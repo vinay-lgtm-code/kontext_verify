@@ -23,6 +23,8 @@ import type {
   AnomalyCallback,
   AnomalyEvent,
   UsdcComplianceCheck,
+  SARReport,
+  CTRReport,
 } from './types.js';
 import type { DigestVerification, DigestLink } from './digest.js';
 import { KontextError, KontextErrorCode } from './types.js';
@@ -287,6 +289,33 @@ export class Kontext {
    */
   async generateReport(options: ReportOptions): Promise<ComplianceReport> {
     return this.auditExporter.generateReport(options);
+  }
+
+  /**
+   * Generate a Suspicious Activity Report (SAR) template.
+   *
+   * This produces a structured SAR template populated with data from the SDK.
+   * It is a template/structure, not an actual regulatory filing.
+   *
+   * @param options - Report configuration
+   * @returns SAR report template
+   */
+  async generateSARReport(options: ReportOptions): Promise<SARReport> {
+    return this.auditExporter.generateSARReport(options);
+  }
+
+  /**
+   * Generate a Currency Transaction Report (CTR) template.
+   *
+   * This produces a structured CTR template for transactions that meet or
+   * exceed reporting thresholds. It is a template/structure, not an actual
+   * regulatory filing.
+   *
+   * @param options - Report configuration
+   * @returns CTR report template
+   */
+  async generateCTRReport(options: ReportOptions): Promise<CTRReport> {
+    return this.auditExporter.generateCTRReport(options);
   }
 
   // --------------------------------------------------------------------------

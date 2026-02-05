@@ -36,6 +36,11 @@ export type {
   ComplianceReport,
   DateRange,
 
+  // SAR/CTR Report Templates
+  SARReport,
+  CTRReport,
+  ReportSubject,
+
   // Trust Scoring
   TrustScore,
   TrustFactor,
@@ -64,3 +69,27 @@ export type { DigestLink, DigestVerification, PrecisionTimestamp } from './diges
 
 // USDC Integration (for direct use)
 export { UsdcCompliance } from './integrations/usdc.js';
+
+// CCTP Integration (Cross-Chain Transfer Protocol)
+export { CCTPTransferManager } from './integrations/cctp.js';
+export type {
+  CrossChainTransfer,
+  InitiateCCTPTransferInput,
+  CCTPAttestationInput,
+  ConfirmCCTPTransferInput,
+  CCTPValidationResult,
+  CCTPValidationCheck,
+  CrossChainAuditEntry,
+  CCTPMessageStatus,
+} from './integrations/cctp.js';
+
+// Webhook Manager
+export { WebhookManager } from './webhooks.js';
+export type {
+  WebhookConfig,
+  RegisterWebhookInput,
+  WebhookEventType,
+  WebhookPayload,
+  WebhookDeliveryResult,
+  WebhookRetryConfig,
+} from './webhooks.js';

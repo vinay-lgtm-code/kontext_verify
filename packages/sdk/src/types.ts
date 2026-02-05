@@ -24,7 +24,7 @@ export type TaskStatus = 'pending' | 'in_progress' | 'confirmed' | 'failed' | 'e
 export type ExportFormat = 'json' | 'csv';
 
 /** Report types */
-export type ReportType = 'compliance' | 'transaction' | 'anomaly';
+export type ReportType = 'compliance' | 'transaction' | 'anomaly' | 'sar' | 'ctr';
 
 /** Anomaly detection rule types */
 export type AnomalyRuleType =
@@ -288,6 +288,94 @@ export interface ExportResult {
   data: string;
   /** Terminal digest of the chain at time of export */
   terminalDigest?: string;
+}
+
+// ============================================================================
+// SAR/CTR Report Templates
+// ============================================================================
+
+/** Subject information for SAR/CTR reports */
+export interface ReportSubject {
+  /** Subject name or identifier */
+  name: string;
+  /** Agent ID (if applicable) */
+  agentId?: string;
+  /** Wallet addresses associated with the subject */
+  addresses: string[];
+  /** Additional identifying information */
+  identifiers?: Record<string, string>;
+}
+
+/** Suspicious Activity Report template */
+export interface SARReport {
+  /** Report ID */
+  id: string;
+  /** Report type discriminator */
+  type: 'sar';
+  /** Generation timestamp */
+  generatedAt: string;
+  /** Reporting period */
+  period: DateRange;
+  /** Project ID */
+  projectId: string;
+  /** Filing institution information */
+  filingInstitution: string;
+  /** Subject(s) of the report */
+  subjects: ReportSubject[];
+  /** Narrative summary of suspicious activity */
+  narrative: string;
+  /** Suspicious activity categories */
+  activityCategories: string[];
+  /** Total amount involved */
+  totalAmount: string;
+  /** Currency/token */
+  currency: string;
+  /** Transactions flagged as suspicious */
+  suspiciousTransactions: TransactionRecord[];
+  /** Related anomalies */
+  anomalies: AnomalyEvent[];
+  /** Supporting action logs */
+  supportingActions: ActionLog[];
+  /** Whether this is a continuing activity report */
+  isContinuingActivity: boolean;
+  /** Prior report ID if continuing */
+  priorReportId: string | null;
+  /** Status of the report */
+  status: 'draft' | 'review' | 'filed';
+}
+
+/** Currency Transaction Report template */
+export interface CTRReport {
+  /** Report ID */
+  id: string;
+  /** Report type discriminator */
+  type: 'ctr';
+  /** Generation timestamp */
+  generatedAt: string;
+  /** Reporting period */
+  period: DateRange;
+  /** Project ID */
+  projectId: string;
+  /** Filing institution information */
+  filingInstitution: string;
+  /** Person/entity conducting the transactions */
+  conductors: ReportSubject[];
+  /** Transactions included in the report */
+  transactions: TransactionRecord[];
+  /** Total cash-in amount */
+  totalCashIn: string;
+  /** Total cash-out amount */
+  totalCashOut: string;
+  /** Currency/token */
+  currency: string;
+  /** Whether multiple transactions are aggregated */
+  isAggregated: boolean;
+  /** Chains involved */
+  chainsInvolved: Chain[];
+  /** Supporting action logs */
+  supportingActions: ActionLog[];
+  /** Status of the report */
+  status: 'draft' | 'review' | 'filed';
 }
 
 // ============================================================================

@@ -79,18 +79,22 @@ const protocols = [
   {
     name: "USDC",
     description: "Circle's stablecoin on Base & Ethereum",
+    highlight: true,
   },
   {
     name: "x402",
     description: "HTTP-native micropayments protocol",
+    highlight: false,
   },
   {
     name: "Google UCP",
     description: "Universal Checkout Protocol & A2A",
+    highlight: false,
   },
   {
     name: "Stripe",
     description: "Agentic commerce & payment intents",
+    highlight: false,
   },
 ];
 
@@ -104,17 +108,35 @@ export default function HomePage() {
 
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center pb-16 pt-20 text-center md:pb-24 md:pt-32">
-            {/* Announcement badge */}
-            <Badge
-              variant="outline"
-              className="mb-6 gap-1.5 border-primary/20 bg-primary/5 px-3 py-1 text-primary"
-            >
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
-              </span>
-              Now open source on GitHub
-            </Badge>
+            {/* Announcement badges */}
+            <div className="mb-6 flex flex-wrap items-center justify-center gap-3">
+              <Badge
+                variant="outline"
+                className="gap-1.5 border-primary/20 bg-primary/5 px-3 py-1 text-primary"
+              >
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                </span>
+                Now open source on GitHub
+              </Badge>
+              <Badge
+                variant="outline"
+                className="gap-1.5 border-blue-500/30 bg-blue-500/10 px-3 py-1 text-blue-400"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="shrink-0">
+                  <circle cx="12" cy="12" r="10" />
+                </svg>
+                USDC Native
+              </Badge>
+              <Badge
+                variant="outline"
+                className="gap-1.5 border-amber-500/30 bg-amber-500/10 px-3 py-1 text-amber-400"
+              >
+                <Shield size={14} className="shrink-0" />
+                GENIUS Act Ready
+              </Badge>
+            </div>
 
             {/* Headline */}
             <h1 className="max-w-4xl text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
@@ -279,9 +301,24 @@ export default function HomePage() {
             {protocols.map((protocol) => (
               <div
                 key={protocol.name}
-                className="group flex flex-col items-center rounded-xl border border-border/50 bg-card/50 p-8 text-center transition-colors hover:border-primary/30 hover:bg-card"
+                className={`group relative flex flex-col items-center rounded-xl border p-8 text-center transition-colors ${
+                  protocol.highlight
+                    ? "border-blue-500/40 bg-blue-500/5 hover:border-blue-500/60 hover:bg-blue-500/10"
+                    : "border-border/50 bg-card/50 hover:border-primary/30 hover:bg-card"
+                }`}
               >
-                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-2xl font-bold text-primary">
+                {protocol.highlight && (
+                  <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
+                    <Badge className="bg-blue-600 text-white text-[10px] px-2 py-0.5 shadow-sm">
+                      Primary Integration
+                    </Badge>
+                  </div>
+                )}
+                <div className={`mb-4 flex h-14 w-14 items-center justify-center rounded-full text-2xl font-bold ${
+                  protocol.highlight
+                    ? "bg-blue-500/20 text-blue-400"
+                    : "bg-primary/10 text-primary"
+                }`}>
                   {protocol.name[0]}
                 </div>
                 <h3 className="text-lg font-semibold">{protocol.name}</h3>
@@ -297,13 +334,22 @@ export default function HomePage() {
       {/* GENIUS Act */}
       <section className="border-t border-border/40 bg-background">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-primary/5 via-card to-card p-8 sm:p-12 md:p-16">
+          <div className="relative overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/5 via-card to-card p-8 sm:p-12 md:p-16">
             <div className="relative z-10 max-w-2xl">
-              <Badge variant="outline" className="mb-4 border-primary/30 text-primary">
-                Regulatory Readiness
-              </Badge>
+              <div className="mb-4 flex flex-wrap items-center gap-3">
+                <Badge variant="outline" className="border-amber-500/30 bg-amber-500/10 text-amber-400">
+                  <Shield size={12} className="mr-1.5" />
+                  Regulatory Readiness
+                </Badge>
+                <Badge variant="outline" className="border-blue-500/30 bg-blue-500/10 text-blue-400">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="mr-1.5">
+                    <circle cx="12" cy="12" r="10" />
+                  </svg>
+                  Built for USDC
+                </Badge>
+              </div>
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                Built for the GENIUS Act era
+                Compliance-ready for the GENIUS Act
               </h2>
               <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
                 The GENIUS Act is reshaping stablecoin regulation in the United
@@ -311,25 +357,45 @@ export default function HomePage() {
                 to operate confidently -- audit trails, transaction logging, and
                 risk scoring that align with where regulation is heading.
               </p>
-              <p className="mt-4 text-muted-foreground">
-                Stop bolting on compliance as an afterthought. Build it in from
-                day one.
-              </p>
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                {[
+                  "Immutable audit trails for every USDC transaction",
+                  "Trust scoring aligned with regulatory expectations",
+                  "Exportable compliance reports (JSON, CSV, PDF)",
+                  "Anomaly detection with configurable risk thresholds",
+                ].map((item) => (
+                  <div key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      className="mt-0.5 shrink-0 text-amber-400"
+                    >
+                      <path d="m9 12 2 2 4-4" />
+                      <circle cx="12" cy="12" r="10" />
+                    </svg>
+                    {item}
+                  </div>
+                ))}
+              </div>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Button size="lg" asChild>
                   <Link href="/docs">Get Started</Link>
                 </Button>
                 <Button variant="outline" size="lg" className="gap-2" asChild>
-                  <Link href="/about">
-                    Learn More
+                  <Link href="/faqs#compliance">
+                    Compliance FAQs
                     <ArrowRight size={16} />
                   </Link>
                 </Button>
               </div>
             </div>
             {/* Decorative element */}
-            <div className="absolute -right-20 -top-20 h-80 w-80 rounded-full bg-primary/5 blur-3xl" />
-            <div className="absolute -bottom-20 -right-10 h-60 w-60 rounded-full bg-primary/3 blur-3xl" />
+            <div className="absolute -right-20 -top-20 h-80 w-80 rounded-full bg-amber-500/5 blur-3xl" />
+            <div className="absolute -bottom-20 -right-10 h-60 w-60 rounded-full bg-amber-500/3 blur-3xl" />
           </div>
         </div>
       </section>
