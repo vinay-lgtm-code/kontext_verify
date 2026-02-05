@@ -180,7 +180,7 @@ export default function AboutPage() {
           <div className="mt-16 flex flex-col items-start gap-4 sm:flex-row">
             <Button size="lg" className="gap-2" asChild>
               <a
-                href="https://github.com/kontext-verify"
+                href="https://github.com/vinay-lgtm-code/kontext_verify"
                 target="_blank"
                 rel="noopener noreferrer"
               >

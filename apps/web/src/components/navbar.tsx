@@ -62,7 +62,7 @@ export function Navbar() {
         <div className="hidden md:flex md:items-center md:gap-3">
           <Button variant="ghost" size="sm" asChild>
             <a
-              href="https://github.com/kontext-verify"
+              href="https://github.com/vinay-lgtm-code/kontext_verify"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2"
@@ -111,7 +111,7 @@ export function Navbar() {
             <div className="pt-4 flex flex-col gap-2">
               <Button variant="outline" size="sm" asChild>
                 <a
-                  href="https://github.com/kontext-verify"
+                  href="https://github.com/vinay-lgtm-code/kontext_verify"
                   target="_blank"
                   rel="noopener noreferrer"
                 >

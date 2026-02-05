@@ -133,7 +133,7 @@ export default function HomePage() {
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
               <Button size="lg" className="gap-2 px-6" asChild>
                 <a
-                  href="https://github.com/kontext-verify"
+                  href="https://github.com/vinay-lgtm-code/kontext_verify"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -408,7 +408,7 @@ export default function HomePage() {
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
               <Button size="lg" className="gap-2 px-6" asChild>
                 <a
-                  href="https://github.com/kontext-verify"
+                  href="https://github.com/vinay-lgtm-code/kontext_verify"
                   target="_blank"
                   rel="noopener noreferrer"
                 >

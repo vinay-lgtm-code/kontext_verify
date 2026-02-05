@@ -490,7 +490,7 @@ export default function DocsPage() {
                   icon: BookOpen,
                   title: "Examples",
                   description: "Real-world code examples",
-                  href: "https://github.com/kontext-verify",
+                  href: "https://github.com/vinay-lgtm-code/kontext_verify",
                 },
               ].map((link) => (
                 <a
@@ -890,7 +890,7 @@ KONTEXT_ENVIRONMENT=production  # Environment`}
               <ul className="mt-4">
                 <li>
                   <a
-                    href="https://github.com/kontext-verify"
+                    href="https://github.com/vinay-lgtm-code/kontext_verify"
                     target="_blank"
                     rel="noopener noreferrer"
                   >

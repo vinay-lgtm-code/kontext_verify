@@ -32,7 +32,7 @@ const plans = [
     description:
       "Everything you need to add basic compliance to your agentic workflows.",
     cta: "Get Started Free",
-    ctaHref: "https://github.com/kontext-verify",
+    ctaHref: "https://github.com/vinay-lgtm-code/kontext_verify",
     ctaExternal: true,
     highlighted: false,
     features: [
@@ -243,7 +243,7 @@ export default function PricingPage() {
             <p className="mt-4 text-muted-foreground">
               Can&apos;t find what you&apos;re looking for? Reach out on{" "}
               <a
-                href="https://github.com/kontext-verify"
+                href="https://github.com/vinay-lgtm-code/kontext_verify"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:underline"
@@ -283,7 +283,7 @@ export default function PricingPage() {
             <div className="mt-6 flex flex-col sm:flex-row gap-4">
               <Button size="lg" asChild>
                 <a
-                  href="https://github.com/kontext-verify"
+                  href="https://github.com/vinay-lgtm-code/kontext_verify"
                   target="_blank"
                   rel="noopener noreferrer"
                 >

@@ -17,7 +17,7 @@ const footerLinks = {
     { href: "/about", label: "About" },
     { href: "/blog", label: "Blog" },
     {
-      href: "https://github.com/kontext-verify",
+      href: "https://github.com/vinay-lgtm-code/kontext_verify",
       label: "GitHub",
       external: true,
     },
