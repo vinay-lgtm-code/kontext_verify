@@ -52,11 +52,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/kontext-hq/kontext-sdk"
+    "url": "https://github.com/vinay-lgtm-code/kontext_verify"
   },
   "homepage": "https://getkontext.com",
   "bugs": {
-    "url": "https://github.com/kontext-hq/kontext-sdk/issues"
+    "url": "https://github.com/vinay-lgtm-code/kontext_verify/issues"
   },
   "publishConfig": {
     "access": "public"

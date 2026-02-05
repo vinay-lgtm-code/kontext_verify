@@ -2,7 +2,7 @@
 # Kontext API Server - Dockerfile for GCP Cloud Run
 # ============================================================================
 
-FROM node:22-slim AS base
+FROM node:22-slim
 
 RUN corepack enable && corepack prepare pnpm@9.1.0 --activate
 
@@ -21,18 +21,9 @@ COPY packages/server/ packages/server/
 # Build
 RUN pnpm --filter @kontext/server build
 
-# Production stage
-FROM node:22-slim AS production
-
-WORKDIR /app
-
-COPY --from=base /app/packages/server/dist ./dist
-COPY --from=base /app/packages/server/package.json ./
-COPY --from=base /app/node_modules ./node_modules
-
 ENV NODE_ENV=production
 ENV PORT=8080
 
 EXPOSE 8080
 
-CMD ["node", "dist/index.js"]
+CMD ["node", "packages/server/dist/index.js"]

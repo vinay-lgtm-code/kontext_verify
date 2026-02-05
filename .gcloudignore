@@ -1,0 +1,11 @@
+.git
+node_modules/
+research/
+ROADMAP.md
+apps/web/node_modules/
+apps/web/.next/
+packages/sdk/node_modules/
+packages/demo/node_modules/
+coverage/
+dist/
+.vercel
