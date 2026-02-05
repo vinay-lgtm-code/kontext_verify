@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+.DS_Store
+coverage/
+.turbo/
+.kontext/
+.kontext-demo/
+*.tsbuildinfo
+package-lock.json
+.vercel
+
+# Internal docs (not public)
+research/
+ROADMAP.md

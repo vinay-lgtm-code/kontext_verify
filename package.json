@@ -1,0 +1,25 @@
+{
+  "name": "kontext-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Kontext - Trust and compliance layer for agentic workflows",
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "lint": "eslint . --ext .ts",
+    "format": "prettier --write \"packages/*/src/**/*.ts\"",
+    "demo": "pnpm --filter @kontext/demo start",
+    "dev:server": "pnpm --filter @kontext/server dev",
+    "clean": "pnpm -r clean"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@9.15.9",
+  "author": "Kontext Team",
+  "license": "MIT",
+  "devDependencies": {
+    "pnpm": "^9.15.9"
+  }
+}
