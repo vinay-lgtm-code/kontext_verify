@@ -30,6 +30,29 @@ describe('CCTPTransferManager', () => {
       expect(result.checks.every((c) => c.passed)).toBe(true);
     });
 
+    it('should validate a cross-chain transfer to Arc', () => {
+      const manager = new CCTPTransferManager();
+      const result = manager.validateTransfer(
+        createTransferInput({ sourceChain: 'ethereum', destinationChain: 'arc' }),
+      );
+
+      expect(result.valid).toBe(true);
+      expect(result.riskLevel).toBe('low');
+      const destCheck = result.checks.find((c) => c.name === 'cctp_destination_chain');
+      expect(destCheck?.passed).toBe(true);
+    });
+
+    it('should validate a cross-chain transfer from Arc', () => {
+      const manager = new CCTPTransferManager();
+      const result = manager.validateTransfer(
+        createTransferInput({ sourceChain: 'arc', destinationChain: 'base' }),
+      );
+
+      expect(result.valid).toBe(true);
+      const sourceCheck = result.checks.find((c) => c.name === 'cctp_source_chain');
+      expect(sourceCheck?.passed).toBe(true);
+    });
+
     it('should reject same source and destination chain', () => {
       const manager = new CCTPTransferManager();
       const result = manager.validateTransfer(
@@ -112,6 +135,20 @@ describe('CCTPTransferManager', () => {
       expect(transfer.destinationTxHash).toBeNull();
       expect(transfer.messageHash).toBeNull();
       expect(transfer.initiatedAt).toBeDefined();
+    });
+
+    it('should initiate a cross-chain transfer to Arc with correct domain', () => {
+      const manager = new CCTPTransferManager();
+      const transfer = manager.initiateTransfer(
+        createTransferInput({ sourceChain: 'base', destinationChain: 'arc' }),
+      );
+
+      expect(transfer.id).toBeDefined();
+      expect(transfer.status).toBe('pending');
+      expect(transfer.sourceChain).toBe('base');
+      expect(transfer.destinationChain).toBe('arc');
+      expect(transfer.sourceDomain).toBe(6);
+      expect(transfer.destinationDomain).toBe(10);
     });
 
     it('should record attestation for a pending transfer', () => {
@@ -311,13 +348,15 @@ describe('CCTPTransferManager', () => {
       expect(CCTPTransferManager.getDomainId('arbitrum')).toBe(3);
       expect(CCTPTransferManager.getDomainId('optimism')).toBe(2);
       expect(CCTPTransferManager.getDomainId('polygon')).toBe(7);
+      expect(CCTPTransferManager.getDomainId('arc')).toBe(10);
     });
 
     it('should return supported chains', () => {
       const chains = CCTPTransferManager.getSupportedChains();
       expect(chains).toContain('ethereum');
       expect(chains).toContain('base');
-      expect(chains.length).toBeGreaterThanOrEqual(5);
+      expect(chains).toContain('arc');
+      expect(chains.length).toBeGreaterThanOrEqual(6);
     });
   });
 });

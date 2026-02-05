@@ -18,6 +18,8 @@ const USDC_CONTRACTS: Record<string, string> = {
   polygon: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
   arbitrum: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
   optimism: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',
+  // Arc (Circle's stablecoin-native blockchain) -- placeholder address, update when Arc mainnet launches
+  arc: '0xa0c0000000000000000000000000000000000001',
 };
 
 /** USDC has 6 decimals */

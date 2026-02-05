@@ -1,7 +1,7 @@
 {
   "name": "@kontext/sdk",
   "version": "0.1.0",
-  "description": "Trust and compliance layer for agentic crypto workflows",
+  "description": "Trust and compliance layer for agentic crypto workflows. Provides action logging, audit trails, trust scoring, anomaly detection, USDC compliance, and CCTP cross-chain transfer tracking.",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -19,8 +19,11 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "LICENSE",
+    "package.json"
   ],
+  "sideEffects": false,
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -38,13 +41,25 @@
     "agent",
     "trust",
     "audit",
-    "genius-act"
+    "genius-act",
+    "cctp",
+    "cross-chain",
+    "anomaly-detection",
+    "agentic",
+    "web3"
   ],
   "author": "Kontext Team",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/kontext-hq/kontext-sdk"
+  },
+  "homepage": "https://getkontext.com",
+  "bugs": {
+    "url": "https://github.com/kontext-hq/kontext-sdk/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "devDependencies": {
     "tsup": "^8.0.0",

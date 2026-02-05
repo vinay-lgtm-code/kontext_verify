@@ -91,6 +91,24 @@ describe('Action Logging', () => {
     expect(tx.token).toBe('USDC');
   });
 
+  it('should log a transaction on Arc chain', async () => {
+    kontext = createClient();
+    const tx = await kontext.logTransaction({
+      txHash: '0x' + 'a'.repeat(64),
+      chain: 'arc',
+      amount: '250.00',
+      token: 'USDC',
+      from: '0x' + '1'.repeat(40),
+      to: '0x' + '2'.repeat(40),
+      agentId: 'agent-1',
+    });
+
+    expect(tx.type).toBe('transaction');
+    expect(tx.chain).toBe('arc');
+    expect(tx.amount).toBe('250.00');
+    expect(tx.token).toBe('USDC');
+  });
+
   it('should reject invalid transaction amount', async () => {
     kontext = createClient();
     await expect(

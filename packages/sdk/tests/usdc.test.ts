@@ -82,12 +82,27 @@ describe('UsdcCompliance', () => {
     const chains = UsdcCompliance.getSupportedChains();
     expect(chains).toContain('ethereum');
     expect(chains).toContain('base');
+    expect(chains).toContain('arc');
   });
 
   it('should return contract addresses', () => {
     const addr = UsdcCompliance.getContractAddress('base');
     expect(addr).toBeDefined();
     expect(addr).toMatch(/^0x/);
+  });
+
+  it('should return Arc contract address', () => {
+    const addr = UsdcCompliance.getContractAddress('arc');
+    expect(addr).toBeDefined();
+    expect(addr).toMatch(/^0x/);
+  });
+
+  it('should pass compliance check for Arc chain', () => {
+    const result = UsdcCompliance.checkTransaction(
+      createTx({ chain: 'arc' }),
+    );
+    const chainCheck = result.checks.find((c) => c.name === 'chain_support');
+    expect(chainCheck?.passed).toBe(true);
   });
 
   it('should flag invalid amounts', () => {

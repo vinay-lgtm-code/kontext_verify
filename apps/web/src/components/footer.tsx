@@ -3,16 +3,17 @@ import Link from "next/link";
 const footerLinks = {
   Product: [
     { href: "/docs", label: "Documentation" },
+    { href: "/use-cases", label: "Use Cases" },
+    { href: "/integrations", label: "Integrations" },
     { href: "/pricing", label: "Pricing" },
     { href: "/faqs", label: "FAQs" },
-    { href: "/docs#quickstart", label: "Quick Start" },
-    { href: "/docs#api", label: "API Reference" },
   ],
   Integrations: [
-    { href: "/docs#usdc", label: "USDC on Base" },
-    { href: "/docs#x402", label: "x402 Protocol" },
-    { href: "/docs#ucp", label: "Google UCP/A2A" },
-    { href: "/docs#stripe", label: "Stripe Agentic" },
+    { href: "/use-cases#usdc-payments", label: "USDC on Base" },
+    { href: "/use-cases#x402-protocol", label: "x402 Protocol" },
+    { href: "/use-cases#google-ucp", label: "Google UCP/A2A" },
+    { href: "/use-cases#stripe-agentic", label: "Stripe Agentic" },
+    { href: "/integrations#agent-frameworks", label: "Agent Frameworks" },
   ],
   Company: [
     { href: "/about", label: "About" },

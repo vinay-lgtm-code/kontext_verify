@@ -21,6 +21,8 @@ const CCTP_DOMAINS: Record<string, number> = {
   optimism: 2,
   base: 6,
   polygon: 7,
+  // Arc (Circle's stablecoin-native blockchain) -- placeholder domain ID, update when Arc mainnet launches
+  arc: 10,
 };
 
 /** CCTP message status */
