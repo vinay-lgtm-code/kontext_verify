@@ -6,7 +6,7 @@ import { TOTAL_FRAMES, FRAME_RATE } from "./video/styles";
 
 export function VideoDemo() {
   return (
-    <div className="relative mx-auto max-w-4xl overflow-hidden rounded-xl border border-border/40 shadow-2xl">
+    <div className="relative mx-auto w-full overflow-hidden rounded-xl border border-border/40 shadow-2xl">
       <Player
         component={KontextDemoVideo}
         durationInFrames={TOTAL_FRAMES}

@@ -26,7 +26,7 @@ const VideoDemo = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="aspect-video w-full max-w-4xl mx-auto rounded-xl border border-border/40 bg-card/50 flex items-center justify-center">
+      <div className="aspect-video w-full mx-auto rounded-xl border border-border/40 bg-card/50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           <p className="text-sm text-muted-foreground">Loading demo...</p>
