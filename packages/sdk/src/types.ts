@@ -3,7 +3,7 @@
 // ============================================================================
 
 /** Supported blockchain networks */
-export type Chain = 'ethereum' | 'base' | 'polygon' | 'arbitrum' | 'optimism' | 'arc';
+export type Chain = 'ethereum' | 'base' | 'polygon' | 'arbitrum' | 'optimism' | 'arc' | 'avalanche' | 'solana';
 
 /** Supported stablecoin tokens */
 export type Token = 'USDC' | 'USDT' | 'DAI' | 'EURC';

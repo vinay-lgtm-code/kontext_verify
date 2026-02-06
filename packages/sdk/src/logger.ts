@@ -260,7 +260,7 @@ export class ActionLogger {
       );
     }
 
-    const validChains: Chain[] = ['ethereum', 'base', 'polygon', 'arbitrum', 'optimism', 'arc'];
+    const validChains: Chain[] = ['ethereum', 'base', 'polygon', 'arbitrum', 'optimism', 'arc', 'avalanche', 'solana'];
     if (!validChains.includes(input.chain)) {
       throw new KontextError(
         KontextErrorCode.VALIDATION_ERROR,

@@ -19,9 +19,9 @@ export const metadata: Metadata = {
     "Get started with Kontext in minutes. Installation, quick start, API reference, and integration guides for USDC, x402, Google UCP, and Stripe.",
 };
 
-const installCode = `npm install @kontext/sdk`;
+const installCode = `npm install kontext-sdk`;
 
-const quickStartCode = `import { Kontext } from '@kontext/sdk';
+const quickStartCode = `import { Kontext } from 'kontext-sdk';
 
 // Initialize with your API key (optional for open-source features)
 const ctx = new Kontext({
@@ -52,7 +52,7 @@ if (result.flagged) {
   // Proceed with the transaction
 }`;
 
-const actionLoggingCode = `import { Kontext } from '@kontext/sdk';
+const actionLoggingCode = `import { Kontext } from 'kontext-sdk';
 
 const ctx = new Kontext();
 
@@ -91,7 +91,7 @@ await workflow.step('execute_payment', {
 
 await workflow.complete();`;
 
-const taskConfirmationCode = `import { Kontext } from '@kontext/sdk';
+const taskConfirmationCode = `import { Kontext } from 'kontext-sdk';
 
 const ctx = new Kontext();
 
@@ -122,7 +122,7 @@ if (result.pendingConfirmation) {
   // The result resolves when confirmed or times out
 }`;
 
-const auditExportCode = `import { Kontext } from '@kontext/sdk';
+const auditExportCode = `import { Kontext } from 'kontext-sdk';
 
 const ctx = new Kontext();
 
@@ -152,7 +152,7 @@ for await (const chunk of stream) {
   process.stdout.write(chunk);
 }`;
 
-const trustScoringCode = `import { Kontext } from '@kontext/sdk';
+const trustScoringCode = `import { Kontext } from 'kontext-sdk';
 
 const ctx = new Kontext({ apiKey: process.env.KONTEXT_KEY });
 
@@ -184,7 +184,7 @@ console.log(history.average);      // 0.96
 console.log(history.trend);        // 'stable'
 console.log(history.flagCount);    // 2`;
 
-const anomalyDetectionCode = `import { Kontext } from '@kontext/sdk';
+const anomalyDetectionCode = `import { Kontext } from 'kontext-sdk';
 
 const ctx = new Kontext();
 
@@ -227,7 +227,7 @@ console.log(result.flags);
 //   }
 // ]`;
 
-const usdcIntegrationCode = `import { Kontext } from '@kontext/sdk';
+const usdcIntegrationCode = `import { Kontext } from 'kontext-sdk';
 import { createPublicClient, http } from 'viem';
 import { base } from 'viem/chains';
 
@@ -266,7 +266,7 @@ async function sendUSDC(to: string, amount: string) {
   });
 }`;
 
-const x402IntegrationCode = `import { Kontext } from '@kontext/sdk';
+const x402IntegrationCode = `import { Kontext } from 'kontext-sdk';
 
 const ctx = new Kontext();
 
@@ -302,7 +302,7 @@ function kontextMiddleware(handler) {
   };
 }`;
 
-const ucpIntegrationCode = `import { Kontext } from '@kontext/sdk';
+const ucpIntegrationCode = `import { Kontext } from 'kontext-sdk';
 
 const ctx = new Kontext();
 
@@ -327,7 +327,7 @@ async function handleAgentTransaction(ucpPayload) {
   };
 }`;
 
-const stripeIntegrationCode = `import { Kontext } from '@kontext/sdk';
+const stripeIntegrationCode = `import { Kontext } from 'kontext-sdk';
 import Stripe from 'stripe';
 
 const ctx = new Kontext();
@@ -530,7 +530,7 @@ export default function DocsPage() {
                 Or with yarn / pnpm:
               </p>
               <CodeBlock
-                code={`yarn add @kontext/sdk\n# or\npnpm add @kontext/sdk`}
+                code={`yarn add kontext-sdk\n# or\npnpm add kontext-sdk`}
                 language="bash"
                 filename="Terminal"
               />
@@ -811,7 +811,7 @@ interface VerifyResult {
               </p>
               <CodeBlock
                 code={`// kontext.config.ts
-import { defineConfig } from '@kontext/sdk';
+import { defineConfig } from 'kontext-sdk';
 
 export default defineConfig({
   chain: 'base',
@@ -874,7 +874,7 @@ KONTEXT_ENVIRONMENT=production  # Environment`}
   Policy,
   Rules,
   WorkflowContext,
-} from '@kontext/sdk';`}
+} from 'kontext-sdk';`}
                 language="typescript"
                 filename="types.ts"
               />

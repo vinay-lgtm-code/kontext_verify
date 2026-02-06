@@ -20,7 +20,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 
-const heroCode = `import { Kontext } from '@kontext/sdk';
+const heroCode = `import { Kontext } from 'kontext-sdk';
 
 const ctx = new Kontext({ apiKey: process.env.KONTEXT_KEY });
 
@@ -181,7 +181,7 @@ export default function HomePage() {
             {/* Install command */}
             <div className="mt-8 inline-flex items-center gap-2 rounded-full border border-border/50 bg-card/50 px-4 py-2 font-mono text-sm text-muted-foreground backdrop-blur-sm">
               <span className="text-primary">$</span>
-              npm install @kontext/sdk
+              npm install kontext-sdk
             </div>
           </div>
         </div>

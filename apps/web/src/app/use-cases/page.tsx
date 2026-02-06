@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     "Explore how Kontext powers compliant agentic transactions -- USDC payments, x402 micropayments, Stripe commerce, Google UCP, cross-chain CCTP transfers, and treasury management.",
 };
 
-const usdcCode = `import { Kontext } from '@kontext/sdk';
+const usdcCode = `import { Kontext } from 'kontext-sdk';
 
 const ctx = new Kontext({ chain: 'base' });
 
@@ -53,7 +53,7 @@ if (compliance.approved) {
   console.log('Audit ID:', compliance.auditId);
 }`;
 
-const x402Code = `import { Kontext } from '@kontext/sdk';
+const x402Code = `import { Kontext } from 'kontext-sdk';
 
 const ctx = new Kontext();
 
@@ -89,7 +89,7 @@ export function x402KontextMiddleware(handler) {
   };
 }`;
 
-const stripeCode = `import { Kontext } from '@kontext/sdk';
+const stripeCode = `import { Kontext } from 'kontext-sdk';
 import Stripe from 'stripe';
 
 const ctx = new Kontext();
@@ -123,7 +123,7 @@ async function handleAgentPayment(agentId: string, amount: number) {
   return intent;
 }`;
 
-const ucpCode = `import { Kontext } from '@kontext/sdk';
+const ucpCode = `import { Kontext } from 'kontext-sdk';
 
 const ctx = new Kontext();
 
@@ -150,7 +150,7 @@ async function handleUcpTransaction(ucpPayload) {
   };
 }`;
 
-const cctpCode = `import { Kontext } from '@kontext/sdk';
+const cctpCode = `import { Kontext } from 'kontext-sdk';
 
 const ctx = new Kontext();
 
@@ -204,7 +204,7 @@ class CCTPTransferManager {
   }
 }`;
 
-const treasuryCode = `import { Kontext } from '@kontext/sdk';
+const treasuryCode = `import { Kontext } from 'kontext-sdk';
 
 const ctx = new Kontext({ apiKey: process.env.KONTEXT_KEY });
 
@@ -507,7 +507,7 @@ export default function UseCasesPage() {
             </p>
             <div className="mt-8 inline-flex items-center gap-2 rounded-full border border-border/50 bg-card/50 px-4 py-2 font-mono text-sm text-muted-foreground backdrop-blur-sm">
               <span className="text-primary">$</span>
-              npm install @kontext/sdk
+              npm install kontext-sdk
             </div>
             <div className="mt-6 flex flex-col gap-4 sm:flex-row">
               <Button size="lg" asChild>

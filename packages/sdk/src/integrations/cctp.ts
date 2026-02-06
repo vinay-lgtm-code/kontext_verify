@@ -1,6 +1,10 @@
 // ============================================================================
 // Kontext SDK - CCTP (Cross-Chain Transfer Protocol) Integration
 // ============================================================================
+// Supports both CCTP V1 and V2 features:
+// - V1: Standard burn-and-mint with attestation (minutes)
+// - V2: Fast transfers (sub-minute), hooks for post-transfer automation,
+//        and expanded domain support
 
 import type {
   Chain,
@@ -14,7 +18,7 @@ import { generateId, now, parseAmount } from '../utils.js';
 // Types
 // ============================================================================
 
-/** Supported CCTP domain identifiers for each chain */
+/** Supported CCTP domain identifiers for each chain (V2 expanded) */
 const CCTP_DOMAINS: Record<string, number> = {
   ethereum: 0,
   arbitrum: 3,
@@ -23,7 +27,33 @@ const CCTP_DOMAINS: Record<string, number> = {
   polygon: 7,
   // Arc (Circle's stablecoin-native blockchain) -- placeholder domain ID, update when Arc mainnet launches
   arc: 10,
+  // CCTP V2 expanded domains
+  avalanche: 1,
+  solana: 5,
 };
+
+/** CCTP V2 fast-transfer eligible routes */
+const FAST_TRANSFER_ROUTES: Set<string> = new Set([
+  'ethereum->base',
+  'base->ethereum',
+  'ethereum->arbitrum',
+  'arbitrum->ethereum',
+  'ethereum->optimism',
+  'optimism->ethereum',
+  'ethereum->polygon',
+  'polygon->ethereum',
+  'base->arbitrum',
+  'arbitrum->base',
+  'base->optimism',
+  'optimism->base',
+  'base->polygon',
+  'polygon->base',
+  'ethereum->avalanche',
+  'avalanche->ethereum',
+]);
+
+/** CCTP protocol version */
+export type CCTPVersion = 'v1' | 'v2';
 
 /** CCTP message status */
 export type CCTPMessageStatus =
@@ -31,6 +61,48 @@ export type CCTPMessageStatus =
   | 'attested'
   | 'confirmed'
   | 'failed';
+
+/** CCTP V2 hook definition for post-transfer automation */
+export interface CCTPHook {
+  /** Target contract address on the destination chain */
+  targetContract: string;
+  /** Encoded function call data */
+  callData: string;
+  /** Maximum gas for hook execution */
+  gasLimit: number;
+  /** Human-readable description of the hook */
+  description?: string;
+}
+
+/** Input for initiating a CCTP V2 fast transfer */
+export interface InitiateFastTransferInput {
+  /** Source chain */
+  sourceChain: Chain;
+  /** Destination chain */
+  destinationChain: Chain;
+  /** Transfer amount */
+  amount: string;
+  /** Token being transferred */
+  token: Token;
+  /** Sender address */
+  sender: string;
+  /** Recipient address */
+  recipient: string;
+  /** Source chain transaction hash */
+  sourceTxHash: string;
+  /** Agent initiating the transfer */
+  agentId: string;
+  /** Maximum finality time the sender will accept (seconds) */
+  maxFinalitySeconds?: number;
+  /** Optional hooks to execute after transfer completes */
+  hooks?: CCTPHook[];
+  /** Optional nonce */
+  nonce?: number;
+  /** Optional correlation ID */
+  correlationId?: string;
+  /** Optional metadata */
+  metadata?: Record<string, unknown>;
+}
 
 /** A cross-chain transfer record */
 export interface CrossChainTransfer {
@@ -74,6 +146,14 @@ export interface CrossChainTransfer {
   agentId: string;
   /** Additional metadata */
   metadata: Record<string, unknown>;
+  /** CCTP protocol version used */
+  version?: CCTPVersion;
+  /** Whether this is a fast transfer (V2) */
+  isFastTransfer?: boolean;
+  /** Post-transfer hooks (V2) */
+  hooks?: CCTPHook[];
+  /** Hook execution results (V2) */
+  hookResults?: CCTPHookResult[];
 }
 
 /** Input for initiating a cross-chain transfer record */
@@ -158,6 +238,34 @@ export interface CrossChainAuditEntry {
   linked: boolean;
   /** Duration from initiation to confirmation in milliseconds */
   durationMs: number | null;
+}
+
+/** Result of a CCTP V2 hook execution */
+export interface CCTPHookResult {
+  /** Target contract address */
+  targetContract: string;
+  /** Whether the hook executed successfully */
+  success: boolean;
+  /** Transaction hash of the hook execution */
+  transactionHash?: string;
+  /** Error message if the hook failed */
+  error?: string;
+  /** Gas used by the hook */
+  gasUsed?: number;
+}
+
+/** Validation result for a CCTP V2 fast transfer */
+export interface FastTransferValidation {
+  /** Whether the fast transfer route is supported */
+  fastTransferAvailable: boolean;
+  /** Estimated finality time in seconds */
+  estimatedFinalitySeconds: number;
+  /** Whether hooks are valid */
+  hooksValid: boolean;
+  /** Hook validation details */
+  hookValidation: { index: number; valid: boolean; reason?: string }[];
+  /** Standard validation result */
+  standardValidation: CCTPValidationResult;
 }
 
 // ============================================================================
@@ -473,6 +581,167 @@ export class CCTPTransferManager {
       .filter((entry): entry is CrossChainAuditEntry => entry !== undefined);
   }
 
+  // --------------------------------------------------------------------------
+  // CCTP V2 Features
+  // --------------------------------------------------------------------------
+
+  /**
+   * Validate a fast transfer request (CCTP V2).
+   * Checks route eligibility, hook validity, and standard validation.
+   *
+   * @param input - Fast transfer details
+   * @returns FastTransferValidation with availability and hook checks
+   */
+  validateFastTransfer(input: InitiateFastTransferInput): FastTransferValidation {
+    const standardInput: InitiateCCTPTransferInput = {
+      sourceChain: input.sourceChain,
+      destinationChain: input.destinationChain,
+      amount: input.amount,
+      token: input.token,
+      sender: input.sender,
+      recipient: input.recipient,
+      sourceTxHash: input.sourceTxHash,
+      agentId: input.agentId,
+      nonce: input.nonce,
+      correlationId: input.correlationId,
+      metadata: input.metadata,
+    };
+
+    const standardValidation = this.validateTransfer(standardInput);
+
+    // Check if fast transfer route is available
+    const routeKey = `${input.sourceChain}->${input.destinationChain}`;
+    const fastTransferAvailable = FAST_TRANSFER_ROUTES.has(routeKey);
+
+    // Estimate finality time
+    const estimatedFinalitySeconds = fastTransferAvailable ? 30 : 900;
+
+    // Validate hooks
+    const hookValidation: { index: number; valid: boolean; reason?: string }[] = [];
+    if (input.hooks) {
+      for (let i = 0; i < input.hooks.length; i++) {
+        const hook = input.hooks[i]!;
+        const isValidAddr = /^0x[a-fA-F0-9]{40}$/.test(hook.targetContract);
+        const hasCallData = hook.callData.length > 0;
+        const validGas = hook.gasLimit > 0 && hook.gasLimit <= 10_000_000;
+
+        if (!isValidAddr) {
+          hookValidation.push({ index: i, valid: false, reason: 'Invalid target contract address' });
+        } else if (!hasCallData) {
+          hookValidation.push({ index: i, valid: false, reason: 'Call data is empty' });
+        } else if (!validGas) {
+          hookValidation.push({ index: i, valid: false, reason: 'Gas limit must be between 1 and 10,000,000' });
+        } else {
+          hookValidation.push({ index: i, valid: true });
+        }
+      }
+    }
+
+    const hooksValid = hookValidation.every((h) => h.valid);
+
+    return {
+      fastTransferAvailable,
+      estimatedFinalitySeconds,
+      hooksValid,
+      hookValidation,
+      standardValidation,
+    };
+  }
+
+  /**
+   * Initiate a CCTP V2 fast transfer with optional hooks.
+   *
+   * Fast transfers use CCTP V2's sub-minute finality on supported routes.
+   * Hooks allow automated post-transfer actions on the destination chain.
+   *
+   * @param input - Fast transfer details including optional hooks
+   * @returns The created CrossChainTransfer record with V2 metadata
+   */
+  initiateFastTransfer(input: InitiateFastTransferInput): CrossChainTransfer {
+    const id = generateId();
+    const correlationId = input.correlationId ?? generateId();
+    const routeKey = `${input.sourceChain}->${input.destinationChain}`;
+    const isFast = FAST_TRANSFER_ROUTES.has(routeKey);
+
+    const transfer: CrossChainTransfer = {
+      id,
+      sourceChain: input.sourceChain,
+      destinationChain: input.destinationChain,
+      sourceDomain: CCTP_DOMAINS[input.sourceChain] ?? -1,
+      destinationDomain: CCTP_DOMAINS[input.destinationChain] ?? -1,
+      amount: input.amount,
+      token: input.token,
+      sender: input.sender,
+      recipient: input.recipient,
+      sourceTxHash: input.sourceTxHash,
+      destinationTxHash: null,
+      messageHash: null,
+      status: 'pending',
+      nonce: input.nonce ?? null,
+      initiatedAt: now(),
+      attestedAt: null,
+      confirmedAt: null,
+      correlationId,
+      agentId: input.agentId,
+      metadata: {
+        ...input.metadata,
+        maxFinalitySeconds: input.maxFinalitySeconds ?? (isFast ? 30 : 900),
+      },
+      version: 'v2',
+      isFastTransfer: isFast,
+      hooks: input.hooks,
+    };
+
+    this.transfers.set(id, transfer);
+    this.actionLinks.set(id, {});
+
+    return transfer;
+  }
+
+  /**
+   * Record hook execution results for a V2 transfer.
+   *
+   * @param transferId - The transfer ID
+   * @param results - Array of hook execution results
+   * @returns The updated transfer
+   */
+  recordHookResults(transferId: string, results: CCTPHookResult[]): CrossChainTransfer {
+    const transfer = this.transfers.get(transferId);
+
+    if (!transfer) {
+      throw new Error(`Cross-chain transfer not found: ${transferId}`);
+    }
+
+    if (transfer.version !== 'v2') {
+      throw new Error(`Transfer ${transferId} is not a V2 transfer`);
+    }
+
+    const updated: CrossChainTransfer = {
+      ...transfer,
+      hookResults: results,
+      metadata: {
+        ...transfer.metadata,
+        hooksExecutedAt: now(),
+        hookSuccessCount: results.filter((r) => r.success).length,
+        hookFailureCount: results.filter((r) => !r.success).length,
+      },
+    };
+
+    this.transfers.set(transferId, updated);
+    return updated;
+  }
+
+  /**
+   * Check if a route supports CCTP V2 fast transfers.
+   *
+   * @param sourceChain - Source blockchain network
+   * @param destinationChain - Destination blockchain network
+   * @returns Whether fast transfer is available
+   */
+  static isFastTransferAvailable(sourceChain: Chain, destinationChain: Chain): boolean {
+    return FAST_TRANSFER_ROUTES.has(`${sourceChain}->${destinationChain}`);
+  }
+
   /**
    * Get the CCTP domain ID for a given chain.
    *
@@ -488,6 +757,15 @@ export class CCTPTransferManager {
    */
   static getSupportedChains(): Chain[] {
     return Object.keys(CCTP_DOMAINS) as Chain[];
+  }
+
+  /**
+   * Get the list of V2 fast-transfer eligible routes.
+   *
+   * @returns Array of route strings in "source->destination" format
+   */
+  static getFastTransferRoutes(): string[] {
+    return Array.from(FAST_TRANSFER_ROUTES);
   }
 
   // --------------------------------------------------------------------------

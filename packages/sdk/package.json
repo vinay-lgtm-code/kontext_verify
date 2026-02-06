@@ -1,5 +1,5 @@
 {
-  "name": "@kontext/sdk",
+  "name": "kontext-sdk",
   "version": "0.1.0",
   "description": "Trust and compliance layer for agentic crypto workflows. Provides action logging, audit trails, trust scoring, anomaly detection, USDC compliance, and CCTP cross-chain transfer tracking.",
   "main": "./dist/index.js",

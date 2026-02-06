@@ -70,7 +70,7 @@ export type { DigestLink, DigestVerification, PrecisionTimestamp } from './diges
 // USDC Integration (for direct use)
 export { UsdcCompliance } from './integrations/usdc.js';
 
-// CCTP Integration (Cross-Chain Transfer Protocol)
+// CCTP Integration (Cross-Chain Transfer Protocol) - V1 + V2
 export { CCTPTransferManager } from './integrations/cctp.js';
 export type {
   CrossChainTransfer,
@@ -81,7 +81,49 @@ export type {
   CCTPValidationCheck,
   CrossChainAuditEntry,
   CCTPMessageStatus,
+  // CCTP V2 types
+  CCTPVersion,
+  CCTPHook,
+  CCTPHookResult,
+  InitiateFastTransferInput,
+  FastTransferValidation,
 } from './integrations/cctp.js';
+
+// Circle Programmable Wallets Integration
+export { CircleWalletManager } from './integrations/circle-wallets.js';
+export type {
+  CircleWalletOptions,
+  WalletSet,
+  CircleWallet,
+  CreateWalletOptions,
+  CompliantTransferInput,
+  CompliantTransferResult,
+  ComplianceCheckSummary,
+  WalletBalance,
+  CircleApiAdapter,
+} from './integrations/circle-wallets.js';
+
+// Circle Compliance Engine Integration
+export { CircleComplianceEngine } from './integrations/circle-compliance.js';
+export type {
+  ScreenTransactionInput,
+  DualScreenResult,
+  AddressScreenResult,
+  RiskAssessmentInput,
+  ComprehensiveRiskResult,
+  ComprehensiveRiskFactor,
+  CircleComplianceAdapter,
+} from './integrations/circle-compliance.js';
+
+// Gas Station Integration
+export { GasStationManager } from './integrations/gas-station.js';
+export type {
+  GasEligibility,
+  GasEstimateInput,
+  GasEstimate,
+  GasSponsorshipLog,
+  GasStationAdapter,
+} from './integrations/gas-station.js';
 
 // Webhook Manager
 export { WebhookManager } from './webhooks.js';

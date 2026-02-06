@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     "Integrate Kontext with LangChain, CrewAI, AutoGen, USDC, Stripe, x402, Google UCP, and CCTP. Add compliance to any agent framework or payment protocol.",
 };
 
-const langchainCode = `import { Kontext } from '@kontext/sdk';
+const langchainCode = `import { Kontext } from 'kontext-sdk';
 import { CallbackHandler } from '@kontext/langchain';
 
 const ctx = new Kontext({ apiKey: process.env.KONTEXT_KEY });
@@ -62,7 +62,7 @@ const trail = await ctx.export({
   format: 'json',
 });`;
 
-const crewaiCode = `import { Kontext } from '@kontext/sdk';
+const crewaiCode = `import { Kontext } from 'kontext-sdk';
 
 const ctx = new Kontext({ apiKey: process.env.KONTEXT_KEY });
 
@@ -105,7 +105,7 @@ function kontextTaskObserver(ctx) {
   };
 }`;
 
-const autogenCode = `import { Kontext } from '@kontext/sdk';
+const autogenCode = `import { Kontext } from 'kontext-sdk';
 
 const ctx = new Kontext({ apiKey: process.env.KONTEXT_KEY });
 

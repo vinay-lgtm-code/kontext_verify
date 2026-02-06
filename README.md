@@ -16,11 +16,11 @@ AI agents are moving real money. Kontext gives them an audit trail.
 Kontext is a TypeScript SDK that logs agent actions, scores trust, detects anomalies, and exports compliance-ready audit data — built for USDC, Base, Ethereum, and the GENIUS Act era.
 
 ```bash
-npm install @kontext/sdk
+npm install kontext-sdk
 ```
 
 ```typescript
-import { Kontext } from '@kontext/sdk';
+import { Kontext } from 'kontext-sdk';
 
 const ctx = Kontext.init({
   projectId: 'my-project',
@@ -70,15 +70,15 @@ Kontext adds structured logging, tamper-evident audit trails, anomaly detection,
 ### 1. Install
 
 ```bash
-npm install @kontext/sdk
+npm install kontext-sdk
 # or
-pnpm add @kontext/sdk
+pnpm add kontext-sdk
 ```
 
 ### 2. Initialize
 
 ```typescript
-import { Kontext } from '@kontext/sdk';
+import { Kontext } from 'kontext-sdk';
 
 // Local mode — no API key, no external dependencies
 const ctx = Kontext.init({
@@ -182,7 +182,7 @@ const chain = ctx.exportDigestChain();
 // { genesisHash, links, terminalDigest }
 
 // Third party can verify independently
-import { verifyExportedChain } from '@kontext/sdk';
+import { verifyExportedChain } from 'kontext-sdk';
 const result = verifyExportedChain(chain, actions);
 console.log(result.valid); // true
 ```
@@ -202,7 +202,7 @@ See the [integration docs](https://www.getkontext.com/docs#usdc) for code exampl
 
 ```
 packages/
-  sdk/       @kontext/sdk — core TypeScript SDK (npm package)
+  sdk/       kontext-sdk — core TypeScript SDK (npm package)
   server/    API server (Hono on GCP Cloud Run)
   demo/      Interactive demo showing all features
 apps/

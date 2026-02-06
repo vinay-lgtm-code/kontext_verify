@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { CCTPTransferManager } from '../src/integrations/cctp.js';
-import type { InitiateCCTPTransferInput } from '../src/integrations/cctp.js';
+import type { InitiateCCTPTransferInput, InitiateFastTransferInput, CCTPHook, CCTPHookResult } from '../src/integrations/cctp.js';
 
 function createTransferInput(
   overrides: Partial<InitiateCCTPTransferInput> = {},
@@ -357,6 +357,226 @@ describe('CCTPTransferManager', () => {
       expect(chains).toContain('base');
       expect(chains).toContain('arc');
       expect(chains.length).toBeGreaterThanOrEqual(6);
+    });
+
+    it('should include V2 expanded domains (avalanche, solana)', () => {
+      expect(CCTPTransferManager.getDomainId('avalanche' as any)).toBe(1);
+      expect(CCTPTransferManager.getDomainId('solana' as any)).toBe(5);
+      const chains = CCTPTransferManager.getSupportedChains();
+      expect(chains).toContain('avalanche');
+      expect(chains).toContain('solana');
+    });
+  });
+
+  // ==========================================================================
+  // CCTP V2 Features
+  // ==========================================================================
+
+  describe('V2 fast transfer', () => {
+    function createFastInput(
+      overrides: Partial<InitiateFastTransferInput> = {},
+    ): InitiateFastTransferInput {
+      return {
+        sourceChain: 'ethereum',
+        destinationChain: 'base',
+        amount: '1000',
+        token: 'USDC',
+        sender: '0x' + '1'.repeat(40),
+        recipient: '0x' + '2'.repeat(40),
+        sourceTxHash: '0x' + 'a'.repeat(64),
+        agentId: 'agent-1',
+        ...overrides,
+      };
+    }
+
+    it('should validate a fast transfer on an eligible route', () => {
+      const manager = new CCTPTransferManager();
+      const result = manager.validateFastTransfer(createFastInput());
+
+      expect(result.fastTransferAvailable).toBe(true);
+      expect(result.estimatedFinalitySeconds).toBeLessThanOrEqual(60);
+      expect(result.standardValidation.valid).toBe(true);
+    });
+
+    it('should report fast transfer unavailable for non-eligible route', () => {
+      const manager = new CCTPTransferManager();
+      const result = manager.validateFastTransfer(
+        createFastInput({ sourceChain: 'arc', destinationChain: 'polygon' }),
+      );
+
+      expect(result.fastTransferAvailable).toBe(false);
+      expect(result.estimatedFinalitySeconds).toBeGreaterThan(60);
+    });
+
+    it('should validate hooks in fast transfer', () => {
+      const manager = new CCTPTransferManager();
+      const hooks: CCTPHook[] = [
+        {
+          targetContract: '0x' + '3'.repeat(40),
+          callData: '0xabcdef',
+          gasLimit: 500000,
+          description: 'Stake received USDC',
+        },
+      ];
+
+      const result = manager.validateFastTransfer(
+        createFastInput({ hooks }),
+      );
+
+      expect(result.hooksValid).toBe(true);
+      expect(result.hookValidation.length).toBe(1);
+      expect(result.hookValidation[0]!.valid).toBe(true);
+    });
+
+    it('should reject hooks with invalid target contract', () => {
+      const manager = new CCTPTransferManager();
+      const hooks: CCTPHook[] = [
+        {
+          targetContract: 'invalid-address',
+          callData: '0xabcdef',
+          gasLimit: 500000,
+        },
+      ];
+
+      const result = manager.validateFastTransfer(
+        createFastInput({ hooks }),
+      );
+
+      expect(result.hooksValid).toBe(false);
+      expect(result.hookValidation[0]!.valid).toBe(false);
+      expect(result.hookValidation[0]!.reason).toContain('Invalid target contract');
+    });
+
+    it('should reject hooks with empty call data', () => {
+      const manager = new CCTPTransferManager();
+      const hooks: CCTPHook[] = [
+        {
+          targetContract: '0x' + '3'.repeat(40),
+          callData: '',
+          gasLimit: 500000,
+        },
+      ];
+
+      const result = manager.validateFastTransfer(
+        createFastInput({ hooks }),
+      );
+
+      expect(result.hooksValid).toBe(false);
+      expect(result.hookValidation[0]!.reason).toContain('Call data is empty');
+    });
+
+    it('should reject hooks with invalid gas limit', () => {
+      const manager = new CCTPTransferManager();
+      const hooks: CCTPHook[] = [
+        {
+          targetContract: '0x' + '3'.repeat(40),
+          callData: '0xabcdef',
+          gasLimit: 0,
+        },
+      ];
+
+      const result = manager.validateFastTransfer(
+        createFastInput({ hooks }),
+      );
+
+      expect(result.hooksValid).toBe(false);
+      expect(result.hookValidation[0]!.reason).toContain('Gas limit');
+    });
+
+    it('should initiate a fast transfer with V2 metadata', () => {
+      const manager = new CCTPTransferManager();
+      const transfer = manager.initiateFastTransfer(createFastInput());
+
+      expect(transfer.id).toBeDefined();
+      expect(transfer.status).toBe('pending');
+      expect(transfer.version).toBe('v2');
+      expect(transfer.isFastTransfer).toBe(true);
+      expect(transfer.metadata['maxFinalitySeconds']).toBe(30);
+    });
+
+    it('should initiate a non-fast V2 transfer on ineligible routes', () => {
+      const manager = new CCTPTransferManager();
+      const transfer = manager.initiateFastTransfer(
+        createFastInput({ sourceChain: 'arc', destinationChain: 'polygon' }),
+      );
+
+      expect(transfer.version).toBe('v2');
+      expect(transfer.isFastTransfer).toBe(false);
+      expect(transfer.metadata['maxFinalitySeconds']).toBe(900);
+    });
+
+    it('should store hooks on fast transfer', () => {
+      const manager = new CCTPTransferManager();
+      const hooks: CCTPHook[] = [
+        {
+          targetContract: '0x' + '3'.repeat(40),
+          callData: '0xabcdef',
+          gasLimit: 500000,
+          description: 'Auto-stake',
+        },
+      ];
+
+      const transfer = manager.initiateFastTransfer(
+        createFastInput({ hooks }),
+      );
+
+      expect(transfer.hooks).toBeDefined();
+      expect(transfer.hooks!.length).toBe(1);
+      expect(transfer.hooks![0]!.description).toBe('Auto-stake');
+    });
+
+    it('should record hook execution results', () => {
+      const manager = new CCTPTransferManager();
+      const transfer = manager.initiateFastTransfer(createFastInput());
+
+      const hookResults: CCTPHookResult[] = [
+        {
+          targetContract: '0x' + '3'.repeat(40),
+          success: true,
+          transactionHash: '0x' + 'd'.repeat(64),
+          gasUsed: 50000,
+        },
+      ];
+
+      const updated = manager.recordHookResults(transfer.id, hookResults);
+
+      expect(updated.hookResults).toBeDefined();
+      expect(updated.hookResults!.length).toBe(1);
+      expect(updated.hookResults![0]!.success).toBe(true);
+      expect(updated.metadata['hookSuccessCount']).toBe(1);
+      expect(updated.metadata['hookFailureCount']).toBe(0);
+    });
+
+    it('should throw when recording hook results for non-V2 transfer', () => {
+      const manager = new CCTPTransferManager();
+      const transfer = manager.initiateTransfer(createTransferInput());
+
+      expect(() =>
+        manager.recordHookResults(transfer.id, []),
+      ).toThrow('not a V2 transfer');
+    });
+
+    it('should throw when recording hook results for non-existent transfer', () => {
+      const manager = new CCTPTransferManager();
+
+      expect(() =>
+        manager.recordHookResults('nonexistent', []),
+      ).toThrow('not found');
+    });
+  });
+
+  describe('V2 static helpers', () => {
+    it('should check fast transfer availability', () => {
+      expect(CCTPTransferManager.isFastTransferAvailable('ethereum', 'base')).toBe(true);
+      expect(CCTPTransferManager.isFastTransferAvailable('base', 'ethereum')).toBe(true);
+      expect(CCTPTransferManager.isFastTransferAvailable('arc', 'polygon')).toBe(false);
+    });
+
+    it('should return fast transfer routes', () => {
+      const routes = CCTPTransferManager.getFastTransferRoutes();
+      expect(routes.length).toBeGreaterThan(0);
+      expect(routes).toContain('ethereum->base');
+      expect(routes).toContain('base->ethereum');
     });
   });
 });

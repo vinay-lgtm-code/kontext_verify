@@ -1,4 +1,4 @@
-# @kontext/sdk
+# kontext-sdk
 
 Trust and compliance layer for agentic crypto workflows.
 
@@ -7,13 +7,13 @@ Kontext provides structured action logging, tamper-evident audit trails, trust s
 ## Install
 
 ```bash
-npm install @kontext/sdk
+npm install kontext-sdk
 ```
 
 ## Quick Start
 
 ```typescript
-import { Kontext } from '@kontext/sdk';
+import { Kontext } from 'kontext-sdk';
 
 // Initialize in local mode (no API key needed)
 const kontext = Kontext.init({

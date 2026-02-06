@@ -152,7 +152,7 @@ export default function IntroducingKontextPost() {
         </p>
 
         <CodeBlock
-          code={`import { Kontext } from '@kontext/sdk';
+          code={`import { Kontext } from 'kontext-sdk';
 
 const ctx = new Kontext({ chain: 'base' });
 
@@ -237,7 +237,7 @@ const result = await ctx.verify({
         </p>
 
         <CodeBlock
-          code={`npm install @kontext/sdk`}
+          code={`npm install kontext-sdk`}
           language="bash"
           filename="Terminal"
         />
