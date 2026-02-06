@@ -28,8 +28,39 @@ import {
 export const metadata: Metadata = {
   title: "Integrations",
   description:
-    "Integrate Kontext with LangChain, CrewAI, AutoGen, USDC, Stripe, x402, Google UCP, and CCTP. Add compliance to any agent framework or payment protocol.",
+    "Integrate Kontext with Vercel AI SDK, LangChain, CrewAI, AutoGen, USDC, Stripe, x402, Google UCP, and CCTP. Add compliance to any agent framework or payment protocol.",
 };
+
+const vercelAICode = `import { openai } from '@ai-sdk/openai';
+import { generateText } from 'ai';
+import { createKontextAI } from 'kontext-sdk';
+
+// One-line setup: wraps your model with audit trails
+const { model, kontext } = createKontextAI(openai('gpt-4o'), {
+  agentId: 'payment-agent',
+  financialTools: ['transfer_usdc', 'send_payment'],
+  chain: 'base',
+});
+
+// Every tool call is automatically logged with
+// tamper-evident SHA-256 digest chains
+const result = await generateText({
+  model,
+  tools: {
+    transfer_usdc: {
+      description: 'Transfer USDC to an address',
+      parameters: { to: 'string', amount: 'string' },
+      execute: async ({ to, amount }) => {
+        // Kontext automatically logs this with compliance checks
+        return { success: true, hash: '0xabc...' };
+      },
+    },
+  },
+  prompt: 'Send 500 USDC to 0x1234 for the API invoice',
+});
+
+// Export the tamper-evident audit trail
+const audit = await kontext.exportAudit({ format: 'json' });`;
 
 const langchainCode = `import { Kontext } from 'kontext-sdk';
 import { CallbackHandler } from '@kontext/langchain';
@@ -153,6 +184,18 @@ function kontextMiddleware(ctx) {
 }`;
 
 const agentFrameworks = [
+  {
+    id: "vercel-ai-sdk",
+    icon: Zap,
+    title: "Vercel AI SDK",
+    description:
+      "First-class middleware for the Vercel AI SDK. Wraps generateText(), streamText(), and generateObject() with automatic digest chain logging, financial tool detection, trust scoring, and compliance checks. One line to add tamper-evident audit trails to every AI operation.",
+    code: vercelAICode,
+    filename: "vercel-ai-integration.ts",
+    status: "Available",
+    statusColor: "border-green-500/30 bg-green-500/10 text-green-400",
+    docsLink: "/docs",
+  },
   {
     id: "langchain",
     icon: Link2,
@@ -290,6 +333,12 @@ export default function IntegrationsPage() {
       <section className="sticky top-16 z-40 border-b border-border/40 bg-background/95 backdrop-blur-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex gap-2 overflow-x-auto py-3 scrollbar-none">
+            <a
+              href="#vercel-ai-sdk"
+              className="inline-flex shrink-0 rounded-full border border-green-500/30 bg-green-500/5 px-3 py-1.5 text-xs text-green-400 transition-colors hover:bg-green-500/10"
+            >
+              Vercel AI SDK
+            </a>
             <a
               href="#agent-frameworks"
               className="inline-flex shrink-0 rounded-full border border-border/50 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground hover:bg-accent"
