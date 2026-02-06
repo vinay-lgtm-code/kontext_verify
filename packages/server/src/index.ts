@@ -13,12 +13,15 @@ import { ServerStore } from './store.js';
 const app = new Hono();
 const store = new ServerStore();
 
-// Valid API keys for MVP (in production, these would be in a database)
-const VALID_API_KEYS = new Set([
-  'sk_test_kontext_demo_key_001',
-  'sk_test_kontext_demo_key_002',
-  process.env['KONTEXT_API_KEY'],
-].filter(Boolean));
+// API keys loaded from environment variables
+// Set KONTEXT_API_KEYS as a comma-separated list, or KONTEXT_API_KEY for a single key.
+// Example: KONTEXT_API_KEYS="sk_live_abc123,sk_live_def456"
+const VALID_API_KEYS = new Set(
+  [
+    process.env['KONTEXT_API_KEY'],
+    ...(process.env['KONTEXT_API_KEYS']?.split(',').map((k) => k.trim()) ?? []),
+  ].filter(Boolean),
+);
 
 // ============================================================================
 // Middleware
@@ -64,7 +67,7 @@ function authMiddleware(c: Parameters<Parameters<typeof app.use>[1]>[0], next: (
 app.get('/', (c) => {
   return c.json({
     service: 'kontext-api',
-    version: '0.1.0',
+    version: '0.2.0',
     status: 'healthy',
     timestamp: new Date().toISOString(),
   });
@@ -412,7 +415,7 @@ const port = parseInt(process.env['PORT'] ?? '8080', 10);
 
 console.log(`
   ╔══════════════════════════════════════════╗
-  ║         Kontext API Server v0.1.0        ║
+  ║         Kontext API Server v0.2.0        ║
   ║──────────────────────────────────────────║
   ║  Status:  Running                        ║
   ║  Port:    ${String(port).padEnd(33)}║
