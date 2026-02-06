@@ -1,4 +1,5 @@
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -19,6 +20,21 @@ import {
   ArrowRight,
   ExternalLink,
 } from "lucide-react";
+
+const VideoDemo = dynamic(
+  () => import("@/components/video-demo").then((m) => ({ default: m.VideoDemo })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="aspect-video w-full max-w-4xl mx-auto rounded-xl border border-border/40 bg-card/50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <p className="text-sm text-muted-foreground">Loading demo...</p>
+        </div>
+      </div>
+    ),
+  }
+);
 
 const heroCode = `import { Kontext } from 'kontext-sdk';
 
@@ -184,6 +200,25 @@ export default function HomePage() {
               npm install kontext-sdk
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Demo Video */}
+      <section className="relative border-t border-border/40 bg-background">
+        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <Badge variant="secondary" className="mb-4">
+              See It In Action
+            </Badge>
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              What happens when your AI agent moves $50,000?
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+              Watch a side-by-side comparison of agent transactions — without
+              compliance infrastructure vs. with Kontext.
+            </p>
+          </div>
+          <VideoDemo />
         </div>
       </section>
 
