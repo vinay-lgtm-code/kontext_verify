@@ -62,6 +62,14 @@ export type {
   // USDC Integration
   UsdcComplianceCheck,
   ComplianceCheckResult,
+
+  // Agent Reasoning
+  LogReasoningInput,
+  ReasoningEntry,
+
+  // Compliance Certificates
+  GenerateComplianceCertificateInput,
+  ComplianceCertificate,
 } from './types.js';
 
 // Error types

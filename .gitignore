@@ -1,7 +1,5 @@
 node_modules/
 dist/
-.env
-.env.local
 *.log
 .DS_Store
 coverage/
@@ -11,6 +9,21 @@ coverage/
 *.tsbuildinfo
 package-lock.json
 .vercel
+
+# Secrets and environment files
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+service-account*.json
+*-credentials.json
+secrets.yaml
+secrets.yml
+secrets.json
 
 # Internal docs (not public)
 research/

@@ -25,6 +25,10 @@ import type {
   UsdcComplianceCheck,
   SARReport,
   CTRReport,
+  LogReasoningInput,
+  ReasoningEntry,
+  GenerateComplianceCertificateInput,
+  ComplianceCertificate,
 } from './types.js';
 import type { DigestVerification, DigestLink } from './digest.js';
 import { KontextError, KontextErrorCode } from './types.js';
@@ -35,6 +39,8 @@ import { AuditExporter } from './audit.js';
 import { TrustScorer } from './trust.js';
 import { AnomalyDetector } from './anomaly.js';
 import { UsdcCompliance } from './integrations/usdc.js';
+import { createHash } from 'crypto';
+import { generateId, now } from './utils.js';
 
 /**
  * Main Kontext SDK client. Provides a unified interface to all SDK features:
@@ -442,6 +448,16 @@ export class Kontext {
     return this.logger.getDigestChain().exportChain();
   }
 
+  /**
+   * Get all action log entries. Required for independent third-party
+   * verification via `verifyExportedChain(chain, actions)`.
+   *
+   * @returns A copy of the action log array
+   */
+  getActions(): ActionLog[] {
+    return this.store.getActions();
+  }
+
   // --------------------------------------------------------------------------
   // USDC Integration
   // --------------------------------------------------------------------------
@@ -454,6 +470,245 @@ export class Kontext {
    */
   checkUsdcCompliance(tx: LogTransactionInput): UsdcComplianceCheck {
     return UsdcCompliance.checkTransaction(tx);
+  }
+
+  // --------------------------------------------------------------------------
+  // Agent Reasoning
+  // --------------------------------------------------------------------------
+
+  /**
+   * Log an agent's reasoning/justification for an action.
+   * The reasoning entry is recorded into the digest chain as a tamper-evident
+   * part of the audit trail (type: 'reasoning').
+   *
+   * @param input - Reasoning details
+   * @returns The created reasoning entry
+   *
+   * @example
+   * ```typescript
+   * const entry = await kontext.logReasoning({
+   *   agentId: 'payment-agent-1',
+   *   action: 'approve_transfer',
+   *   reasoning: 'Recipient is a verified vendor with 50+ prior transactions',
+   *   confidence: 0.95,
+   *   context: { recipientId: 'vendor-42' },
+   * });
+   * ```
+   */
+  async logReasoning(input: LogReasoningInput): Promise<ReasoningEntry> {
+    if (!input.agentId || input.agentId.trim() === '') {
+      throw new KontextError(
+        KontextErrorCode.VALIDATION_ERROR,
+        'agentId is required for reasoning entries',
+      );
+    }
+
+    if (!input.action || input.action.trim() === '') {
+      throw new KontextError(
+        KontextErrorCode.VALIDATION_ERROR,
+        'action is required for reasoning entries',
+      );
+    }
+
+    if (!input.reasoning || input.reasoning.trim() === '') {
+      throw new KontextError(
+        KontextErrorCode.VALIDATION_ERROR,
+        'reasoning is required for reasoning entries',
+      );
+    }
+
+    if (input.confidence !== undefined && (input.confidence < 0 || input.confidence > 1)) {
+      throw new KontextError(
+        KontextErrorCode.VALIDATION_ERROR,
+        'confidence must be between 0 and 1',
+      );
+    }
+
+    const reasoningEntry: ReasoningEntry = {
+      id: generateId(),
+      timestamp: now(),
+      agentId: input.agentId,
+      action: input.action,
+      reasoning: input.reasoning,
+      confidence: input.confidence ?? 1.0,
+      context: input.context ?? {},
+    };
+
+    // Log into the digest chain as a 'reasoning' action
+    await this.log({
+      type: 'reasoning',
+      description: `Reasoning for ${input.action}: ${input.reasoning}`,
+      agentId: input.agentId,
+      metadata: {
+        reasoningId: reasoningEntry.id,
+        action: input.action,
+        reasoning: input.reasoning,
+        confidence: reasoningEntry.confidence,
+        context: reasoningEntry.context,
+      },
+    });
+
+    return reasoningEntry;
+  }
+
+  /**
+   * Get all reasoning entries for a specific agent.
+   *
+   * @param agentId - Agent identifier
+   * @returns Array of reasoning entries
+   */
+  getReasoningEntries(agentId: string): ReasoningEntry[] {
+    const reasoningActions = this.store.queryActions(
+      (a) => a.agentId === agentId && a.type === 'reasoning',
+    );
+
+    return reasoningActions.map((action) => ({
+      id: action.metadata.reasoningId as string,
+      timestamp: action.timestamp,
+      agentId: action.agentId,
+      action: action.metadata.action as string,
+      reasoning: action.metadata.reasoning as string,
+      confidence: action.metadata.confidence as number,
+      context: (action.metadata.context as Record<string, unknown>) ?? {},
+    }));
+  }
+
+  // --------------------------------------------------------------------------
+  // Compliance Certificates
+  // --------------------------------------------------------------------------
+
+  /**
+   * Generate a compliance certificate that summarizes agent actions and
+   * verifies the terminal digest.
+   *
+   * @param input - Certificate generation options
+   * @returns A compliance certificate with digest chain verification
+   *
+   * @example
+   * ```typescript
+   * const cert = await kontext.generateComplianceCertificate({
+   *   agentId: 'payment-agent-1',
+   *   includeReasoning: true,
+   * });
+   * console.log(cert.complianceStatus); // 'compliant'
+   * console.log(cert.digestChain.verified); // true
+   * ```
+   */
+  async generateComplianceCertificate(
+    input: GenerateComplianceCertificateInput,
+  ): Promise<ComplianceCertificate> {
+    const { agentId, timeRange, includeReasoning } = input;
+
+    // Get all actions for the agent, optionally filtered by time range
+    let agentActions = this.store.getActionsByAgent(agentId);
+    if (timeRange) {
+      const from = timeRange.from.getTime();
+      const to = timeRange.to.getTime();
+      agentActions = agentActions.filter((a) => {
+        const ts = new Date(a.timestamp).getTime();
+        return ts >= from && ts <= to;
+      });
+    }
+
+    // Count transactions
+    const transactions = agentActions.filter((a) => a.type === 'transaction');
+
+    // Count tool calls
+    const toolCalls = agentActions.filter((a) => a.type === 'tool_call');
+
+    // Count reasoning entries
+    const reasoningActions = agentActions.filter((a) => a.type === 'reasoning');
+
+    // Build action type summary
+    const typeCounts = new Map<string, number>();
+    for (const action of agentActions) {
+      typeCounts.set(action.type, (typeCounts.get(action.type) ?? 0) + 1);
+    }
+    const actionSummary = Array.from(typeCounts.entries()).map(([type, count]) => ({
+      type,
+      count,
+    }));
+
+    // Verify digest chain
+    const verification = this.verifyDigestChain();
+    const chainLength = this.logger.getDigestChain().getChainLength();
+    const terminalDigest = this.getTerminalDigest();
+
+    // Get trust score
+    const trustScore = await this.trustScorer.getTrustScore(agentId);
+
+    // Determine compliance status
+    const anomalies = this.store.queryAnomalies((a) => a.agentId === agentId);
+    let filteredAnomalies = anomalies;
+    if (timeRange) {
+      const from = timeRange.from.getTime();
+      const to = timeRange.to.getTime();
+      filteredAnomalies = anomalies.filter((a) => {
+        const ts = new Date(a.detectedAt).getTime();
+        return ts >= from && ts <= to;
+      });
+    }
+
+    let complianceStatus: ComplianceCertificate['complianceStatus'];
+    const criticalAnomalies = filteredAnomalies.filter((a) => a.severity === 'critical');
+    const highAnomalies = filteredAnomalies.filter((a) => a.severity === 'high');
+
+    if (!verification.valid || criticalAnomalies.length > 0) {
+      complianceStatus = 'non-compliant';
+    } else if (highAnomalies.length > 0 || trustScore.score < 50) {
+      complianceStatus = 'review-required';
+    } else {
+      complianceStatus = 'compliant';
+    }
+
+    // Build reasoning entries if requested
+    let reasoningEntries: ReasoningEntry[] = [];
+    if (includeReasoning) {
+      reasoningEntries = reasoningActions.map((action) => ({
+        id: action.metadata.reasoningId as string,
+        timestamp: action.timestamp,
+        agentId: action.agentId,
+        action: action.metadata.action as string,
+        reasoning: action.metadata.reasoning as string,
+        confidence: action.metadata.confidence as number,
+        context: (action.metadata.context as Record<string, unknown>) ?? {},
+      }));
+    }
+
+    // Build the certificate content (before signature)
+    const certificateId = generateId();
+    const issuedAt = now();
+
+    const certificateContent = {
+      certificateId,
+      agentId,
+      issuedAt,
+      summary: {
+        actions: agentActions.length,
+        transactions: transactions.length,
+        toolCalls: toolCalls.length,
+        reasoningEntries: reasoningActions.length,
+      },
+      digestChain: {
+        terminalDigest,
+        chainLength,
+        verified: verification.valid,
+      },
+      trustScore: trustScore.score,
+      complianceStatus,
+      actions: actionSummary,
+      reasoning: reasoningEntries,
+    };
+
+    // Compute SHA-256 signature of the certificate content
+    const hash = createHash('sha256');
+    hash.update(JSON.stringify(certificateContent));
+    const signature = hash.digest('hex');
+
+    return {
+      ...certificateContent,
+      signature,
+    };
   }
 
   // --------------------------------------------------------------------------

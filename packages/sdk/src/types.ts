@@ -516,6 +516,89 @@ export interface ComplianceCheckResult {
 }
 
 // ============================================================================
+// Agent Reasoning
+// ============================================================================
+
+/** Input for logging agent reasoning */
+export interface LogReasoningInput {
+  /** ID of the agent making the decision */
+  agentId: string;
+  /** What action was taken or is being considered */
+  action: string;
+  /** The agent's reasoning/justification */
+  reasoning: string;
+  /** Optional confidence score (0-1) */
+  confidence?: number;
+  /** Optional additional context */
+  context?: Record<string, unknown>;
+}
+
+/** A reasoning entry stored in the action log */
+export interface ReasoningEntry {
+  /** Unique reasoning entry identifier */
+  id: string;
+  /** Timestamp of the reasoning entry */
+  timestamp: string;
+  /** ID of the agent making the decision */
+  agentId: string;
+  /** What action was taken or is being considered */
+  action: string;
+  /** The agent's reasoning/justification */
+  reasoning: string;
+  /** Confidence score (0-1), defaults to 1.0 */
+  confidence: number;
+  /** Additional context */
+  context: Record<string, unknown>;
+}
+
+// ============================================================================
+// Compliance Certificates
+// ============================================================================
+
+/** Input for generating a compliance certificate */
+export interface GenerateComplianceCertificateInput {
+  /** ID of the agent to generate the certificate for */
+  agentId: string;
+  /** Optional time window */
+  timeRange?: { from: Date; to: Date };
+  /** Whether to include reasoning entries */
+  includeReasoning?: boolean;
+}
+
+/** Compliance certificate summarizing agent actions and verifying the digest chain */
+export interface ComplianceCertificate {
+  /** Unique certificate ID */
+  certificateId: string;
+  /** Agent ID */
+  agentId: string;
+  /** ISO timestamp of when the certificate was issued */
+  issuedAt: string;
+  /** Summary of counts */
+  summary: {
+    actions: number;
+    transactions: number;
+    toolCalls: number;
+    reasoningEntries: number;
+  };
+  /** Digest chain verification status */
+  digestChain: {
+    terminalDigest: string;
+    chainLength: number;
+    verified: boolean;
+  };
+  /** Agent's current trust score */
+  trustScore: number;
+  /** Overall compliance status */
+  complianceStatus: 'compliant' | 'non-compliant' | 'review-required';
+  /** Summary list of action types and counts */
+  actions: Array<{ type: string; count: number }>;
+  /** Reasoning entries (if includeReasoning is true) */
+  reasoning: ReasoningEntry[];
+  /** SHA-256 hash of the certificate content for verification */
+  signature: string;
+}
+
+// ============================================================================
 // Errors
 // ============================================================================
 
