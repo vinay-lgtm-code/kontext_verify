@@ -367,7 +367,7 @@ export default function UseCasesPage() {
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
               See how Kontext powers compliant agentic transactions across
-              stablecoin payments, micropayment protocols, commerce platforms,
+              stablecoin and fiat payments, micropayment protocols, commerce platforms,
               and cross-chain transfers.
             </p>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-center">

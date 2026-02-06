@@ -264,7 +264,7 @@ const result = await ctx.verify({
           <li>Webhook integrations for real-time alerting</li>
         </ul>
         <p>
-          If you are building with agentic commerce and stablecoins, I would
+          If you are building with agentic commerce — stablecoins or fiat — I would
           love to hear from you. Star the repo, open an issue, or reach out on
           X. Let us build the trust layer for the agent economy together.
         </p>

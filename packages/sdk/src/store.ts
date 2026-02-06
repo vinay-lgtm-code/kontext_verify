@@ -1,10 +1,9 @@
 // ============================================================================
-// Kontext SDK - In-Memory Data Store
+// Kontext SDK - In-Memory Data Store with Pluggable Persistence
 // ============================================================================
-// This module provides an in-memory store used by the SDK in local mode.
-// In cloud mode, data is sent to the Kontext API instead.
-// For production persistence, this would be replaced by a database adapter
-// (e.g., PostgreSQL, Cloud Firestore, BigQuery).
+// This module provides the core data store used by the SDK. By default data
+// lives in memory (no breaking change). When a StorageAdapter is provided,
+// data can be flushed to and restored from persistent storage.
 
 import type {
   ActionLog,
@@ -12,20 +11,96 @@ import type {
   Task,
   AnomalyEvent,
 } from './types.js';
+import type { StorageAdapter } from './storage.js';
+
+/** Storage keys used for persisting store data */
+const STORAGE_KEYS = {
+  actions: 'kontext:actions',
+  transactions: 'kontext:transactions',
+  tasks: 'kontext:tasks',
+  anomalies: 'kontext:anomalies',
+} as const;
 
 /**
  * In-memory data store for the Kontext SDK.
  * Holds all action logs, transactions, tasks, and anomaly events.
  *
- * NOTE: This store is intentionally simple for the MVP. In production,
- * replace with a persistent store backed by Cloud Firestore, PostgreSQL,
- * or BigQuery for compliance-grade durability.
+ * When a StorageAdapter is provided, call `flush()` to persist state
+ * and `restore()` to reload from storage.
  */
 export class KontextStore {
   private actions: ActionLog[] = [];
   private transactions: TransactionRecord[] = [];
   private tasks: Map<string, Task> = new Map();
   private anomalies: AnomalyEvent[] = [];
+  private storageAdapter: StorageAdapter | null = null;
+
+  /**
+   * Attach a storage adapter for persistence.
+   *
+   * @param adapter - The storage backend to use
+   */
+  setStorageAdapter(adapter: StorageAdapter): void {
+    this.storageAdapter = adapter;
+  }
+
+  /**
+   * Get the currently attached storage adapter (if any).
+   */
+  getStorageAdapter(): StorageAdapter | null {
+    return this.storageAdapter;
+  }
+
+  // --------------------------------------------------------------------------
+  // Persistence: flush & restore
+  // --------------------------------------------------------------------------
+
+  /**
+   * Persist all current in-memory state to the attached storage adapter.
+   * No-op if no adapter is attached.
+   */
+  async flush(): Promise<void> {
+    if (!this.storageAdapter) return;
+
+    await Promise.all([
+      this.storageAdapter.save(STORAGE_KEYS.actions, this.actions),
+      this.storageAdapter.save(STORAGE_KEYS.transactions, this.transactions),
+      this.storageAdapter.save(
+        STORAGE_KEYS.tasks,
+        Array.from(this.tasks.entries()),
+      ),
+      this.storageAdapter.save(STORAGE_KEYS.anomalies, this.anomalies),
+    ]);
+  }
+
+  /**
+   * Restore in-memory state from the attached storage adapter.
+   * Merges loaded data with any existing in-memory data.
+   * No-op if no adapter is attached.
+   */
+  async restore(): Promise<void> {
+    if (!this.storageAdapter) return;
+
+    const [actions, transactions, tasksEntries, anomalies] = await Promise.all([
+      this.storageAdapter.load(STORAGE_KEYS.actions),
+      this.storageAdapter.load(STORAGE_KEYS.transactions),
+      this.storageAdapter.load(STORAGE_KEYS.tasks),
+      this.storageAdapter.load(STORAGE_KEYS.anomalies),
+    ]);
+
+    if (Array.isArray(actions)) {
+      this.actions = actions;
+    }
+    if (Array.isArray(transactions)) {
+      this.transactions = transactions;
+    }
+    if (Array.isArray(tasksEntries)) {
+      this.tasks = new Map(tasksEntries as [string, Task][]);
+    }
+    if (Array.isArray(anomalies)) {
+      this.anomalies = anomalies;
+    }
+  }
 
   // --------------------------------------------------------------------------
   // Actions

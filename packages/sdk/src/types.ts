@@ -47,7 +47,7 @@ export interface KontextConfig {
   projectId: string;
   /** Deployment environment */
   environment: Environment;
-  /** Backend API URL (defaults to Kontext cloud) */
+  /** Backend API URL (defaults to Kontext cloud API) */
   apiUrl?: string;
   /** Enable debug logging */
   debug?: boolean;
@@ -57,6 +57,8 @@ export interface KontextConfig {
   flushIntervalMs?: number;
   /** Local file output directory for OSS mode */
   localOutputDir?: string;
+  /** Pluggable storage adapter for persistence (default: in-memory) */
+  storage?: import('./storage.js').StorageAdapter;
 }
 
 // ============================================================================

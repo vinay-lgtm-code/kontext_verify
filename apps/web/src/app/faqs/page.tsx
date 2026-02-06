@@ -13,7 +13,7 @@ import { ArrowRight } from "lucide-react";
 export const metadata: Metadata = {
   title: "FAQs",
   description:
-    "Frequently asked questions about Kontext -- the trust and compliance SDK for agentic stablecoin transactions. Technical details, integrations, pricing, and more.",
+    "Frequently asked questions about Kontext -- the trust and compliance SDK for agentic stablecoin and fiat transactions. Technical details, integrations, pricing, and more.",
 };
 
 const faqCategories = [
@@ -23,12 +23,12 @@ const faqCategories = [
       {
         question: "What is Kontext?",
         answer:
-          "Kontext is a TypeScript SDK that provides trust and compliance infrastructure for AI agents performing stablecoin transactions. It handles action logging, trust scoring, anomaly detection, and audit trail export so you can ship compliant agentic workflows without building compliance tooling from scratch.",
+          "Kontext is a TypeScript SDK that provides trust and compliance infrastructure for AI agents performing stablecoin and fiat transactions. It handles action logging, trust scoring, anomaly detection, and audit trail export so you can ship compliant agentic workflows without building compliance tooling from scratch.",
       },
       {
         question: "Who is Kontext built for?",
         answer:
-          "Kontext is built for developers integrating AI agents with stablecoin payments -- particularly USDC on Base and Ethereum. If you are building agentic commerce, autonomous payment agents, or any workflow where AI agents move money, Kontext gives you the compliance layer.",
+          "Kontext is built for developers integrating AI agents with stablecoin and fiat payments -- whether USDC on Base, Stripe payment intents, or any workflow where AI agents move money. Kontext gives you the compliance layer.",
       },
       {
         question: "Is Kontext open source?",

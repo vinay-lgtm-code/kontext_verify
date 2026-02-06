@@ -459,9 +459,9 @@ export default function DocsPage() {
               <h1>Kontext SDK Documentation</h1>
               <p>
                 Kontext is a TypeScript SDK that provides trust and compliance
-                infrastructure for agentic workflows involving stablecoin
-                transactions. This guide covers everything from installation to
-                advanced integrations.
+                infrastructure for agentic workflows involving stablecoin and
+                fiat transactions. This guide covers everything from
+                installation to advanced integrations.
               </p>
             </div>
 

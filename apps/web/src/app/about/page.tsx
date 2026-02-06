@@ -8,7 +8,7 @@ import { ArrowRight } from "lucide-react";
 export const metadata: Metadata = {
   title: "About Kontext",
   description:
-    "The agent economy is growing fast, but trust infrastructure hasn't kept up. Kontext provides the compliance layer that makes agentic stablecoin transactions verifiable.",
+    "The agent economy is growing fast, but trust infrastructure hasn't kept up. Kontext provides the compliance layer that makes agentic stablecoin and fiat transactions verifiable.",
 };
 
 export default function AboutPage() {
@@ -150,7 +150,7 @@ export default function AboutPage() {
             <p>
               This is early. The SDK is open source, the roadmap is public, and
               I am building in the open. If you are working on agentic commerce
-              with stablecoins, I would love to hear from you.
+              with stablecoins or fiat payments, I would love to hear from you.
             </p>
 
             <Separator className="my-12" />
@@ -169,10 +169,10 @@ export default function AboutPage() {
               developer reaches for.
             </p>
             <p>
-              We start with stablecoins because that is where the regulatory
-              pressure is highest and the need is most acute. But the
-              architecture is designed to expand to any action an agent takes
-              that needs verification and trust.
+              We started with stablecoins because that is where the regulatory
+              pressure is highest, and have expanded to fiat payment rails
+              like Stripe. The architecture is designed for any action an
+              agent takes that needs verification and trust.
             </p>
           </div>
 

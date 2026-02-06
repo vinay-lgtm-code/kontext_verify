@@ -23,10 +23,11 @@ export const metadata: Metadata = {
     template: "%s | Kontext",
   },
   description:
-    "Compliance and trust infrastructure for agentic stablecoin transactions. Action logging, audit export, trust scoring, and anomaly detection for USDC, x402, and more.",
+    "Compliance and trust infrastructure for agentic stablecoin and fiat transactions. Action logging, audit export, trust scoring, and anomaly detection for USDC, Stripe, x402, and more.",
   keywords: [
     "agentic commerce",
     "stablecoin compliance",
+    "fiat payments compliance",
     "USDC",
     "x402 protocol",
     "trust scoring",
@@ -45,7 +46,7 @@ export const metadata: Metadata = {
     siteName: "Kontext",
     title: "Kontext - Trust Layer for the Agent Economy",
     description:
-      "Compliance and trust infrastructure for agentic stablecoin transactions. Built for the GENIUS Act era.",
+      "Compliance and trust infrastructure for agentic stablecoin and fiat transactions. Built for the GENIUS Act era.",
     images: [
       {
         url: "/og-image.png",
@@ -59,7 +60,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Kontext - Trust Layer for the Agent Economy",
     description:
-      "Compliance and trust infrastructure for agentic stablecoin transactions.",
+      "Compliance and trust infrastructure for agentic stablecoin and fiat transactions.",
     images: ["/og-image.png"],
     creator: "@kontextverify",
   },

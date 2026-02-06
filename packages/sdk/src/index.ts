@@ -5,6 +5,10 @@
 // Main client
 export { Kontext } from './client.js';
 
+// Storage adapters
+export { MemoryStorage, FileStorage } from './storage.js';
+export type { StorageAdapter } from './storage.js';
+
 // All types
 export type {
   // Config
@@ -69,6 +73,7 @@ export type { DigestLink, DigestVerification, PrecisionTimestamp } from './diges
 
 // USDC Integration (for direct use)
 export { UsdcCompliance } from './integrations/usdc.js';
+export type { SanctionsCheckResult } from './integrations/usdc.js';
 
 // CCTP Integration (Cross-Chain Transfer Protocol) - V1 + V2
 export { CCTPTransferManager } from './integrations/cctp.js';
@@ -135,3 +140,21 @@ export type {
   WebhookDeliveryResult,
   WebhookRetryConfig,
 } from './webhooks.js';
+
+// Vercel AI SDK Integration
+export {
+  kontextMiddleware,
+  kontextWrapModel,
+  createKontextAI,
+  withKontext,
+  extractAmount,
+} from './integrations/vercel-ai.js';
+export type {
+  AIOperationType,
+  KontextAIOptions,
+  BlockedToolCall,
+  CreateKontextAIInput,
+  CreateKontextAIResult,
+  WithKontextOptions,
+  KontextAIContext,
+} from './integrations/vercel-ai.js';

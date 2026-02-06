@@ -18,6 +18,15 @@ export const metadata: Metadata = {
 
 const posts = [
   {
+    slug: "tamper-evident-audit-trails",
+    title: "Building Tamper-Evident Audit Trails for AI Agent Transactions",
+    description:
+      "AI agents are making autonomous financial decisions. Learn how digest chains provide cryptographic proof that your audit logs have not been altered.",
+    date: "2026-02-05",
+    readTime: "8 min read",
+    tags: ["Engineering", "Audit", "Cryptography"],
+  },
+  {
     slug: "introducing-kontext",
     title: "Introducing Kontext: Trust Layer for Agentic Stablecoin Transactions",
     description:

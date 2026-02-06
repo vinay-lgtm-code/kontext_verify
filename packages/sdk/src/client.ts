@@ -81,6 +81,12 @@ export class Kontext {
     this.config = config;
     this.mode = config.apiKey ? 'cloud' : 'local';
     this.store = new KontextStore();
+
+    // Attach storage adapter if provided
+    if (config.storage) {
+      this.store.setStorageAdapter(config.storage);
+    }
+
     this.logger = new ActionLogger(config, this.store);
     this.taskManager = new TaskManager(config, this.store);
     this.auditExporter = new AuditExporter(config, this.store);
@@ -107,6 +113,13 @@ export class Kontext {
    *   apiKey: 'sk_live_...',
    *   projectId: 'my-project',
    *   environment: 'production',
+   * });
+   *
+   * // With persistent file storage
+   * const kontext = Kontext.init({
+   *   projectId: 'my-project',
+   *   environment: 'development',
+   *   storage: new FileStorage('./kontext-data'),
    * });
    * ```
    */
@@ -200,6 +213,28 @@ export class Kontext {
    */
   async flushLogs(): Promise<void> {
     await this.logger.flush();
+  }
+
+  // --------------------------------------------------------------------------
+  // Persistence
+  // --------------------------------------------------------------------------
+
+  /**
+   * Persist all current in-memory state to the attached storage adapter.
+   * No-op if no storage adapter is configured.
+   */
+  async flush(): Promise<void> {
+    await this.logger.flush();
+    await this.store.flush();
+  }
+
+  /**
+   * Restore state from the attached storage adapter.
+   * Loads previously persisted actions, transactions, tasks, and anomalies.
+   * No-op if no storage adapter is configured.
+   */
+  async restore(): Promise<void> {
+    await this.store.restore();
   }
 
   // --------------------------------------------------------------------------

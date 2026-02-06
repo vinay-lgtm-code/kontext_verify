@@ -146,9 +146,9 @@ export default function HomePage() {
 
             {/* Sub-headline */}
             <p className="mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-              Compliance and audit infrastructure for agentic stablecoin
-              transactions. Log actions, score trust, detect anomalies, and
-              export audit trails -- in five lines of code.
+              Compliance and audit infrastructure for agentic stablecoin and
+              fiat transactions. Log actions, score trust, detect anomalies,
+              and export audit trails — in five lines of code.
             </p>
 
             {/* CTAs */}
@@ -254,7 +254,7 @@ export default function HomePage() {
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
               A complete trust and compliance toolkit designed for developers
-              building with stablecoins and agentic workflows.
+              building agentic workflows with stablecoins and fiat payments.
             </p>
           </div>
 
@@ -292,8 +292,8 @@ export default function HomePage() {
               Works with your stack
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-              First-class support for the leading agent commerce protocols and
-              stablecoin infrastructure.
+              First-class support for the leading agent commerce protocols,
+              stablecoin infrastructure, and fiat payment rails.
             </p>
           </div>
 
