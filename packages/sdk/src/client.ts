@@ -563,13 +563,13 @@ export class Kontext {
     );
 
     return reasoningActions.map((action) => ({
-      id: action.metadata.reasoningId as string,
+      id: action.metadata['reasoningId'] as string,
       timestamp: action.timestamp,
       agentId: action.agentId,
-      action: action.metadata.action as string,
-      reasoning: action.metadata.reasoning as string,
-      confidence: action.metadata.confidence as number,
-      context: (action.metadata.context as Record<string, unknown>) ?? {},
+      action: action.metadata['action'] as string,
+      reasoning: action.metadata['reasoning'] as string,
+      confidence: action.metadata['confidence'] as number,
+      context: (action.metadata['context'] as Record<string, unknown>) ?? {},
     }));
   }
 
@@ -665,13 +665,13 @@ export class Kontext {
     let reasoningEntries: ReasoningEntry[] = [];
     if (includeReasoning) {
       reasoningEntries = reasoningActions.map((action) => ({
-        id: action.metadata.reasoningId as string,
+        id: action.metadata['reasoningId'] as string,
         timestamp: action.timestamp,
         agentId: action.agentId,
-        action: action.metadata.action as string,
-        reasoning: action.metadata.reasoning as string,
-        confidence: action.metadata.confidence as number,
-        context: (action.metadata.context as Record<string, unknown>) ?? {},
+        action: action.metadata['action'] as string,
+        reasoning: action.metadata['reasoning'] as string,
+        confidence: action.metadata['confidence'] as number,
+        context: (action.metadata['context'] as Record<string, unknown>) ?? {},
       }));
     }
 

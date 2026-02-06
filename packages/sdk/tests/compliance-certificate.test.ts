@@ -151,11 +151,11 @@ describe('Compliance Certificates', () => {
       agentId: 'agent-1',
     });
 
-    // Wait briefly to create a time gap
-    const midpoint = new Date();
-
     // Small delay to ensure timestamp separation
     await new Promise((resolve) => setTimeout(resolve, 50));
+
+    // Capture midpoint AFTER delay so it's clearly after action-1
+    const midpoint = new Date();
 
     await kontext.log({
       type: 'action-2',
