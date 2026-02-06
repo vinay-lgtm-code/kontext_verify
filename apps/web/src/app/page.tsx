@@ -26,10 +26,10 @@ const VideoDemo = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="aspect-video w-full mx-auto rounded-xl border border-border/40 bg-card/50 flex items-center justify-center">
+      <div className="w-full mx-auto rounded-xl border border-border/40 bg-card/50 flex items-center justify-center" style={{ height: "700px" }}>
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground">Loading demo...</p>
+          <p className="text-sm text-muted-foreground">Loading interactive demo...</p>
         </div>
       </div>
     ),
@@ -208,14 +208,14 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <Badge variant="secondary" className="mb-4">
-              See It In Action
+              Interactive Demo
             </Badge>
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              What happens when your AI agent moves $50,000?
+              Try it live — no API keys required
             </h2>
             <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-              Watch a side-by-side comparison of agent transactions — without
-              compliance infrastructure vs. with Kontext.
+              Chat with an AI agent that moves USDC. See the audit trail, digest chain,
+              trust score, and compliance checks update in real time.
             </p>
           </div>
           <VideoDemo />

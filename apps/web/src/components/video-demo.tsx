@@ -1,25 +1,14 @@
 "use client";
 
-import { Player } from "@remotion/player";
-import { KontextDemoVideo } from "./video/Video";
-import { TOTAL_FRAMES, FRAME_RATE } from "./video/styles";
-
 export function VideoDemo() {
   return (
     <div className="relative mx-auto w-full overflow-hidden rounded-xl border border-border/40 shadow-2xl">
-      <Player
-        component={KontextDemoVideo}
-        durationInFrames={TOTAL_FRAMES}
-        fps={FRAME_RATE}
-        compositionWidth={1920}
-        compositionHeight={1080}
-        style={{
-          width: "100%",
-          aspectRatio: "16/9",
-        }}
-        controls
-        autoPlay
-        loop
+      <iframe
+        src="https://demo-6kgfy18lv-vinay-narayans-projects.vercel.app"
+        className="w-full border-0"
+        style={{ height: "700px" }}
+        title="Kontext Interactive Demo"
+        allow="clipboard-read; clipboard-write"
       />
     </div>
   );
