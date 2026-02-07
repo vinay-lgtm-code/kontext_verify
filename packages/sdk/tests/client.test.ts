@@ -408,3 +408,168 @@ describe('Anomaly Detection', () => {
     expect(anomalies.length).toBe(0);
   });
 });
+
+describe('Metadata Validation', () => {
+  it('should accept valid metadata when schema is configured', async () => {
+    const kontext = Kontext.init({
+      projectId: 'test-project',
+      environment: 'development',
+      metadataSchema: {
+        parse(data: unknown) {
+          return data as Record<string, unknown>;
+        },
+      },
+    });
+
+    const action = await kontext.log({
+      type: 'test',
+      description: 'Valid metadata',
+      agentId: 'agent-1',
+      metadata: { key: 'value' },
+    });
+
+    expect(action.metadata).toEqual({ key: 'value' });
+    await kontext.destroy();
+  });
+
+  it('should reject invalid metadata when schema throws', async () => {
+    const kontext = Kontext.init({
+      projectId: 'test-project',
+      environment: 'development',
+      metadataSchema: {
+        parse(_data: unknown) {
+          throw new Error('Invalid metadata: expected string values');
+        },
+      },
+    });
+
+    await expect(
+      kontext.log({
+        type: 'test',
+        description: 'Bad metadata',
+        agentId: 'agent-1',
+        metadata: { nested: { deep: true } },
+      }),
+    ).rejects.toThrow('Metadata validation failed');
+
+    await kontext.destroy();
+  });
+
+  it('should reject invalid metadata in logTransaction', async () => {
+    const kontext = Kontext.init({
+      projectId: 'test-project',
+      environment: 'development',
+      metadataSchema: {
+        parse(_data: unknown) {
+          throw new Error('schema violation');
+        },
+      },
+    });
+
+    await expect(
+      kontext.logTransaction({
+        txHash: '0x' + 'a'.repeat(64),
+        chain: 'base',
+        amount: '100',
+        token: 'USDC',
+        from: '0x' + '1'.repeat(40),
+        to: '0x' + '2'.repeat(40),
+        agentId: 'agent-1',
+        metadata: { bad: true },
+      }),
+    ).rejects.toThrow('Metadata validation failed');
+
+    await kontext.destroy();
+  });
+
+  it('should reject invalid metadata in createTask', async () => {
+    const kontext = Kontext.init({
+      projectId: 'test-project',
+      environment: 'development',
+      metadataSchema: {
+        parse(_data: unknown) {
+          throw new Error('task metadata invalid');
+        },
+      },
+    });
+
+    await expect(
+      kontext.createTask({
+        description: 'Test task',
+        agentId: 'agent-1',
+        requiredEvidence: ['txHash'],
+        metadata: { invalid: 123 },
+      }),
+    ).rejects.toThrow('Metadata validation failed');
+
+    await kontext.destroy();
+  });
+
+  it('should skip validation when no metadata is provided', async () => {
+    let parseCalled = false;
+    const kontext = Kontext.init({
+      projectId: 'test-project',
+      environment: 'development',
+      metadataSchema: {
+        parse(_data: unknown) {
+          parseCalled = true;
+          return _data as Record<string, unknown>;
+        },
+      },
+    });
+
+    await kontext.log({
+      type: 'test',
+      description: 'No metadata',
+      agentId: 'agent-1',
+    });
+
+    expect(parseCalled).toBe(false);
+    await kontext.destroy();
+  });
+
+  it('should skip validation when no schema is configured', async () => {
+    const kontext = Kontext.init({
+      projectId: 'test-project',
+      environment: 'development',
+    });
+
+    // Should not throw even with arbitrary metadata
+    const action = await kontext.log({
+      type: 'test',
+      description: 'Any metadata',
+      agentId: 'agent-1',
+      metadata: { anything: { goes: true } },
+    });
+
+    expect(action.metadata).toEqual({ anything: { goes: true } });
+    await kontext.destroy();
+  });
+
+  it('should throw VALIDATION_ERROR code on schema failure', async () => {
+    const kontext = Kontext.init({
+      projectId: 'test-project',
+      environment: 'development',
+      metadataSchema: {
+        parse(_data: unknown) {
+          throw new Error('bad');
+        },
+      },
+    });
+
+    try {
+      await kontext.log({
+        type: 'test',
+        description: 'Fail',
+        agentId: 'agent-1',
+        metadata: { x: 1 },
+      });
+      expect.unreachable('should have thrown');
+    } catch (err) {
+      expect(err).toBeInstanceOf(KontextError);
+      expect((err as KontextError).code).toBe(KontextErrorCode.VALIDATION_ERROR);
+    }
+
+    await kontext.destroy();
+  });
+});

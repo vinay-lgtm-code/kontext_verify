@@ -64,6 +64,36 @@ export interface KontextConfig {
   logLevel?: 'debug' | 'info' | 'warn' | 'error';
   /** Pluggable storage adapter for persistence (default: in-memory) */
   storage?: import('./storage.js').StorageAdapter;
+
+  /**
+   * Optional metadata schema validator. When provided, all metadata passed to
+   * `log()`, `logTransaction()`, and `createTask()` will be validated against
+   * this schema before being recorded.
+   *
+   * Accepts any object with a `parse(data: unknown)` method (e.g., a Zod schema).
+   * Throws on validation failure, passes through on success.
+   *
+   * @example
+   * ```typescript
+   * import { z } from 'zod';
+   *
+   * const kontext = Kontext.init({
+   *   projectId: 'my-app',
+   *   environment: 'production',
+   *   metadataSchema: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])),
+   * });
+   * ```
+   */
+  metadataSchema?: MetadataValidator;
+}
+
+/**
+ * Interface for metadata validation. Compatible with Zod schemas and any
+ * validator that implements a `parse` method.
+ */
+export interface MetadataValidator {
+  /** Validate and return the metadata. Should throw on invalid data. */
+  parse(data: unknown): Record<string, unknown>;
 }
 
 // ============================================================================

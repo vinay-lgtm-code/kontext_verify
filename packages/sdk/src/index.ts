@@ -71,6 +71,9 @@ export type {
   // Compliance Certificates
   GenerateComplianceCertificateInput,
   ComplianceCertificate,
+
+  // Metadata Validation
+  MetadataValidator,
 } from './types.js';
 
 // Error types

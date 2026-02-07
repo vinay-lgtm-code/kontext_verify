@@ -88,6 +88,14 @@ export class Kontext {
     this.mode = config.apiKey ? 'cloud' : 'local';
     this.store = new KontextStore();
 
+    // Validate metadataSchema eagerly — if provided, it must have a parse() method
+    if (config.metadataSchema && typeof config.metadataSchema.parse !== 'function') {
+      throw new KontextError(
+        KontextErrorCode.INITIALIZATION_ERROR,
+        'metadataSchema must have a parse() method',
+      );
+    }
+
     // Attach storage adapter if provided
     if (config.storage) {
       this.store.setStorageAdapter(config.storage);
@@ -177,6 +185,26 @@ export class Kontext {
   }
 
   // --------------------------------------------------------------------------
+  // Internal Helpers
+  // --------------------------------------------------------------------------
+
+  /**
+   * Validate metadata against the configured schema, if any.
+   * No-op when metadataSchema is not configured.
+   */
+  private validateMetadata(metadata: Record<string, unknown> | undefined): void {
+    if (!metadata || !this.config.metadataSchema) return;
+    try {
+      this.config.metadataSchema.parse(metadata);
+    } catch (err) {
+      throw new KontextError(
+        KontextErrorCode.VALIDATION_ERROR,
+        `Metadata validation failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  }
+
+  // --------------------------------------------------------------------------
   // Action Logging
   // --------------------------------------------------------------------------
 
@@ -187,6 +215,7 @@ export class Kontext {
    * @returns The created action log entry
    */
   async log(input: LogActionInput): Promise<ActionLog> {
+    this.validateMetadata(input.metadata);
     const action = await this.logger.log(input);
 
     // Run anomaly detection if enabled
@@ -204,6 +233,7 @@ export class Kontext {
    * @returns The created transaction record
    */
   async logTransaction(input: LogTransactionInput): Promise<TransactionRecord> {
+    this.validateMetadata(input.metadata);
     const record = await this.logger.logTransaction(input);
 
     // Run anomaly detection if enabled
@@ -254,6 +284,7 @@ export class Kontext {
    * @returns The created task
    */
   async createTask(input: CreateTaskInput): Promise<Task> {
+    this.validateMetadata(input.metadata);
     return this.taskManager.createTask(input);
   }
 

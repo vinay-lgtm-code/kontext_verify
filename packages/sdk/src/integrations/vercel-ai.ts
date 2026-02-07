@@ -202,259 +202,284 @@ export interface KontextAIContext {
  * ```
  */
 export function kontextMiddleware(kontext: Kontext, options?: KontextAIOptions) {
-  const agentId = options?.agentId ?? 'vercel-ai';
-  const logToolArgs = options?.logToolArgs ?? false;
-  const financialTools = options?.financialTools ?? [];
-  const defaultCurrency = options?.defaultCurrency ?? 'USDC';
-  const trustThreshold = options?.trustThreshold;
-  const onBlocked = options?.onBlocked;
+  const cfg: ResolvedMiddlewareConfig = {
+    agentId: options?.agentId ?? 'vercel-ai',
+    logToolArgs: options?.logToolArgs ?? false,
+    financialTools: options?.financialTools ?? [],
+    defaultCurrency: options?.defaultCurrency ?? 'USDC',
+    trustThreshold: options?.trustThreshold,
+    onBlocked: options?.onBlocked,
+  };
 
   return {
-    /**
-     * Logs the AI request parameters before the model is invoked.
-     * Captures the operation type, model ID, tool count, and generation settings.
-     */
-    transformParams: async ({ params, type }: { params: Record<string, unknown>; type: string }) => {
-      const modelInfo = params['model'] as { modelId?: string } | undefined;
-      const tools = params['tools'];
-
-      await kontext.log({
-        type: `ai_${type}`,
-        description: `AI ${type} request to ${modelInfo?.modelId ?? 'unknown'} model`,
-        agentId,
-        metadata: {
-          model: modelInfo?.modelId ?? 'unknown',
-          toolCount: Array.isArray(tools) ? tools.length : 0,
-          maxTokens: params['maxTokens'] ?? null,
-          temperature: params['temperature'] ?? null,
-          operationType: type,
-        },
-      });
-
-      return params;
-    },
-
-    /**
-     * Wraps synchronous generation (`generateText`, `generateObject`).
-     * After the model returns, logs every tool call individually and the
-     * overall response. For financial tools, automatically creates
-     * compliance-tracked transaction records.
-     */
-    wrapGenerate: async ({
-      doGenerate,
-      params,
-    }: {
-      doGenerate: () => Promise<Record<string, unknown>>;
-      params: Record<string, unknown>;
-    }) => {
-      const startTime = Date.now();
-
-      // Check trust threshold before generation
-      if (trustThreshold !== undefined) {
-        const trustScore = await kontext.getTrustScore(agentId);
-        if (trustScore.score < trustThreshold) {
-          await kontext.log({
-            type: 'ai_blocked',
-            description: `AI generation blocked: agent trust score ${trustScore.score} below threshold ${trustThreshold}`,
-            agentId,
-            metadata: {
-              trustScore: trustScore.score,
-              trustLevel: trustScore.level,
-              threshold: trustThreshold,
-            },
-          });
-
-          throw new Error(
-            `Kontext: AI generation blocked. Agent "${agentId}" trust score (${trustScore.score}) ` +
-            `is below the required threshold (${trustThreshold}).`,
-          );
-        }
-      }
-
-      const result = await doGenerate();
-      const duration = Date.now() - startTime;
-      const modelInfo = params['model'] as { modelId?: string } | undefined;
-
-      // Log each tool call
-      const toolCalls = result['toolCalls'] as Array<{ toolName: string; args: unknown }> | undefined;
-      if (toolCalls && toolCalls.length > 0) {
-        for (const toolCall of toolCalls) {
-          // Check if this specific tool should be blocked
-          if (trustThreshold !== undefined && financialTools.includes(toolCall.toolName)) {
-            const trustScore = await kontext.getTrustScore(agentId);
-            if (trustScore.score < trustThreshold) {
-              if (onBlocked) {
-                onBlocked({ toolName: toolCall.toolName, args: toolCall.args }, `Trust score ${trustScore.score} below threshold ${trustThreshold}`);
-              }
-
-              await kontext.log({
-                type: 'ai_tool_blocked',
-                description: `Financial tool "${toolCall.toolName}" blocked: trust score ${trustScore.score} below threshold ${trustThreshold}`,
-                agentId,
-                metadata: {
-                  toolName: toolCall.toolName,
-                  trustScore: trustScore.score,
-                  threshold: trustThreshold,
-                },
-              });
-
-              continue;
-            }
-          }
-
-          // Log the tool call
-          await kontext.log({
-            type: 'ai_tool_call',
-            description: `Tool call: ${toolCall.toolName}`,
-            agentId,
-            metadata: {
-              toolName: toolCall.toolName,
-              args: logToolArgs ? toolCall.args : '[redacted]',
-              duration,
-              model: modelInfo?.modelId ?? 'unknown',
-            },
-          });
-
-          // For financial tools, extract and log a transaction
-          if (financialTools.includes(toolCall.toolName)) {
-            const amount = extractAmount(toolCall.args);
-            if (amount !== null) {
-              await kontext.log({
-                type: 'ai_financial_tool_call',
-                description: `Financial tool "${toolCall.toolName}" invoked with amount ${amount} ${defaultCurrency}`,
-                agentId,
-                metadata: {
-                  toolName: toolCall.toolName,
-                  amount: amount.toString(),
-                  currency: defaultCurrency,
-                  toolArgs: logToolArgs ? toolCall.args : '[redacted]',
-                },
-              });
-            }
-          }
-        }
-      }
-
-      // Log the overall completion
-      const usage = result['usage'] as { promptTokens?: number; completionTokens?: number; totalTokens?: number } | undefined;
-      await kontext.log({
-        type: 'ai_response',
-        description: `AI response completed in ${duration}ms`,
-        agentId,
-        metadata: {
-          duration,
-          toolCallCount: toolCalls?.length ?? 0,
-          finishReason: result['finishReason'] ?? 'unknown',
-          promptTokens: usage?.promptTokens ?? null,
-          completionTokens: usage?.completionTokens ?? null,
-          totalTokens: usage?.totalTokens ?? null,
-          model: modelInfo?.modelId ?? 'unknown',
-        },
-      });
-
-      return result;
-    },
-
-    /**
-     * Wraps streaming generation (`streamText`).
-     * Pipes the response stream through a transform that monitors for
-     * tool call chunks. On stream completion, logs the overall duration
-     * and any tool calls that occurred during the stream.
-     */
-    wrapStream: async ({
-      doStream,
-      params,
-    }: {
-      doStream: () => Promise<{ stream: ReadableStream; [key: string]: unknown }>;
-      params: Record<string, unknown>;
-    }) => {
-      const startTime = Date.now();
-      const modelInfo = params['model'] as { modelId?: string } | undefined;
-
-      // Log stream start
-      await kontext.log({
-        type: 'ai_stream_start',
-        description: `AI stream started for model ${modelInfo?.modelId ?? 'unknown'}`,
-        agentId,
-        metadata: {
-          model: modelInfo?.modelId ?? 'unknown',
-          operationType: 'stream',
-        },
-      });
-
-      const { stream, ...rest } = await doStream();
-
-      const toolCallsInStream: Array<{ toolName: string; args: unknown }> = [];
-
-      // Transform stream to monitor and log tool calls
-      const transformedStream = stream.pipeThrough(
-        new TransformStream({
-          transform(chunk: Record<string, unknown>, controller) {
-            // Pass through all chunks unmodified
-            controller.enqueue(chunk);
-
-            // Track tool call chunks for post-stream logging
-            if (chunk['type'] === 'tool-call') {
-              const toolName = chunk['toolName'] as string;
-              const args = chunk['args'] as unknown;
-              toolCallsInStream.push({ toolName, args });
-            }
-          },
-          async flush() {
-            const duration = Date.now() - startTime;
-
-            // Log each tool call found in the stream
-            for (const toolCall of toolCallsInStream) {
-              await kontext.log({
-                type: 'ai_tool_call',
-                description: `Tool call (stream): ${toolCall.toolName}`,
-                agentId,
-                metadata: {
-                  toolName: toolCall.toolName,
-                  args: logToolArgs ? toolCall.args : '[redacted]',
-                  duration,
-                  model: modelInfo?.modelId ?? 'unknown',
-                  source: 'stream',
-                },
-              });
-
-              // Financial tool logging in stream
-              if (financialTools.includes(toolCall.toolName)) {
-                const amount = extractAmount(toolCall.args);
-                if (amount !== null) {
-                  await kontext.log({
-                    type: 'ai_financial_tool_call',
-                    description: `Financial tool "${toolCall.toolName}" invoked via stream with amount ${amount} ${defaultCurrency}`,
-                    agentId,
-                    metadata: {
-                      toolName: toolCall.toolName,
-                      amount: amount.toString(),
-                      currency: defaultCurrency,
-                      source: 'stream',
-                    },
-                  });
-                }
-              }
-            }
-
-            // Log stream completion
-            await kontext.log({
-              type: 'ai_stream_complete',
-              description: `AI stream completed in ${duration}ms with ${toolCallsInStream.length} tool call(s)`,
-              agentId,
-              metadata: {
-                duration,
-                toolCallCount: toolCallsInStream.length,
-                model: modelInfo?.modelId ?? 'unknown',
-              },
-            });
-          },
-        }),
-      );
-
-      return { stream: transformedStream, ...rest };
-    },
+    transformParams: (ctx: { params: Record<string, unknown>; type: string }) =>
+      logTransformParams(kontext, cfg, ctx),
+    wrapGenerate: (ctx: { doGenerate: () => Promise<Record<string, unknown>>; params: Record<string, unknown> }) =>
+      wrapGenerateWithAudit(kontext, cfg, ctx),
+    wrapStream: (ctx: { doStream: () => Promise<{ stream: ReadableStream; [key: string]: unknown }>; params: Record<string, unknown> }) =>
+      wrapStreamWithAudit(kontext, cfg, ctx),
   };
+}
+
+// ============================================================================
+// Resolved config (avoids re-reading options in every helper)
+// ============================================================================
+
+interface ResolvedMiddlewareConfig {
+  agentId: string;
+  logToolArgs: boolean;
+  financialTools: string[];
+  defaultCurrency: string;
+  trustThreshold: number | undefined;
+  onBlocked: ((toolCall: BlockedToolCall, reason: string) => void) | undefined;
+}
+
+// ============================================================================
+// transformParams — logs AI request before model invocation
+// ============================================================================
+
+async function logTransformParams(
+  kontext: Kontext,
+  cfg: ResolvedMiddlewareConfig,
+  { params, type }: { params: Record<string, unknown>; type: string },
+): Promise<Record<string, unknown>> {
+  const modelInfo = params['model'] as { modelId?: string } | undefined;
+  const tools = params['tools'];
+
+  await kontext.log({
+    type: `ai_${type}`,
+    description: `AI ${type} request to ${modelInfo?.modelId ?? 'unknown'} model`,
+    agentId: cfg.agentId,
+    metadata: {
+      model: modelInfo?.modelId ?? 'unknown',
+      toolCount: Array.isArray(tools) ? tools.length : 0,
+      maxTokens: params['maxTokens'] ?? null,
+      temperature: params['temperature'] ?? null,
+      operationType: type,
+    },
+  });
+
+  return params;
+}
+
+// ============================================================================
+// wrapGenerate — wraps synchronous generation with audit logging
+// ============================================================================
+
+async function wrapGenerateWithAudit(
+  kontext: Kontext,
+  cfg: ResolvedMiddlewareConfig,
+  { doGenerate, params }: { doGenerate: () => Promise<Record<string, unknown>>; params: Record<string, unknown> },
+): Promise<Record<string, unknown>> {
+  const startTime = Date.now();
+
+  await enforceAgentTrustThreshold(kontext, cfg);
+
+  const result = await doGenerate();
+  const duration = Date.now() - startTime;
+  const modelId = extractModelId(params);
+
+  const toolCalls = result['toolCalls'] as Array<{ toolName: string; args: unknown }> | undefined;
+  if (toolCalls && toolCalls.length > 0) {
+    for (const toolCall of toolCalls) {
+      await processToolCall(kontext, cfg, toolCall, duration, modelId);
+    }
+  }
+
+  await logGenerateCompletion(kontext, cfg, result, duration, modelId, toolCalls?.length ?? 0);
+  return result;
+}
+
+// ============================================================================
+// wrapStream — wraps streaming generation with audit logging
+// ============================================================================
+
+async function wrapStreamWithAudit(
+  kontext: Kontext,
+  cfg: ResolvedMiddlewareConfig,
+  { doStream, params }: { doStream: () => Promise<{ stream: ReadableStream; [key: string]: unknown }>; params: Record<string, unknown> },
+): Promise<{ stream: ReadableStream; [key: string]: unknown }> {
+  const startTime = Date.now();
+  const modelId = extractModelId(params);
+
+  await kontext.log({
+    type: 'ai_stream_start',
+    description: `AI stream started for model ${modelId}`,
+    agentId: cfg.agentId,
+    metadata: { model: modelId, operationType: 'stream' },
+  });
+
+  const { stream, ...rest } = await doStream();
+  const toolCallsInStream: Array<{ toolName: string; args: unknown }> = [];
+
+  const transformedStream = stream.pipeThrough(
+    new TransformStream({
+      transform(chunk: Record<string, unknown>, controller) {
+        controller.enqueue(chunk);
+        if (chunk['type'] === 'tool-call') {
+          toolCallsInStream.push({
+            toolName: chunk['toolName'] as string,
+            args: chunk['args'] as unknown,
+          });
+        }
+      },
+      async flush() {
+        const duration = Date.now() - startTime;
+        await logStreamToolCalls(kontext, cfg, toolCallsInStream, duration, modelId);
+        await kontext.log({
+          type: 'ai_stream_complete',
+          description: `AI stream completed in ${duration}ms with ${toolCallsInStream.length} tool call(s)`,
+          agentId: cfg.agentId,
+          metadata: { duration, toolCallCount: toolCallsInStream.length, model: modelId },
+        });
+      },
+    }),
+  );
+
+  return { stream: transformedStream, ...rest };
+}
+
+// ============================================================================
+// Shared helpers for middleware decomposition
+// ============================================================================
+
+/** Extract modelId from params, defaulting to 'unknown'. */
+function extractModelId(params: Record<string, unknown>): string {
+  return (params['model'] as { modelId?: string } | undefined)?.modelId ?? 'unknown';
+}
+
+/** Enforce agent-level trust threshold; throws if score is below threshold. */
+async function enforceAgentTrustThreshold(kontext: Kontext, cfg: ResolvedMiddlewareConfig): Promise<void> {
+  if (cfg.trustThreshold === undefined) return;
+
+  const trustScore = await kontext.getTrustScore(cfg.agentId);
+  if (trustScore.score < cfg.trustThreshold) {
+    await kontext.log({
+      type: 'ai_blocked',
+      description: `AI generation blocked: agent trust score ${trustScore.score} below threshold ${cfg.trustThreshold}`,
+      agentId: cfg.agentId,
+      metadata: { trustScore: trustScore.score, trustLevel: trustScore.level, threshold: cfg.trustThreshold },
+    });
+    throw new Error(
+      `Kontext: AI generation blocked. Agent "${cfg.agentId}" trust score (${trustScore.score}) ` +
+      `is below the required threshold (${cfg.trustThreshold}).`,
+    );
+  }
+}
+
+/** Process a single tool call: check trust, log the call, log financial data if applicable. */
+async function processToolCall(
+  kontext: Kontext,
+  cfg: ResolvedMiddlewareConfig,
+  toolCall: { toolName: string; args: unknown },
+  duration: number,
+  modelId: string,
+): Promise<void> {
+  // Check if this financial tool should be blocked
+  if (cfg.trustThreshold !== undefined && cfg.financialTools.includes(toolCall.toolName)) {
+    const trustScore = await kontext.getTrustScore(cfg.agentId);
+    if (trustScore.score < cfg.trustThreshold) {
+      cfg.onBlocked?.({ toolName: toolCall.toolName, args: toolCall.args }, `Trust score ${trustScore.score} below threshold ${cfg.trustThreshold}`);
+      await kontext.log({
+        type: 'ai_tool_blocked',
+        description: `Financial tool "${toolCall.toolName}" blocked: trust score ${trustScore.score} below threshold ${cfg.trustThreshold}`,
+        agentId: cfg.agentId,
+        metadata: { toolName: toolCall.toolName, trustScore: trustScore.score, threshold: cfg.trustThreshold },
+      });
+      return;
+    }
+  }
+
+  await kontext.log({
+    type: 'ai_tool_call',
+    description: `Tool call: ${toolCall.toolName}`,
+    agentId: cfg.agentId,
+    metadata: {
+      toolName: toolCall.toolName,
+      args: cfg.logToolArgs ? toolCall.args : '[redacted]',
+      duration,
+      model: modelId,
+    },
+  });
+
+  await logFinancialToolCall(kontext, cfg, toolCall);
+}
+
+/** Log a financial tool call if the tool is in the financialTools list and has an extractable amount. */
+async function logFinancialToolCall(
+  kontext: Kontext,
+  cfg: ResolvedMiddlewareConfig,
+  toolCall: { toolName: string; args: unknown },
+  source?: string,
+): Promise<void> {
+  if (!cfg.financialTools.includes(toolCall.toolName)) return;
+
+  const amount = extractAmount(toolCall.args);
+  if (amount === null) return;
+
+  await kontext.log({
+    type: 'ai_financial_tool_call',
+    description: `Financial tool "${toolCall.toolName}" invoked${source ? ` via ${source}` : ''} with amount ${amount} ${cfg.defaultCurrency}`,
+    agentId: cfg.agentId,
+    metadata: {
+      toolName: toolCall.toolName,
+      amount: amount.toString(),
+      currency: cfg.defaultCurrency,
+      ...(cfg.logToolArgs ? { toolArgs: toolCall.args } : {}),
+      ...(source ? { source } : {}),
+    },
+  });
+}
+
+/** Log the overall generate completion with usage statistics. */
+async function logGenerateCompletion(
+  kontext: Kontext,
+  cfg: ResolvedMiddlewareConfig,
+  result: Record<string, unknown>,
+  duration: number,
+  modelId: string,
+  toolCallCount: number,
+): Promise<void> {
+  const usage = result['usage'] as { promptTokens?: number; completionTokens?: number; totalTokens?: number } | undefined;
+  await kontext.log({
+    type: 'ai_response',
+    description: `AI response completed in ${duration}ms`,
+    agentId: cfg.agentId,
+    metadata: {
+      duration,
+      toolCallCount,
+      finishReason: result['finishReason'] ?? 'unknown',
+      promptTokens: usage?.promptTokens ?? null,
+      completionTokens: usage?.completionTokens ?? null,
+      totalTokens: usage?.totalTokens ?? null,
+      model: modelId,
+    },
+  });
+}
+
+/** Log all tool calls collected during a stream, including financial tool detection. */
+async function logStreamToolCalls(
+  kontext: Kontext,
+  cfg: ResolvedMiddlewareConfig,
+  toolCalls: Array<{ toolName: string; args: unknown }>,
+  duration: number,
+  modelId: string,
+): Promise<void> {
+  for (const toolCall of toolCalls) {
+    await kontext.log({
+      type: 'ai_tool_call',
+      description: `Tool call (stream): ${toolCall.toolName}`,
+      agentId: cfg.agentId,
+      metadata: {
+        toolName: toolCall.toolName,
+        args: cfg.logToolArgs ? toolCall.args : '[redacted]',
+        duration,
+        model: modelId,
+        source: 'stream',
+      },
+    });
+    await logFinancialToolCall(kontext, cfg, toolCall, 'stream');
+  }
 }
 
 // ============================================================================
