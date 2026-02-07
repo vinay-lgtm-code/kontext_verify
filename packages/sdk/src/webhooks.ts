@@ -2,6 +2,7 @@
 // Kontext SDK - Webhook Manager
 // ============================================================================
 
+import { createHmac, timingSafeEqual } from 'crypto';
 import type { AnomalyEvent, TrustScore } from './types.js';
 import type { Task } from './types.js';
 import { generateId, now } from './utils.js';
@@ -411,8 +412,6 @@ export class WebhookManager {
   }
 
   private async computeSignature(payload: WebhookPayload, secret: string): Promise<string> {
-    // Use the built-in crypto module for HMAC signature
-    const { createHmac } = await import('crypto');
     const hmac = createHmac('sha256', secret);
     hmac.update(JSON.stringify(payload));
     return hmac.digest('hex');
@@ -420,5 +419,37 @@ export class WebhookManager {
 
   private sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Verify a webhook signature using constant-time comparison to prevent
+   * timing attacks. Use this in your webhook handler to validate incoming
+   * payloads from Kontext.
+   *
+   * @param payload - The raw JSON payload body (string)
+   * @param signature - The signature from the X-Kontext-Signature header
+   * @param secret - The webhook secret used during registration
+   * @returns Whether the signature is valid
+   *
+   * @example
+   * ```typescript
+   * const isValid = WebhookManager.verifySignature(
+   *   req.body, // raw JSON string
+   *   req.headers['x-kontext-signature'],
+   *   'my-webhook-secret',
+   * );
+   * if (!isValid) return res.status(401).send('Invalid signature');
+   * ```
+   */
+  static verifySignature(payload: string, signature: string, secret: string): boolean {
+    const hmac = createHmac('sha256', secret);
+    hmac.update(payload);
+    const expected = hmac.digest('hex');
+
+    if (expected.length !== signature.length) {
+      return false;
+    }
+
+    return timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(signature, 'hex'));
   }
 }

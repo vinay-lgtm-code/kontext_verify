@@ -407,4 +407,68 @@ describe('WebhookManager', () => {
       expect(headers['X-Kontext-Signature']).toBeUndefined();
     });
   });
+
+  describe('verifySignature (timing-safe)', () => {
+    it('should return true for a valid signature', async () => {
+      const mockFetch = createMockFetch();
+      const manager = new WebhookManager({}, mockFetch as unknown as typeof fetch);
+      const secret = 'my-webhook-secret';
+
+      manager.register({
+        url: 'https://example.com/webhook',
+        events: ['anomaly.detected'],
+        secret,
+      });
+
+      await manager.notifyAnomalyDetected(createAnomalyEvent());
+
+      const callArgs = mockFetch.mock.calls[0]!;
+      const body = callArgs[1].body as string;
+      const signature = callArgs[1].headers['X-Kontext-Signature'] as string;
+
+      expect(WebhookManager.verifySignature(body, signature, secret)).toBe(true);
+    });
+
+    it('should return false for a tampered payload', async () => {
+      const mockFetch = createMockFetch();
+      const manager = new WebhookManager({}, mockFetch as unknown as typeof fetch);
+      const secret = 'my-webhook-secret';
+
+      manager.register({
+        url: 'https://example.com/webhook',
+        events: ['anomaly.detected'],
+        secret,
+      });
+
+      await manager.notifyAnomalyDetected(createAnomalyEvent());
+
+      const callArgs = mockFetch.mock.calls[0]!;
+      const signature = callArgs[1].headers['X-Kontext-Signature'] as string;
+
+      expect(WebhookManager.verifySignature('{"tampered":true}', signature, secret)).toBe(false);
+    });
+
+    it('should return false for wrong secret', async () => {
+      const mockFetch = createMockFetch();
+      const manager = new WebhookManager({}, mockFetch as unknown as typeof fetch);
+
+      manager.register({
+        url: 'https://example.com/webhook',
+        events: ['anomaly.detected'],
+        secret: 'correct-secret',
+      });
+
+      await manager.notifyAnomalyDetected(createAnomalyEvent());
+
+      const callArgs = mockFetch.mock.calls[0]!;
+      const body = callArgs[1].body as string;
+      const signature = callArgs[1].headers['X-Kontext-Signature'] as string;
+
+      expect(WebhookManager.verifySignature(body, signature, 'wrong-secret')).toBe(false);
+    });
+
+    it('should return false for mismatched length signature', () => {
+      expect(WebhookManager.verifySignature('{}', 'short', 'secret')).toBe(false);
+    });
+  });
 });

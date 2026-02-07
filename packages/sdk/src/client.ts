@@ -700,14 +700,14 @@ export class Kontext {
       reasoning: reasoningEntries,
     };
 
-    // Compute SHA-256 signature of the certificate content
+    // Compute SHA-256 hash of the certificate content for integrity verification
     const hash = createHash('sha256');
     hash.update(JSON.stringify(certificateContent));
-    const signature = hash.digest('hex');
+    const contentHash = hash.digest('hex');
 
     return {
       ...certificateContent,
-      signature,
+      contentHash,
     };
   }
 

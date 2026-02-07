@@ -27,7 +27,17 @@ const VALID_API_KEYS = new Set(
 // Middleware
 // ============================================================================
 
-app.use('*', cors());
+app.use('*', cors({
+  origin: [
+    'https://getkontext.com',
+    'https://www.getkontext.com',
+    ...(process.env['KONTEXT_CORS_ORIGINS']?.split(',').map((o) => o.trim()).filter(Boolean) ?? []),
+    ...(process.env['NODE_ENV'] === 'development' ? ['http://localhost:3000', 'http://localhost:3001'] : []),
+  ],
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization', 'X-Project-Id', 'X-Kontext-Signature'],
+  maxAge: 86400,
+}));
 app.use('*', logger());
 
 // ============================================================================
@@ -49,7 +59,7 @@ const RATE_LIMIT_MAX_REQUESTS = 100;
  */
 app.use('/v1/*', async (c, next) => {
   const forwardedFor = c.req.header('x-forwarded-for');
-  const ip = (forwardedFor ? forwardedFor.split(',')[0].trim() : c.req.header('x-real-ip')) ?? 'unknown';
+  const ip = (forwardedFor ? forwardedFor.split(',')[0]?.trim() : c.req.header('x-real-ip')) ?? 'unknown';
 
   const currentTime = Date.now();
   const entry = rateLimitMap.get(ip);

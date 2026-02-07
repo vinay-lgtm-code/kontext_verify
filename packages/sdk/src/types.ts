@@ -599,8 +599,8 @@ export interface ComplianceCertificate {
   actions: Array<{ type: string; count: number }>;
   /** Reasoning entries (if includeReasoning is true) */
   reasoning: ReasoningEntry[];
-  /** SHA-256 hash of the certificate content for verification */
-  signature: string;
+  /** SHA-256 hash of the certificate content for integrity verification */
+  contentHash: string;
 }
 
 // ============================================================================

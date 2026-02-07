@@ -44,7 +44,7 @@ describe('Compliance Certificates', () => {
     expect(['compliant', 'non-compliant', 'review-required']).toContain(cert.complianceStatus);
     expect(cert.actions.length).toBeGreaterThan(0);
     expect(cert.reasoning).toEqual([]);
-    expect(cert.signature).toMatch(/^[a-f0-9]{64}$/);
+    expect(cert.contentHash).toMatch(/^[a-f0-9]{64}$/);
   });
 
   it('should count transactions correctly', async () => {
@@ -176,7 +176,7 @@ describe('Compliance Certificates', () => {
     expect(cert.actions[0]!.type).toBe('action-2');
   });
 
-  it('should produce a valid SHA-256 signature', async () => {
+  it('should produce a valid SHA-256 content hash', async () => {
     kontext = createClient();
 
     await kontext.log({
@@ -190,7 +190,7 @@ describe('Compliance Certificates', () => {
     });
 
     // Recompute the signature from the certificate content
-    const contentForSignature = {
+    const contentForHash = {
       certificateId: cert.certificateId,
       agentId: cert.agentId,
       issuedAt: cert.issuedAt,
@@ -203,10 +203,10 @@ describe('Compliance Certificates', () => {
     };
 
     const hash = createHash('sha256');
-    hash.update(JSON.stringify(contentForSignature));
-    const expectedSignature = hash.digest('hex');
+    hash.update(JSON.stringify(contentForHash));
+    const expectedHash = hash.digest('hex');
 
-    expect(cert.signature).toBe(expectedSignature);
+    expect(cert.contentHash).toBe(expectedHash);
   });
 
   it('should verify the digest chain', async () => {
