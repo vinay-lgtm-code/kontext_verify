@@ -479,9 +479,10 @@ export class AnomalyDetector {
       try {
         cb(anomaly);
       } catch (error) {
-        if (this.config.debug) {
-          console.debug('[Kontext] Anomaly callback error:', error);
-        }
+        console.warn(
+          `[Kontext] Anomaly callback error for ${anomaly.type} (${anomaly.id}):`,
+          error instanceof Error ? error.message : error,
+        );
       }
     }
   }

@@ -638,11 +638,23 @@ export function withKontext(
   handler: (req: Request, ctx: KontextAIContext) => Promise<Response>,
   options?: WithKontextOptions,
 ): (req: Request) => Promise<Response> {
+  // Validate projectId: must be explicitly provided or set via env var
+  const resolvedProjectId = options?.projectId ?? process.env['KONTEXT_PROJECT_ID'];
+  if (!resolvedProjectId) {
+    throw new Error('Kontext: projectId is required. Provide it via options or set KONTEXT_PROJECT_ID env var.');
+  }
+
+  // Validate apiKey: if explicitly provided, must not be empty/whitespace
+  const resolvedApiKey = options?.apiKey ?? process.env['KONTEXT_API_KEY'];
+  if (options?.apiKey !== undefined && options.apiKey.trim() === '') {
+    throw new Error('Kontext: apiKey was provided but is empty.');
+  }
+
   // Initialize a shared Kontext client for the route
   const kontext = Kontext.init({
-    projectId: options?.projectId ?? process.env['KONTEXT_PROJECT_ID'] ?? 'default',
+    projectId: resolvedProjectId,
     environment: options?.environment ?? (process.env['NODE_ENV'] === 'production' ? 'production' : 'development') as Environment,
-    apiKey: options?.apiKey ?? process.env['KONTEXT_API_KEY'],
+    apiKey: resolvedApiKey,
     debug: options?.debug,
   });
 

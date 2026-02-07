@@ -30,6 +30,48 @@ const VALID_API_KEYS = new Set(
 app.use('*', cors());
 app.use('*', logger());
 
+// ============================================================================
+// Rate Limiting
+// ============================================================================
+
+/** Sliding-window rate limiter state keyed by IP */
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+/** Rate limit configuration: 100 requests per 60-second window */
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 100;
+
+/**
+ * In-memory sliding-window rate limiter middleware.
+ * Applied to /v1/* routes only. Extracts client IP from x-forwarded-for
+ * (first entry) or x-real-ip header, and enforces a per-IP request limit.
+ * Returns 429 Too Many Requests with a Retry-After header when exceeded.
+ */
+app.use('/v1/*', async (c, next) => {
+  const forwardedFor = c.req.header('x-forwarded-for');
+  const ip = (forwardedFor ? forwardedFor.split(',')[0].trim() : c.req.header('x-real-ip')) ?? 'unknown';
+
+  const currentTime = Date.now();
+  const entry = rateLimitMap.get(ip);
+
+  if (!entry || currentTime >= entry.resetAt) {
+    // Start a new window
+    rateLimitMap.set(ip, { count: 1, resetAt: currentTime + RATE_LIMIT_WINDOW_MS });
+    return next();
+  }
+
+  if (entry.count >= RATE_LIMIT_MAX_REQUESTS) {
+    const retryAfterSeconds = Math.ceil((entry.resetAt - currentTime) / 1000);
+    return c.json(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } },
+    );
+  }
+
+  entry.count++;
+  return next();
+});
+
 /**
  * API key authentication middleware.
  * Extracts the API key from the Authorization header (Bearer token)

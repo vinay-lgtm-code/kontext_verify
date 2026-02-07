@@ -34,7 +34,7 @@ const USDC_DECIMALS = 6;
 // Last updated: sourced from publicly known sanctions as of 2024.
 
 /** OFAC-sanctioned Ethereum addresses from the Treasury SDN list */
-const SANCTIONED_ADDRESSES: string[] = [
+let SANCTIONED_ADDRESSES: string[] = [
   // Tornado Cash contracts (sanctioned August 2022)
   '0xd90e2f925DA726b50C4Ed8D0Fb90Ad053324F31b',
   '0xd96f2B1c14Db8458374d9Aca76E26c3D18364307',
@@ -66,7 +66,7 @@ const SANCTIONED_ADDRESSES: string[] = [
 /**
  * Pre-computed set of lowercased sanctioned addresses for O(1) lookups.
  */
-const SANCTIONED_SET: Set<string> = new Set(
+let SANCTIONED_SET: Set<string> = new Set(
   SANCTIONED_ADDRESSES.map((addr) => addr.toLowerCase()),
 );
 
@@ -230,6 +230,51 @@ export class UsdcCompliance {
    */
   static getSupportedChains(): Chain[] {
     return Object.keys(USDC_CONTRACTS) as Chain[];
+  }
+
+  /**
+   * Add new sanctioned addresses at runtime.
+   * Normalizes all addresses to lowercase for consistent matching.
+   * Skips addresses that are already in the list.
+   *
+   * @param addresses - Array of Ethereum addresses to add
+   * @returns The count of newly added addresses (excluding duplicates)
+   */
+  static addSanctionedAddresses(addresses: string[]): number {
+    let added = 0;
+    for (const addr of addresses) {
+      const lower = addr.toLowerCase();
+      if (!SANCTIONED_SET.has(lower)) {
+        SANCTIONED_ADDRESSES.push(addr);
+        SANCTIONED_SET.add(lower);
+        added++;
+      }
+    }
+    return added;
+  }
+
+  /**
+   * Replace the entire sanctioned addresses list at runtime.
+   * Clears existing entries and rebuilds from the provided array.
+   *
+   * @param addresses - The new complete list of sanctioned addresses
+   */
+  static replaceSanctionedAddresses(addresses: string[]): void {
+    SANCTIONED_ADDRESSES.length = 0;
+    SANCTIONED_ADDRESSES.push(...addresses);
+    SANCTIONED_SET.clear();
+    for (const addr of addresses) {
+      SANCTIONED_SET.add(addr.toLowerCase());
+    }
+  }
+
+  /**
+   * Get the current number of addresses in the sanctions list.
+   *
+   * @returns The size of the current sanctions list
+   */
+  static getSanctionsListSize(): number {
+    return SANCTIONED_SET.size;
   }
 
   // --------------------------------------------------------------------------

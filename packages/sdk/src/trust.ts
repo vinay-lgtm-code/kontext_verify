@@ -9,9 +9,52 @@ import type {
   RiskFactor,
   LogTransactionInput,
   KontextConfig,
+  ActionLog,
+  TransactionRecord,
+  Task,
+  AnomalyEvent,
 } from './types.js';
 import { KontextStore } from './store.js';
 import { generateId, now, parseAmount, clamp } from './utils.js';
+
+// ============================================================================
+// Named constants — trust level thresholds
+// ============================================================================
+
+const TRUST_LEVEL_VERIFIED = 90;
+const TRUST_LEVEL_HIGH = 70;
+const TRUST_LEVEL_MEDIUM = 50;
+const TRUST_LEVEL_LOW = 30;
+
+// ============================================================================
+// Named constants — risk thresholds
+// ============================================================================
+
+const RISK_FLAG_THRESHOLD = 60;
+const RISK_BLOCK_THRESHOLD = 80;
+const RISK_REVIEW_THRESHOLD = 50;
+
+// ============================================================================
+// Named constants — trust factor weights
+// ============================================================================
+
+const WEIGHT_HISTORY = 0.15;
+const WEIGHT_TASK_COMPLETION = 0.25;
+const WEIGHT_ANOMALY = 0.25;
+const WEIGHT_TX_CONSISTENCY = 0.20;
+const WEIGHT_COMPLIANCE = 0.15;
+
+// ============================================================================
+// Pre-fetched agent data interface (avoids redundant store queries)
+// ============================================================================
+
+/** Pre-fetched data for a single agent, passed to factor methods to avoid redundant store queries. */
+export interface AgentData {
+  actions: ActionLog[];
+  transactions: TransactionRecord[];
+  tasks: Task[];
+  anomalies: AnomalyEvent[];
+}
 
 /**
  * TrustScorer computes trust scores for agents and risk scores for transactions.
@@ -93,9 +136,9 @@ export class TrustScorer {
     const riskScore = clamp(Math.round(totalScore / Math.max(factors.length, 1)), 0, 100);
 
     const riskLevel = this.riskScoreToLevel(riskScore);
-    const flagged = riskScore >= 60;
-    const recommendation = riskScore >= 80 ? 'block' as const
-      : riskScore >= 50 ? 'review' as const
+    const flagged = riskScore >= RISK_FLAG_THRESHOLD;
+    const recommendation = riskScore >= RISK_BLOCK_THRESHOLD ? 'block' as const
+      : riskScore >= RISK_REVIEW_THRESHOLD ? 'review' as const
       : 'approve' as const;
 
     return {
@@ -114,29 +157,25 @@ export class TrustScorer {
   // --------------------------------------------------------------------------
 
   private computeAgentFactors(agentId: string): TrustFactor[] {
-    const factors: TrustFactor[] = [];
+    // Query the store ONCE for all agent data (reduces ~8 scans to 4)
+    const data: AgentData = {
+      actions: this.store.getActionsByAgent(agentId),
+      transactions: this.store.getTransactionsByAgent(agentId),
+      tasks: this.store.queryTasks((t) => t.agentId === agentId),
+      anomalies: this.store.queryAnomalies((a) => a.agentId === agentId),
+    };
 
-    // Factor 1: History depth
-    factors.push(this.computeHistoryDepthFactor(agentId));
-
-    // Factor 2: Task completion rate
-    factors.push(this.computeTaskCompletionFactor(agentId));
-
-    // Factor 3: Anomaly frequency
-    factors.push(this.computeAnomalyFrequencyFactor(agentId));
-
-    // Factor 4: Transaction consistency
-    factors.push(this.computeTransactionConsistencyFactor(agentId));
-
-    // Factor 5: Compliance adherence
-    factors.push(this.computeComplianceAdherenceFactor(agentId));
-
-    return factors;
+    return [
+      this.computeHistoryDepthFactor(data),
+      this.computeTaskCompletionFactor(data),
+      this.computeAnomalyFrequencyFactor(data),
+      this.computeTransactionConsistencyFactor(data),
+      this.computeComplianceAdherenceFactor(data),
+    ];
   }
 
-  private computeHistoryDepthFactor(agentId: string): TrustFactor {
-    const actions = this.store.getActionsByAgent(agentId);
-    const count = actions.length;
+  private computeHistoryDepthFactor(data: AgentData): TrustFactor {
+    const count = data.actions.length;
 
     // More history = more trust. Max score at 100+ actions.
     let score: number;
@@ -150,26 +189,25 @@ export class TrustScorer {
     return {
       name: 'history_depth',
       score,
-      weight: 0.15,
+      weight: WEIGHT_HISTORY,
       description: `Agent has ${count} recorded actions`,
     };
   }
 
-  private computeTaskCompletionFactor(agentId: string): TrustFactor {
-    const tasks = this.store.queryTasks((t) => t.agentId === agentId);
-    const totalTasks = tasks.length;
+  private computeTaskCompletionFactor(data: AgentData): TrustFactor {
+    const totalTasks = data.tasks.length;
 
     if (totalTasks === 0) {
       return {
         name: 'task_completion',
         score: 50, // Neutral if no tasks
-        weight: 0.25,
+        weight: WEIGHT_TASK_COMPLETION,
         description: 'No tasks recorded yet',
       };
     }
 
-    const confirmed = tasks.filter((t) => t.status === 'confirmed').length;
-    const failed = tasks.filter((t) => t.status === 'failed').length;
+    const confirmed = data.tasks.filter((t) => t.status === 'confirmed').length;
+    const failed = data.tasks.filter((t) => t.status === 'failed').length;
     const completionRate = confirmed / totalTasks;
     const failureRate = failed / totalTasks;
 
@@ -179,22 +217,20 @@ export class TrustScorer {
     return {
       name: 'task_completion',
       score: clamp(score, 0, 100),
-      weight: 0.25,
+      weight: WEIGHT_TASK_COMPLETION,
       description: `${confirmed}/${totalTasks} tasks confirmed (${Math.round(completionRate * 100)}% rate)`,
     };
   }
 
-  private computeAnomalyFrequencyFactor(agentId: string): TrustFactor {
-    const anomalies = this.store.queryAnomalies((a) => a.agentId === agentId);
-    const actions = this.store.getActionsByAgent(agentId);
-    const anomalyCount = anomalies.length;
-    const actionCount = actions.length;
+  private computeAnomalyFrequencyFactor(data: AgentData): TrustFactor {
+    const anomalyCount = data.anomalies.length;
+    const actionCount = data.actions.length;
 
     if (actionCount === 0) {
       return {
         name: 'anomaly_frequency',
         score: 50,
-        weight: 0.25,
+        weight: WEIGHT_ANOMALY,
         description: 'No actions recorded yet',
       };
     }
@@ -211,26 +247,26 @@ export class TrustScorer {
     else score = 10;
 
     // Weight critical anomalies more heavily
-    const criticalCount = anomalies.filter((a) => a.severity === 'critical').length;
-    const highCount = anomalies.filter((a) => a.severity === 'high').length;
+    const criticalCount = data.anomalies.filter((a) => a.severity === 'critical').length;
+    const highCount = data.anomalies.filter((a) => a.severity === 'high').length;
     const penaltyFromSeverity = criticalCount * 15 + highCount * 8;
 
     return {
       name: 'anomaly_frequency',
       score: clamp(score - penaltyFromSeverity, 0, 100),
-      weight: 0.25,
+      weight: WEIGHT_ANOMALY,
       description: `${anomalyCount} anomalies across ${actionCount} actions (${Math.round(anomalyRate * 100)}% rate)`,
     };
   }
 
-  private computeTransactionConsistencyFactor(agentId: string): TrustFactor {
-    const transactions = this.store.getTransactionsByAgent(agentId);
+  private computeTransactionConsistencyFactor(data: AgentData): TrustFactor {
+    const transactions = data.transactions;
 
     if (transactions.length < 2) {
       return {
         name: 'transaction_consistency',
         score: 50,
-        weight: 0.20,
+        weight: WEIGHT_TX_CONSISTENCY,
         description: 'Insufficient transaction history for consistency analysis',
       };
     }
@@ -242,7 +278,7 @@ export class TrustScorer {
       return {
         name: 'transaction_consistency',
         score: 50,
-        weight: 0.20,
+        weight: WEIGHT_TX_CONSISTENCY,
         description: 'Insufficient valid amounts for consistency analysis',
       };
     }
@@ -272,14 +308,13 @@ export class TrustScorer {
     return {
       name: 'transaction_consistency',
       score: clamp(score, 0, 100),
-      weight: 0.20,
+      weight: WEIGHT_TX_CONSISTENCY,
       description: `CV=${cv.toFixed(2)}, ${destinations.size} unique destinations across ${transactions.length} transactions`,
     };
   }
 
-  private computeComplianceAdherenceFactor(agentId: string): TrustFactor {
-    const tasks = this.store.queryTasks((t) => t.agentId === agentId);
-    const transactions = this.store.getTransactionsByAgent(agentId);
+  private computeComplianceAdherenceFactor(data: AgentData): TrustFactor {
+    const { tasks, transactions } = data;
 
     // Check how many transactions have corresponding confirmed tasks
     const confirmedTasks = tasks.filter((t) => t.status === 'confirmed');
@@ -304,7 +339,7 @@ export class TrustScorer {
     return {
       name: 'compliance_adherence',
       score: clamp(score, 0, 100),
-      weight: 0.15,
+      weight: WEIGHT_COMPLIANCE,
       description: `${tasksWithEvidence.length} tasks with evidence, ${transactions.length} total transactions`,
     };
   }
@@ -465,16 +500,16 @@ export class TrustScorer {
   // --------------------------------------------------------------------------
 
   private scoreToLevel(score: number): TrustScore['level'] {
-    if (score >= 90) return 'verified';
-    if (score >= 70) return 'high';
-    if (score >= 50) return 'medium';
-    if (score >= 30) return 'low';
+    if (score >= TRUST_LEVEL_VERIFIED) return 'verified';
+    if (score >= TRUST_LEVEL_HIGH) return 'high';
+    if (score >= TRUST_LEVEL_MEDIUM) return 'medium';
+    if (score >= TRUST_LEVEL_LOW) return 'low';
     return 'untrusted';
   }
 
   private riskScoreToLevel(score: number): TransactionEvaluation['riskLevel'] {
-    if (score >= 80) return 'critical';
-    if (score >= 60) return 'high';
+    if (score >= RISK_BLOCK_THRESHOLD) return 'critical';
+    if (score >= RISK_FLAG_THRESHOLD) return 'high';
     if (score >= 35) return 'medium';
     return 'low';
   }

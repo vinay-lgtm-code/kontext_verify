@@ -10,6 +10,7 @@ import type {
   KontextConfig,
   Chain,
   Token,
+  LogLevel,
 } from './types.js';
 import { KontextError, KontextErrorCode } from './types.js';
 import { KontextStore } from './store.js';
@@ -17,6 +18,14 @@ import { DigestChain } from './digest.js';
 import { generateId, now, isValidAddress, isValidTxHash, parseAmount } from './utils.js';
 import * as fs from 'fs';
 import * as path from 'path';
+
+/** Numeric severity map for log level comparison */
+const LOG_LEVEL_SEVERITY: Record<LogLevel, number> = {
+  debug: 0,
+  info: 1,
+  warn: 2,
+  error: 3,
+};
 
 /**
  * ActionLogger handles structured logging of all agent actions.
@@ -37,6 +46,7 @@ export class ActionLogger {
   private readonly batchSize: number;
   private readonly flushIntervalMs: number;
   private readonly isCloudMode: boolean;
+  private readonly logLevel: LogLevel;
 
   constructor(config: KontextConfig, store: KontextStore) {
     this.config = config;
@@ -45,6 +55,7 @@ export class ActionLogger {
     this.batchSize = config.batchSize ?? 50;
     this.flushIntervalMs = config.flushIntervalMs ?? 5000;
     this.isCloudMode = !!config.apiKey;
+    this.logLevel = config.logLevel ?? (config.debug ? 'debug' : 'warn');
 
     // Start the periodic flush timer
     this.flushTimer = setInterval(() => {
@@ -97,9 +108,7 @@ export class ActionLogger {
       await this.flush();
     }
 
-    if (this.config.debug) {
-      this.debugLog('Action logged', action);
-    }
+    this.emitLog('debug', 'Action logged', action);
 
     return action;
   }
@@ -160,9 +169,7 @@ export class ActionLogger {
       await this.flush();
     }
 
-    if (this.config.debug) {
-      this.debugLog('Transaction logged', record);
-    }
+    this.emitLog('debug', 'Transaction logged', record);
 
     return record;
   }
@@ -292,9 +299,7 @@ export class ActionLogger {
       const lines = actions.map((a) => JSON.stringify(a)).join('\n') + '\n';
       fs.appendFileSync(filePath, lines, 'utf-8');
     } catch (error) {
-      if (this.config.debug) {
-        this.debugLog('Failed to write log file', { error });
-      }
+      this.emitLog('warn', 'Failed to write log file', { error });
     }
   }
 
@@ -323,15 +328,37 @@ export class ActionLogger {
       if (error instanceof KontextError) throw error;
 
       // On API failure, fall back to local file storage
-      if (this.config.debug) {
-        this.debugLog('API flush failed, falling back to local file', { error });
-      }
+      this.emitLog('warn', 'API flush failed, falling back to local file', { error });
       this.flushToFile(actions);
     }
   }
 
-  private debugLog(message: string, data?: unknown): void {
+  /**
+   * Emit a log message at the specified severity level.
+   * Only outputs if the message level meets or exceeds the configured logLevel.
+   */
+  emitLog(level: LogLevel, message: string, data?: unknown): void {
+    if (LOG_LEVEL_SEVERITY[level] < LOG_LEVEL_SEVERITY[this.logLevel]) {
+      return;
+    }
+
     const timestamp = now();
-    console.debug(`[Kontext ${timestamp}] ${message}`, data ? JSON.stringify(data, null, 2) : '');
+    const formatted = `[Kontext ${timestamp}] ${message}`;
+    const payload = data ? JSON.stringify(data, null, 2) : '';
+
+    switch (level) {
+      case 'debug':
+        console.debug(formatted, payload);
+        break;
+      case 'info':
+        console.info(formatted, payload);
+        break;
+      case 'warn':
+        console.warn(formatted, payload);
+        break;
+      case 'error':
+        console.error(formatted, payload);
+        break;
+    }
   }
 }

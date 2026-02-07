@@ -15,6 +15,7 @@ export type {
   KontextConfig,
   KontextMode,
   Environment,
+  LogLevel,
 
   // Actions & Logging
   ActionLog,

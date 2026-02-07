@@ -191,16 +191,26 @@ export class WebhookManager {
 
   /**
    * Get all registered webhooks.
+   * Secrets are redacted to prevent accidental exposure in logs or API responses.
    */
   getWebhooks(): WebhookConfig[] {
-    return Array.from(this.webhooks.values());
+    return Array.from(this.webhooks.values()).map((w) => ({
+      ...w,
+      secret: w.secret ? '***REDACTED***' : w.secret,
+    }));
   }
 
   /**
    * Get a specific webhook by ID.
+   * The secret is redacted to prevent accidental exposure in logs or API responses.
    */
   getWebhook(webhookId: string): WebhookConfig | undefined {
-    return this.webhooks.get(webhookId);
+    const webhook = this.webhooks.get(webhookId);
+    if (!webhook) return undefined;
+    return {
+      ...webhook,
+      secret: webhook.secret ? '***REDACTED***' : webhook.secret,
+    };
   }
 
   /**

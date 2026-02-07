@@ -287,7 +287,8 @@ export class DigestChain {
    */
   private getPrecisionTimestamp(): PrecisionTimestamp {
     const hrtime = process.hrtime.bigint();
-    const microseconds = Number((hrtime - this.hrtimeBase) % 1000000n);
+    const delta = hrtime >= this.hrtimeBase ? hrtime - this.hrtimeBase : 0n;
+    const microseconds = Number(delta % 1000000n);
 
     return {
       iso: new Date().toISOString(),

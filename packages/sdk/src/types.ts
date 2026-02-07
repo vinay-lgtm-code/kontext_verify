@@ -11,6 +11,9 @@ export type Token = 'USDC' | 'USDT' | 'DAI' | 'EURC';
 /** SDK operating mode */
 export type KontextMode = 'local' | 'cloud';
 
+/** Log level for the SDK logger */
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+
 /** Environment configuration */
 export type Environment = 'development' | 'staging' | 'production';
 
@@ -57,6 +60,8 @@ export interface KontextConfig {
   flushIntervalMs?: number;
   /** Local file output directory for OSS mode */
   localOutputDir?: string;
+  /** Minimum log level for SDK output (default: 'warn', or 'debug' if debug=true) */
+  logLevel?: 'debug' | 'info' | 'warn' | 'error';
   /** Pluggable storage adapter for persistence (default: in-memory) */
   storage?: import('./storage.js').StorageAdapter;
 }

@@ -176,7 +176,7 @@ export class TaskManager {
    * @param taskId - The task identifier
    * @returns The task, or undefined if not found
    */
-  async getTaskStatus(taskId: string): Task | undefined {
+  async getTaskStatus(taskId: string): Promise<Task | undefined> {
     const task = this.store.getTask(taskId);
 
     if (!task) return undefined;

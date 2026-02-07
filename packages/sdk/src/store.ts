@@ -13,6 +13,12 @@ import type {
 } from './types.js';
 import type { StorageAdapter } from './storage.js';
 
+/** Maximum number of entries per collection before eviction kicks in */
+export const DEFAULT_MAX_ENTRIES = 10_000;
+
+/** Percentage of oldest entries to evict when the limit is exceeded */
+const EVICTION_RATIO = 0.1;
+
 /** Storage keys used for persisting store data */
 const STORAGE_KEYS = {
   actions: 'kontext:actions',
@@ -34,6 +40,11 @@ export class KontextStore {
   private tasks: Map<string, Task> = new Map();
   private anomalies: AnomalyEvent[] = [];
   private storageAdapter: StorageAdapter | null = null;
+  private readonly maxEntries: number;
+
+  constructor(maxEntries: number = DEFAULT_MAX_ENTRIES) {
+    this.maxEntries = maxEntries;
+  }
 
   /**
    * Attach a storage adapter for persistence.
@@ -62,14 +73,18 @@ export class KontextStore {
   async flush(): Promise<void> {
     if (!this.storageAdapter) return;
 
+    // Snapshot all collections before async save to prevent data inconsistency
+    // if addAction/addTransaction/addAnomaly mutates arrays during the flush.
+    const actionsSnapshot = [...this.actions];
+    const transactionsSnapshot = [...this.transactions];
+    const tasksSnapshot = Array.from(this.tasks.entries());
+    const anomaliesSnapshot = [...this.anomalies];
+
     await Promise.all([
-      this.storageAdapter.save(STORAGE_KEYS.actions, this.actions),
-      this.storageAdapter.save(STORAGE_KEYS.transactions, this.transactions),
-      this.storageAdapter.save(
-        STORAGE_KEYS.tasks,
-        Array.from(this.tasks.entries()),
-      ),
-      this.storageAdapter.save(STORAGE_KEYS.anomalies, this.anomalies),
+      this.storageAdapter.save(STORAGE_KEYS.actions, actionsSnapshot),
+      this.storageAdapter.save(STORAGE_KEYS.transactions, transactionsSnapshot),
+      this.storageAdapter.save(STORAGE_KEYS.tasks, tasksSnapshot),
+      this.storageAdapter.save(STORAGE_KEYS.anomalies, anomaliesSnapshot),
     ]);
   }
 
@@ -106,9 +121,12 @@ export class KontextStore {
   // Actions
   // --------------------------------------------------------------------------
 
-  /** Append an action log entry. */
+  /** Append an action log entry. Evicts oldest 10% when maxEntries is exceeded. */
   addAction(action: ActionLog): void {
     this.actions.push(action);
+    if (this.actions.length > this.maxEntries) {
+      this.actions.splice(0, Math.ceil(this.maxEntries * EVICTION_RATIO));
+    }
   }
 
   /** Retrieve all action log entries. */
@@ -130,9 +148,12 @@ export class KontextStore {
   // Transactions
   // --------------------------------------------------------------------------
 
-  /** Append a transaction record. */
+  /** Append a transaction record. Evicts oldest 10% when maxEntries is exceeded. */
   addTransaction(tx: TransactionRecord): void {
     this.transactions.push(tx);
+    if (this.transactions.length > this.maxEntries) {
+      this.transactions.splice(0, Math.ceil(this.maxEntries * EVICTION_RATIO));
+    }
   }
 
   /** Retrieve all transaction records. */
@@ -194,9 +215,12 @@ export class KontextStore {
   // Anomalies
   // --------------------------------------------------------------------------
 
-  /** Append an anomaly event. */
+  /** Append an anomaly event. Evicts oldest 10% when maxEntries is exceeded. */
   addAnomaly(anomaly: AnomalyEvent): void {
     this.anomalies.push(anomaly);
+    if (this.anomalies.length > this.maxEntries) {
+      this.anomalies.splice(0, Math.ceil(this.maxEntries * EVICTION_RATIO));
+    }
   }
 
   /** Retrieve all anomaly events. */
