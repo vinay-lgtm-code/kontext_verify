@@ -135,38 +135,26 @@ export default function TamperEvidentAuditTrailsPost() {
 
         <h2>The solution: digest chains</h2>
         <p>
-          A digest chain is a lightweight cryptographic data structure that
-          provides tamper evidence for an ordered sequence of events. The concept
-          is straightforward: each entry in the log includes a hash that depends
-          on the previous entry&apos;s hash, creating a chain where modifying any
-          single record invalidates every subsequent record.
+          A digest chain is a cryptographic data structure that provides tamper
+          evidence for an ordered sequence of events. Each entry in the log
+          includes a cryptographic fingerprint that depends on the previous
+          entry, creating a chain where modifying any single record invalidates
+          every subsequent record.
         </p>
         <p>
-          Here is the formula. For each log entry <em>D</em>, we compute its
-          digest <em>H</em> as:
+          The core idea is similar to how blockchains link blocks, but
+          purpose-built for audit trails: each event is cryptographically
+          linked to everything that came before it. The specific implementation
+          details are proprietary and patent-protected.
         </p>
-
-        <CodeBlock
-          code={`H_D = SHA-256( H_{D-1} || Serialize(E_D) || S_D )
-
-Where:
-  H_D     = digest of the current entry
-  H_{D-1} = digest of the previous entry (genesis uses a seed value)
-  E_D     = the structured event data (action, amount, agent, metadata)
-  S_D     = timestamp of the entry
-  ||      = concatenation`}
-          language="plaintext"
-          filename="digest-chain-formula.txt"
-        />
 
         <p>
           The power of this structure is its cascading integrity. If someone
-          alters entry number 47 in a chain of 10,000 entries, the hash of
-          entry 47 changes. Because entry 48&apos;s hash depends on entry
-          47&apos;s hash, entry 48 is now also invalid. The corruption cascades
-          all the way to the end of the chain. A single verification pass from
-          the genesis entry to the latest entry can detect tampering at any
-          point.
+          alters entry number 47 in a chain of 10,000 entries, the fingerprint
+          of entry 47 changes. Because entry 48&apos;s fingerprint depends on
+          entry 47, entry 48 is now also invalid. The corruption cascades all
+          the way to the end of the chain. A single verification pass can
+          detect tampering at any point.
         </p>
 
         {/* Visual representation of digest chain */}
@@ -175,8 +163,7 @@ Where:
             {/* Block 0 */}
             <div className="flex-shrink-0 rounded-l-lg border border-border bg-muted/30 px-4 py-3 text-center w-[180px]">
               <div className="text-xs font-mono text-muted-foreground mb-1">Entry 0 (Genesis)</div>
-              <div className="text-xs font-mono font-bold text-primary truncate">H_0 = SHA-256(seed || E_0 || S_0)</div>
-              <div className="mt-1 text-[10px] font-mono text-muted-foreground/70 truncate">a3f2...8b01</div>
+              <div className="text-xs font-mono font-bold text-primary truncate">Digest: a3f2...8b01</div>
             </div>
             {/* Arrow */}
             <div className="flex-shrink-0 w-8 flex items-center justify-center">
@@ -185,8 +172,7 @@ Where:
             {/* Block 1 */}
             <div className="flex-shrink-0 border border-border bg-muted/30 px-4 py-3 text-center w-[180px]">
               <div className="text-xs font-mono text-muted-foreground mb-1">Entry 1</div>
-              <div className="text-xs font-mono font-bold text-primary truncate">H_1 = SHA-256(H_0 || E_1 || S_1)</div>
-              <div className="mt-1 text-[10px] font-mono text-muted-foreground/70 truncate">7c91...f4e2</div>
+              <div className="text-xs font-mono font-bold text-primary truncate">Digest: 7c91...f4e2</div>
             </div>
             {/* Arrow */}
             <div className="flex-shrink-0 w-8 flex items-center justify-center">
@@ -195,8 +181,7 @@ Where:
             {/* Block 2 */}
             <div className="flex-shrink-0 border border-border bg-muted/30 px-4 py-3 text-center w-[180px]">
               <div className="text-xs font-mono text-muted-foreground mb-1">Entry 2</div>
-              <div className="text-xs font-mono font-bold text-primary truncate">H_2 = SHA-256(H_1 || E_2 || S_2)</div>
-              <div className="mt-1 text-[10px] font-mono text-muted-foreground/70 truncate">d4b7...29a6</div>
+              <div className="text-xs font-mono font-bold text-primary truncate">Digest: d4b7...29a6</div>
             </div>
             {/* Arrow */}
             <div className="flex-shrink-0 w-8 flex items-center justify-center">
@@ -205,14 +190,13 @@ Where:
             {/* Block N */}
             <div className="flex-shrink-0 rounded-r-lg border border-border bg-muted/30 px-4 py-3 text-center w-[180px]">
               <div className="text-xs font-mono text-muted-foreground mb-1">Entry N</div>
-              <div className="text-xs font-mono font-bold text-primary truncate">H_N = SHA-256(H_{"{N-1}"} || E_N || S_N)</div>
-              <div className="mt-1 text-[10px] font-mono text-muted-foreground/70 truncate">e8f3...61cd</div>
+              <div className="text-xs font-mono font-bold text-primary truncate">Digest: e8f3...61cd</div>
             </div>
           </div>
           <p className="mt-3 text-center text-xs text-muted-foreground">
-            Each entry&apos;s digest includes the previous entry&apos;s digest,
+            Each entry&apos;s digest depends on the previous entry,
             creating a tamper-evident chain. Altering any entry invalidates all
-            subsequent digests.
+            subsequent entries.
           </p>
         </div>
 
@@ -251,17 +235,16 @@ console.log(verification.valid); // true`}
         />
 
         <p>
-          Under the hood, <code>logTransaction</code> does the following: it
-          serializes the event data into a deterministic canonical form, fetches
-          the digest of the previous entry in the chain, computes the SHA-256
-          hash of the concatenated previous digest, serialized data, and
-          timestamp, and stores the entry along with its digest.
+          Under the hood, <code>logTransaction</code> handles all the
+          cryptographic chaining automatically -- your event data is linked to
+          the full history of prior events, producing a unique fingerprint that
+          would change if anything in the chain were altered.
         </p>
         <p>
           The <code>verifyExportedChain</code> function replays the entire chain
-          from genesis, recomputing each digest and comparing it against the
-          stored value. If any entry has been modified, the verification fails
-          and reports the exact index where the chain breaks.
+          from genesis, validating each entry against the next. If any entry has
+          been modified, the verification fails and reports the exact index
+          where the chain breaks.
         </p>
 
         <h2>Verifying chain integrity</h2>

@@ -4,7 +4,7 @@
 //
 // This is the key integration point. The Kontext SDK wraps the AI model so
 // that every tool call, LLM request, and streaming response is automatically
-// logged into a tamper-evident SHA-256 digest chain.
+// logged into a tamper-evident cryptographic digest chain.
 //
 // One-line setup:
 //   const { model, kontext } = createKontextAI(openai('gpt-4o'), { ... });

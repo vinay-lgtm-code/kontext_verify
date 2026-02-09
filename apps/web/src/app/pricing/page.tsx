@@ -1,4 +1,6 @@
-import type { Metadata } from "next";
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,55 +18,85 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Check, ArrowRight } from "lucide-react";
+import { Check, ArrowRight, Loader2 } from "lucide-react";
 
-export const metadata: Metadata = {
-  title: "Pricing",
-  description:
-    "Simple, transparent pricing for Kontext. Start free with the open-source SDK, or upgrade for cloud features, advanced anomaly detection, and compliance templates.",
-};
+// ---------------------------------------------------------------------------
+// Upgrade helper — calls the server to create a Stripe Checkout session
+// ---------------------------------------------------------------------------
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+
+async function initiateUpgrade(
+  email: string,
+  seats?: number,
+): Promise<string> {
+  const res = await fetch(`${API_URL}/v1/checkout`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, seats }),
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: "Checkout failed" }));
+    throw new Error(body.error ?? "Failed to start checkout");
+  }
+
+  const { url } = await res.json();
+  return url; // Redirect to this Stripe Checkout URL
+}
+
+// ---------------------------------------------------------------------------
+// Plan data
+// ---------------------------------------------------------------------------
 
 const plans = [
   {
-    name: "Open Source",
-    price: "Free",
-    period: "forever",
+    name: "Free",
+    price: "$0",
+    period: "",
     description:
-      "Everything you need to add basic compliance to your agentic workflows.",
-    cta: "Get Started Free",
+      "Everything you need to add basic compliance to your agentic workflows. Up to 20K events/mo included.",
+    cta: "Get Started",
     ctaHref: "https://github.com/vinay-lgtm-code/kontext_verify",
     ctaExternal: true,
     highlighted: false,
+    isProCheckout: false,
     features: [
+      "Up to 20,000 events/month",
       "Core SDK with full TypeScript support",
       "Action logging and audit trail",
       "Basic anomaly detection rules",
-      "Local audit export (JSON, CSV)",
-      "Single-chain support",
+      "Local audit export (JSON)",
+      "Single-protocol support",
+      "Digest chain integrity verification",
       "Community support via GitHub",
       "MIT License",
     ],
   },
   {
     name: "Pro",
-    price: "$99",
-    period: "/month",
+    price: "$199",
+    period: "/user/mo",
     description:
-      "Cloud-powered compliance for teams shipping production agents.",
-    cta: "Start Pro Trial",
-    ctaHref: "/docs",
+      "Everything in Free plus cloud dashboard, all protocols, compliance templates, and advanced detection. Up to 100K events/mo.",
+    cta: "Start Pro",
+    ctaHref: "#",
     ctaExternal: false,
     highlighted: true,
+    isProCheckout: true,
     features: [
-      "Everything in Open Source, plus:",
+      "Up to 100,000 events/month",
+      "Everything in Free, plus:",
       "Cloud compliance dashboard",
+      "All protocols (x402 + UCP + Stripe)",
+      "GENIUS Act alignment templates",
+      "SAR/CTR report generation",
+      "Regulatory-ready exports",
+      "OFAC screening capabilities",
       "Advanced anomaly detection (ML-powered)",
       "Trust scoring API with history",
-      "Compliance report templates (SOC2, SAR)",
-      "Multi-chain support (Base, Ethereum, more)",
-      "Webhook alerts and notifications",
-      "Email support with 24h response time",
-      "Team access controls",
+      "Webhooks and notifications",
+      "Team dashboard",
     ],
   },
   {
@@ -72,66 +104,180 @@ const plans = [
     price: "Custom",
     period: "",
     description:
-      "For organizations with custom compliance requirements and scale.",
+      "Everything in Pro plus custom rules, dedicated support, SLA, and unlimited events.",
     cta: "Contact Us",
-    ctaHref: "mailto:hello@kontext.dev",
+    ctaHref: "https://cal.com/vinnaray",
     ctaExternal: true,
     highlighted: false,
+    isProCheckout: false,
     features: [
+      "Unlimited events",
       "Everything in Pro, plus:",
       "Custom compliance rule engine",
       "Dedicated support engineer",
-      "99.9% SLA guarantee",
-      "SOC2 attestation support",
+      "99.9% uptime target (see Enterprise SLA terms)",
+      "SOC 2 attestation support",
       "Custom audit report formats",
       "On-premise deployment option",
-      "Volume-based pricing",
-      "Priority feature requests",
+      "SSO/SAML",
     ],
   },
 ];
 
 const faqs = [
   {
-    question: "Is the open-source version really free?",
+    question: "Is the free tier really free?",
     answer:
-      "Yes. The core Kontext SDK is MIT-licensed and free to use in production. It includes action logging, basic anomaly detection, and local audit export. You can run it entirely self-hosted with no usage limits.",
-  },
-  {
-    question: "What happens if I exceed the Pro plan limits?",
-    answer:
-      "Pro plans include generous usage tiers. If you approach limits, we will reach out proactively. There are no surprise charges -- we will work with you to find the right plan, whether that is scaling Pro or moving to Enterprise.",
+      "Yes. The core Kontext SDK is MIT-licensed and free to use in production with up to 20,000 events/month included. It includes action logging, basic anomaly detection, and local audit export. You can run it entirely self-hosted.",
   },
   {
     question: "Can I try Pro features before committing?",
     answer:
-      "Absolutely. Pro comes with a 14-day free trial with full access to all features. No credit card required to start. If it is not the right fit, you can continue using the open-source version.",
+      "Absolutely. All paid plans come with a 14-day free trial with full access to all features. No credit card required to start. If it is not the right fit, you can continue using the free tier with 20K events/month.",
+  },
+  {
+    question: "What does the Pro tier include for compliance?",
+    answer:
+      "Pro includes tools that support your compliance efforts: GENIUS Act alignment templates, SAR/CTR report generation, regulatory-ready exports, OFAC screening capabilities, advanced anomaly detection, trust scoring API, webhooks, and a team dashboard. It provides the technical building blocks for your compliance program.",
   },
   {
     question: "How does Kontext handle my transaction data?",
     answer:
-      "With the open-source version, all data stays on your infrastructure. With Pro and Enterprise, data is encrypted at rest and in transit, stored in GCP with SOC2-compliant practices. You retain full ownership of your data and can export or delete it at any time.",
+      "With the free tier, all data stays on your infrastructure. With Pro, data is encrypted at rest and in transit, stored in GCP following SOC 2-aligned practices. You retain full ownership of your data and can export or delete it at any time.",
   },
   {
     question: "Do you support chains beyond Base and Ethereum?",
     answer:
-      "The open-source SDK works with any EVM chain. Pro adds first-class support for multiple chains with chain-specific anomaly detection and trust scoring. Enterprise customers can request support for non-EVM chains.",
+      "The free SDK works with any EVM chain. Pro adds first-class support for multiple chains with chain-specific anomaly detection and trust scoring. Enterprise customers can request support for non-EVM chains.",
   },
   {
     question: "What kind of support do I get?",
     answer:
-      "Open Source users get community support through GitHub Issues and Discussions. Pro includes email support with a 24-hour response time. Enterprise includes a dedicated support engineer and custom SLA.",
+      "Free tier users get community support through GitHub Issues and Discussions. Pro includes email support with a 24-hour response time. Enterprise includes a dedicated support engineer and custom SLA.",
   },
   {
-    question: "Is Kontext compliant with the GENIUS Act?",
+    question: "Does Kontext support GENIUS Act compliance efforts?",
     answer:
-      "Kontext provides the infrastructure to help you achieve compliance with emerging stablecoin regulations including the GENIUS Act. This includes audit trails, transaction logging, and risk scoring. However, we are a tool provider, not a legal advisor -- consult your compliance team for specific regulatory requirements.",
+      "Kontext provides developer tools that support compliance efforts aligned with emerging stablecoin regulations including the GENIUS Act. The Pro tier includes GENIUS Act alignment templates, SAR/CTR report generation, and OFAC screening capabilities. However, Kontext is a developer tool, not a legal advisor or compliance certifier -- consult qualified legal counsel for specific regulatory requirements.",
   },
 ];
 
+// ---------------------------------------------------------------------------
+// Email Capture Modal (inline)
+// ---------------------------------------------------------------------------
+
+function EmailCaptureForm({
+  onSubmit,
+  onCancel,
+  isLoading,
+  error,
+}: {
+  onSubmit: (email: string) => void;
+  onCancel: () => void;
+  isLoading: boolean;
+  error: string | null;
+}) {
+  const [email, setEmail] = useState("");
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="mx-4 w-full max-w-md rounded-lg border border-border bg-background p-6 shadow-xl">
+        <h3 className="text-lg font-semibold">Start your Pro subscription</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Enter your email to continue to secure checkout via Stripe.
+        </p>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (email.trim()) onSubmit(email.trim());
+          }}
+          className="mt-4 space-y-3"
+        >
+          <input
+            type="email"
+            required
+            autoFocus
+            placeholder="you@company.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none ring-primary focus:ring-2"
+            disabled={isLoading}
+          />
+          {error && (
+            <p className="text-sm text-red-500">{error}</p>
+          )}
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={onCancel}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" className="flex-1 gap-2" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Redirecting...
+                </>
+              ) : (
+                <>
+                  Continue to Checkout
+                  <ArrowRight size={16} />
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
+        <p className="mt-3 text-center text-xs text-muted-foreground">
+          Powered by Stripe. Cancel anytime.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Page Component
+// ---------------------------------------------------------------------------
+
 export default function PricingPage() {
+  const [showEmailCapture, setShowEmailCapture] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  async function handleProCheckout(email: string) {
+    setIsLoading(true);
+    setCheckoutError(null);
+
+    try {
+      const url = await initiateUpgrade(email);
+      window.location.href = url;
+    } catch (err) {
+      setCheckoutError(
+        err instanceof Error ? err.message : "Something went wrong. Please try again.",
+      );
+      setIsLoading(false);
+    }
+  }
+
   return (
     <>
+      {/* Email Capture Modal */}
+      {showEmailCapture && (
+        <EmailCaptureForm
+          onSubmit={handleProCheckout}
+          onCancel={() => {
+            setShowEmailCapture(false);
+            setCheckoutError(null);
+          }}
+          isLoading={isLoading}
+          error={checkoutError}
+        />
+      )}
+
       {/* Hero */}
       <section className="border-b border-border/40">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
@@ -143,8 +289,8 @@ export default function PricingPage() {
               Simple, transparent pricing
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-              Start free with the open-source SDK. Upgrade when you need cloud
-              features, advanced detection, and compliance templates.
+              Start free with the open-source SDK. Upgrade to Pro when you need
+              cloud features, compliance templates, and advanced detection.
             </p>
           </div>
         </div>
@@ -153,7 +299,7 @@ export default function PricingPage() {
       {/* Plans */}
       <section className="bg-background">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="grid gap-6 lg:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-3">
             {plans.map((plan) => (
               <Card
                 key={plan.name}
@@ -205,27 +351,38 @@ export default function PricingPage() {
                   </ul>
                 </CardContent>
                 <CardFooter>
-                  <Button
-                    className="w-full gap-2"
-                    variant={plan.highlighted ? "default" : "outline"}
-                    asChild
-                  >
-                    {plan.ctaExternal ? (
-                      <a
-                        href={plan.ctaHref}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {plan.cta}
-                        <ArrowRight size={16} />
-                      </a>
-                    ) : (
-                      <Link href={plan.ctaHref}>
-                        {plan.cta}
-                        <ArrowRight size={16} />
-                      </Link>
-                    )}
-                  </Button>
+                  {plan.isProCheckout ? (
+                    <Button
+                      className="w-full gap-2"
+                      variant="default"
+                      onClick={() => setShowEmailCapture(true)}
+                    >
+                      {plan.cta}
+                      <ArrowRight size={16} />
+                    </Button>
+                  ) : (
+                    <Button
+                      className="w-full gap-2"
+                      variant={plan.highlighted ? "default" : "outline"}
+                      asChild
+                    >
+                      {plan.ctaExternal ? (
+                        <a
+                          href={plan.ctaHref}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {plan.cta}
+                          <ArrowRight size={16} />
+                        </a>
+                      ) : (
+                        <Link href={plan.ctaHref}>
+                          {plan.cta}
+                          <ArrowRight size={16} />
+                        </Link>
+                      )}
+                    </Button>
+                  )}
                 </CardFooter>
               </Card>
             ))}

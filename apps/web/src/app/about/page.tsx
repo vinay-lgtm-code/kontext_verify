@@ -143,13 +143,13 @@ export default function AboutPage() {
               on as an afterthought -- or worse, skip it entirely.
             </p>
             <p>
-              Kontext is designed to be the compliance layer you actually want
-              to use. Clean API, great TypeScript support, sensible defaults,
-              and clear documentation.
+              Kontext is designed to be the compliance-support layer you
+              actually want to use. Clean API, great TypeScript support,
+              sensible defaults, and clear documentation.
             </p>
             <p>
-              This is early. The SDK is open source, the roadmap is public, and
-              I am building in the open. If you are working on agentic commerce
+              This is early. The SDK is open source and I am building in the
+              open. If you are working on agentic commerce
               with stablecoins or fiat payments, I would love to hear from you.
             </p>
 
@@ -164,9 +164,9 @@ export default function AboutPage() {
             </p>
             <p>
               Kontext&apos;s vision is to be the trust infrastructure for this
-              new economy -- the compliance layer that every agent builder
-              reaches for, the way Stripe became the payment layer every
-              developer reaches for.
+              new economy -- the compliance-support layer that every agent
+              builder reaches for, the way Stripe became the payment layer
+              every developer reaches for.
             </p>
             <p>
               We started with stablecoins because that is where the regulatory

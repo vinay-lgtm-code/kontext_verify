@@ -51,7 +51,7 @@ export function Chat() {
             </h2>
             <p className="text-sm text-kontext-muted max-w-md mb-6">
               Every tool call and transaction is logged in a tamper-evident
-              SHA-256 digest chain. Try asking me to transfer USDC or check a
+              cryptographic digest chain. Try asking me to transfer USDC or check a
               balance.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-md">
@@ -229,7 +229,7 @@ export function Chat() {
                 <div className="bg-kontext-surface border border-kontext-border rounded-lg p-2">
                   <p className="text-xs text-kontext-muted">Digest Chain</p>
                   <p className="text-sm font-mono text-kontext-text truncate">
-                    SHA-256
+                    Verified
                   </p>
                 </div>
               </div>

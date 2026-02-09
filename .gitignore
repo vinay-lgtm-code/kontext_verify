@@ -29,3 +29,24 @@ secrets.json
 # Internal docs (not public)
 research/
 ROADMAP.md
+
+# Binary documents (should never be in git)
+*.docx
+*.doc
+*.xlsx
+*.xls
+*.pptx
+
+# Internal scripts
+generate_updated_eval.py
+kontext-architecture-evaluation.js
+pull_usage.py
+backend-engineer
+backend-engineer.skill
+
+# Local shell scripts
+*.local.sh
+
+# Architecture evaluations
+*-Evaluation*
+*-evaluation*

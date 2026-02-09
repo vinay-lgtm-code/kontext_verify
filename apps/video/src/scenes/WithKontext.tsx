@@ -272,7 +272,7 @@ export const WithKontext: React.FC = () => {
               checkColor={COLORS.green}
             />
             <CheckmarkLine
-              text={'Digest Chain: H_D = SHA-256(...)'}
+              text={'Digest Chain: Tamper-Evident'}
               startFrame={checkStartFrame + checkGap * 3}
               checkColor={COLORS.green}
             />

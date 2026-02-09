@@ -92,7 +92,7 @@ export default function DemoPage() {
         <div className="flex items-center gap-4">
           <div className="hidden sm:flex items-center gap-2 text-[10px] text-[#52525b]">
             <span className="px-1.5 py-0.5 rounded bg-[#111] border border-[#262626] font-mono">
-              SHA-256
+              Crypto-Linked
             </span>
             <span className="px-1.5 py-0.5 rounded bg-[#111] border border-[#262626] font-mono">
               OFAC

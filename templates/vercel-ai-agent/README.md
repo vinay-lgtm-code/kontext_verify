@@ -9,7 +9,7 @@
 ## What You Get
 
 - **AI chat agent** powered by Vercel AI SDK + GPT-4o with streaming responses
-- **Tamper-evident audit trail** -- every tool call and LLM request is hashed into a rolling SHA-256 digest chain
+- **Tamper-evident audit trail** -- every tool call and LLM request is hashed into a patented cryptographic digest chain
 - **Financial tool compliance** -- USDC transfers, payments, and balance checks are automatically flagged and logged
 - **Trust scoring** -- agent behavior is scored in real-time based on history, anomalies, and task completion
 - **One-line integration** -- wrap any AI model with `createKontextAI()` and compliance logging is automatic
@@ -54,7 +54,7 @@ User message --> AI model --> Tool call (e.g. transfer_usdc)
                     +-----------+-----------+
                     |                       |
               Log to digest chain    Extract financial data
-              (SHA-256 linked)       (amount, currency, etc.)
+              (crypto-linked)        (amount, currency, etc.)
                     |                       |
                     v                       v
               Audit trail            Compliance check
@@ -84,7 +84,7 @@ export async function POST(req: Request) {
     logToolArgs: true,
   });
 
-  // Every tool call is now automatically logged with SHA-256 digest chains
+  // Every tool call is now automatically logged with cryptographic digest chains
   const result = streamText({
     model,
     messages,
@@ -139,7 +139,7 @@ For every AI interaction, Kontext automatically records:
 | `ai_financial_tool_call` | Extracted amount, currency, tool name |
 | `ai_stream_complete` | Duration, tool call count, model ID |
 
-Each event is added to the digest chain with a SHA-256 hash linking it to the previous entry.
+Each event is added to the digest chain with a cryptographic hash linking it to the previous entry.
 
 ## Links
 

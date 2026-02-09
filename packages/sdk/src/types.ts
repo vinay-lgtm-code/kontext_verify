@@ -50,7 +50,7 @@ export interface KontextConfig {
   projectId: string;
   /** Deployment environment */
   environment: Environment;
-  /** Backend API URL (defaults to Kontext cloud API) */
+  /** Backend API URL. Falls back to KONTEXT_API_URL env var, then https://api.kontext.so */
   apiUrl?: string;
   /** Enable debug logging */
   debug?: boolean;
@@ -85,6 +85,21 @@ export interface KontextConfig {
    * ```
    */
   metadataSchema?: MetadataValidator;
+
+  /**
+   * Pricing plan tier. Controls event metering limits.
+   * - 'free': 20,000 events/month
+   * - 'pro': 100,000 events/month
+   * - 'enterprise': Unlimited events
+   * @default 'free'
+   */
+  plan?: 'free' | 'pro' | 'enterprise';
+
+  /**
+   * Custom URL for the Pro plan upgrade page.
+   * @default 'https://kontext.so/upgrade'
+   */
+  upgradeUrl?: string;
 }
 
 /**

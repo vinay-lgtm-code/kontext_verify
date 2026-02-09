@@ -16,7 +16,7 @@ describe('Kontext.init', () => {
 
   it('should initialize in cloud mode with an API key', () => {
     const kontext = Kontext.init({
-      apiKey: 'sk_test_abc123',
+      apiKey: 'sk_test_REDACTED_000',
       projectId: 'test-project',
       environment: 'production',
     });
@@ -40,7 +40,7 @@ describe('Kontext.init', () => {
 
   it('should mask API key in getConfig', () => {
     const kontext = Kontext.init({
-      apiKey: 'sk_test_abcdefghijklmnop',
+      apiKey: 'sk_test_REDACTED_000_extra',
       projectId: 'test-project',
       environment: 'development',
     });

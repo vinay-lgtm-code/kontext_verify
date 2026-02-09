@@ -43,7 +43,7 @@ const { model, kontext } = createKontextAI(openai('gpt-4o'), {
 });
 
 // Every tool call is automatically logged with
-// tamper-evident SHA-256 digest chains
+// tamper-evident cryptographic digest chains
 const result = await generateText({
   model,
   tools: {
@@ -239,7 +239,7 @@ const paymentIntegrations = [
     icon: DollarSign,
     title: "USDC / Circle",
     description:
-      "Native stablecoin compliance for USDC transfers on Base and Ethereum. Audit trails, trust scoring, and GENIUS Act readiness.",
+      "Native stablecoin compliance support for USDC transfers on Base and Ethereum. Audit trails, trust scoring, and GENIUS Act alignment.",
     status: "Available",
     statusColor: "border-blue-500/30 bg-blue-500/10 text-blue-400",
     linkHref: "/use-cases#usdc-payments",

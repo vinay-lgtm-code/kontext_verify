@@ -304,7 +304,7 @@ export class ActionLogger {
   }
 
   private async flushToApi(actions: ActionLog[]): Promise<void> {
-    const apiUrl = this.config.apiUrl ?? 'https://kontext-api-421314897784.us-central1.run.app';
+    const apiUrl = this.config.apiUrl ?? process.env['KONTEXT_API_URL'] ?? 'https://api.kontext.so';
 
     try {
       const response = await fetch(`${apiUrl}/v1/actions`, {

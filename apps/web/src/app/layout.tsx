@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     siteName: "Kontext",
     title: "Kontext - Trust Layer for the Agent Economy",
     description:
-      "Compliance and trust infrastructure for agentic stablecoin and fiat transactions. Built for the GENIUS Act era.",
+      "Compliance-support and trust infrastructure for agentic stablecoin and fiat transactions. Aligned with GENIUS Act requirements.",
     images: [
       {
         url: "/og-image.png",

@@ -25,7 +25,7 @@ const quickStartCode = `import { Kontext } from 'kontext-sdk';
 
 // Initialize with your API key (optional for open-source features)
 const ctx = new Kontext({
-  apiKey: process.env.KONTEXT_KEY, // only needed for Pro/Enterprise
+  apiKey: process.env.KONTEXT_KEY, // only needed for paid plans
   chain: 'base',                   // default chain
 });
 
@@ -458,10 +458,10 @@ export default function DocsPage() {
               </Badge>
               <h1>Kontext SDK Documentation</h1>
               <p>
-                Kontext is a TypeScript SDK that provides trust and compliance
-                infrastructure for agentic workflows involving stablecoin and
-                fiat transactions. This guide covers everything from
-                installation to advanced integrations.
+                Kontext is a TypeScript SDK that provides trust and
+                compliance-support infrastructure for agentic workflows
+                involving stablecoin and fiat transactions. This guide covers
+                everything from installation to advanced integrations.
               </p>
             </div>
 
@@ -631,7 +631,7 @@ export default function DocsPage() {
                 Every verified action receives a trust score between 0 and 1.
                 The score is computed from multiple factors including agent
                 history, amount normality, transaction velocity, and recipient
-                trust. <strong>Pro feature</strong> for historical analysis and
+                trust. <strong>Paid plan feature</strong> for historical analysis and
                 trend tracking.
               </p>
               <CodeBlock
@@ -649,8 +649,8 @@ export default function DocsPage() {
               <p>
                 Configure rules to automatically flag or block suspicious agent
                 behavior. Built-in checks include velocity limits, amount
-                thresholds, and behavioral analysis. Pro plans include
-                ML-powered detection.
+                thresholds, and behavioral analysis. Paid plans (Pro and above)
+                include ML-powered detection.
               </p>
               <CodeBlock
                 code={anomalyDetectionCode}
@@ -740,7 +740,7 @@ export default function DocsPage() {
                 code={`const ctx = new Kontext(options?: KontextOptions);
 
 interface KontextOptions {
-  apiKey?: string;      // API key for Pro/Enterprise features
+  apiKey?: string;      // API key for paid plans (Pro/Enterprise)
   chain?: string;       // Default chain ('base' | 'ethereum' | 'polygon')
   environment?: string; // 'production' | 'staging' | 'development'
   baseUrl?: string;     // Custom API base URL (self-hosted)
@@ -793,7 +793,7 @@ interface VerifyResult {
               <p>Configures anomaly detection rules.</p>
 
               <h3>ctx.trustHistory(query)</h3>
-              <p>Queries historical trust scores for an agent. <strong>Pro feature.</strong></p>
+              <p>Queries historical trust scores for an agent. <strong>Paid plan feature.</strong></p>
 
               <h3>ctx.workflow(name)</h3>
               <p>Creates a workflow context for multi-step action logging.</p>
@@ -843,7 +843,7 @@ export default defineConfig({
 
               <h3>Environment Variables</h3>
               <CodeBlock
-                code={`KONTEXT_API_KEY=sk_live_...     # Pro/Enterprise API key
+                code={`KONTEXT_API_KEY=sk_live_...     # API key for paid plans (Pro/Compliance/Team/Scale/Enterprise)
 KONTEXT_CHAIN=base              # Default chain
 KONTEXT_ENVIRONMENT=production  # Environment`}
                 language="bash"

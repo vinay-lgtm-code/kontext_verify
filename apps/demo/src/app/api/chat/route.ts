@@ -66,7 +66,7 @@ function parseMockPrompt(prompt: string): MockResponse {
     const txHash = generateMockTxHash();
 
     return {
-      message: `I've initiated a transfer of ${amount} USDC to \`${to.slice(0, 6)}...${to.slice(-4)}\` on Base.\n\nTransaction hash: \`${txHash.slice(0, 10)}...${txHash.slice(-6)}\`\n\nThe transfer has been logged to the Kontext audit trail with a SHA-256 digest for tamper-evident compliance.`,
+      message: `I've initiated a transfer of ${amount} USDC to \`${to.slice(0, 6)}...${to.slice(-4)}\` on Base.\n\nTransaction hash: \`${txHash.slice(0, 10)}...${txHash.slice(-6)}\`\n\nThe transfer has been logged to the Kontext audit trail with a cryptographic digest for tamper-evident compliance.`,
       toolCalls: [
         {
           name: "transfer_usdc",
@@ -144,14 +144,14 @@ function parseMockPrompt(prompt: string): MockResponse {
   ) {
     return {
       message:
-        "The Kontext digest chain uses rolling SHA-256 hashes where each event's digest incorporates the prior digest: `H(n) = SHA-256(H(n-1) || Serialize(E) || Salt)`. This creates a tamper-evident audit trail -- modifying any past event breaks the chain. You can verify this independently by exporting the chain and recomputing all hashes.",
+        "The Kontext digest chain creates a tamper-evident audit trail using a patented cryptographic linking mechanism. Each event is chained to the full history before it -- modifying any past event breaks the chain, making tampering immediately detectable. You can verify integrity independently by exporting the chain and running the built-in verification function.",
       toolCalls: [],
     };
   }
 
   // Default
   return {
-    message: `I'm the Kontext demo agent with access to financial tools. I can:\n\n- **Send USDC** - e.g., "Send $5,000 USDC to 0x742d...bD1E"\n- **Check balance** - e.g., "Check my wallet balance"\n- **View trust score** - e.g., "What's my trust score?"\n\nEvery action is logged to a tamper-evident SHA-256 digest chain with automatic OFAC sanctions screening and compliance checks.`,
+    message: `I'm the Kontext demo agent with access to financial tools. I can:\n\n- **Send USDC** - e.g., "Send $5,000 USDC to 0x742d...bD1E"\n- **Check balance** - e.g., "Check my wallet balance"\n- **View trust score** - e.g., "What's my trust score?"\n\nEvery action is logged to a tamper-evident digest chain with automatic OFAC sanctions screening and compliance checks.`,
     toolCalls: [],
   };
 }

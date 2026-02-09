@@ -215,19 +215,22 @@ const result = await ctx.verify({
           </li>
         </ul>
 
-        <h2>Open source, with a Pro tier</h2>
+        <h2>Open source, with simple pricing</h2>
         <p>
-          The core Kontext SDK is open source under the MIT license. This
-          includes action logging, basic anomaly detection, local audit export,
-          and single-chain support. You can run it entirely self-hosted with no
-          usage limits and no API key required.
+          The core Kontext SDK is open source under the MIT license with up to
+          20,000 events/month included. This covers action logging, basic
+          anomaly detection, local audit export, and single-protocol support.
+          You can run it entirely self-hosted with no API key required.
         </p>
         <p>
-          For teams that need more, Kontext Pro ($99/month) adds a cloud
-          dashboard, ML-powered anomaly detection, historical trust scoring,
-          compliance report templates, multi-chain support, and email support.
-          Enterprise plans are available for organizations with custom
-          compliance requirements.
+          For teams that need more, Kontext Pro ($199/user/month) adds the
+          cloud compliance dashboard, all protocol integrations (x402, UCP,
+          Stripe), GENIUS Act alignment templates, SAR/CTR report generation,
+          OFAC screening capabilities, ML-powered anomaly detection, trust scoring
+          API, webhooks, and a team dashboard -- up to 100K events/month.
+          Enterprise (custom pricing) is available for organizations that need
+          unlimited events, custom rules, dedicated support, and on-prem
+          deployment.
         </p>
 
         <h2>Getting started</h2>

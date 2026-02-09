@@ -9,6 +9,12 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { ServerStore } from './store.js';
+import {
+  createCheckoutSession,
+  createPortalSession,
+  getCheckoutSession,
+  handleWebhookEvent,
+} from './stripe.js';
 
 const app = new Hono();
 const store = new ServerStore();
@@ -22,6 +28,81 @@ const VALID_API_KEYS = new Set(
     ...(process.env['KONTEXT_API_KEYS']?.split(',').map((k) => k.trim()) ?? []),
   ].filter(Boolean),
 );
+
+// ============================================================================
+// Plan Metering - Server-Side Event Tracking
+// ============================================================================
+
+/** Plan tier definitions and their limits */
+type PlanTier = 'free' | 'pro' | 'enterprise';
+
+const PLAN_LIMITS: Record<PlanTier, number> = {
+  free: 20_000,
+  pro: 100_000,
+  enterprise: Infinity,
+};
+
+/** Per-API-key usage tracking */
+interface ApiKeyUsage {
+  plan: PlanTier;
+  eventCount: number;
+  billingPeriodStart: string;
+}
+
+/** In-memory map of API key -> usage */
+const apiKeyUsage = new Map<string, ApiKeyUsage>();
+
+/** API key -> plan tier mapping (configurable via env or registration) */
+const apiKeyPlans = new Map<string, PlanTier>();
+
+// Load plan configuration from environment (format: KONTEXT_API_KEY_PLANS="sk_live_abc:pro,sk_live_def:enterprise")
+const planConfig = process.env['KONTEXT_API_KEY_PLANS'];
+if (planConfig) {
+  for (const entry of planConfig.split(',').map((e) => e.trim())) {
+    const [key, plan] = entry.split(':');
+    if (key && plan && (plan === 'free' || plan === 'pro' || plan === 'enterprise')) {
+      apiKeyPlans.set(key, plan as PlanTier);
+    }
+  }
+}
+
+/**
+ * Get or initialize usage tracking for an API key.
+ */
+function getApiKeyUsage(apiKey: string): ApiKeyUsage {
+  let usage = apiKeyUsage.get(apiKey);
+  if (!usage) {
+    const now = new Date();
+    usage = {
+      plan: apiKeyPlans.get(apiKey) ?? 'free',
+      eventCount: 0,
+      billingPeriodStart: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString(),
+    };
+    apiKeyUsage.set(apiKey, usage);
+  }
+
+  // Check billing period reset
+  const periodStart = new Date(usage.billingPeriodStart);
+  const nextPeriod = new Date(Date.UTC(periodStart.getUTCFullYear(), periodStart.getUTCMonth() + 1, 1));
+  if (new Date() >= nextPeriod) {
+    const now = new Date();
+    usage.eventCount = 0;
+    usage.billingPeriodStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+  }
+
+  return usage;
+}
+
+/**
+ * Track events for an API key and return whether the limit is exceeded.
+ */
+function trackEvents(apiKey: string, count: number): { limitExceeded: boolean; usage: ApiKeyUsage } {
+  const usage = getApiKeyUsage(apiKey);
+  usage.eventCount += count;
+  const limit = PLAN_LIMITS[usage.plan];
+  const limitExceeded = limit !== Infinity && usage.eventCount > limit;
+  return { limitExceeded, usage };
+}
 
 // ============================================================================
 // Middleware
@@ -136,6 +217,7 @@ app.get('/health', (c) => {
 // POST /v1/actions - Receive logged actions
 app.post('/v1/actions', authMiddleware, async (c) => {
   const projectId = c.get('projectId' as never) as string;
+  const apiKey = c.req.header('Authorization')?.slice(7) ?? '';
 
   let body: { actions?: unknown[] };
   try {
@@ -160,6 +242,10 @@ app.post('/v1/actions', authMiddleware, async (c) => {
     }
   }
 
+  // Track events for plan metering
+  const { limitExceeded, usage } = trackEvents(apiKey, actions.length);
+  const limit = PLAN_LIMITS[usage.plan];
+
   store.addActions(
     projectId,
     actions.map((a) => ({
@@ -175,11 +261,37 @@ app.post('/v1/actions', authMiddleware, async (c) => {
     })),
   );
 
+  // Set usage headers
+  const headers: Record<string, string> = {
+    'X-Kontext-Usage': String(usage.eventCount),
+    'X-Kontext-Limit': limit === Infinity ? 'unlimited' : String(limit),
+  };
+
+  // Soft limit: still process the event but return 429 with upgrade instructions
+  if (limitExceeded) {
+    const upgradeMessage = usage.plan === 'free'
+      ? "You've reached the 20,000 event limit on the Free plan. Upgrade to Pro for 100K events/mo → https://kontext.so/upgrade"
+      : "You've reached the 100,000 event limit on Pro. Contact us for Enterprise pricing → https://cal.com/vinnaray";
+
+    return c.json({
+      success: true,
+      received: actions.length,
+      timestamp: new Date().toISOString(),
+      limitExceeded: true,
+      message: upgradeMessage,
+      usage: {
+        plan: usage.plan,
+        eventCount: usage.eventCount,
+        limit: limit === Infinity ? 'unlimited' : limit,
+      },
+    }, { status: 429, headers });
+  }
+
   return c.json({
     success: true,
     received: actions.length,
     timestamp: new Date().toISOString(),
-  });
+  }, { status: 200, headers });
 });
 
 // POST /v1/tasks - Create a task
@@ -391,6 +503,31 @@ app.get('/v1/trust/:agentId', authMiddleware, (c) => {
   });
 });
 
+// GET /v1/usage - Get current usage stats for the API key
+app.get('/v1/usage', authMiddleware, (c) => {
+  const apiKey = c.req.header('Authorization')?.slice(7) ?? '';
+  const usage = getApiKeyUsage(apiKey);
+  const limit = PLAN_LIMITS[usage.plan];
+  const remaining = limit === Infinity ? Infinity : Math.max(0, limit - usage.eventCount);
+  const usagePercentage = limit === Infinity ? 0 : Math.min(100, (usage.eventCount / limit) * 100);
+
+  return c.json({
+    plan: usage.plan,
+    eventCount: usage.eventCount,
+    limit: limit === Infinity ? 'unlimited' : limit,
+    remainingEvents: limit === Infinity ? 'unlimited' : remaining,
+    usagePercentage: Math.round(usagePercentage * 100) / 100,
+    limitExceeded: limit !== Infinity && usage.eventCount > limit,
+    billingPeriodStart: usage.billingPeriodStart,
+    timestamp: new Date().toISOString(),
+  }, {
+    headers: {
+      'X-Kontext-Usage': String(usage.eventCount),
+      'X-Kontext-Limit': limit === Infinity ? 'unlimited' : String(limit),
+    },
+  });
+});
+
 // POST /v1/anomalies/evaluate - Evaluate transaction for anomalies
 app.post('/v1/anomalies/evaluate', authMiddleware, async (c) => {
   const projectId = c.get('projectId' as never) as string;
@@ -457,6 +594,111 @@ app.post('/v1/anomalies/evaluate', authMiddleware, async (c) => {
     anomalies,
     timestamp: new Date().toISOString(),
   });
+});
+
+// ============================================================================
+// Stripe Checkout + Billing Routes (no auth required — public checkout flow)
+// ============================================================================
+
+const KONTEXT_APP_URL = process.env['KONTEXT_APP_URL'] ?? 'http://localhost:3000';
+
+// POST /v1/checkout — Create a Stripe Checkout Session for Pro plan
+app.post('/v1/checkout', async (c) => {
+  let body: { email?: string; seats?: number };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: 'Invalid JSON body' }, 400);
+  }
+
+  const email = body.email?.trim();
+  if (!email || !email.includes('@')) {
+    return c.json({ error: 'A valid email address is required' }, 400);
+  }
+
+  const seats = body.seats ?? 1;
+  if (seats < 1 || !Number.isInteger(seats)) {
+    return c.json({ error: 'Seats must be a positive integer' }, 400);
+  }
+
+  try {
+    const result = await createCheckoutSession({
+      customerEmail: email,
+      seats,
+      successUrl: `${KONTEXT_APP_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancelUrl: `${KONTEXT_APP_URL}/checkout/cancel`,
+    });
+
+    return c.json({ url: result.url, sessionId: result.sessionId });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to create checkout session';
+    return c.json({ error: message }, 500);
+  }
+});
+
+// POST /v1/webhook/stripe — Stripe webhook handler
+app.post('/v1/webhook/stripe', async (c) => {
+  const signature = c.req.header('stripe-signature');
+  if (!signature) {
+    return c.json({ error: 'Missing stripe-signature header' }, 400);
+  }
+
+  try {
+    // Read raw body for signature verification
+    const rawBody = await c.req.text();
+    const result = await handleWebhookEvent(rawBody, signature);
+
+    // Log the event for debugging
+    console.log(`[Stripe Webhook] ${result.type} — handled: ${result.handled}`, result.data ?? '');
+
+    return c.json({ received: true, type: result.type, handled: result.handled });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Webhook processing failed';
+    console.error('[Stripe Webhook] Error:', message);
+    return c.json({ error: message }, 400);
+  }
+});
+
+// POST /v1/portal — Create a Customer Portal session
+app.post('/v1/portal', async (c) => {
+  let body: { customerId?: string };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: 'Invalid JSON body' }, 400);
+  }
+
+  if (!body.customerId) {
+    return c.json({ error: 'Customer ID is required' }, 400);
+  }
+
+  try {
+    const result = await createPortalSession({
+      customerId: body.customerId,
+      returnUrl: `${KONTEXT_APP_URL}/pricing`,
+    });
+
+    return c.json({ url: result.url });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to create portal session';
+    return c.json({ error: message }, 500);
+  }
+});
+
+// GET /v1/checkout/success — Verify checkout session status
+app.get('/v1/checkout/success', async (c) => {
+  const sessionId = c.req.query('session_id');
+  if (!sessionId) {
+    return c.json({ error: 'session_id query parameter is required' }, 400);
+  }
+
+  try {
+    const session = await getCheckoutSession(sessionId);
+    return c.json(session);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to retrieve session';
+    return c.json({ error: message }, 500);
+  }
 });
 
 export default app;

@@ -23,7 +23,7 @@ import {
 export const metadata: Metadata = {
   title: "Use Cases",
   description:
-    "Explore how Kontext powers compliant agentic transactions -- USDC payments, x402 micropayments, Stripe commerce, Google UCP, cross-chain CCTP transfers, and treasury management.",
+    "Explore how Kontext supports compliance-ready agentic transactions -- USDC payments, x402 micropayments, Stripe commerce, Google UCP, cross-chain CCTP transfers, and treasury management.",
 };
 
 const usdcCode = `import { Kontext } from 'kontext-sdk';
@@ -252,13 +252,13 @@ const useCases = [
     badgeColor: "border-blue-500/30 bg-blue-500/10 text-blue-400",
     title: "USDC Payments",
     description:
-      "Agents making USDC transfers on Base and Ethereum with full compliance and audit trails. The most common Kontext use case -- verify every stablecoin movement your agents make.",
+      "Agents making USDC transfers on Base and Ethereum with comprehensive audit trails and compliance support. The most common Kontext use case -- verify every stablecoin movement your agents make.",
     code: usdcCode,
     filename: "usdc-agent.ts",
     benefits: [
       "Immutable audit trail for every USDC transfer with cryptographic linking",
       "Real-time anomaly detection -- velocity checks, amount thresholds, recipient analysis",
-      "GENIUS Act readiness with exportable compliance reports (JSON, CSV, PDF)",
+      "Supports GENIUS Act compliance efforts with exportable reports (JSON, CSV, PDF)",
       "Trust scoring per transaction based on agent history and behavioral analysis",
     ],
   },
@@ -366,7 +366,7 @@ export default function UseCasesPage() {
               <span className="gradient-text">Agent Economy</span>
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-              See how Kontext powers compliant agentic transactions across
+              See how Kontext supports compliance-ready agentic transactions across
               stablecoin and fiat payments, micropayment protocols, commerce platforms,
               and cross-chain transfers.
             </p>

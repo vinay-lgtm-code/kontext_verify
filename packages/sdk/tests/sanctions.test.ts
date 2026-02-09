@@ -107,7 +107,8 @@ describe('OFAC Sanctions - checkSanctionsDetailed()', () => {
 describe('OFAC Sanctions - getSanctionedAddresses()', () => {
   it('should return a non-empty list of sanctioned addresses', () => {
     const addresses = UsdcCompliance.getSanctionedAddresses();
-    expect(addresses.length).toBeGreaterThan(20);
+    // Expanded from 22 to 33+ addresses (added new SDN entries + delisted retained)
+    expect(addresses.length).toBeGreaterThan(30);
   });
 
   it('should contain known Tornado Cash address', () => {

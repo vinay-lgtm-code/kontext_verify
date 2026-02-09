@@ -31,6 +31,7 @@ import type {
   ComplianceCertificate,
 } from './types.js';
 import type { DigestVerification, DigestLink } from './digest.js';
+import type { PlanTier, PlanUsage, LimitEvent } from './plans.js';
 import { KontextError, KontextErrorCode } from './types.js';
 import { KontextStore } from './store.js';
 import { ActionLogger } from './logger.js';
@@ -39,8 +40,12 @@ import { AuditExporter } from './audit.js';
 import { TrustScorer } from './trust.js';
 import { AnomalyDetector } from './anomaly.js';
 import { UsdcCompliance } from './integrations/usdc.js';
+import { PlanManager } from './plans.js';
 import { createHash } from 'crypto';
 import { generateId, now } from './utils.js';
+
+/** Storage key for plan metering data */
+const PLAN_STORAGE_KEY = 'kontext:plan';
 
 /**
  * Main Kontext SDK client. Provides a unified interface to all SDK features:
@@ -82,6 +87,7 @@ export class Kontext {
   private readonly trustScorer: TrustScorer;
   private readonly anomalyDetector: AnomalyDetector;
   private readonly mode: KontextMode;
+  private readonly planManager: PlanManager;
 
   private constructor(config: KontextConfig) {
     this.config = config;
@@ -99,6 +105,15 @@ export class Kontext {
     // Attach storage adapter if provided
     if (config.storage) {
       this.store.setStorageAdapter(config.storage);
+    }
+
+    // Initialize plan manager
+    const planTier: PlanTier = config.plan ?? 'free';
+    this.planManager = new PlanManager(planTier);
+
+    // Configure upgrade URLs
+    if (config.upgradeUrl) {
+      this.planManager.upgradeUrl = config.upgradeUrl;
     }
 
     this.logger = new ActionLogger(config, this.store);
@@ -218,6 +233,12 @@ export class Kontext {
     this.validateMetadata(input.metadata);
     const action = await this.logger.log(input);
 
+    // Track event for plan metering
+    const limitExceeded = this.planManager.recordEvent();
+    if (limitExceeded) {
+      action.metadata = { ...action.metadata, limitExceeded: true };
+    }
+
     // Run anomaly detection if enabled
     if (this.anomalyDetector.isEnabled()) {
       this.anomalyDetector.evaluateAction(action);
@@ -235,6 +256,12 @@ export class Kontext {
   async logTransaction(input: LogTransactionInput): Promise<TransactionRecord> {
     this.validateMetadata(input.metadata);
     const record = await this.logger.logTransaction(input);
+
+    // Track event for plan metering
+    const limitExceeded = this.planManager.recordEvent();
+    if (limitExceeded) {
+      record.metadata = { ...record.metadata, limitExceeded: true };
+    }
 
     // Run anomaly detection if enabled
     if (this.anomalyDetector.isEnabled()) {
@@ -740,6 +767,94 @@ export class Kontext {
       ...certificateContent,
       contentHash,
     };
+  }
+
+  // --------------------------------------------------------------------------
+  // Plan & Usage Metering
+  // --------------------------------------------------------------------------
+
+  /**
+   * Get current usage statistics for the plan.
+   *
+   * @returns Usage data including plan, event count, limits, and whether the limit is exceeded
+   */
+  getUsage(): PlanUsage {
+    return this.planManager.getUsage();
+  }
+
+  /**
+   * Change the plan tier at runtime (e.g., after Stripe checkout succeeds).
+   *
+   * @param tier - The new plan tier
+   */
+  setPlan(tier: PlanTier): void {
+    this.planManager.setPlan(tier);
+  }
+
+  /**
+   * Register a callback for when usage reaches 80% of the plan limit.
+   *
+   * @param callback - Function to call with the limit event
+   * @returns Unsubscribe function
+   */
+  onUsageWarning(callback: (event: LimitEvent) => void): () => void {
+    return this.planManager.onUsageWarning(callback);
+  }
+
+  /**
+   * Register a callback for when the plan event limit is reached.
+   *
+   * @param callback - Function to call with the limit event
+   * @returns Unsubscribe function
+   */
+  onLimitReached(callback: (event: LimitEvent) => void): () => void {
+    return this.planManager.onLimitReached(callback);
+  }
+
+  /**
+   * Get the URL for upgrading to the Pro plan.
+   *
+   * @returns The upgrade URL (configurable via init)
+   */
+  getUpgradeUrl(): string {
+    return this.planManager.upgradeUrl;
+  }
+
+  /**
+   * Get the URL for contacting the team about Enterprise pricing.
+   *
+   * @returns The enterprise contact URL
+   */
+  getEnterpriseContactUrl(): string {
+    return this.planManager.enterpriseContactUrl;
+  }
+
+  /**
+   * Persist plan metering state to the storage adapter.
+   * Call this alongside flush() to persist event counts across restarts.
+   */
+  async flushPlanState(): Promise<void> {
+    const adapter = this.store.getStorageAdapter();
+    if (!adapter) return;
+    await adapter.save(PLAN_STORAGE_KEY, this.planManager.toJSON());
+  }
+
+  /**
+   * Restore plan metering state from the storage adapter.
+   * Call this after restore() to reload event counts.
+   */
+  async restorePlanState(): Promise<void> {
+    const adapter = this.store.getStorageAdapter();
+    if (!adapter) return;
+    const data = await adapter.load(PLAN_STORAGE_KEY);
+    if (data && typeof data === 'object' && data.tier && typeof data.eventCount === 'number') {
+      this.planManager.setPlan(data.tier);
+      this.planManager.setEventCount(data.eventCount);
+      if (data.billingPeriodStart) {
+        this.planManager.resetBillingPeriod(new Date(data.billingPeriodStart));
+        this.planManager.setEventCount(data.eventCount);
+      }
+    }
   }
 
   // --------------------------------------------------------------------------

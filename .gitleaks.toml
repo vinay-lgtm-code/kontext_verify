@@ -1,0 +1,89 @@
+# ============================================================================
+# Gitleaks Configuration - Pre-commit Secret Scanning
+# ============================================================================
+# Install: brew install gitleaks
+# Run manually: gitleaks detect --source . --verbose
+# Pre-commit hook: gitleaks protect --staged --verbose
+#
+# See https://github.com/gitleaks/gitleaks for full documentation.
+
+title = "Kontext Gitleaks Configuration"
+
+# --------------------------------------------------------------------------
+# Custom Rules
+# --------------------------------------------------------------------------
+
+[[rules]]
+id = "kontext-api-key-live"
+description = "Kontext live API key"
+regex = '''sk_live_[A-Za-z0-9_\-]{8,}'''
+tags = ["key", "kontext"]
+
+[[rules]]
+id = "kontext-api-key-test"
+description = "Kontext test API key (non-placeholder)"
+regex = '''sk_test_(?!REDACTED|MOCK|\.\.\.)[A-Za-z0-9_\-]{8,}'''
+tags = ["key", "kontext"]
+
+[[rules]]
+id = "gcp-project-number"
+description = "GCP project number in URL"
+regex = '''[a-z]+-api-\d{10,14}\.[a-z0-9\-]+\.run\.app'''
+tags = ["gcp", "infrastructure"]
+
+[[rules]]
+id = "aws-access-key"
+description = "AWS Access Key ID"
+regex = '''AKIA[0-9A-Z]{16}'''
+tags = ["key", "aws"]
+
+[[rules]]
+id = "aws-secret-key"
+description = "AWS Secret Access Key"
+regex = '''(?i)aws_secret_access_key\s*[=:]\s*[A-Za-z0-9/+=]{40}'''
+tags = ["key", "aws"]
+
+[[rules]]
+id = "jwt-token"
+description = "JSON Web Token"
+regex = '''eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}'''
+tags = ["token", "jwt"]
+
+[[rules]]
+id = "private-key-pem"
+description = "Private key (PEM format)"
+regex = '''-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----'''
+tags = ["key", "private"]
+
+[[rules]]
+id = "gemini-api-key"
+description = "Google Gemini / AI Studio API key"
+regex = '''AIza[A-Za-z0-9_\-]{35}'''
+tags = ["key", "google"]
+
+[[rules]]
+id = "stripe-secret-key"
+description = "Stripe secret key (non-placeholder)"
+regex = '''sk_(live|test)_(?!MOCK|REDACTED|\.\.\.)[A-Za-z0-9]{24,}'''
+tags = ["key", "stripe"]
+
+[[rules]]
+id = "stripe-webhook-secret"
+description = "Stripe webhook secret (non-placeholder)"
+regex = '''whsec_(?!MOCK|REDACTED|\.\.\.)[A-Za-z0-9]{24,}'''
+tags = ["key", "stripe"]
+
+# --------------------------------------------------------------------------
+# Allowlist - Paths and patterns to ignore
+# --------------------------------------------------------------------------
+
+[allowlist]
+description = "Global allowlist"
+paths = [
+  '''\.gitleaks\.toml$''',
+  '''SECURITY-AUDIT-REPORT\.md$''',
+  '''\.env\.example$''',
+  '''node_modules/''',
+  '''pnpm-lock\.yaml$''',
+  '''package-lock\.json$''',
+]

@@ -150,7 +150,7 @@ export default function HomePage() {
                 className="gap-1.5 border-amber-500/30 bg-amber-500/10 px-3 py-1 text-amber-400"
               >
                 <Shield size={14} className="shrink-0" />
-                GENIUS Act Ready
+                GENIUS Act Aligned
               </Badge>
             </div>
 
@@ -231,7 +231,7 @@ export default function HomePage() {
                 Developer Experience
               </Badge>
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                Five lines to production-grade compliance
+                Five lines to production-ready compliance support
               </h2>
               <p className="mt-4 text-lg text-muted-foreground">
                 Initialize the SDK, call <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">verify()</code> on
@@ -285,10 +285,10 @@ export default function HomePage() {
               Features
             </Badge>
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Everything you need for agent compliance
+              Everything you need to support agent compliance
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-              A complete trust and compliance toolkit designed for developers
+              A trust and compliance-support toolkit designed for developers
               building agentic workflows with stablecoins and fiat payments.
             </p>
           </div>
@@ -384,13 +384,13 @@ export default function HomePage() {
                 </Badge>
               </div>
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                Compliance-ready for the GENIUS Act
+                Supports GENIUS Act compliance efforts
               </h2>
               <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
                 The GENIUS Act is reshaping stablecoin regulation in the United
-                States. Kontext gives your agents the compliance infrastructure
-                to operate confidently -- audit trails, transaction logging, and
-                risk scoring that align with where regulation is heading.
+                States. Kontext provides developer tools that support your
+                compliance efforts -- audit trails, transaction logging, and
+                risk scoring aligned with where regulation is heading.
               </p>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 {[
@@ -446,8 +446,8 @@ export default function HomePage() {
               Trusted by builders
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-              Join the developers building the next generation of compliant
-              agentic commerce.
+              Join the developers building the next generation of
+              compliance-ready agentic commerce.
             </p>
           </div>
 
@@ -461,7 +461,7 @@ export default function HomePage() {
               },
               {
                 quote:
-                  "We went from zero audit trail to full compliance reporting in under an hour. The DX is phenomenal.",
+                  "We went from zero audit trail to comprehensive compliance reporting in under an hour. The DX is phenomenal.",
                 author: "Coming soon",
                 role: "Early adopter testimonials",
               },

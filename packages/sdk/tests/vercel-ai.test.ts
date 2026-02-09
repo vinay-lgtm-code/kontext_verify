@@ -805,7 +805,7 @@ describe('createKontextAI', () => {
     const mockModel = createMockModel();
     const { kontext } = createKontextAI(mockModel, {
       projectId: 'cloud-test',
-      apiKey: 'sk_test_abc123',
+      apiKey: 'sk_test_REDACTED_000',
       environment: 'production',
     });
 

@@ -92,6 +92,14 @@ export function Footer() {
             &copy; {new Date().getFullYear()} Kontext. Open source under MIT License.
           </p>
         </div>
+
+        <div className="border-t border-border/40 py-4">
+          <p className="text-center text-xs text-muted-foreground/60 leading-relaxed max-w-3xl mx-auto">
+            Kontext provides developer tools that support compliance efforts. It
+            does not constitute legal advice or guarantee regulatory compliance.
+            Consult qualified legal counsel for compliance certification.
+          </p>
+        </div>
       </div>
     </footer>
   );

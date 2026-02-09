@@ -13,7 +13,7 @@ import { ArrowRight } from "lucide-react";
 export const metadata: Metadata = {
   title: "FAQs",
   description:
-    "Frequently asked questions about Kontext -- the trust and compliance SDK for agentic stablecoin and fiat transactions. Technical details, integrations, pricing, and more.",
+    "Frequently asked questions about Kontext -- the trust and compliance-support SDK for agentic stablecoin and fiat transactions. Technical details, integrations, pricing, and more.",
 };
 
 const faqCategories = [
@@ -23,17 +23,17 @@ const faqCategories = [
       {
         question: "What is Kontext?",
         answer:
-          "Kontext is a TypeScript SDK that provides trust and compliance infrastructure for AI agents performing stablecoin and fiat transactions. It handles action logging, trust scoring, anomaly detection, and audit trail export so you can ship compliant agentic workflows without building compliance tooling from scratch.",
+          "Kontext is a TypeScript SDK that provides trust and compliance-support infrastructure for AI agents performing stablecoin and fiat transactions. It handles action logging, trust scoring, anomaly detection, and audit trail export so you can ship compliance-ready agentic workflows without building compliance tooling from scratch.",
       },
       {
         question: "Who is Kontext built for?",
         answer:
-          "Kontext is built for developers integrating AI agents with stablecoin and fiat payments -- whether USDC on Base, Stripe payment intents, or any workflow where AI agents move money. Kontext gives you the compliance layer.",
+          "Kontext is built for developers integrating AI agents with stablecoin and fiat payments -- whether USDC on Base, Stripe payment intents, or any workflow where AI agents move money. Kontext provides the compliance-support layer.",
       },
       {
         question: "Is Kontext open source?",
         answer:
-          "Yes. The core SDK is fully open source and available on GitHub. You can self-host the entire stack with no feature gates on the open-source tier. Cloud-managed features like ML-powered anomaly detection and the compliance dashboard are available on paid plans.",
+          "Yes. The core SDK is fully open source and available on GitHub with up to 20,000 events/month included. You can self-host the entire stack with no feature gates on the free tier. Cloud-managed features like ML-powered anomaly detection, compliance templates, and the cloud dashboard are available on the Pro plan at $199/user/month.",
       },
       {
         question: "What license does Kontext use?",
@@ -53,7 +53,7 @@ const faqCategories = [
       {
         question: "What blockchain chains are supported?",
         answer:
-          "The open-source SDK works with any EVM-compatible chain. First-class integrations are provided for Base and Ethereum. Pro plans add chain-specific anomaly detection for additional networks, and Enterprise customers can request non-EVM chain support.",
+          "The open-source SDK works with any EVM-compatible chain. First-class integrations are provided for Base and Ethereum. Paid plans (Pro and above) add chain-specific anomaly detection for additional networks, and Enterprise customers can request non-EVM chain support.",
       },
       {
         question: "How does trust scoring work?",
@@ -63,17 +63,17 @@ const faqCategories = [
       {
         question: "How does anomaly detection work?",
         answer:
-          "Anomaly detection runs a configurable rule engine on every verify() call. Built-in rules include velocity limits (transactions per time window), amount thresholds (single and daily caps), and behavioral checks (unusual timing, new recipients, amount spikes). Pro plans add ML-powered detection trained on your agent's history.",
+          "Anomaly detection runs a configurable rule engine on every verify() call. Built-in rules include velocity limits (transactions per time window), amount thresholds (single and daily caps), and behavioral checks (unusual timing, new recipients, amount spikes). Paid plans (Pro and above) add ML-powered detection trained on your agent's history.",
       },
       {
         question: "What is the digest chain?",
         answer:
-          "The digest chain is Kontext's append-only audit structure that links each logged action to the previous one via cryptographic hashes. This creates a tamper-evident chain of records -- if any entry is modified, the hash chain breaks, making unauthorized changes detectable.",
+          "The digest chain is Kontext's patented append-only audit structure that cryptographically links each logged action to the full history before it. This creates a tamper-evident chain of records -- if any entry is modified, the chain breaks, making unauthorized changes immediately detectable.",
       },
       {
         question: "How is audit data stored?",
         answer:
-          "With the open-source SDK, all data stays on your infrastructure -- you control storage entirely. On Pro and Enterprise plans, audit data is encrypted at rest (AES-256) and in transit (TLS 1.3), stored in SOC2-compliant cloud infrastructure. You retain full ownership and can export or delete data at any time.",
+          "With the open-source SDK, all data stays on your infrastructure -- you control storage entirely. On paid plans (Pro and above), audit data is encrypted at rest (AES-256) and in transit (TLS 1.3), stored in cloud infrastructure following SOC 2-aligned practices. You retain full ownership and can export or delete data at any time.",
       },
       {
         question: "What are the performance characteristics?",
@@ -126,14 +126,14 @@ const faqCategories = [
           "The GENIUS Act (Guiding and Establishing National Innovation for U.S. Stablecoins) is U.S. legislation establishing a regulatory framework for stablecoin issuers and the ecosystems around them. It introduces requirements around reserves, transparency, and consumer protection that impact how stablecoin transactions are logged and audited.",
       },
       {
-        question: "How does Kontext help with GENIUS Act compliance?",
+        question: "How does Kontext support GENIUS Act compliance efforts?",
         answer:
-          "Kontext provides the technical infrastructure that aligns with where stablecoin regulation is heading: immutable audit trails, transaction-level logging, risk scoring, and exportable compliance reports. It does not make you compliant on its own, but it gives you the data and tooling your compliance team needs.",
+          "Kontext provides technical infrastructure aligned with where stablecoin regulation is heading: immutable audit trails, transaction-level logging, risk scoring, and exportable compliance reports. It supports your compliance efforts but does not make you compliant on its own -- it gives your compliance team the data and tooling they need.",
       },
       {
-        question: "Is Kontext itself a compliant or certified product?",
+        question: "Is Kontext itself a certified compliance product?",
         answer:
-          "Kontext is a developer tool, not a regulated financial entity. Pro and Enterprise infrastructure follows SOC2-compliant practices for data handling. However, Kontext is not a substitute for legal or compliance counsel -- it provides the technical building blocks your compliance program needs.",
+          "Kontext is a developer tool, not a regulated financial entity. Paid plan infrastructure follows SOC 2-aligned practices for data handling. However, Kontext does not guarantee regulatory compliance and is not a substitute for legal counsel -- it provides the technical building blocks your compliance program needs.",
       },
       {
         question: "What audit export formats are supported?",
@@ -151,14 +151,14 @@ const faqCategories = [
     name: "Pricing & Plans",
     faqs: [
       {
-        question: "What is included in the free open-source tier?",
+        question: "What is included in the free tier?",
         answer:
-          "The open-source tier includes the full SDK with action logging, local audit export (JSON, CSV), basic rule-based anomaly detection, single-chain support, and the digest chain. There are no usage limits on self-hosted deployments. It is MIT-licensed and free forever.",
+          "The free tier includes the full SDK with up to 20,000 events/month, action logging, local audit export (JSON), basic rule-based anomaly detection, single-protocol support, and the digest chain. It is MIT-licensed and free forever.",
       },
       {
-        question: "What does the Pro plan add?",
+        question: "What does the Pro plan include?",
         answer:
-          "Pro ($99/month) adds cloud-managed infrastructure: a compliance dashboard, ML-powered anomaly detection, trust scoring with historical analysis, multi-chain support, compliance report templates (SOC2, SAR), webhook alerts, team access controls, and email support with 24-hour response time.",
+          "Pro ($199/user/mo, up to 100K events) includes everything in Free plus the cloud compliance dashboard, all protocol integrations (x402, UCP, Stripe), GENIUS Act alignment templates, SAR/CTR report generation, regulatory-ready exports, OFAC screening capabilities, advanced anomaly detection (ML-powered), trust scoring API, webhooks, and team dashboard. It provides the technical building blocks for your compliance program.",
       },
       {
         question: "Can I self-host the entire stack?",
@@ -168,7 +168,7 @@ const faqCategories = [
       {
         question: "What does the Enterprise plan include?",
         answer:
-          "Enterprise includes everything in Pro plus a custom compliance rule engine, dedicated support engineer, 99.9% SLA, SOC2 attestation support, custom audit report formats, on-premise deployment, volume-based pricing, and priority feature requests. Contact us for details.",
+          "Enterprise includes everything in Pro plus unlimited events, a custom compliance rule engine, dedicated support engineer, 99.9% uptime target (see Enterprise SLA terms), SOC 2 attestation support, custom audit report formats, on-premise deployment, SSO/SAML, and priority feature requests. Contact us for details.",
       },
     ],
   },
@@ -178,17 +178,17 @@ const faqCategories = [
       {
         question: "How is data encrypted?",
         answer:
-          "All data in transit is encrypted with TLS 1.3. On Pro and Enterprise plans, data at rest is encrypted with AES-256. API keys are hashed and never stored in plaintext. The open-source tier keeps all data on your infrastructure, so encryption is governed by your own setup.",
+          "All data in transit is encrypted with TLS 1.3. On paid plans (Pro and above), data at rest is encrypted with AES-256. API keys are hashed and never stored in plaintext. The free tier keeps all data on your infrastructure, so encryption is governed by your own setup.",
       },
       {
         question: "Where is cloud data stored?",
         answer:
-          "Pro and Enterprise data is stored in GCP infrastructure with SOC2-compliant practices. Data residency options are available on Enterprise plans for organizations with geographic data requirements. All data is encrypted at rest and in transit.",
+          "Paid plan data is stored in GCP infrastructure following SOC 2-aligned practices. Data residency options are available on Enterprise plans for organizations with geographic data requirements. All data is encrypted at rest and in transit.",
       },
       {
         question: "Is Kontext SOC2 certified?",
         answer:
-          "Kontext's cloud infrastructure follows SOC2-compliant practices. Enterprise customers receive SOC2 attestation support and can request detailed security documentation. We are actively pursuing formal SOC2 Type II certification.",
+          "Kontext's cloud infrastructure follows SOC 2-aligned practices. Enterprise customers receive SOC 2 attestation support and can request detailed security documentation. We are actively pursuing formal SOC 2 Type II certification.",
       },
       {
         question: "How does Kontext handle PII?",

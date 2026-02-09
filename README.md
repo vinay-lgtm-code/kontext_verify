@@ -58,7 +58,7 @@ Kontext adds structured logging, tamper-evident audit trails, anomaly detection,
 | Feature | What it does |
 |---|---|
 | **Action Logging** | Structured audit trail for every agent action with timestamps, correlation IDs, and metadata |
-| **Digest Chain** | Rolling SHA-256 hash chain — tamper with any past event and verification fails |
+| **Digest Chain** | Patented cryptographic hash chain — tamper with any past event and verification fails |
 | **Task Confirmation** | Human-in-the-loop approval for high-value actions with evidence requirements |
 | **Trust Scoring** | Per-agent trust scores based on transaction patterns, consistency, and compliance |
 | **Anomaly Detection** | Flag unusual amounts, velocity spikes, new destinations, off-hours activity, rapid succession |
@@ -164,18 +164,7 @@ console.log(`Terminal digest: ${audit.terminalDigest}`);
 
 ## Digest chain
 
-Every action logged through Kontext gets a cryptographic digest that chains to all prior actions:
-
-```
-H_D = SHA-256(H_{D-1} || Serialize(E_D) || S_D)
-```
-
-- **H_D** — current digest
-- **H_{D-1}** — prior digest (genesis hash for first event)
-- **E_D** — serialized event data
-- **S_D** — salt from microsecond-precision timestamp
-
-Tamper with any past event and the chain breaks. Export it for independent third-party verification:
+Every action logged through Kontext gets a cryptographic digest that chains to all prior actions. The patented linking mechanism ensures that tampering with any past event breaks the chain. Export it for independent third-party verification:
 
 ```typescript
 const chain = ctx.exportDigestChain();
@@ -231,19 +220,28 @@ npx pnpm dev:server
 npx pnpm --filter web dev
 ```
 
-## Open source vs Pro
+## Plans & Pricing
 
-| | Open Source | Pro |
-|---|---|---|
-| Action logging | Local file output | Cloud API |
-| Digest chain | Full | Full |
-| Anomaly detection | Rule-based | Rule-based + ML |
-| Trust scoring | Local | Historical + trends |
-| Audit export | JSON, CSV | JSON, CSV, templates |
-| Chain support | Single | Multi-chain |
-| Support | GitHub Issues | Email (24h SLA) |
+| | Free | Pro | Enterprise |
+|---|---|---|---|
+| **Price** | $0 | $199/user/mo | Custom |
+| **Events/mo** | Up to 20,000 | Up to 100,000 | Unlimited |
+| Action logging | Local | Cloud API | Cloud API |
+| Digest chain | Full | Full | Full |
+| Anomaly detection | Basic rules | Advanced (ML-powered) | Custom rules engine |
+| Trust scoring | Local | Trust scoring API + history | Advanced |
+| GENIUS Act templates | -- | Yes | Yes |
+| SAR/CTR reports | -- | Yes | Yes |
+| OFAC screening | -- | Advanced | Advanced |
+| Audit export | JSON | JSON, CSV, PDF | Custom formats |
+| Protocol support | Single | All (x402 + UCP + Stripe) | All |
+| Team dashboard | -- | Yes | Yes |
+| Webhooks | -- | Yes | Yes |
+| Support | GitHub Issues | Email (24h) | Dedicated engineer |
+| SLA | -- | -- | 99.9% |
+| On-prem | -- | -- | Yes |
 
-The open-source SDK is fully functional with no usage limits. Run it self-hosted, no API key needed. [Pricing details](https://www.getkontext.com/pricing).
+The free SDK is fully functional with up to 20,000 events/month. Run it self-hosted, no API key needed. [Pricing details](https://www.getkontext.com/pricing).
 
 ## License
 

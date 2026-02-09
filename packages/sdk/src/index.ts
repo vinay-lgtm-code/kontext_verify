@@ -79,6 +79,10 @@ export type {
 // Error types
 export { KontextError, KontextErrorCode } from './types.js';
 
+// Plan/Tier System
+export { PlanManager, PLAN_LIMITS } from './plans.js';
+export type { PlanTier, PlanConfig, PlanUsage, LimitEvent } from './plans.js';
+
 // Digest Chain
 export { DigestChain, verifyExportedChain } from './digest.js';
 export type { DigestLink, DigestVerification, PrecisionTimestamp } from './digest.js';
@@ -86,6 +90,24 @@ export type { DigestLink, DigestVerification, PrecisionTimestamp } from './diges
 // USDC Integration (for direct use)
 export { UsdcCompliance } from './integrations/usdc.js';
 export type { SanctionsCheckResult } from './integrations/usdc.js';
+
+// Comprehensive OFAC Sanctions Screening
+export { OFACSanctionsScreener, ofacScreener } from './integrations/ofac-sanctions.js';
+export type {
+  SanctionsList,
+  SanctionedJurisdiction,
+  SanctionsRiskLevel,
+  SanctionedEntityType,
+  SanctionedAddressEntry,
+  ComprehensiveSanctionsResult,
+  SanctionsMatch,
+  JurisdictionFlag,
+  PatternFlag,
+  OwnershipFlag,
+  TransactionForAnalysis,
+  EntityNameEntry,
+  SanctionsListMetadata,
+} from './integrations/ofac-sanctions.js';
 
 // CCTP Integration (Cross-Chain Transfer Protocol) - V1 + V2
 export { CCTPTransferManager } from './integrations/cctp.js';

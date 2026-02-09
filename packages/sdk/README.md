@@ -55,7 +55,7 @@ console.log(`Chain valid: ${verification.valid}`);
 
 - **Action Logging** -- Structured logging for all agent actions with timestamps, correlation IDs, and metadata.
 - **Transaction Tracking** -- Full chain details for crypto transactions across Base, Ethereum, Polygon, Arbitrum, and Optimism.
-- **Tamper-Evident Digest Chain** -- Rolling SHA-256 digest chain that detects any modification to the audit trail.
+- **Tamper-Evident Digest Chain** -- Patented cryptographic digest chain that detects any modification to the audit trail.
 - **Trust Scoring** -- Rule-based trust scores for agents based on history, task completion, anomaly rate, and consistency.
 - **Anomaly Detection** -- Configurable rules for unusual amounts, frequency spikes, new destinations, off-hours activity, rapid succession, and round amounts.
 - **Task Confirmation** -- Evidence-based task tracking with required proof for completion.
