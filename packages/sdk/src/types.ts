@@ -89,11 +89,18 @@ export interface KontextConfig {
   /**
    * Pricing plan tier. Controls event metering limits.
    * - 'free': 20,000 events/month
-   * - 'pro': 100,000 events/month
+   * - 'pro': 100,000 events/user/month (multiplied by seats)
    * - 'enterprise': Unlimited events
    * @default 'free'
    */
   plan?: 'free' | 'pro' | 'enterprise';
+
+  /**
+   * Number of seats (users) on the plan. Pro plan limits are multiplied
+   * by the number of seats: 100K events/user/mo.
+   * @default 1
+   */
+  seats?: number;
 
   /**
    * Custom URL for the Pro plan upgrade page.

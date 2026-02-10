@@ -109,7 +109,7 @@ export class Kontext {
 
     // Initialize plan manager
     const planTier: PlanTier = config.plan ?? 'free';
-    this.planManager = new PlanManager(planTier);
+    this.planManager = new PlanManager(planTier, undefined, config.seats ?? 1);
 
     // Configure upgrade URLs
     if (config.upgradeUrl) {

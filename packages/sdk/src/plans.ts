@@ -19,9 +19,11 @@ export interface PlanConfig {
 export interface PlanUsage {
   /** Current plan tier */
   plan: PlanTier;
+  /** Number of seats (users) on the plan */
+  seats: number;
   /** Number of events logged in the current billing period */
   eventCount: number;
-  /** Maximum events allowed */
+  /** Maximum events allowed (Pro: seats x 100K) */
   limit: number;
   /** Remaining events before limit */
   remainingEvents: number;
@@ -49,10 +51,10 @@ export interface LimitEvent {
   message: string;
 }
 
-/** Plan definitions with their event limits */
+/** Base plan definitions with their event limits (per seat for Pro) */
 export const PLAN_LIMITS: Record<PlanTier, number> = {
   free: 20_000,
-  pro: 100_000,
+  pro: 100_000, // per user/seat
   enterprise: Infinity,
 };
 
@@ -71,6 +73,7 @@ const THROTTLE_INTERVAL = 100;
  */
 export class PlanManager {
   private tier: PlanTier;
+  private seats: number;
   private eventCount: number;
   private billingPeriodStart: Date;
   private warningThreshold: number;
@@ -87,8 +90,9 @@ export class PlanManager {
   /** Enterprise contact URL */
   enterpriseContactUrl: string = 'https://cal.com/vinnaray';
 
-  constructor(tier: PlanTier = 'free', billingPeriodStart?: Date) {
+  constructor(tier: PlanTier = 'free', billingPeriodStart?: Date, seats: number = 1) {
     this.tier = tier;
+    this.seats = Math.max(1, Math.floor(seats));
     this.eventCount = 0;
     this.warningThreshold = DEFAULT_WARNING_THRESHOLD;
     this.billingPeriodStart = billingPeriodStart ?? PlanManager.defaultBillingPeriodStart();
@@ -116,9 +120,27 @@ export class PlanManager {
     return this.tier;
   }
 
-  /** Get the event limit for the current plan */
+  /** Get the event limit for the current plan (Pro is multiplied by seats) */
   getLimit(): number {
-    return PLAN_LIMITS[this.tier];
+    const base = PLAN_LIMITS[this.tier];
+    if (base === Infinity) return Infinity;
+    // Pro plan: 100K events per user/seat
+    if (this.tier === 'pro') return base * this.seats;
+    return base;
+  }
+
+  /** Get the current number of seats */
+  getSeats(): number {
+    return this.seats;
+  }
+
+  /** Update the number of seats (e.g., after Stripe subscription update) */
+  setSeats(seats: number): void {
+    this.seats = Math.max(1, Math.floor(seats));
+    // Reset warning state since effective limits changed
+    this.warningEmitted = false;
+    this.limitEmitted = false;
+    this.eventsSinceLimitWarning = 0;
   }
 
   /** Get the current event count */
@@ -151,6 +173,7 @@ export class PlanManager {
   getUsage(): PlanUsage {
     return {
       plan: this.tier,
+      seats: this.seats,
       eventCount: this.eventCount,
       limit: this.getLimit(),
       remainingEvents: this.getRemainingEvents(),
@@ -312,11 +335,13 @@ export class PlanManager {
   /** Serialize state for storage */
   toJSON(): {
     tier: PlanTier;
+    seats: number;
     eventCount: number;
     billingPeriodStart: string;
   } {
     return {
       tier: this.tier,
+      seats: this.seats,
       eventCount: this.eventCount,
       billingPeriodStart: this.billingPeriodStart.toISOString(),
     };
@@ -325,10 +350,11 @@ export class PlanManager {
   /** Restore state from storage */
   static fromJSON(data: {
     tier: PlanTier;
+    seats?: number;
     eventCount: number;
     billingPeriodStart: string;
   }): PlanManager {
-    const manager = new PlanManager(data.tier, new Date(data.billingPeriodStart));
+    const manager = new PlanManager(data.tier, new Date(data.billingPeriodStart), data.seats ?? 1);
     manager.eventCount = data.eventCount;
     return manager;
   }
@@ -362,11 +388,12 @@ export class PlanManager {
   private logLimitMessage(): void {
     if (this.tier === 'free') {
       console.warn(
-        `You've reached the 20,000 event limit on the Free plan. Upgrade to Pro for 100K events/mo and full compliance features → ${this.upgradeUrl}`,
+        `You've reached the 20,000 event limit on the Free plan. Upgrade to Pro for 100K events/user/mo and full compliance features → ${this.upgradeUrl}`,
       );
     } else if (this.tier === 'pro') {
+      const effectiveLimit = (100_000 * this.seats).toLocaleString();
       console.warn(
-        `You've reached the 100,000 event limit on Pro. Contact us for Enterprise pricing → ${this.enterpriseContactUrl}`,
+        `You've reached the ${effectiveLimit} event limit on Pro (${this.seats} seat${this.seats !== 1 ? 's' : ''}). Add seats or contact us for Enterprise pricing → ${this.enterpriseContactUrl}`,
       );
     }
   }

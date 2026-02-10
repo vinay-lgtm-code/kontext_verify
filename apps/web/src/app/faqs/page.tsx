@@ -33,7 +33,7 @@ const faqCategories = [
       {
         question: "Is Kontext open source?",
         answer:
-          "Yes. The core SDK is fully open source and available on GitHub with up to 20,000 events/month included. You can self-host the entire stack with no feature gates on the free tier. Cloud-managed features like ML-powered anomaly detection, compliance templates, and the cloud dashboard are available on the Pro plan at $199/user/month.",
+          "Yes. The core SDK is fully open source and available on GitHub with 20,000 events/month included. You can self-host the entire stack with no feature gates on the free tier. Cloud-managed features like ML-powered anomaly detection, compliance templates, and the cloud dashboard are available on the Pro plan at $199/user/month (100K events/user/mo). Enterprise plans have unlimited events.",
       },
       {
         question: "What license does Kontext use?",
@@ -153,12 +153,12 @@ const faqCategories = [
       {
         question: "What is included in the free tier?",
         answer:
-          "The free tier includes the full SDK with up to 20,000 events/month, action logging, local audit export (JSON), basic rule-based anomaly detection, single-protocol support, and the digest chain. It is MIT-licensed and free forever.",
+          "The free tier includes the full SDK with 20,000 events/month (soft cap), action logging, local audit export (JSON), basic rule-based anomaly detection, single-protocol support, and the digest chain. It is MIT-licensed and free forever.",
       },
       {
         question: "What does the Pro plan include?",
         answer:
-          "Pro ($199/user/mo, up to 100K events) includes everything in Free plus the cloud compliance dashboard, all protocol integrations (x402, UCP, Stripe), GENIUS Act alignment templates, SAR/CTR report generation, regulatory-ready exports, OFAC screening capabilities, advanced anomaly detection (ML-powered), trust scoring API, webhooks, and team dashboard. It provides the technical building blocks for your compliance program.",
+          "Pro ($199/user/mo, 100K events per user per month) includes everything in Open Source plus: cloud compliance dashboard, advanced anomaly detection (ML-powered), trust scoring API with history, compliance report templates (SOC 2, SAR), multi-chain support (Base, Ethereum, more), webhook alerts and notifications, email support with 24h response time, and team access controls. Event limits scale with your team size.",
       },
       {
         question: "Can I self-host the entire stack?",
@@ -168,7 +168,7 @@ const faqCategories = [
       {
         question: "What does the Enterprise plan include?",
         answer:
-          "Enterprise includes everything in Pro plus unlimited events, a custom compliance rule engine, dedicated support engineer, 99.9% uptime target (see Enterprise SLA terms), SOC 2 attestation support, custom audit report formats, on-premise deployment, SSO/SAML, and priority feature requests. Contact us for details.",
+          "Enterprise includes everything in Pro plus unlimited events (no caps), a custom compliance rule engine, dedicated support engineer, 99.9% uptime target (see Enterprise SLA terms), SOC 2 attestation support, custom audit report formats, on-premise deployment, SSO/SAML, and priority feature requests. Contact us for details.",
       },
     ],
   },

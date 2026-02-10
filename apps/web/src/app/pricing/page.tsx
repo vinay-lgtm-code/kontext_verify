@@ -55,14 +55,14 @@ const plans = [
     price: "$0",
     period: "",
     description:
-      "Everything you need to add basic compliance to your agentic workflows. Up to 20K events/mo included.",
+      "Everything you need to add basic compliance to your agentic workflows. Includes 20,000 events/month.",
     cta: "Get Started",
     ctaHref: "https://github.com/vinay-lgtm-code/kontext_verify",
     ctaExternal: true,
     highlighted: false,
     isProCheckout: false,
     features: [
-      "Up to 20,000 events/month",
+      "20,000 events/month included",
       "Core SDK with full TypeScript support",
       "Action logging and audit trail",
       "Basic anomaly detection rules",
@@ -78,25 +78,23 @@ const plans = [
     price: "$199",
     period: "/user/mo",
     description:
-      "Everything in Free plus cloud dashboard, all protocols, compliance templates, and advanced detection. Up to 100K events/mo.",
+      "Everything in Open Source plus cloud dashboard, advanced detection, compliance templates, and team controls. 100K events/user/mo.",
     cta: "Start Pro",
     ctaHref: "#",
     ctaExternal: false,
     highlighted: true,
     isProCheckout: true,
     features: [
-      "Up to 100,000 events/month",
-      "Everything in Free, plus:",
+      "Up to 100,000 events/user/month",
+      "Everything in Open Source, plus:",
       "Cloud compliance dashboard",
-      "All protocols (x402 + UCP + Stripe)",
-      "GENIUS Act alignment templates",
-      "SAR/CTR report generation",
-      "Regulatory-ready exports",
-      "OFAC screening capabilities",
       "Advanced anomaly detection (ML-powered)",
       "Trust scoring API with history",
-      "Webhooks and notifications",
-      "Team dashboard",
+      "Compliance report templates (SOC 2, SAR)",
+      "Multi-chain support (Base, Ethereum, more)",
+      "Webhook alerts and notifications",
+      "Email support with 24h response time",
+      "Team access controls",
     ],
   },
   {
@@ -104,14 +102,14 @@ const plans = [
     price: "Custom",
     period: "",
     description:
-      "Everything in Pro plus custom rules, dedicated support, SLA, and unlimited events.",
+      "Everything in Pro plus custom rules, dedicated support, SLA, and unlimited events. No event caps.",
     cta: "Contact Us",
     ctaHref: "https://cal.com/vinnaray",
     ctaExternal: true,
     highlighted: false,
     isProCheckout: false,
     features: [
-      "Unlimited events",
+      "Unlimited events — no caps",
       "Everything in Pro, plus:",
       "Custom compliance rule engine",
       "Dedicated support engineer",
@@ -128,7 +126,7 @@ const faqs = [
   {
     question: "Is the free tier really free?",
     answer:
-      "Yes. The core Kontext SDK is MIT-licensed and free to use in production with up to 20,000 events/month included. It includes action logging, basic anomaly detection, and local audit export. You can run it entirely self-hosted.",
+      "Yes. The core Kontext SDK is MIT-licensed and free to use in production with 20,000 events/month included. Beyond that, events are soft-capped with a clear upgrade prompt. It includes action logging, basic anomaly detection, and local audit export. You can run it entirely self-hosted.",
   },
   {
     question: "Can I try Pro features before committing?",
@@ -138,7 +136,7 @@ const faqs = [
   {
     question: "What does the Pro tier include for compliance?",
     answer:
-      "Pro includes tools that support your compliance efforts: GENIUS Act alignment templates, SAR/CTR report generation, regulatory-ready exports, OFAC screening capabilities, advanced anomaly detection, trust scoring API, webhooks, and a team dashboard. It provides the technical building blocks for your compliance program.",
+      "Pro includes 100,000 events per user per month, a cloud compliance dashboard, advanced ML-powered anomaly detection, trust scoring API with history, compliance report templates (SOC 2, SAR), multi-chain support, webhook alerts and notifications, email support with 24h response time, and team access controls. Enterprise gets unlimited events with no caps.",
   },
   {
     question: "How does Kontext handle my transaction data?",
@@ -172,24 +170,27 @@ function EmailCaptureForm({
   isLoading,
   error,
 }: {
-  onSubmit: (email: string) => void;
+  onSubmit: (email: string, seats: number) => void;
   onCancel: () => void;
   isLoading: boolean;
   error: string | null;
 }) {
   const [email, setEmail] = useState("");
+  const [seats, setSeats] = useState(1);
+
+  const total = seats * 199;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="mx-4 w-full max-w-md rounded-lg border border-border bg-background p-6 shadow-xl">
         <h3 className="text-lg font-semibold">Start your Pro subscription</h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          Enter your email to continue to secure checkout via Stripe.
+          $199/user/month. Each seat includes 100K events/mo.
         </p>
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (email.trim()) onSubmit(email.trim());
+            if (email.trim()) onSubmit(email.trim(), seats);
           }}
           className="mt-4 space-y-3"
         >
@@ -203,6 +204,38 @@ function EmailCaptureForm({
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none ring-primary focus:ring-2"
             disabled={isLoading}
           />
+          <div>
+            <label className="mb-1 block text-sm font-medium text-foreground">
+              Team size
+            </label>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setSeats(Math.max(1, seats - 1))}
+                className="flex h-8 w-8 items-center justify-center rounded-md border border-border text-sm hover:bg-muted"
+                disabled={seats <= 1 || isLoading}
+              >
+                -
+              </button>
+              <span className="w-12 text-center text-sm font-medium">
+                {seats} {seats === 1 ? "user" : "users"}
+              </span>
+              <button
+                type="button"
+                onClick={() => setSeats(seats + 1)}
+                className="flex h-8 w-8 items-center justify-center rounded-md border border-border text-sm hover:bg-muted"
+                disabled={isLoading}
+              >
+                +
+              </button>
+              <span className="ml-auto text-sm text-muted-foreground">
+                ${total}/mo
+              </span>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {(seats * 100000).toLocaleString()} events/mo total
+            </p>
+          </div>
           {error && (
             <p className="text-sm text-red-500">{error}</p>
           )}
@@ -248,12 +281,12 @@ export default function PricingPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
-  async function handleProCheckout(email: string) {
+  async function handleProCheckout(email: string, seats: number) {
     setIsLoading(true);
     setCheckoutError(null);
 
     try {
-      const url = await initiateUpgrade(email);
+      const url = await initiateUpgrade(email, seats);
       window.location.href = url;
     } catch (err) {
       setCheckoutError(

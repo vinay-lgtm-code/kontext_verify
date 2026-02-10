@@ -41,7 +41,7 @@ function getStripeClient(): Stripe {
 export const PRO_PLAN_CONFIG = {
   product: {
     name: 'Kontext Pro',
-    description: 'Cloud compliance dashboard, all protocols, GENIUS Act templates, advanced detection. Up to 100K events/mo.',
+    description: 'Cloud compliance dashboard, advanced anomaly detection, trust scoring, compliance templates, multi-chain support, webhooks, team controls. 100K events/user/mo.',
   },
   price: {
     amount: 19900, // $199.00 in cents

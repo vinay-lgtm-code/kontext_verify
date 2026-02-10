@@ -129,15 +129,14 @@ export default function AboutPage() {
 
             <Separator className="my-12" />
 
-            <h2>Why I am building this</h2>
+            <h2>Why we are building this</h2>
             <p>
-              I am a solo founder building Kontext because I see a clear gap in
-              the market that will only grow as agents become more autonomous and
-              handle more money.
+              There is a clear gap in the market that will only grow as agents
+              become more autonomous and handle more money.
             </p>
             <p>
-              I have spent time at the intersection of developer tools,
-              compliance, and crypto infrastructure, and I believe the right
+              We have spent time at the intersection of developer tools,
+              compliance, and crypto infrastructure, and we believe the right
               approach is developer-first: make compliance as easy as adding a
               middleware. If the developer experience is bad, teams will bolt it
               on as an afterthought -- or worse, skip it entirely.
@@ -148,9 +147,9 @@ export default function AboutPage() {
               sensible defaults, and clear documentation.
             </p>
             <p>
-              This is early. The SDK is open source and I am building in the
+              This is early. The SDK is open source and we are building in the
               open. If you are working on agentic commerce
-              with stablecoins or fiat payments, I would love to hear from you.
+              with stablecoins or fiat payments, we would love to hear from you.
             </p>
 
             <Separator className="my-12" />

@@ -45,6 +45,7 @@ const PLAN_LIMITS: Record<PlanTier, number> = {
 /** Per-API-key usage tracking */
 interface ApiKeyUsage {
   plan: PlanTier;
+  seats: number;
   eventCount: number;
   billingPeriodStart: string;
 }
@@ -52,16 +53,19 @@ interface ApiKeyUsage {
 /** In-memory map of API key -> usage */
 const apiKeyUsage = new Map<string, ApiKeyUsage>();
 
-/** API key -> plan tier mapping (configurable via env or registration) */
-const apiKeyPlans = new Map<string, PlanTier>();
+/** API key -> plan tier + seats mapping (configurable via env or registration) */
+const apiKeyPlans = new Map<string, { plan: PlanTier; seats: number }>();
 
-// Load plan configuration from environment (format: KONTEXT_API_KEY_PLANS="sk_live_abc:pro,sk_live_def:enterprise")
+// Load plan configuration from environment (format: KONTEXT_API_KEY_PLANS="sk_live_abc:pro:3,sk_live_def:enterprise")
 const planConfig = process.env['KONTEXT_API_KEY_PLANS'];
 if (planConfig) {
   for (const entry of planConfig.split(',').map((e) => e.trim())) {
-    const [key, plan] = entry.split(':');
+    const parts = entry.split(':');
+    const key = parts[0];
+    const plan = parts[1];
+    const seats = parts[2] ? parseInt(parts[2], 10) : 1;
     if (key && plan && (plan === 'free' || plan === 'pro' || plan === 'enterprise')) {
-      apiKeyPlans.set(key, plan as PlanTier);
+      apiKeyPlans.set(key, { plan: plan as PlanTier, seats: Math.max(1, seats || 1) });
     }
   }
 }
@@ -73,8 +77,10 @@ function getApiKeyUsage(apiKey: string): ApiKeyUsage {
   let usage = apiKeyUsage.get(apiKey);
   if (!usage) {
     const now = new Date();
+    const planInfo = apiKeyPlans.get(apiKey);
     usage = {
-      plan: apiKeyPlans.get(apiKey) ?? 'free',
+      plan: planInfo?.plan ?? 'free',
+      seats: planInfo?.seats ?? 1,
       eventCount: 0,
       billingPeriodStart: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString(),
     };
@@ -96,10 +102,18 @@ function getApiKeyUsage(apiKey: string): ApiKeyUsage {
 /**
  * Track events for an API key and return whether the limit is exceeded.
  */
+function getEffectiveLimit(usage: ApiKeyUsage): number {
+  const base = PLAN_LIMITS[usage.plan];
+  if (base === Infinity) return Infinity;
+  // Pro plan: 100K events per user/seat
+  if (usage.plan === 'pro') return base * usage.seats;
+  return base;
+}
+
 function trackEvents(apiKey: string, count: number): { limitExceeded: boolean; usage: ApiKeyUsage } {
   const usage = getApiKeyUsage(apiKey);
   usage.eventCount += count;
-  const limit = PLAN_LIMITS[usage.plan];
+  const limit = getEffectiveLimit(usage);
   const limitExceeded = limit !== Infinity && usage.eventCount > limit;
   return { limitExceeded, usage };
 }
@@ -244,7 +258,7 @@ app.post('/v1/actions', authMiddleware, async (c) => {
 
   // Track events for plan metering
   const { limitExceeded, usage } = trackEvents(apiKey, actions.length);
-  const limit = PLAN_LIMITS[usage.plan];
+  const limit = getEffectiveLimit(usage);
 
   store.addActions(
     projectId,
@@ -269,9 +283,10 @@ app.post('/v1/actions', authMiddleware, async (c) => {
 
   // Soft limit: still process the event but return 429 with upgrade instructions
   if (limitExceeded) {
+    const effectiveLimit = getEffectiveLimit(usage);
     const upgradeMessage = usage.plan === 'free'
-      ? "You've reached the 20,000 event limit on the Free plan. Upgrade to Pro for 100K events/mo → https://kontext.so/upgrade"
-      : "You've reached the 100,000 event limit on Pro. Contact us for Enterprise pricing → https://cal.com/vinnaray";
+      ? "You've reached the 20,000 event limit on the Free plan. Upgrade to Pro for 100K events/user/mo → https://kontext.so/upgrade"
+      : `You've reached the ${effectiveLimit.toLocaleString()} event limit on Pro (${usage.seats} seat${usage.seats !== 1 ? 's' : ''}). Add seats or contact us for Enterprise pricing → https://cal.com/vinnaray`;
 
     return c.json({
       success: true,
@@ -507,12 +522,13 @@ app.get('/v1/trust/:agentId', authMiddleware, (c) => {
 app.get('/v1/usage', authMiddleware, (c) => {
   const apiKey = c.req.header('Authorization')?.slice(7) ?? '';
   const usage = getApiKeyUsage(apiKey);
-  const limit = PLAN_LIMITS[usage.plan];
+  const limit = getEffectiveLimit(usage);
   const remaining = limit === Infinity ? Infinity : Math.max(0, limit - usage.eventCount);
   const usagePercentage = limit === Infinity ? 0 : Math.min(100, (usage.eventCount / limit) * 100);
 
   return c.json({
     plan: usage.plan,
+    seats: usage.seats,
     eventCount: usage.eventCount,
     limit: limit === Infinity ? 'unlimited' : limit,
     remainingEvents: limit === Infinity ? 'unlimited' : remaining,
