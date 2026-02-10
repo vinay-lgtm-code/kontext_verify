@@ -2,6 +2,12 @@
 
 All notable public changes to the Kontext SDK and platform are documented here.
 
+## [0.3.1] - 2026-02-10
+
+### Added
+- Gate BlocklistManager behind Pro plan (not available on free tier)
+
+
 ## [0.3.0] - 2026-02-10
 
 ### Added

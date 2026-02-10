@@ -1,6 +1,6 @@
 {
   "name": "kontext-sdk",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Trust and compliance layer for agentic stablecoin and fiat transactions. Vercel AI SDK integration, tamper-evident digest chains, agent reasoning, compliance certificates, trust scoring, OFAC sanctions, Circle wallet support, and CCTP V2.",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
