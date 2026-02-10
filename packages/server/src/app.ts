@@ -9,12 +9,6 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { ServerStore } from './store.js';
-import {
-  createCheckoutSession,
-  createPortalSession,
-  getCheckoutSession,
-  handleWebhookEvent,
-} from './stripe.js';
 
 const app = new Hono();
 const store = new ServerStore();
@@ -638,6 +632,7 @@ app.post('/v1/checkout', async (c) => {
   }
 
   try {
+    const { createCheckoutSession } = await import('./stripe.js');
     const result = await createCheckoutSession({
       customerEmail: email,
       seats,
@@ -662,6 +657,7 @@ app.post('/v1/webhook/stripe', async (c) => {
   try {
     // Read raw body for signature verification
     const rawBody = await c.req.text();
+    const { handleWebhookEvent } = await import('./stripe.js');
     const result = await handleWebhookEvent(rawBody, signature);
 
     // Log the event for debugging
@@ -689,6 +685,7 @@ app.post('/v1/portal', async (c) => {
   }
 
   try {
+    const { createPortalSession } = await import('./stripe.js');
     const result = await createPortalSession({
       customerId: body.customerId,
       returnUrl: `${KONTEXT_APP_URL}/pricing`,
@@ -709,6 +706,7 @@ app.get('/v1/checkout/success', async (c) => {
   }
 
   try {
+    const { getCheckoutSession } = await import('./stripe.js');
     const session = await getCheckoutSession(sessionId);
     return c.json(session);
   } catch (err) {
