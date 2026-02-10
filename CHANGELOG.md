@@ -2,6 +2,16 @@
 
 All notable public changes to the Kontext SDK and platform are documented here.
 
+## [0.2.5] - 2026-02-10
+
+### Changed
+- Switched npm publish to trusted publishing via GitHub Actions OIDC (no tokens needed)
+
+### Fixed
+- TypeScript strict mode errors in OFAC sanctions DTS build
+- pnpm lockfile sync and demo workspace reference
+- Release workflow: pnpm version conflict, gitignored file handling
+
 ## [0.2.1] - 2026-02-10
 
 ### Added
