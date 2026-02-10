@@ -192,3 +192,15 @@ export type {
   WithKontextOptions,
   KontextAIContext,
 } from './integrations/vercel-ai.js';
+
+// CFTC Compliance Integration (Letter No. 26-05 - FCM Digital Asset Margin)
+export { CFTCCompliance } from './integrations/cftc-compliance.js';
+export type {
+  CFTCAccountClass,
+  DigitalAssetType,
+  CollateralValuation,
+  SegregationCalculation,
+  DigitalAssetReport,
+  IncidentReport,
+  CFTCComplianceConfig,
+} from './integrations/cftc-compliance.js';

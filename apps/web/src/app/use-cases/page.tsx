@@ -17,13 +17,14 @@ import {
   Users,
   ArrowLeftRight,
   Landmark,
+  ShieldCheck,
   Check,
 } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Use Cases",
   description:
-    "Explore how Kontext supports compliance-ready agentic transactions -- USDC payments, x402 micropayments, Stripe commerce, Google UCP, cross-chain CCTP transfers, and treasury management.",
+    "Explore how Kontext supports compliance-ready agentic transactions -- USDC payments, x402 micropayments, Stripe commerce, Google UCP, cross-chain CCTP transfers, treasury management, and FCM digital asset collateral compliance (CFTC Letter 26-05).",
 };
 
 const usdcCode = `import { Kontext } from 'kontext-sdk';
@@ -244,6 +245,30 @@ async function executeTreasuryTransfer(params) {
   console.log('Trust score:', result.trustScore);
 }`;
 
+const fcmCode = `import { Kontext, CFTCCompliance } from 'kontext-sdk';
+
+const kontext = Kontext.init({ projectId: 'fcm-collateral', environment: 'production' });
+const cftc = new CFTCCompliance();
+
+// Log collateral valuation with haircut
+cftc.logCollateralValuation({
+  accountClass: 'futures',
+  assetType: 'payment_stablecoin',
+  assetSymbol: 'USDC',
+  quantity: 1_000_000,
+  marketValue: 1_000_000,
+  haircutPercentage: 0.02,
+  valuationMethod: 'dco_reference',
+  agentId: 'collateral-agent',
+});
+
+// Generate weekly CFTC report
+const report = cftc.generateWeeklyDigitalAssetReport(
+  'futures',
+  new Date('2026-02-03'),
+  new Date('2026-02-09'),
+);`;
+
 const useCases = [
   {
     id: "usdc-payments",
@@ -345,6 +370,26 @@ const useCases = [
       "Risk scoring based on amount, purpose, department, and agent history",
       "Multi-channel notifications (Slack, email) for pending approvals",
       "Department-level budget enforcement with real-time spend tracking",
+    ],
+  },
+  {
+    id: "fcm-collateral",
+    icon: ShieldCheck,
+    badge: "CFTC Letter 26-05 Aligned",
+    badgeColor: "border-rose-500/30 bg-rose-500/10 text-rose-400",
+    title: "FCM Digital Asset Collateral Compliance",
+    description:
+      "CFTC Letter 26-05 compliance infrastructure for futures commission merchants accepting stablecoin and digital asset collateral. Kontext provides the tamper-evident audit trail, automated reporting, and segregation tracking that FCMs need to meet new CFTC requirements.",
+    code: fcmCode,
+    filename: "fcm-compliance.ts",
+    benefits: [
+      "Collateral valuation logging with tamper-evident audit trail and cryptographic digest chains",
+      "Daily mark-to-market tracking with automated haircut validation per DCO reference prices",
+      "Weekly CFTC digital asset reports generated automatically by asset type and account class",
+      "Segregation calculation logging for futures, cleared swaps, and 30.7 secured accounts",
+      "Cybersecurity incident reporting and alerting per CFTC requirements",
+      "GENIUS Act-aligned stablecoin definitions for payment stablecoin classification",
+      "Risk management program documentation support aligned with Commission Reg 1.11",
     ],
   },
 ];

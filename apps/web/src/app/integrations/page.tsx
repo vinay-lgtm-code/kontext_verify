@@ -23,6 +23,7 @@ import {
   Zap,
   Users,
   ArrowLeftRight,
+  ShieldCheck,
 } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -288,6 +289,16 @@ const protocolIntegrations = [
     linkHref: "/use-cases#cctp-transfers",
     linkLabel: "View use case",
   },
+  {
+    icon: ShieldCheck,
+    title: "CFTC / FCM Compliance",
+    description:
+      "Digital asset collateral compliance for futures commission merchants under CFTC Letter 26-05. Collateral valuation logging, weekly reports, and segregation tracking.",
+    status: "Available",
+    statusColor: "border-rose-500/30 bg-rose-500/10 text-rose-400",
+    linkHref: "/use-cases#fcm-collateral",
+    linkLabel: "View use case",
+  },
 ];
 
 export default function IntegrationsPage() {
@@ -356,6 +367,12 @@ export default function IntegrationsPage() {
               className="inline-flex shrink-0 rounded-full border border-border/50 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground hover:bg-accent"
             >
               Protocols
+            </a>
+            <a
+              href="#protocols"
+              className="inline-flex shrink-0 rounded-full border border-rose-500/30 bg-rose-500/5 px-3 py-1.5 text-xs text-rose-400 transition-colors hover:bg-rose-500/10"
+            >
+              CFTC / FCM
             </a>
           </div>
         </div>
@@ -525,7 +542,7 @@ export default function IntegrationsPage() {
             </p>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {protocolIntegrations.map((integration) => (
               <Card
                 key={integration.title}
