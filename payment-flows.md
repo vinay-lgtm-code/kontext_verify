@@ -145,9 +145,15 @@ interface UsdcComplianceCheck {
 | Method | Description |
 |--------|-------------|
 | `screenAddress(address, context?)` | Full address screen with jurisdictional + entity checks |
-| `screenEntity(name)` | Fuzzy entity name matching against SDN names |
-| `analyzeTransaction(pattern)` | Detects suspicious patterns (MIXING, CHAIN_HOPPING, STRUCTURING, RAPID_MOVEMENT, PEELING_CHAIN) |
-| `isActivelySanctioned(address)` | Active-only SDN check |
+| `isActivelySanctioned(address)` | Active-only SDN check (O(1) lookup) |
+| `hasAnySanctionsHistory(address)` | Check if address has any sanctions record (active or delisted) |
+| `getAddressEntry(address)` | Get the full SDN entry for a specific address |
+| `screenJurisdiction(code)` | Screen a country code against sanctioned jurisdictions |
+| `searchEntityName(query, threshold?)` | Fuzzy entity name matching against SDN names (default threshold: 0.6) |
+| `checkFiftyPercentRule(owners)` | Check if cumulative sanctioned ownership >= 50% |
+| `analyzeTransactionPatterns(transactions)` | Detects suspicious patterns (MIXING, CHAIN_HOPPING, STRUCTURING, RAPID_MOVEMENT, PEELING_CHAIN) |
+| `addAddresses(entries)` | Add sanctioned address entries at runtime |
+| `addEntities(entities)` | Add sanctioned entity entries at runtime |
 
 ### Screening Layers
 
@@ -441,7 +447,7 @@ Records a sponsorship event after on-chain confirmation. Logs `gas_sponsorship` 
 
 ## 9. CFTC Letter 26-05 Compliance
 
-**Entry point:** `new CFTCComplianceManager()`
+**Entry point:** `new CFTCCompliance()`
 
 **File:** `packages/sdk/src/integrations/cftc-compliance.ts`
 
@@ -453,10 +459,14 @@ Records a sponsorship event after on-chain confirmation. Logs `gas_sponsorship` 
 |--------|-------------|
 | `logCollateralValuation(input)` | Log a collateral valuation with haircut validation |
 | `logSegregationCalculation(input)` | Log daily segregation calculation (Reg 1.20 / 30.7) |
-| `generateWeeklyReport(startDate, endDate, agentId)` | Generate weekly digital asset report |
 | `logIncident(input)` | Log cybersecurity/operational incident |
-| `getValuations(filter?)` | Query stored valuations |
-| `getSegregationHistory(filter?)` | Query segregation calculations |
+| `generateWeeklyDigitalAssetReport(accountClass, periodStart, periodEnd)` | Generate weekly digital asset report for an account class |
+| `generateDailySegregationReport(accountClass, date)` | Get most recent segregation calculation for a given account class and date |
+| `getCollateralValuations(filters?)` | Query stored collateral valuations with optional filters |
+| `getSegregationCalculations(filters?)` | Query segregation calculations with optional filters |
+| `getIncidents(filters?)` | Query incident reports with optional filters |
+| `validateHaircut(assetType, haircutPercentage)` | Validate a haircut percentage against CFTC Letter 26-05 requirements |
+| `exportCFTCReport(options)` | Export CFTC compliance data in JSON or CSV format |
 
 ### Haircut Rules
 
@@ -601,11 +611,9 @@ If `trustThreshold` is set, the middleware:
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `type` | `string` | Yes | Report type identifier |
-| `from` | `Date` | Yes | Start date |
-| `to` | `Date` | Yes | End date |
-| `agentId` | `string` | No | Filter by agent |
-| `format` | `'json' \| 'csv'` | No | Output format |
+| `type` | `ReportType` | Yes | Report type (`'compliance' \| 'transaction' \| 'anomaly' \| 'sar' \| 'ctr'`) |
+| `period` | `DateRange` | Yes | Reporting period with `start: Date` and `end: Date` |
+| `agentIds` | `string[]` | No | Filter by agent IDs |
 
 ### Step-by-step
 
@@ -642,9 +650,13 @@ Same as `LogTransactionInput`.
 
 ```typescript
 interface TransactionEvaluation {
-  riskScore: number;        // 0-100
+  txHash: string;              // Transaction hash being evaluated
+  riskScore: number;           // 0-100 (higher = more risky)
+  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  factors: RiskFactor[];       // Breakdown of what contributed to score
+  flagged: boolean;            // Whether the transaction should be flagged (riskScore >= 60)
   recommendation: 'approve' | 'review' | 'block';
-  factors: RiskFactor[];    // Breakdown of what contributed to score
+  evaluatedAt: string;         // ISO 8601 timestamp
 }
 ```
 
@@ -770,9 +782,9 @@ Every payment flow listed above has corresponding test coverage:
 | x402 | `integrations.test.ts` |
 | Vercel AI SDK | `vercel-ai.test.ts`, `e2e-vercel-ai.test.ts` |
 | SAR/CTR Reports | `audit-reports.test.ts` |
-| Risk Evaluation | `client.test.ts` |
-| Approval Policies | `approval.test.ts` |
-| Plan Gating | `plan-gate.test.ts`, `plans.test.ts` |
+| Risk Evaluation | `client.test.ts`, `transaction-evaluation.test.ts` |
+| Approval Policies | `approval.test.ts`, `payment-flow-gating.test.ts` |
+| Plan Gating | `plan-gate.test.ts`, `plan-gate-completeness.test.ts`, `plans.test.ts`, `payment-flow-gating.test.ts` |
 | Digest Chain | `digest.test.ts` |
 | Compliance Certificates | `compliance-certificate.test.ts` |
 | Feature Flags | `feature-flags.test.ts` |
