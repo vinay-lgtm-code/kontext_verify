@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { createHmac, timingSafeEqual } from 'crypto';
-import type { AnomalyEvent, TrustScore } from './types.js';
+import type { AnomalyEvent, TrustScore, ApprovalRequest } from './types.js';
 import type { Task } from './types.js';
 import { generateId, now } from './utils.js';
 
@@ -16,7 +16,9 @@ export type WebhookEventType =
   | 'anomaly.detected'
   | 'task.confirmed'
   | 'task.failed'
-  | 'trust.score_changed';
+  | 'trust.score_changed'
+  | 'approval.required'
+  | 'approval.decided';
 
 /** Webhook registration configuration */
 export interface WebhookConfig {
@@ -324,6 +326,59 @@ export class WebhookManager {
     };
 
     return this.deliver('trust.score_changed', payload);
+  }
+
+  /**
+   * Notify all subscribed webhooks that an approval is required.
+   *
+   * @param request - The approval request that was created
+   * @returns Array of delivery results
+   */
+  async notifyApprovalRequired(request: ApprovalRequest): Promise<WebhookDeliveryResult[]> {
+    const payload: WebhookPayload = {
+      id: generateId(),
+      event: 'approval.required',
+      timestamp: now(),
+      data: {
+        requestId: request.id,
+        actionId: request.actionId,
+        agentId: request.agentId,
+        status: request.status,
+        triggeredPolicies: request.triggeredPolicies,
+        riskAssessment: request.riskAssessment,
+        requiredEvidence: request.requiredEvidence,
+        expiresAt: request.expiresAt,
+        metadata: request.metadata,
+      },
+    };
+
+    return this.deliver('approval.required', payload);
+  }
+
+  /**
+   * Notify all subscribed webhooks that an approval decision was made.
+   *
+   * @param request - The approval request with the decision
+   * @returns Array of delivery results
+   */
+  async notifyApprovalDecided(request: ApprovalRequest): Promise<WebhookDeliveryResult[]> {
+    const payload: WebhookPayload = {
+      id: generateId(),
+      event: 'approval.decided',
+      timestamp: now(),
+      data: {
+        requestId: request.id,
+        actionId: request.actionId,
+        agentId: request.agentId,
+        status: request.status,
+        triggeredPolicies: request.triggeredPolicies,
+        riskAssessment: request.riskAssessment,
+        decision: request.decision,
+        metadata: request.metadata,
+      },
+    };
+
+    return this.deliver('approval.decided', payload);
   }
 
   // --------------------------------------------------------------------------

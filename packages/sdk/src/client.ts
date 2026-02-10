@@ -30,6 +30,11 @@ import type {
   GenerateComplianceCertificateInput,
   ComplianceCertificate,
   Environment,
+  ApprovalPolicy,
+  ApprovalRequest,
+  ApprovalEvaluation,
+  EvaluateApprovalInput,
+  SubmitDecisionInput,
 } from './types.js';
 import type { DigestVerification, DigestLink } from './digest.js';
 import type { PlanTier, PlanUsage, LimitEvent } from './plans.js';
@@ -46,6 +51,7 @@ import { requirePlan } from './plan-gate.js';
 import type { EventExporter } from './exporters.js';
 import { NoopExporter } from './exporters.js';
 import { FeatureFlagManager } from './feature-flags.js';
+import { ApprovalManager } from './approval.js';
 import { createHash } from 'crypto';
 import { generateId, now } from './utils.js';
 
@@ -95,6 +101,7 @@ export class Kontext {
   private readonly planManager: PlanManager;
   private readonly exporter: EventExporter;
   private readonly featureFlagManager: FeatureFlagManager | null;
+  private approvalManager: ApprovalManager | null;
 
   private constructor(config: KontextConfig) {
     this.config = config;
@@ -135,6 +142,11 @@ export class Kontext {
     // Initialize feature flag manager if configured
     this.featureFlagManager = config.featureFlags
       ? new FeatureFlagManager(config.featureFlags)
+      : null;
+
+    // Initialize approval manager if policies are configured
+    this.approvalManager = config.approvalPolicies
+      ? new ApprovalManager(config.approvalPolicies)
       : null;
   }
 
@@ -921,6 +933,73 @@ export class Kontext {
    */
   getFeatureFlagManager(): FeatureFlagManager | null {
     return this.featureFlagManager;
+  }
+
+  // --------------------------------------------------------------------------
+  // Approval / Human-in-the-Loop
+  // --------------------------------------------------------------------------
+
+  /**
+   * Set or replace approval policies. Creates a new ApprovalManager.
+   *
+   * @param policies - Approval policy configurations
+   */
+  setApprovalPolicies(policies: ApprovalPolicy[]): void {
+    requirePlan('approval-policies', this.planManager.getTier());
+    this.approvalManager = new ApprovalManager(policies);
+  }
+
+  /**
+   * Evaluate an action against the configured approval policies.
+   *
+   * @param input - Action details to evaluate
+   * @returns Evaluation result indicating whether approval is required
+   * @throws KontextError if no approval policies are configured
+   */
+  evaluateApproval(input: EvaluateApprovalInput): ApprovalEvaluation {
+    if (!this.approvalManager) {
+      throw new KontextError(
+        KontextErrorCode.INITIALIZATION_ERROR,
+        'Approval policies are not configured. Call setApprovalPolicies() or pass approvalPolicies in init config.',
+      );
+    }
+    return this.approvalManager.evaluate(input);
+  }
+
+  /**
+   * Submit a human decision on a pending approval request.
+   *
+   * @param input - Decision details
+   * @returns The updated ApprovalRequest
+   * @throws KontextError if no approval policies are configured
+   */
+  submitApprovalDecision(input: SubmitDecisionInput): ApprovalRequest {
+    if (!this.approvalManager) {
+      throw new KontextError(
+        KontextErrorCode.INITIALIZATION_ERROR,
+        'Approval policies are not configured. Call setApprovalPolicies() or pass approvalPolicies in init config.',
+      );
+    }
+    return this.approvalManager.submitDecision(input);
+  }
+
+  /**
+   * Get an approval request by ID.
+   *
+   * @param requestId - The approval request identifier
+   * @returns The approval request, or undefined if not found
+   */
+  getApprovalRequest(requestId: string): ApprovalRequest | undefined {
+    return this.approvalManager?.getRequest(requestId);
+  }
+
+  /**
+   * Get all pending approval requests.
+   *
+   * @returns Array of pending approval requests
+   */
+  getPendingApprovals(): ApprovalRequest[] {
+    return this.approvalManager?.getPendingRequests() ?? [];
   }
 
   // --------------------------------------------------------------------------

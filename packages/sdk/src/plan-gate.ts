@@ -17,7 +17,8 @@ export type GatedFeature =
   | 'circle-wallets'
   | 'circle-compliance'
   | 'gas-station'
-  | 'cctp-transfers';
+  | 'cctp-transfers'
+  | 'approval-policies';
 
 const FEATURE_MIN_PLAN: Record<GatedFeature, PlanTier> = {
   'advanced-anomaly-rules': 'pro',
@@ -31,6 +32,7 @@ const FEATURE_MIN_PLAN: Record<GatedFeature, PlanTier> = {
   'circle-compliance': 'enterprise',
   'gas-station': 'enterprise',
   'cctp-transfers': 'enterprise',
+  'approval-policies': 'pro',
 };
 
 const PLAN_RANK: Record<PlanTier, number> = { free: 0, pro: 1, enterprise: 2 };
@@ -47,6 +49,7 @@ const FEATURE_LABELS: Record<GatedFeature, string> = {
   'circle-compliance': 'Circle Compliance Engine',
   'gas-station': 'Gas Station integration',
   'cctp-transfers': 'CCTP cross-chain transfers',
+  'approval-policies': 'Approval policies',
 };
 
 /**

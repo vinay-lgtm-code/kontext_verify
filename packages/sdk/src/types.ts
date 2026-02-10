@@ -138,6 +138,13 @@ export interface KontextConfig {
    * `FeatureFlagManager` that fetches flags from Firestore REST API.
    */
   featureFlags?: FeatureFlagConfig;
+
+  /**
+   * Approval policies for human-in-the-loop review. When provided, the SDK
+   * initializes an `ApprovalManager` that evaluates actions against these
+   * policies and blocks execution until a human decides.
+   */
+  approvalPolicies?: ApprovalPolicy[];
 }
 
 /**
@@ -737,6 +744,78 @@ export interface FeatureFlagConfig {
 }
 
 // ============================================================================
+// Approval / Human-in-the-Loop
+// ============================================================================
+
+/** Types of approval policies that can trigger human review */
+export type ApprovalPolicyType = 'amount-threshold' | 'low-trust-score' | 'anomaly-detected' | 'new-destination' | 'manual';
+
+/** Status of an approval request */
+export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'expired';
+
+/** Configurable policy that determines when human approval is required */
+export interface ApprovalPolicy {
+  type: ApprovalPolicyType;
+  enabled: boolean;
+  params: Record<string, unknown>;
+  requiredEvidence?: string[];
+}
+
+/** A pending or resolved approval request */
+export interface ApprovalRequest {
+  id: string;
+  actionId: string;
+  agentId: string;
+  status: ApprovalStatus;
+  triggeredPolicies: ApprovalPolicyType[];
+  riskAssessment: { score: number; factors: string[] };
+  requiredEvidence: string[];
+  decision: ApprovalDecision | null;
+  createdAt: string;
+  expiresAt: string;
+  metadata: Record<string, unknown>;
+}
+
+/** Decision made by a human reviewer */
+export interface ApprovalDecision {
+  decision: 'approve' | 'reject';
+  decidedBy: string;
+  reason: string;
+  evidence?: Record<string, unknown>;
+  conditions?: string[];
+  decidedAt: string;
+}
+
+/** Result of evaluating an action against approval policies */
+export interface ApprovalEvaluation {
+  required: boolean;
+  requestId?: string;
+  triggeredPolicies: ApprovalPolicyType[];
+  riskAssessment: { score: number; factors: string[] };
+}
+
+/** Input for evaluating whether an action requires approval */
+export interface EvaluateApprovalInput {
+  actionId: string;
+  agentId: string;
+  amount?: string;
+  destination?: string;
+  trustScore?: number;
+  anomalies?: Array<{ type: string; severity: string }>;
+  metadata?: Record<string, unknown>;
+}
+
+/** Input for submitting a human decision on an approval request */
+export interface SubmitDecisionInput {
+  requestId: string;
+  decision: 'approve' | 'reject';
+  decidedBy: string;
+  reason: string;
+  evidence?: Record<string, unknown>;
+  conditions?: string[];
+}
+
+// ============================================================================
 // Errors
 // ============================================================================
 
@@ -753,6 +832,8 @@ export enum KontextErrorCode {
   EXPORT_ERROR = 'EXPORT_ERROR',
   ANOMALY_CONFIG_ERROR = 'ANOMALY_CONFIG_ERROR',
   PLAN_REQUIRED = 'PLAN_REQUIRED',
+  APPROVAL_NOT_FOUND = 'APPROVAL_NOT_FOUND',
+  APPROVAL_EXPIRED = 'APPROVAL_EXPIRED',
 }
 
 /** Kontext SDK error */

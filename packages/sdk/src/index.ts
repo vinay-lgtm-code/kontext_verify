@@ -97,6 +97,19 @@ export type {
   FlagPlanTargeting,
 } from './types.js';
 
+// Approval / Human-in-the-Loop
+export { ApprovalManager } from './approval.js';
+export type {
+  ApprovalPolicy,
+  ApprovalPolicyType,
+  ApprovalStatus,
+  ApprovalRequest,
+  ApprovalDecision,
+  ApprovalEvaluation,
+  EvaluateApprovalInput,
+  SubmitDecisionInput,
+} from './types.js';
+
 // Error types
 export { KontextError, KontextErrorCode } from './types.js';
 
