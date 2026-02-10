@@ -54,20 +54,24 @@ function parseChangelog(raw: string) {
 }
 
 function getChangelog(): string {
-  try {
-    const filePath = path.join(process.cwd(), "..", "..", "CHANGELOG.md");
-    return fs.readFileSync(filePath, "utf-8");
-  } catch {
-    // Fallback: try from repo root (depends on working directory)
+  // Try multiple paths to handle different build contexts:
+  // - Vercel with root=apps/web: cwd is apps/web, so ../../CHANGELOG.md reaches monorepo root
+  // - Vercel with root=monorepo:  cwd is monorepo root, so ./CHANGELOG.md works
+  // - Local dev (next dev):       cwd is apps/web, so ../../CHANGELOG.md works
+  const candidates = [
+    path.join(process.cwd(), "..", "..", "CHANGELOG.md"),
+    path.join(process.cwd(), "CHANGELOG.md"),
+    path.join(process.cwd(), "apps", "web", "..", "..", "CHANGELOG.md"),
+  ];
+
+  for (const candidate of candidates) {
     try {
-      return fs.readFileSync(
-        path.join(process.cwd(), "CHANGELOG.md"),
-        "utf-8"
-      );
+      return fs.readFileSync(candidate, "utf-8");
     } catch {
-      return "";
+      // try next candidate
     }
   }
+  return "";
 }
 
 export default function ChangelogPage() {
