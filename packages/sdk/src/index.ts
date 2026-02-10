@@ -242,3 +242,27 @@ export type {
   IncidentReport,
   CFTCComplianceConfig,
 } from './integrations/cftc-compliance.js';
+
+// Unified Screening Provider Architecture
+export { ScreeningAggregator, BlocklistManager, createScreeningAggregator } from './integrations/screening-aggregator.js';
+export type {
+  ScreeningProvider,
+  RiskCategory,
+  RiskSeverity,
+  RiskSignal,
+  ScreeningAction,
+  TransactionDirection,
+  ProviderScreeningResult,
+  UnifiedScreeningResult,
+  ScreenAddressInput,
+  ScreenTransactionProviderInput,
+  ScreeningAggregatorConfig,
+  ListEntry,
+  BlocklistConfig,
+} from './integrations/screening-provider.js';
+
+// Screening Providers - OFAC Auto-Update & Chainalysis Oracle
+export { OFACListProvider, ChainalysisOracleProvider } from './integrations/provider-ofac.js';
+
+// Screening Providers - Chainalysis Free API & OpenSanctions
+export { ChainalysisFreeAPIProvider, OpenSanctionsProvider } from './integrations/provider-apis.js';
