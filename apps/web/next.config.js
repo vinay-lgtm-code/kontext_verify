@@ -4,15 +4,21 @@ const path = require("path");
 // Read CHANGELOG.md at config time and inject as env var.
 // __dirname is always apps/web — reliable across local dev and Vercel.
 let changelogContent = "";
-for (const p of [
+const changelogCandidates = [
   path.join(__dirname, "..", "..", "CHANGELOG.md"),
   path.join(__dirname, "CHANGELOG.md"),
-]) {
+  path.join(process.cwd(), "CHANGELOG.md"),
+  path.join(process.cwd(), "..", "..", "CHANGELOG.md"),
+];
+console.log("[changelog] __dirname =", __dirname);
+console.log("[changelog] cwd =", process.cwd());
+for (const p of changelogCandidates) {
   try {
     changelogContent = fs.readFileSync(p, "utf-8");
+    console.log("[changelog] Found at:", p, "length:", changelogContent.length);
     break;
   } catch {
-    // try next
+    console.log("[changelog] Not found:", p);
   }
 }
 
