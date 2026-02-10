@@ -2,6 +2,13 @@
 
 All notable public changes to the Kontext SDK and platform are documented here.
 
+## [0.3.2] - 2026-02-10
+
+### Added
+- Update release workflow to publish from release branch
+- Add custom blocklist/allowlist to Pro tier on pricing page and FAQs
+
+
 ## [0.3.1] - 2026-02-10
 
 ### Added
