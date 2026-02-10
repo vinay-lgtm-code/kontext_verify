@@ -886,7 +886,7 @@ export class OFACSanctionsScreener {
       const isActive = entry.dateRemoved === null;
       directMatches.push({
         matchedAddress: entry.address,
-        list: entry.lists[0],
+        list: entry.lists[0]!,
         entityName: entry.entityName,
         entityType: entry.entityType,
         confidence: 1.0,
@@ -915,7 +915,7 @@ export class OFACSanctionsScreener {
         const cpActive = cpEntry.dateRemoved === null;
         directMatches.push({
           matchedAddress: cpEntry.address,
-          list: cpEntry.lists[0],
+          list: cpEntry.lists[0]!,
           entityName: cpEntry.entityName,
           entityType: cpEntry.entityType,
           confidence: 1.0,
@@ -1129,9 +1129,9 @@ export class OFACSanctionsScreener {
         totalSanctionedOwnership += owner.ownershipPercentage;
         flags.push({
           entityName,
-          sanctionedParent: matches[0].entity.name,
+          sanctionedParent: matches[0]!.entity.name,
           ownershipPercentage: owner.ownershipPercentage,
-          source: `Fuzzy match on "${owner.ownerName}" -> "${matches[0].matchedOn}" (${Math.round(matches[0].similarity * 100)}% match)`,
+          source: `Fuzzy match on "${owner.ownerName}" -> "${matches[0]!.matchedOn}" (${Math.round(matches[0]!.similarity * 100)}% match)`,
         });
       }
     }
