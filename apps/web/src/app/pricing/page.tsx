@@ -91,6 +91,7 @@ const plans = [
       "All anomaly detection rules (6 rules)",
       "SAR/CTR report generation",
       "Best-in-class unified screening (OFAC, Chainalysis, OpenSanctions)",
+      "Custom blocklist/allowlist manager",
       "CSV export",
       "Multi-chain support (Ethereum, Polygon, Arbitrum, Optimism, Avalanche, Solana)",
       "Webhook alerts",
@@ -136,7 +137,7 @@ const faqs = [
   {
     question: "What does the Pro tier include for compliance?",
     answer:
-      "Pro includes 100,000 events per user per month, all six anomaly detection rules (including new-destination, off-hours, rapid-succession, and round-amount checks), SAR/CTR report generation, best-in-class unified screening (OFAC SDN, Chainalysis, OpenSanctions), CSV export, multi-chain support (Ethereum, Polygon, Arbitrum, Optimism, Avalanche, Solana), webhook alerts, and email support with 24h response time. Enterprise gets unlimited events with no caps.",
+      "Pro includes 100,000 events per user per month, all six anomaly detection rules (including new-destination, off-hours, rapid-succession, and round-amount checks), SAR/CTR report generation, best-in-class unified screening (OFAC SDN, Chainalysis, OpenSanctions), custom blocklist/allowlist manager, CSV export, multi-chain support (Ethereum, Polygon, Arbitrum, Optimism, Avalanche, Solana), webhook alerts, and email support with 24h response time. Enterprise gets unlimited events with no caps.",
   },
   {
     question: "How does Kontext handle my transaction data?",

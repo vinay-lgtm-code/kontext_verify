@@ -158,7 +158,7 @@ const faqCategories = [
       {
         question: "What does the Pro plan include?",
         answer:
-          "Pro ($199/user/mo, 100K events per user per month) includes everything in Free plus: all six anomaly detection rules (including new-destination, off-hours, rapid-succession, and round-amount), SAR/CTR report generation, best-in-class unified screening aggregating OFAC SDN, Chainalysis Oracle, Chainalysis API, and OpenSanctions into a single result, CSV export, multi-chain support (Ethereum, Polygon, Arbitrum, Optimism, Avalanche, Solana), webhook alerts, and email support with 24h response time. Event limits scale with your team size.",
+          "Pro ($199/user/mo, 100K events per user per month) includes everything in Free plus: all six anomaly detection rules (including new-destination, off-hours, rapid-succession, and round-amount), SAR/CTR report generation, best-in-class unified screening aggregating OFAC SDN, Chainalysis Oracle, Chainalysis API, and OpenSanctions into a single result, custom blocklist/allowlist manager, CSV export, multi-chain support (Ethereum, Polygon, Arbitrum, Optimism, Avalanche, Solana), webhook alerts, and email support with 24h response time. Event limits scale with your team size.",
       },
       {
         question: "Can I self-host the entire stack?",
