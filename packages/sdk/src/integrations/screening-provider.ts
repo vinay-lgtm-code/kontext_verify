@@ -26,7 +26,6 @@
 // ============================================================================
 
 import type { Chain } from '../types.js';
-import type { PlanTier } from '../plans.js';
 
 // ============================================================================
 // Risk Categories (aligned with Circle's 9 built-in rules)
@@ -184,38 +183,6 @@ export interface ScreeningProvider {
 }
 
 // ============================================================================
-// Blocklist / Allowlist Types
-// ============================================================================
-
-/** A blocklist or allowlist entry */
-export interface ListEntry {
-  /** The blockchain address */
-  address: string;
-  /** Which chains this entry applies to (empty = all) */
-  chains: Chain[];
-  /** Reason for listing */
-  reason: string;
-  /** Who added this entry */
-  addedBy: string;
-  /** When the entry was added */
-  addedAt: string;
-  /** Optional expiration date */
-  expiresAt?: string;
-  /** Optional metadata */
-  metadata?: Record<string, unknown>;
-}
-
-/** Blocklist manager configuration */
-export interface BlocklistConfig {
-  /** Path to persist blocklist data (optional) */
-  persistPath?: string;
-  /** Whether allowlist takes priority over blocklist */
-  allowlistPriority?: boolean;
-  /** Current plan tier — required for plan gate enforcement (Pro+) */
-  plan?: PlanTier;
-}
-
-// ============================================================================
 // Unified Screening Result (Aggregated)
 // ============================================================================
 
@@ -272,6 +239,4 @@ export interface ScreeningAggregatorConfig {
   reviewThreshold?: number;
   /** Custom provider weights for aggregation (provider name -> weight 0-1) */
   providerWeights?: Record<string, number>;
-  /** Blocklist configuration */
-  blocklist?: BlocklistConfig;
 }

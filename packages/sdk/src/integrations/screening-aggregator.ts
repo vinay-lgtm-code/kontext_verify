@@ -1,31 +1,18 @@
 // ============================================================================
-// Kontext SDK - Screening Aggregator & Blocklist Manager
+// Kontext SDK - Screening Aggregator
 // ============================================================================
 //
-// Provides two core components for unified compliance screening:
+// Combines results from multiple ScreeningProvider instances into a unified
+// screening decision using weighted scoring, configurable thresholds, and
+// parallel provider execution.
 //
-// 1. **BlocklistManager**: Manages user-defined blocklist and allowlist addresses
-//    with O(1) lookup, chain filtering, and time-based expiration. Maps to
-//    Circle Compliance Engine Rule #3 (Custom Blocklist).
-//
-// 2. **ScreeningAggregator**: Combines results from multiple ScreeningProvider
-//    instances into a unified screening decision using weighted scoring,
-//    configurable thresholds, and parallel provider execution.
+// Custom blocklist/allowlist (BlocklistManager) is available on Pro and
+// Enterprise plans. See https://getkontext.com/pricing for details.
 //
 // Usage:
-//   const blocklist = new BlocklistManager();
-//   blocklist.addToBlocklist({
-//     address: '0xBad...',
-//     chains: ['ethereum'],
-//     reason: 'Known scammer',
-//     addedBy: 'admin',
-//     addedAt: new Date().toISOString(),
-//   });
-//
 //   const aggregator = new ScreeningAggregator(
 //     [new OFACListProvider(), new ChainalysisFreeAPIProvider({ apiKey: '...' })],
 //     { blockThreshold: 80, reviewThreshold: 40 },
-//     blocklist,
 //   );
 //
 //   const result = await aggregator.screenAddress({
@@ -35,9 +22,6 @@
 //   if (result.decision === 'BLOCK') { /* deny transaction */ }
 // ============================================================================
 
-import type { Chain } from '../types.js';
-import { requirePlan } from '../plan-gate.js';
-import type { PlanTier } from '../plans.js';
 import type {
   ScreeningProvider,
   ScreenAddressInput,
@@ -47,227 +31,9 @@ import type {
   RiskSeverity,
   RiskCategory,
   ScreeningAction,
-  ListEntry,
-  BlocklistConfig,
   UnifiedScreeningResult,
   ScreeningAggregatorConfig,
 } from './screening-provider.js';
-
-// ============================================================================
-// BlocklistManager
-// ============================================================================
-
-/**
- * Manages user-defined blocklist and allowlist addresses for compliance
- * screening. Maps to Circle Compliance Engine Rule #3 (Custom Blocklist).
- *
- * Features:
- * - O(1) address lookup via Map with lowercase keys
- * - Per-chain filtering: entries can target specific chains or all chains
- * - Time-based expiration: entries with an `expiresAt` date are skipped
- *   (not removed) when expired
- * - Bulk import/export for list management
- *
- * @example
- * ```typescript
- * const manager = new BlocklistManager();
- *
- * manager.addToBlocklist({
- *   address: '0xBadActor...',
- *   chains: ['ethereum', 'base'],
- *   reason: 'Known phishing address',
- *   addedBy: 'compliance-team',
- *   addedAt: new Date().toISOString(),
- *   expiresAt: '2026-12-31T23:59:59Z',
- * });
- *
- * if (manager.isBlocklisted('0xbadactor...', 'ethereum')) {
- *   // Block the transaction
- * }
- * ```
- */
-export class BlocklistManager {
-  /** Internal blocklist store — lowercase address -> ListEntry */
-  private readonly blocklist: Map<string, ListEntry> = new Map();
-  /** Internal allowlist store — lowercase address -> ListEntry */
-  private readonly allowlist: Map<string, ListEntry> = new Map();
-  /** Optional configuration */
-  private readonly config: BlocklistConfig;
-
-  constructor(config?: BlocklistConfig) {
-    // Enforce Pro+ plan gate — BlocklistManager is not available on the free tier
-    const plan = config?.plan ?? 'free';
-    requirePlan('blocklist-manager', plan);
-    this.config = config ?? {};
-  }
-
-  // --------------------------------------------------------------------------
-  // Blocklist Operations
-  // --------------------------------------------------------------------------
-
-  /**
-   * Add an address to the blocklist.
-   *
-   * If the address already exists, the entry is overwritten with the new one.
-   *
-   * @param entry - The list entry to add
-   */
-  addToBlocklist(entry: ListEntry): void {
-    const key = entry.address.toLowerCase();
-    this.blocklist.set(key, entry);
-  }
-
-  /**
-   * Add an address to the allowlist.
-   *
-   * If the address already exists, the entry is overwritten with the new one.
-   *
-   * @param entry - The list entry to add
-   */
-  addToAllowlist(entry: ListEntry): void {
-    const key = entry.address.toLowerCase();
-    this.allowlist.set(key, entry);
-  }
-
-  /**
-   * Remove an address from the blocklist.
-   *
-   * @param address - The blockchain address to remove (case-insensitive)
-   * @returns `true` if the address was found and removed, `false` otherwise
-   */
-  removeFromBlocklist(address: string): boolean {
-    return this.blocklist.delete(address.toLowerCase());
-  }
-
-  /**
-   * Remove an address from the allowlist.
-   *
-   * @param address - The blockchain address to remove (case-insensitive)
-   * @returns `true` if the address was found and removed, `false` otherwise
-   */
-  removeFromAllowlist(address: string): boolean {
-    return this.allowlist.delete(address.toLowerCase());
-  }
-
-  /**
-   * Check whether an address is on the blocklist.
-   *
-   * Performs case-insensitive lookup and honors:
-   * - Chain filtering: if the entry specifies chains, the address is only
-   *   considered blocklisted if the given chain matches (or entry has no chains).
-   * - Expiration: if the entry has an `expiresAt` date in the past, it is
-   *   skipped (not removed from storage).
-   *
-   * @param address - The blockchain address to check
-   * @param chain - Optional chain to filter against
-   * @returns `true` if the address is actively blocklisted
-   */
-  isBlocklisted(address: string, chain?: Chain): boolean {
-    return this.isListed(this.blocklist, address, chain);
-  }
-
-  /**
-   * Check whether an address is on the allowlist.
-   *
-   * Same matching semantics as {@link isBlocklisted}: case-insensitive,
-   * chain-aware, and expiration-aware.
-   *
-   * @param address - The blockchain address to check
-   * @param chain - Optional chain to filter against
-   * @returns `true` if the address is actively allowlisted
-   */
-  isAllowlisted(address: string, chain?: Chain): boolean {
-    return this.isListed(this.allowlist, address, chain);
-  }
-
-  /**
-   * Return all blocklist entries.
-   */
-  getBlocklist(): ListEntry[] {
-    return Array.from(this.blocklist.values());
-  }
-
-  /**
-   * Return all allowlist entries.
-   */
-  getAllowlist(): ListEntry[] {
-    return Array.from(this.allowlist.values());
-  }
-
-  // --------------------------------------------------------------------------
-  // Bulk Import / Export
-  // --------------------------------------------------------------------------
-
-  /**
-   * Bulk-import entries into either the blocklist or allowlist.
-   *
-   * @param entries - Array of list entries to import
-   * @param type - Target list: `'blocklist'` or `'allowlist'`
-   * @returns The number of entries that were imported
-   */
-  importList(entries: ListEntry[], type: 'blocklist' | 'allowlist'): number {
-    const target = type === 'blocklist' ? this.blocklist : this.allowlist;
-    let imported = 0;
-
-    for (const entry of entries) {
-      const key = entry.address.toLowerCase();
-      target.set(key, entry);
-      imported++;
-    }
-
-    return imported;
-  }
-
-  /**
-   * Export all entries from either the blocklist or allowlist.
-   *
-   * @param type - Source list: `'blocklist'` or `'allowlist'`
-   * @returns Array of all list entries (including expired ones)
-   */
-  exportList(type: 'blocklist' | 'allowlist'): ListEntry[] {
-    const source = type === 'blocklist' ? this.blocklist : this.allowlist;
-    return Array.from(source.values());
-  }
-
-  // --------------------------------------------------------------------------
-  // Internal Helpers
-  // --------------------------------------------------------------------------
-
-  /**
-   * Check whether an address is present and active in a given list map.
-   * Expired entries are skipped but not removed from storage.
-   */
-  private isListed(
-    list: Map<string, ListEntry>,
-    address: string,
-    chain?: Chain,
-  ): boolean {
-    const key = address.toLowerCase();
-    const entry = list.get(key);
-
-    if (!entry) {
-      return false;
-    }
-
-    // Check expiration — expired entries are considered inactive
-    if (entry.expiresAt) {
-      const expiresAt = new Date(entry.expiresAt);
-      if (expiresAt.getTime() <= Date.now()) {
-        return false;
-      }
-    }
-
-    // Check chain filter — if the entry specifies chains, the given chain
-    // must be in the list. An empty chains array means "all chains".
-    if (chain && entry.chains.length > 0) {
-      if (!entry.chains.includes(chain)) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-}
 
 // ============================================================================
 // Severity Ordering (for comparison)
@@ -355,11 +121,12 @@ function withTimeout<T>(
  * unified screening decision.
  *
  * The aggregator:
- * - Checks the optional {@link BlocklistManager} first (allowlist and blocklist)
  * - Runs all providers in parallel (configurable) with per-provider timeout
  * - Computes a weighted-average aggregate risk score
  * - Determines the final decision based on configurable thresholds
  * - Enforces minimum provider success requirements
+ *
+ * Custom blocklist/allowlist support is available on Pro and Enterprise plans.
  *
  * @example
  * ```typescript
@@ -376,7 +143,6 @@ function withTimeout<T>(
  *       'opensanctions': 0.6,
  *     },
  *   },
- *   blocklistManager,
  * );
  *
  * const result = await aggregator.screenAddress({
@@ -400,21 +166,17 @@ export class ScreeningAggregator {
     >
   > & {
     providerWeights: Record<string, number>;
-    blocklist: BlocklistConfig;
   };
-  private readonly blocklist: BlocklistManager | undefined;
 
   /**
    * Create a new ScreeningAggregator.
    *
    * @param providers - Array of screening providers to aggregate
    * @param config - Optional aggregator configuration
-   * @param blocklist - Optional blocklist manager for custom block/allow lists
    */
   constructor(
     providers: ScreeningProvider[],
     config?: ScreeningAggregatorConfig,
-    blocklist?: BlocklistManager,
   ) {
     this.providers = [...providers];
     this.config = {
@@ -424,9 +186,7 @@ export class ScreeningAggregator {
       blockThreshold: config?.blockThreshold ?? 80,
       reviewThreshold: config?.reviewThreshold ?? 40,
       providerWeights: config?.providerWeights ?? {},
-      blocklist: config?.blocklist ?? {},
     };
-    this.blocklist = blocklist;
   }
 
   // --------------------------------------------------------------------------
@@ -437,42 +197,20 @@ export class ScreeningAggregator {
    * Screen a single address through all providers and return a unified result.
    *
    * Execution order:
-   * 1. Check allowlist (if allowlisted AND `config.blocklist.allowlistPriority`, approve immediately)
-   * 2. Check blocklist (if blocklisted, block immediately with CUSTOM_BLOCKLIST category)
-   * 3. Run all providers (parallel or sequential) with per-provider timeout
-   * 4. Aggregate results into a unified decision
+   * 1. Run all providers (parallel or sequential) with per-provider timeout
+   * 2. Aggregate results into a unified decision
    *
    * @param input - Address screening input
    * @returns Unified screening result with aggregated decision
    */
   async screenAddress(input: ScreenAddressInput): Promise<UnifiedScreeningResult> {
     const startTime = Date.now();
-    const address = input.address;
-    const chain = input.chain;
 
-    // --- Step 1: Allowlist check ---
-    const allowlisted = this.blocklist
-      ? this.blocklist.isAllowlisted(address, chain)
-      : false;
-
-    if (allowlisted && this.config.blocklist.allowlistPriority) {
-      return this.buildAllowlistedResult(input, Date.now() - startTime);
-    }
-
-    // --- Step 2: Blocklist check ---
-    const blocklisted = this.blocklist
-      ? this.blocklist.isBlocklisted(address, chain)
-      : false;
-
-    if (blocklisted) {
-      return this.buildBlocklistedResult(input, Date.now() - startTime);
-    }
-
-    // --- Step 3: Run providers ---
+    // --- Run providers ---
     const providerResults = await this.runProviders(input);
 
-    // --- Step 4: Aggregate results ---
-    return this.aggregateResults(input, providerResults, allowlisted, blocklisted, Date.now() - startTime);
+    // --- Aggregate results ---
+    return this.aggregateResults(input, providerResults, Date.now() - startTime);
   }
 
   // --------------------------------------------------------------------------
@@ -696,8 +434,6 @@ export class ScreeningAggregator {
   private aggregateResults(
     input: ScreenAddressInput,
     providerResults: ProviderScreeningResult[],
-    allowlisted: boolean,
-    blocklisted: boolean,
     totalLatencyMs: number,
   ): UnifiedScreeningResult {
     const succeededResults = providerResults.filter((r) => r.success);
@@ -771,8 +507,8 @@ export class ScreeningAggregator {
       providersSucceeded: succeededResults.length,
       totalLatencyMs,
       screenedAt: new Date().toISOString(),
-      allowlisted,
-      blocklisted,
+      allowlisted: false,
+      blocklisted: false,
     };
   }
 
@@ -815,72 +551,6 @@ export class ScreeningAggregator {
 
     return Math.round(weightedSum / totalWeight);
   }
-
-  // --------------------------------------------------------------------------
-  // Internal: Shortcut Results
-  // --------------------------------------------------------------------------
-
-  /**
-   * Build an immediate APPROVE result for an allowlisted address.
-   */
-  private buildAllowlistedResult(
-    input: ScreenAddressInput,
-    totalLatencyMs: number,
-  ): UnifiedScreeningResult {
-    return {
-      address: input.address,
-      chain: input.chain,
-      decision: 'APPROVE',
-      actions: ['ALLOW'],
-      highestSeverity: 'NONE',
-      aggregateRiskScore: 0,
-      categories: [],
-      providerResults: [],
-      allSignals: [],
-      providersConsulted: 0,
-      providersSucceeded: 0,
-      totalLatencyMs,
-      screenedAt: new Date().toISOString(),
-      allowlisted: true,
-      blocklisted: false,
-    };
-  }
-
-  /**
-   * Build an immediate BLOCK result for a blocklisted address.
-   */
-  private buildBlocklistedResult(
-    input: ScreenAddressInput,
-    totalLatencyMs: number,
-  ): UnifiedScreeningResult {
-    const signal: RiskSignal = {
-      provider: 'blocklist-manager',
-      category: 'CUSTOM_BLOCKLIST',
-      severity: 'BLOCKLIST',
-      riskScore: 100,
-      actions: ['DENY'],
-      description: `Address ${input.address} is on the custom blocklist`,
-      direction: 'BOTH',
-    };
-
-    return {
-      address: input.address,
-      chain: input.chain,
-      decision: 'BLOCK',
-      actions: ['DENY'],
-      highestSeverity: 'BLOCKLIST',
-      aggregateRiskScore: 100,
-      categories: ['CUSTOM_BLOCKLIST'],
-      providerResults: [],
-      allSignals: [signal],
-      providersConsulted: 0,
-      providersSucceeded: 0,
-      totalLatencyMs,
-      screenedAt: new Date().toISOString(),
-      allowlisted: false,
-      blocklisted: true,
-    };
-  }
 }
 
 // ============================================================================
@@ -888,12 +558,10 @@ export class ScreeningAggregator {
 // ============================================================================
 
 /**
- * Convenience factory for creating a {@link ScreeningAggregator} with optional
- * blocklist support.
+ * Convenience factory for creating a {@link ScreeningAggregator}.
  *
  * @param providers - Array of screening providers to aggregate
  * @param config - Optional aggregator configuration
- * @param blocklist - Optional blocklist manager
  * @returns A configured ScreeningAggregator instance
  *
  * @example
@@ -901,14 +569,12 @@ export class ScreeningAggregator {
  * const aggregator = createScreeningAggregator(
  *   [ofacProvider, chainalysisProvider],
  *   { blockThreshold: 75 },
- *   myBlocklistManager,
  * );
  * ```
  */
 export function createScreeningAggregator(
   providers: ScreeningProvider[],
   config?: ScreeningAggregatorConfig,
-  blocklist?: BlocklistManager,
 ): ScreeningAggregator {
-  return new ScreeningAggregator(providers, config, blocklist);
+  return new ScreeningAggregator(providers, config);
 }
