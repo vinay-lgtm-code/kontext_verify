@@ -9,9 +9,22 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { ServerStore } from './store.js';
+import { ServerFeatureFlags } from './feature-flags.js';
 
 const app = new Hono();
 const store = new ServerStore();
+
+// ============================================================================
+// Feature Flags - Firestore-backed, plan-aware
+// ============================================================================
+
+const GCP_PROJECT_ID = process.env['GCP_PROJECT_ID'] ?? 'kontext-verify-sdk';
+const featureFlags = new ServerFeatureFlags(GCP_PROJECT_ID);
+
+// Warm the feature flag cache at startup (non-blocking)
+featureFlags.init().catch(() => {
+  console.warn('[Kontext] Feature flag cache warm-up failed — flags will load lazily');
+});
 
 // API keys loaded from environment variables
 // Set KONTEXT_API_KEYS as a comma-separated list, or KONTEXT_API_KEY for a single key.
@@ -605,6 +618,75 @@ app.post('/v1/anomalies/evaluate', authMiddleware, async (c) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// ============================================================================
+// Feature Flag Routes (no auth required — flags aren't secrets)
+// ============================================================================
+
+// GET /v1/flags — List all flags (optionally filtered by scope)
+app.get('/v1/flags', (c) => {
+  const scope = c.req.query('scope') as 'sdk' | 'server' | 'website' | undefined;
+  const flags = featureFlags.getAllFlags(scope || undefined);
+
+  return c.json({
+    flags: flags.map((f) => ({
+      name: f.name,
+      description: f.description,
+      scope: f.scope,
+      targeting: f.targeting,
+      createdAt: f.createdAt,
+      updatedAt: f.updatedAt,
+    })),
+    count: flags.length,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// GET /v1/flags/:flagName — Check a specific flag
+app.get('/v1/flags/:flagName', (c) => {
+  const flagName = c.req.param('flagName');
+  const environment = (c.req.query('environment') ?? 'production') as 'development' | 'staging' | 'production';
+  const plan = (c.req.query('plan') ?? 'free') as 'free' | 'pro' | 'enterprise';
+
+  const flag = featureFlags.getFlag(flagName);
+  if (!flag) {
+    return c.json({ error: `Flag not found: ${flagName}` }, 404);
+  }
+
+  const enabled = featureFlags.isEnabled(flagName, environment, plan);
+
+  return c.json({
+    name: flag.name,
+    description: flag.description,
+    scope: flag.scope,
+    enabled,
+    environment,
+    plan,
+    targeting: flag.targeting,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+/**
+ * requireFlag() middleware factory.
+ * Gates a route behind a feature flag — returns 404 if the flag is disabled.
+ */
+export function requireFlag(flagName: string, environment?: 'development' | 'staging' | 'production') {
+  const env = environment ?? (process.env['NODE_ENV'] === 'production' ? 'production' : 'development') as 'development' | 'staging' | 'production';
+
+  return async (c: Parameters<Parameters<typeof app.use>[1]>[0], next: () => Promise<void>): Promise<Response | void> => {
+    // Derive plan from API key config or default to 'free'
+    const apiKey = c.req.header('Authorization')?.slice(7) ?? '';
+    const planInfo = apiKeyPlans.get(apiKey);
+    const plan = planInfo?.plan ?? 'free';
+
+    if (!featureFlags.isEnabled(flagName, env, plan)) {
+      return c.json({ error: 'Not found' }, 404);
+    }
+
+    return next();
+  };
+}
 
 // ============================================================================
 // Stripe Checkout + Billing Routes (no auth required — public checkout flow)

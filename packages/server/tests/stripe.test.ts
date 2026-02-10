@@ -23,22 +23,25 @@ const mockCheckoutSessionsRetrieve = vi.fn();
 const mockWebhooksConstructEvent = vi.fn();
 
 vi.mock('stripe', () => {
-  const StripeMock = vi.fn().mockImplementation(() => ({
-    checkout: {
-      sessions: {
-        create: mockCheckoutSessionsCreate,
-        retrieve: mockCheckoutSessionsRetrieve,
+  // Must use a real function (not arrow) so `new Stripe(...)` works
+  function StripeMock() {
+    return {
+      checkout: {
+        sessions: {
+          create: mockCheckoutSessionsCreate,
+          retrieve: mockCheckoutSessionsRetrieve,
+        },
       },
-    },
-    billingPortal: {
-      sessions: {
-        create: mockBillingPortalSessionsCreate,
+      billingPortal: {
+        sessions: {
+          create: mockBillingPortalSessionsCreate,
+        },
       },
-    },
-    webhooks: {
-      constructEvent: mockWebhooksConstructEvent,
-    },
-  }));
+      webhooks: {
+        constructEvent: mockWebhooksConstructEvent,
+      },
+    };
+  }
   return { default: StripeMock, __esModule: true };
 });
 

@@ -29,6 +29,7 @@ import type {
   ReasoningEntry,
   GenerateComplianceCertificateInput,
   ComplianceCertificate,
+  Environment,
 } from './types.js';
 import type { DigestVerification, DigestLink } from './digest.js';
 import type { PlanTier, PlanUsage, LimitEvent } from './plans.js';
@@ -43,6 +44,7 @@ import { UsdcCompliance } from './integrations/usdc.js';
 import { PlanManager } from './plans.js';
 import type { EventExporter } from './exporters.js';
 import { NoopExporter } from './exporters.js';
+import { FeatureFlagManager } from './feature-flags.js';
 import { createHash } from 'crypto';
 import { generateId, now } from './utils.js';
 
@@ -91,6 +93,7 @@ export class Kontext {
   private readonly mode: KontextMode;
   private readonly planManager: PlanManager;
   private readonly exporter: EventExporter;
+  private readonly featureFlagManager: FeatureFlagManager | null;
 
   private constructor(config: KontextConfig) {
     this.config = config;
@@ -127,6 +130,11 @@ export class Kontext {
     this.auditExporter = new AuditExporter(config, this.store);
     this.trustScorer = new TrustScorer(config, this.store);
     this.anomalyDetector = new AnomalyDetector(config, this.store);
+
+    // Initialize feature flag manager if configured
+    this.featureFlagManager = config.featureFlags
+      ? new FeatureFlagManager(config.featureFlags)
+      : null;
   }
 
   /**
@@ -868,6 +876,31 @@ export class Kontext {
         this.planManager.setEventCount(data.eventCount);
       }
     }
+  }
+
+  // --------------------------------------------------------------------------
+  // Feature Flags
+  // --------------------------------------------------------------------------
+
+  /**
+   * Check if a feature flag is enabled for the current environment and plan.
+   * Returns `false` if feature flags are not configured.
+   * Always synchronous — reads from in-memory cache.
+   */
+  isFeatureEnabled(
+    flagName: string,
+    environment?: Environment,
+    plan?: 'free' | 'pro' | 'enterprise',
+  ): boolean {
+    if (!this.featureFlagManager) return false;
+    return this.featureFlagManager.isEnabled(flagName, environment, plan);
+  }
+
+  /**
+   * Get the underlying FeatureFlagManager (or null if not configured).
+   */
+  getFeatureFlagManager(): FeatureFlagManager | null {
+    return this.featureFlagManager;
   }
 
   // --------------------------------------------------------------------------

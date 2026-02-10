@@ -87,6 +87,16 @@ export type {
   MetadataValidator,
 } from './types.js';
 
+// Feature Flags
+export { FeatureFlagManager } from './feature-flags.js';
+export type {
+  FeatureFlag,
+  FeatureFlagConfig,
+  FlagScope,
+  FlagTargeting,
+  FlagPlanTargeting,
+} from './types.js';
+
 // Error types
 export { KontextError, KontextErrorCode } from './types.js';
 

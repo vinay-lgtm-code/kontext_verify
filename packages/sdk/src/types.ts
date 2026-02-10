@@ -132,6 +132,12 @@ export interface KontextConfig {
    * @default 'https://kontext.so/upgrade'
    */
   upgradeUrl?: string;
+
+  /**
+   * Feature flag configuration. When provided, the SDK initializes a
+   * `FeatureFlagManager` that fetches flags from Firestore REST API.
+   */
+  featureFlags?: FeatureFlagConfig;
 }
 
 /**
@@ -678,6 +684,56 @@ export interface ComplianceCertificate {
   reasoning: ReasoningEntry[];
   /** SHA-256 hash of the certificate content for integrity verification */
   contentHash: string;
+}
+
+// ============================================================================
+// Feature Flags
+// ============================================================================
+
+/** Scope of a feature flag */
+export type FlagScope = 'sdk' | 'server' | 'website' | 'all';
+
+/** Plan-based targeting for a single environment */
+export interface FlagPlanTargeting {
+  free: boolean;
+  pro: boolean;
+  enterprise: boolean;
+}
+
+/** Targeting configuration across all environments */
+export interface FlagTargeting {
+  development: FlagPlanTargeting;
+  staging: FlagPlanTargeting;
+  production: FlagPlanTargeting;
+}
+
+/** A feature flag document stored in Firestore */
+export interface FeatureFlag {
+  name: string;
+  description: string;
+  scope: FlagScope;
+  targeting: FlagTargeting;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+}
+
+/** Configuration for the FeatureFlagManager */
+export interface FeatureFlagConfig {
+  /** GCP project ID containing the Firestore database */
+  gcpProjectId: string;
+  /** Access token for Firestore REST API (optional — server uses metadata server) */
+  accessToken?: string;
+  /** Cache TTL in milliseconds (default: 300_000 for SDK, 60_000 for server) */
+  cacheTtlMs?: number;
+  /** Default value when a flag is not found (default: false) */
+  defaultValue?: boolean;
+  /** Current environment */
+  environment: Environment;
+  /** Current plan tier */
+  plan: 'free' | 'pro' | 'enterprise';
+  /** Scope filter — only load flags matching this scope (or 'all') */
+  scope?: FlagScope;
 }
 
 // ============================================================================
