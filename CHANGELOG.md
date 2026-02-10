@@ -2,6 +2,25 @@
 
 All notable public changes to the Kontext SDK and platform are documented here.
 
+## [0.3.0] - 2026-02-10
+
+### Added
+- Fix approval.ts index signature TypeScript errors blocking CI build
+- Update website copy and plan gating for unified screening
+- Add unified screening provider architecture with 4 pluggable providers
+- Fix payment-flows.md inaccuracies and add 96 tests for full coverage
+- Move Changelog from header nav to footer Product section
+- Document all payment flows and add plan gating integration tests
+- Add ApprovalManager for human-in-the-loop action approval
+- Fix changelog: prebuild script fetches CHANGELOG.md from GitHub
+- Fix changelog on Vercel: fetch CHANGELOG.md from GitHub at build time
+- log changelog path resolution on Vercel
+- Fix changelog: inject content via env var at config time
+- Fix changelog on Vercel: set outputFileTracingRoot to monorepo root
+- Fix changelog page on Vercel: copy CHANGELOG.md at build time
+- Add plan gating to SDK and align marketing copy with actual features
+
+
 ## [0.2.5] - 2026-02-10
 
 ### Changed
