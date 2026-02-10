@@ -133,13 +133,11 @@ jobs:
           git tag "v${{ steps.check.outputs.next_version }}"
           git push origin main --tags
 
-      - name: Publish to npm
+      - name: Publish to npm (trusted publishing via OIDC)
         if: steps.check.outputs.should_release == 'true'
         run: |
           cd packages/sdk
           npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create GitHub Release
         if: steps.check.outputs.should_release == 'true'
@@ -209,12 +207,10 @@ jobs:
           git tag "v${{ inputs.version }}"
           git push origin main --tags
 
-      - name: Publish to npm
+      - name: Publish to npm (trusted publishing via OIDC)
         run: |
           cd packages/sdk
           npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
