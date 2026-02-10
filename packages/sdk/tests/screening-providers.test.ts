@@ -146,7 +146,16 @@ describe('BlocklistManager', () => {
   let manager: BlocklistManager;
 
   beforeEach(() => {
-    manager = new BlocklistManager();
+    manager = new BlocklistManager({ plan: 'pro' });
+  });
+
+  it('should throw on free plan (plan gate enforcement)', () => {
+    expect(() => new BlocklistManager({ plan: 'free' })).toThrow(/Pro plan/);
+    expect(() => new BlocklistManager()).toThrow(/Pro plan/);
+  });
+
+  it('should allow instantiation on enterprise plan', () => {
+    expect(() => new BlocklistManager({ plan: 'enterprise' })).not.toThrow();
   });
 
   it('should add address to blocklist and detect it as blocklisted', () => {
@@ -329,7 +338,7 @@ describe('ScreeningAggregator', () => {
   let blocklist: BlocklistManager;
 
   beforeEach(() => {
-    blocklist = new BlocklistManager();
+    blocklist = new BlocklistManager({ plan: 'pro' });
   });
 
   // --------------------------------------------------------------------------
@@ -2034,7 +2043,7 @@ describe('RiskCategory mapping and decision thresholds', () => {
   });
 
   it('should map BLOCKLIST severity to risk score 100 via blocklist manager', async () => {
-    const blocklist = new BlocklistManager();
+    const blocklist = new BlocklistManager({ plan: 'pro' });
     blocklist.addToBlocklist(createListEntry({
       address: '0x' + 'b'.repeat(40),
     }));

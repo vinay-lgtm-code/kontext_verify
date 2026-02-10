@@ -19,7 +19,8 @@ export type GatedFeature =
   | 'gas-station'
   | 'cctp-transfers'
   | 'approval-policies'
-  | 'unified-screening';
+  | 'unified-screening'
+  | 'blocklist-manager';
 
 const FEATURE_MIN_PLAN: Record<GatedFeature, PlanTier> = {
   'advanced-anomaly-rules': 'pro',
@@ -35,6 +36,7 @@ const FEATURE_MIN_PLAN: Record<GatedFeature, PlanTier> = {
   'cctp-transfers': 'enterprise',
   'approval-policies': 'pro',
   'unified-screening': 'pro',
+  'blocklist-manager': 'pro',
 };
 
 const PLAN_RANK: Record<PlanTier, number> = { free: 0, pro: 1, enterprise: 2 };
@@ -53,6 +55,7 @@ const FEATURE_LABELS: Record<GatedFeature, string> = {
   'cctp-transfers': 'CCTP cross-chain transfers',
   'approval-policies': 'Approval policies',
   'unified-screening': 'Unified screening (OFAC, Chainalysis, OpenSanctions)',
+  'blocklist-manager': 'Custom blocklist/allowlist manager',
 };
 
 /**

@@ -36,6 +36,8 @@
 // ============================================================================
 
 import type { Chain } from '../types.js';
+import { requirePlan } from '../plan-gate.js';
+import type { PlanTier } from '../plans.js';
 import type {
   ScreeningProvider,
   ScreenAddressInput,
@@ -93,6 +95,9 @@ export class BlocklistManager {
   private readonly config: BlocklistConfig;
 
   constructor(config?: BlocklistConfig) {
+    // Enforce Pro+ plan gate — BlocklistManager is not available on the free tier
+    const plan = config?.plan ?? 'free';
+    requirePlan('blocklist-manager', plan);
     this.config = config ?? {};
   }
 

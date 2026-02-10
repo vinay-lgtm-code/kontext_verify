@@ -21,6 +21,8 @@ const PRO_FEATURES: GatedFeature[] = [
   'csv-export',
   'multi-chain',
   'approval-policies',
+  'unified-screening',
+  'blocklist-manager',
 ];
 
 const ENTERPRISE_FEATURES: GatedFeature[] = [

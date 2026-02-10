@@ -26,6 +26,7 @@
 // ============================================================================
 
 import type { Chain } from '../types.js';
+import type { PlanTier } from '../plans.js';
 
 // ============================================================================
 // Risk Categories (aligned with Circle's 9 built-in rules)
@@ -210,6 +211,8 @@ export interface BlocklistConfig {
   persistPath?: string;
   /** Whether allowlist takes priority over blocklist */
   allowlistPriority?: boolean;
+  /** Current plan tier — required for plan gate enforcement (Pro+) */
+  plan?: PlanTier;
 }
 
 // ============================================================================
