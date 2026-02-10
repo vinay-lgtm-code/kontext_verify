@@ -1,6 +1,7 @@
 name: Release
 
 on:
+  # Manual release with explicit version
   workflow_dispatch:
     inputs:
       version:
@@ -8,13 +9,161 @@ on:
         required: true
         type: string
 
+  # Scheduled auto-release: 12 PM PST (20:00 UTC) every 2nd day
+  # Cron doesn't support "every 2 days" natively, so we run daily
+  # and the job checks whether 48 hours have passed since the last tag.
+  schedule:
+    - cron: '0 20 * * *'
+
 concurrency:
   group: release
   cancel-in-progress: false
 
 jobs:
-  release:
+  # ==========================================================================
+  # Scheduled auto-release (patch bump, skip if nothing new)
+  # ==========================================================================
+  auto-release:
+    name: Scheduled Release
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check if release is needed
+        id: check
+        run: |
+          # Get the latest tag
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+
+          if [ -z "$LAST_TAG" ]; then
+            echo "No previous tags — first release"
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+            echo "new_commits=true" >> "$GITHUB_OUTPUT"
+            echo "next_version=0.2.2" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Check if at least 48 hours have passed since the last tag
+          TAG_EPOCH=$(git log -1 --format=%ct "$LAST_TAG")
+          NOW_EPOCH=$(date +%s)
+          DIFF=$(( NOW_EPOCH - TAG_EPOCH ))
+          HOURS=$(( DIFF / 3600 ))
+
+          echo "Hours since last tag ($LAST_TAG): $HOURS"
+
+          if [ "$HOURS" -lt 48 ]; then
+            echo "Less than 48 hours since last release — skipping"
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Check if there are new commits since the last tag
+          COMMIT_COUNT=$(git rev-list "${LAST_TAG}..HEAD" --count)
+          echo "Commits since $LAST_TAG: $COMMIT_COUNT"
+
+          if [ "$COMMIT_COUNT" -eq 0 ]; then
+            echo "No new commits — skipping"
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Auto-bump: increment patch version from last tag
+          # Strip leading 'v' if present
+          CURRENT=$(echo "$LAST_TAG" | sed 's/^v//')
+          MAJOR=$(echo "$CURRENT" | cut -d. -f1)
+          MINOR=$(echo "$CURRENT" | cut -d. -f2)
+          PATCH=$(echo "$CURRENT" | cut -d. -f3)
+          NEXT_PATCH=$((PATCH + 1))
+          NEXT_VERSION="${MAJOR}.${MINOR}.${NEXT_PATCH}"
+
+          echo "Next version: $NEXT_VERSION"
+          echo "should_release=true" >> "$GITHUB_OUTPUT"
+          echo "new_commits=true" >> "$GITHUB_OUTPUT"
+          echo "next_version=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
+
+      - uses: pnpm/action-setup@v4
+        if: steps.check.outputs.should_release == 'true'
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.should_release == 'true'
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        if: steps.check.outputs.should_release == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests
+        if: steps.check.outputs.should_release == 'true'
+        run: |
+          pnpm --filter kontext-sdk test
+          pnpm --filter @kontext/server test
+
+      - name: Build
+        if: steps.check.outputs.should_release == 'true'
+        run: pnpm --filter kontext-sdk build
+
+      - name: Generate changelogs
+        if: steps.check.outputs.should_release == 'true'
+        run: ./scripts/generate-changelog.sh ${{ steps.check.outputs.next_version }}
+
+      - name: Bump SDK version
+        if: steps.check.outputs.should_release == 'true'
+        run: |
+          cd packages/sdk
+          npm version ${{ steps.check.outputs.next_version }} --no-git-tag-version
+
+      - name: Commit, tag, and push
+        if: steps.check.outputs.should_release == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md CHANGELOG-INTERNAL.md packages/sdk/package.json
+          git commit -m "release: v${{ steps.check.outputs.next_version }} (scheduled)"
+          git tag "v${{ steps.check.outputs.next_version }}"
+          git push origin main --tags
+
+      - name: Publish to npm
+        if: steps.check.outputs.should_release == 'true'
+        run: |
+          cd packages/sdk
+          npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        if: steps.check.outputs.should_release == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.check.outputs.next_version }}
+          name: v${{ steps.check.outputs.next_version }}
+          body_path: CHANGELOG.md
+          generate_release_notes: false
+
+      - name: Upload internal changelog to GCS
+        if: steps.check.outputs.should_release == 'true'
+        continue-on-error: true
+        run: |
+          gcloud storage cp CHANGELOG-INTERNAL.md gs://kontext-internal-logs/changelogs/v${{ steps.check.outputs.next_version }}.md
+
+  # ==========================================================================
+  # Manual release with explicit version
+  # ==========================================================================
+  manual-release:
     name: Release v${{ inputs.version }}
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -80,7 +229,6 @@ jobs:
           generate_release_notes: false
 
       - name: Upload internal changelog to GCS
-        if: ${{ secrets.WIF_PROVIDER != '' }}
         continue-on-error: true
         run: |
           gcloud storage cp CHANGELOG-INTERNAL.md gs://kontext-internal-logs/changelogs/v${{ inputs.version }}.md
