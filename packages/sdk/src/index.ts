@@ -9,6 +9,17 @@ export { Kontext } from './client.js';
 export { MemoryStorage, FileStorage } from './storage.js';
 export type { StorageAdapter } from './storage.js';
 
+// Event exporters
+export {
+  NoopExporter,
+  ConsoleExporter,
+  JsonFileExporter,
+  HttpExporter,
+  KontextCloudExporter,
+  MultiExporter,
+} from './exporters.js';
+export type { EventExporter, ExporterResult } from './exporters.js';
+
 // All types
 export type {
   // Config

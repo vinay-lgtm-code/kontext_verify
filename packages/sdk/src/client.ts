@@ -41,6 +41,8 @@ import { TrustScorer } from './trust.js';
 import { AnomalyDetector } from './anomaly.js';
 import { UsdcCompliance } from './integrations/usdc.js';
 import { PlanManager } from './plans.js';
+import type { EventExporter } from './exporters.js';
+import { NoopExporter } from './exporters.js';
 import { createHash } from 'crypto';
 import { generateId, now } from './utils.js';
 
@@ -88,6 +90,7 @@ export class Kontext {
   private readonly anomalyDetector: AnomalyDetector;
   private readonly mode: KontextMode;
   private readonly planManager: PlanManager;
+  private readonly exporter: EventExporter;
 
   private constructor(config: KontextConfig) {
     this.config = config;
@@ -115,6 +118,9 @@ export class Kontext {
     if (config.upgradeUrl) {
       this.planManager.upgradeUrl = config.upgradeUrl;
     }
+
+    // Initialize event exporter (default: NoopExporter)
+    this.exporter = config.exporter ?? new NoopExporter();
 
     this.logger = new ActionLogger(config, this.store);
     this.taskManager = new TaskManager(config, this.store);
@@ -244,6 +250,9 @@ export class Kontext {
       this.anomalyDetector.evaluateAction(action);
     }
 
+    // Ship to exporter (fire-and-forget to avoid blocking the caller)
+    this.exporter.export([action]).catch(() => {});
+
     return action;
   }
 
@@ -268,6 +277,9 @@ export class Kontext {
       this.anomalyDetector.evaluateTransaction(record);
     }
 
+    // Ship to exporter (fire-and-forget to avoid blocking the caller)
+    this.exporter.export([record]).catch(() => {});
+
     return record;
   }
 
@@ -289,6 +301,7 @@ export class Kontext {
   async flush(): Promise<void> {
     await this.logger.flush();
     await this.store.flush();
+    await this.exporter.flush();
   }
 
   /**
@@ -866,5 +879,6 @@ export class Kontext {
    */
   async destroy(): Promise<void> {
     await this.logger.destroy();
+    await this.exporter.shutdown();
   }
 }

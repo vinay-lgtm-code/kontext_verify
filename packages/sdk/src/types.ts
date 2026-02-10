@@ -66,6 +66,31 @@ export interface KontextConfig {
   storage?: import('./storage.js').StorageAdapter;
 
   /**
+   * Pluggable event exporter for shipping events to external systems.
+   * Follows the OpenTelemetry exporter pattern.
+   *
+   * Built-in exporters:
+   * - `NoopExporter` (default) — discards events, current SDK behavior
+   * - `ConsoleExporter` — prints events to stdout
+   * - `JsonFileExporter` — writes JSONL files to disk
+   * - `HttpExporter` — sends batched events to any HTTP endpoint
+   * - `KontextCloudExporter` — ships to Kontext Cloud (Pro/Enterprise)
+   * - `MultiExporter` — fans out to multiple exporters
+   *
+   * @example
+   * ```typescript
+   * import { Kontext, ConsoleExporter } from '@kontext/sdk';
+   *
+   * const kontext = Kontext.init({
+   *   projectId: 'my-app',
+   *   environment: 'development',
+   *   exporter: new ConsoleExporter(),
+   * });
+   * ```
+   */
+  exporter?: import('./exporters.js').EventExporter;
+
+  /**
    * Optional metadata schema validator. When provided, all metadata passed to
    * `log()`, `logTransaction()`, and `createTask()` will be validated against
    * this schema before being recorded.
