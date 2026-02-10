@@ -6,6 +6,7 @@ const footerLinks = {
     { href: "/use-cases", label: "Use Cases" },
     { href: "/integrations", label: "Integrations" },
     { href: "/pricing", label: "Pricing" },
+    { href: "/changelog", label: "Changelog" },
     { href: "/faqs", label: "FAQs" },
   ],
   Integrations: [

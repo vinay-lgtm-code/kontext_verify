@@ -1,0 +1,86 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g. 0.3.0)'
+        required: true
+        type: string
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release v${{ inputs.version }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests
+        run: |
+          pnpm --filter kontext-sdk test
+          pnpm --filter @kontext/server test
+
+      - name: Build
+        run: pnpm --filter kontext-sdk build
+
+      - name: Generate changelogs
+        run: ./scripts/generate-changelog.sh ${{ inputs.version }}
+
+      - name: Bump SDK version
+        run: |
+          cd packages/sdk
+          npm version ${{ inputs.version }} --no-git-tag-version
+
+      - name: Commit, tag, and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md CHANGELOG-INTERNAL.md packages/sdk/package.json
+          git commit -m "release: v${{ inputs.version }}"
+          git tag "v${{ inputs.version }}"
+          git push origin main --tags
+
+      - name: Publish to npm
+        run: |
+          cd packages/sdk
+          npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version }}
+          name: v${{ inputs.version }}
+          body_path: CHANGELOG.md
+          generate_release_notes: false
+
+      - name: Upload internal changelog to GCS
+        if: ${{ secrets.WIF_PROVIDER != '' }}
+        continue-on-error: true
+        run: |
+          gcloud storage cp CHANGELOG-INTERNAL.md gs://kontext-internal-logs/changelogs/v${{ inputs.version }}.md
