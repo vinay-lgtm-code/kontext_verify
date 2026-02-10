@@ -136,6 +136,8 @@ jobs:
       - name: Publish to npm (trusted publishing via OIDC)
         if: steps.check.outputs.should_release == 'true'
         run: |
+          # Clear setup-node auth token so npm falls back to OIDC
+          npm config delete //registry.npmjs.org/:_authToken || true
           cd packages/sdk
           npm publish --provenance --access public
 
@@ -209,6 +211,8 @@ jobs:
 
       - name: Publish to npm (trusted publishing via OIDC)
         run: |
+          # Clear setup-node auth token so npm falls back to OIDC
+          npm config delete //registry.npmjs.org/:_authToken || true
           cd packages/sdk
           npm publish --provenance --access public
 
