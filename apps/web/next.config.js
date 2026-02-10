@@ -1,4 +1,20 @@
+const fs = require("fs");
 const path = require("path");
+
+// Read CHANGELOG.md at config time and inject as env var.
+// __dirname is always apps/web — reliable across local dev and Vercel.
+let changelogContent = "";
+for (const p of [
+  path.join(__dirname, "..", "..", "CHANGELOG.md"),
+  path.join(__dirname, "CHANGELOG.md"),
+]) {
+  try {
+    changelogContent = fs.readFileSync(p, "utf-8");
+    break;
+  } catch {
+    // try next
+  }
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -7,8 +23,9 @@ const nextConfig = {
     // in Vercel's isolated build. Lint is run separately in CI.
     ignoreDuringBuilds: true,
   },
-  // Include monorepo root files (CHANGELOG.md) in serverless function bundles
-  outputFileTracingRoot: path.join(__dirname, "..", ".."),
+  env: {
+    CHANGELOG_CONTENT: changelogContent,
+  },
 };
 
 module.exports = nextConfig;

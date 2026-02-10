@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import { Badge } from "@/components/ui/badge";
-import fs from "fs";
-import path from "path";
 
 export const metadata: Metadata = {
   title: "Changelog - Kontext",
@@ -53,31 +51,8 @@ function parseChangelog(raw: string) {
   return sections;
 }
 
-function getChangelog(): string {
-  const candidates = [
-    // Local dev: cwd is apps/web
-    path.join(process.cwd(), "..", "..", "CHANGELOG.md"),
-    // Vercel with root=monorepo root
-    path.join(process.cwd(), "CHANGELOG.md"),
-    // Vercel serverless: relative to this source file
-    path.resolve(__dirname, "..", "..", "..", "..", "..", "CHANGELOG.md"),
-    // Prebuild copy fallback
-    path.join(process.cwd(), "apps", "web", "CHANGELOG.md"),
-  ];
-
-  for (const candidate of candidates) {
-    try {
-      const content = fs.readFileSync(candidate, "utf-8");
-      if (content.length > 0) return content;
-    } catch {
-      // try next candidate
-    }
-  }
-  return "";
-}
-
 export default function ChangelogPage() {
-  const raw = getChangelog();
+  const raw = process.env.CHANGELOG_CONTENT ?? "";
   const sections = parseChangelog(raw);
 
   return (
