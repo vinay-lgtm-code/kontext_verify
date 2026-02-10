@@ -29,6 +29,15 @@ secrets.json
 # Internal docs (not public)
 research/
 ROADMAP.md
+SECURITY-AUDIT-REPORT.md
+*_feb9.md
+*_assessment_*.md
+*_analysis_*.md
+*_audit_*.md
+*_prospects_*.md
+
+# PDFs (internal regulatory/compliance docs)
+*.pdf
 
 # Binary documents (should never be in git)
 *.docx
@@ -36,6 +45,16 @@ ROADMAP.md
 *.xlsx
 *.xls
 *.pptx
+
+# Office lock files
+.~lock.*
+~$*
+
+# Claude Code internal skills & config
+.claude/
+
+# Firestore config (internal GCP infrastructure)
+firestore.rules
 
 # Internal scripts
 generate_updated_eval.py
