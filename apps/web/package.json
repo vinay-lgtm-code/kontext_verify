@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "cp ../../CHANGELOG.md ./CHANGELOG.md 2>/dev/null || curl -sfL https://raw.githubusercontent.com/vinay-lgtm-code/kontext_verify/main/CHANGELOG.md -o ./CHANGELOG.md 2>/dev/null || true && next build",
+    "prebuild": "node scripts/fetch-changelog.js",
+    "build": "npm run prebuild && next build",
     "start": "next start -p ${PORT:-3000}",
     "lint": "next lint"
   },
