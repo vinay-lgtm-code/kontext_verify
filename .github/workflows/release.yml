@@ -34,6 +34,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: release
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -130,7 +131,7 @@ jobs:
           git add CHANGELOG.md packages/sdk/package.json
           git commit -m "release: v${{ steps.check.outputs.next_version }} (scheduled)"
           git tag "v${{ steps.check.outputs.next_version }}"
-          git push origin main --tags
+          git push origin release --tags
 
       - name: Publish to npm (trusted publishing via OIDC)
         if: steps.check.outputs.should_release == 'true'
@@ -169,6 +170,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: release
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -205,7 +207,7 @@ jobs:
           git add CHANGELOG.md packages/sdk/package.json
           git commit -m "release: v${{ inputs.version }}"
           git tag "v${{ inputs.version }}"
-          git push origin main --tags
+          git push origin release --tags
 
       - name: Publish to npm (trusted publishing via OIDC)
         run: |
