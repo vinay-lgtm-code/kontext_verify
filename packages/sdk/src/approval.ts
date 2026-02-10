@@ -269,7 +269,7 @@ export class ApprovalManager {
   ): { triggered: boolean; factors: string[] } {
     if (input.amount === undefined) return { triggered: false, factors: [] };
 
-    const threshold = parseFloat(policy.params.threshold as string);
+    const threshold = parseFloat(policy.params['threshold'] as string);
     const amount = parseFloat(input.amount);
 
     if (amount > threshold) {
@@ -288,7 +288,7 @@ export class ApprovalManager {
   ): { triggered: boolean; factors: string[] } {
     if (input.trustScore === undefined) return { triggered: false, factors: [] };
 
-    const minScore = policy.params.minScore as number;
+    const minScore = policy.params['minScore'] as number;
 
     if (input.trustScore < minScore) {
       return {
@@ -308,7 +308,7 @@ export class ApprovalManager {
       return { triggered: false, factors: [] };
     }
 
-    const minSeverity = policy.params.minSeverity as string;
+    const minSeverity = policy.params['minSeverity'] as string;
     const minSeverityOrder = SEVERITY_ORDER[minSeverity] ?? 0;
 
     const matchingAnomalies = input.anomalies.filter((a) => {
