@@ -54,19 +54,21 @@ function parseChangelog(raw: string) {
 }
 
 function getChangelog(): string {
-  // Try multiple paths to handle different build contexts:
-  // - Vercel with root=apps/web: cwd is apps/web, so ../../CHANGELOG.md reaches monorepo root
-  // - Vercel with root=monorepo:  cwd is monorepo root, so ./CHANGELOG.md works
-  // - Local dev (next dev):       cwd is apps/web, so ../../CHANGELOG.md works
   const candidates = [
+    // Local dev: cwd is apps/web
     path.join(process.cwd(), "..", "..", "CHANGELOG.md"),
+    // Vercel with root=monorepo root
     path.join(process.cwd(), "CHANGELOG.md"),
-    path.join(process.cwd(), "apps", "web", "..", "..", "CHANGELOG.md"),
+    // Vercel serverless: relative to this source file
+    path.resolve(__dirname, "..", "..", "..", "..", "..", "CHANGELOG.md"),
+    // Prebuild copy fallback
+    path.join(process.cwd(), "apps", "web", "CHANGELOG.md"),
   ];
 
   for (const candidate of candidates) {
     try {
-      return fs.readFileSync(candidate, "utf-8");
+      const content = fs.readFileSync(candidate, "utf-8");
+      if (content.length > 0) return content;
     } catch {
       // try next candidate
     }
