@@ -9,7 +9,7 @@
     "clean": "echo 'Nothing to clean'"
   },
   "dependencies": {
-    "@kontext/sdk": "workspace:*"
+    "kontext-sdk": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.11.0",
