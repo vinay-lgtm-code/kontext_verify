@@ -29,7 +29,7 @@ function getStripeClient(): Stripe {
     throw new Error('STRIPE_SECRET_KEY environment variable is required');
   }
   return new Stripe(key, {
-    apiVersion: '2025-04-30.basil',
+    apiVersion: '2025-02-24.acacia',
     typescript: true,
   });
 }
