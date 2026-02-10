@@ -33,7 +33,7 @@ const faqCategories = [
       {
         question: "Is Kontext open source?",
         answer:
-          "Yes. The core SDK is fully open source and available on GitHub with 20,000 events/month included. You can self-host the entire stack with no feature gates on the free tier. Paid plans add all anomaly detection rules, OFAC screening, SAR/CTR reports, and multi-chain support on the Pro plan at $199/user/month (100K events/user/mo). Enterprise plans have unlimited events.",
+          "Yes. The core SDK is fully open source and available on GitHub with 20,000 events/month included. You can self-host the entire stack with no feature gates on the free tier. Paid plans add all anomaly detection rules, best-in-class unified screening (OFAC, Chainalysis, OpenSanctions), SAR/CTR reports, and multi-chain support on the Pro plan at $199/user/month (100K events/user/mo). Enterprise plans have unlimited events.",
       },
       {
         question: "What license does Kontext use?",
@@ -158,7 +158,7 @@ const faqCategories = [
       {
         question: "What does the Pro plan include?",
         answer:
-          "Pro ($199/user/mo, 100K events per user per month) includes everything in Free plus: all six anomaly detection rules (including new-destination, off-hours, rapid-succession, and round-amount), SAR/CTR report generation, OFAC sanctions screening, CSV export, multi-chain support (Ethereum, Polygon, Arbitrum, Optimism, Avalanche, Solana), webhook alerts, and email support with 24h response time. Event limits scale with your team size.",
+          "Pro ($199/user/mo, 100K events per user per month) includes everything in Free plus: all six anomaly detection rules (including new-destination, off-hours, rapid-succession, and round-amount), SAR/CTR report generation, best-in-class unified screening aggregating OFAC SDN, Chainalysis Oracle, Chainalysis API, and OpenSanctions into a single result, CSV export, multi-chain support (Ethereum, Polygon, Arbitrum, Optimism, Avalanche, Solana), webhook alerts, and email support with 24h response time. Event limits scale with your team size.",
       },
       {
         question: "Can I self-host the entire stack?",
@@ -168,7 +168,7 @@ const faqCategories = [
       {
         question: "What does the Enterprise plan include?",
         answer:
-          "Enterprise includes everything in Pro plus unlimited events (no caps), CFTC compliance module (Letter 26-05), Circle integrations (Programmable Wallets, Compliance Engine, Gas Station), CCTP cross-chain transfers, dedicated support engineer, 99.9% uptime SLA, and SOC 2 attestation support. Contact us for details.",
+          "Enterprise includes everything in Pro plus unlimited events (no caps), unified screening with custom provider weights and SLAs, CFTC compliance module (Letter 26-05), Circle integrations (Programmable Wallets, Compliance Engine, Gas Station), CCTP cross-chain transfers, dedicated support engineer, 99.9% uptime SLA, and SOC 2 attestation support. Contact us for details.",
       },
     ],
   },

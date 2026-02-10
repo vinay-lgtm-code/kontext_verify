@@ -19,6 +19,7 @@ import {
   BarChart3,
   ArrowRight,
   ExternalLink,
+  Search,
 } from "lucide-react";
 
 const VideoDemo = dynamic(
@@ -88,6 +89,12 @@ const features = [
     title: "Real-time Monitoring",
     description:
       "Live dashboard for all agent activity. Filter by agent, chain, action type, and risk level.",
+  },
+  {
+    icon: Search,
+    title: "Unified Screening",
+    description:
+      "Best-in-class compliance screening aggregating OFAC SDN, Chainalysis, and OpenSanctions into a single result. Pluggable provider architecture.",
   },
 ];
 

@@ -25,7 +25,7 @@ import {
 export const metadata: Metadata = {
   title: "Stablecoin Issuers",
   description:
-    "GENIUS Act-aligned compliance infrastructure for stablecoin operations. OFAC screening, SAR/CTR generation, multi-chain support, trust scoring, and audit export for stablecoin issuers.",
+    "GENIUS Act-aligned compliance infrastructure for stablecoin operations. Unified screening (OFAC, Chainalysis, OpenSanctions), SAR/CTR generation, multi-chain support, trust scoring, and audit export for stablecoin issuers.",
 };
 
 const painPoints = [
@@ -60,9 +60,9 @@ const features = [
   },
   {
     icon: Search,
-    title: "OFAC Screening",
+    title: "Unified Compliance Screening",
     description:
-      "Screen transactions against 33+ sanctioned addresses across 14 jurisdictions. Real-time sanctions checking integrated directly into your transaction pipeline.",
+      "Best-in-class screening aggregating OFAC SDN, Chainalysis Oracle, Chainalysis API, and OpenSanctions into a single result. Pluggable provider architecture with weighted scoring and configurable thresholds.",
   },
   {
     icon: FileCheck,
@@ -238,7 +238,7 @@ export default function StablecoinIssuersPage() {
               Compliance infrastructure for stablecoin operations
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-              From OFAC screening to audit export, everything you need to
+              From unified compliance screening to audit export, everything you need to
               operate a compliant stablecoin.
             </p>
           </div>
@@ -274,17 +274,18 @@ export default function StablecoinIssuersPage() {
                 Code Example
               </Badge>
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                OFAC screening and transaction logging
+                Unified screening and transaction logging
               </h2>
               <p className="mt-4 text-lg text-muted-foreground">
-                Screen addresses against OFAC sanctions lists before processing
-                transactions, then log every operation with full compliance
-                context and export audit trails for regulatory inquiries.
+                Screen addresses against multiple sanctions sources -- OFAC SDN,
+                Chainalysis, and OpenSanctions -- before processing transactions,
+                then log every operation with full compliance context and export
+                audit trails for regulatory inquiries.
               </p>
               <ul className="mt-6 space-y-3">
                 {[
-                  "33+ sanctioned addresses across 14 jurisdictions",
-                  "Real-time OFAC screening before every transaction",
+                  "Unified screening across OFAC, Chainalysis, and OpenSanctions",
+                  "Real-time multi-source screening before every transaction",
                   "Full audit trail with tamper-evident digest chain",
                   "Export in JSON, CSV, or PDF for regulators",
                   "Multi-chain support for cross-chain operations",
@@ -329,13 +330,13 @@ export default function StablecoinIssuersPage() {
               </h2>
               <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
                 Stablecoin issuers typically need Pro ($199/user/month) for
-                cloud dashboard, OFAC screening, and ML-powered anomaly
+                cloud dashboard, unified compliance screening, and ML-powered anomaly
                 detection. Enterprise plans are available for issuers with
                 custom requirements, dedicated support, and SLAs.
               </p>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 {[
-                  "Pro: $199/user/month, 100K events/user, OFAC screening",
+                  "Pro: $199/user/month, 100K events/user, unified screening",
                   "Enterprise: Custom pricing, unlimited events, SLA",
                   "GENIUS Act alignment templates included",
                   "Dedicated compliance engineering support (Enterprise)",

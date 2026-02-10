@@ -79,7 +79,7 @@ const plans = [
     price: "$199",
     period: "/user/mo",
     description:
-      "Everything in Free plus all detection rules, OFAC screening, compliance templates, and webhook alerts. 100K events/user/mo.",
+      "Everything in Free plus all detection rules, unified screening (OFAC, Chainalysis, OpenSanctions), compliance templates, and webhook alerts. 100K events/user/mo.",
     cta: "Start Pro",
     ctaHref: "#",
     ctaExternal: false,
@@ -90,7 +90,7 @@ const plans = [
       "Everything in Free, plus:",
       "All anomaly detection rules (6 rules)",
       "SAR/CTR report generation",
-      "OFAC sanctions screening",
+      "Best-in-class unified screening (OFAC, Chainalysis, OpenSanctions)",
       "CSV export",
       "Multi-chain support (Ethereum, Polygon, Arbitrum, Optimism, Avalanche, Solana)",
       "Webhook alerts",
@@ -112,6 +112,7 @@ const plans = [
       "Unlimited events — no caps",
       "Everything in Pro, plus:",
       "CFTC compliance module (Letter 26-05)",
+      "Unified screening with custom provider weights and SLAs",
       "Circle integrations (Programmable Wallets, Compliance Engine, Gas Station)",
       "CCTP cross-chain transfers",
       "Dedicated support engineer",
@@ -135,7 +136,7 @@ const faqs = [
   {
     question: "What does the Pro tier include for compliance?",
     answer:
-      "Pro includes 100,000 events per user per month, all six anomaly detection rules (including new-destination, off-hours, rapid-succession, and round-amount checks), SAR/CTR report generation, OFAC sanctions screening, CSV export, multi-chain support (Ethereum, Polygon, Arbitrum, Optimism, Avalanche, Solana), webhook alerts, and email support with 24h response time. Enterprise gets unlimited events with no caps.",
+      "Pro includes 100,000 events per user per month, all six anomaly detection rules (including new-destination, off-hours, rapid-succession, and round-amount checks), SAR/CTR report generation, best-in-class unified screening (OFAC SDN, Chainalysis, OpenSanctions), CSV export, multi-chain support (Ethereum, Polygon, Arbitrum, Optimism, Avalanche, Solana), webhook alerts, and email support with 24h response time. Enterprise gets unlimited events with no caps.",
   },
   {
     question: "How does Kontext handle my transaction data?",
@@ -155,7 +156,7 @@ const faqs = [
   {
     question: "Does Kontext support GENIUS Act compliance efforts?",
     answer:
-      "Kontext provides developer tools that support compliance efforts aligned with emerging stablecoin regulations including the GENIUS Act. The Pro tier includes GENIUS Act alignment templates, SAR/CTR report generation, and OFAC screening capabilities. However, Kontext is a developer tool, not a legal advisor or compliance certifier -- consult qualified legal counsel for specific regulatory requirements.",
+      "Kontext provides developer tools that support compliance efforts aligned with emerging stablecoin regulations including the GENIUS Act. The Pro tier includes GENIUS Act alignment templates, SAR/CTR report generation, and best-in-class unified screening (OFAC, Chainalysis, OpenSanctions). However, Kontext is a developer tool, not a legal advisor or compliance certifier -- consult qualified legal counsel for specific regulatory requirements.",
   },
 ];
 
@@ -322,7 +323,7 @@ export default function PricingPage() {
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
               Start free with the open-source SDK. Upgrade to Pro when you need
-              all detection rules, OFAC screening, and compliance templates.
+              all detection rules, unified screening, and compliance templates.
             </p>
           </div>
         </div>
