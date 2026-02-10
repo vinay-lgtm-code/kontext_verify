@@ -104,6 +104,10 @@ export { KontextError, KontextErrorCode } from './types.js';
 export { PlanManager, PLAN_LIMITS } from './plans.js';
 export type { PlanTier, PlanConfig, PlanUsage, LimitEvent } from './plans.js';
 
+// Plan Gating
+export { requirePlan, isFeatureAvailable } from './plan-gate.js';
+export type { GatedFeature } from './plan-gate.js';
+
 // Digest Chain
 export { DigestChain, verifyExportedChain } from './digest.js';
 export type { DigestLink, DigestVerification, PrecisionTimestamp } from './digest.js';

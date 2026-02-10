@@ -33,7 +33,7 @@ const faqCategories = [
       {
         question: "Is Kontext open source?",
         answer:
-          "Yes. The core SDK is fully open source and available on GitHub with 20,000 events/month included. You can self-host the entire stack with no feature gates on the free tier. Cloud-managed features like ML-powered anomaly detection, compliance templates, and the cloud dashboard are available on the Pro plan at $199/user/month (100K events/user/mo). Enterprise plans have unlimited events.",
+          "Yes. The core SDK is fully open source and available on GitHub with 20,000 events/month included. You can self-host the entire stack with no feature gates on the free tier. Paid plans add all anomaly detection rules, OFAC screening, SAR/CTR reports, and multi-chain support on the Pro plan at $199/user/month (100K events/user/mo). Enterprise plans have unlimited events.",
       },
       {
         question: "What license does Kontext use?",
@@ -63,7 +63,7 @@ const faqCategories = [
       {
         question: "How does anomaly detection work?",
         answer:
-          "Anomaly detection runs a configurable rule engine on every verify() call. Built-in rules include velocity limits (transactions per time window), amount thresholds (single and daily caps), and behavioral checks (unusual timing, new recipients, amount spikes). Paid plans (Pro and above) add ML-powered detection trained on your agent's history.",
+          "Anomaly detection runs a configurable rule engine on every verify() call. The free tier includes two basic rules: unusual amount and frequency spike. Pro plans unlock all six detection rules including new-destination, off-hours, rapid-succession, and round-amount checks.",
       },
       {
         question: "What is the digest chain?",
@@ -138,7 +138,7 @@ const faqCategories = [
       {
         question: "What audit export formats are supported?",
         answer:
-          "The SDK supports JSON, CSV, and PDF export out of the box. Exports can be filtered by date range, agent, action type, and flag status. Streaming export is available for large datasets. Enterprise plans support custom report formats tailored to specific regulatory frameworks.",
+          "The SDK supports JSON and CSV export. Exports can be filtered by date range, agent, action type, and flag status. Streaming export is available for large datasets.",
       },
       {
         question: "Is Kontext a replacement for legal counsel?",
@@ -153,22 +153,22 @@ const faqCategories = [
       {
         question: "What is included in the free tier?",
         answer:
-          "The free tier includes the full SDK with 20,000 events/month (soft cap), action logging, local audit export (JSON), basic rule-based anomaly detection, single-protocol support, and the digest chain. It is MIT-licensed and free forever.",
+          "The free tier includes the full SDK with 20,000 events/month (soft cap), action logging, JSON export, basic anomaly detection (2 rules: unusual amount and frequency spike), trust scoring (local), digest chain verification, and Base chain support. It is MIT-licensed and free forever.",
       },
       {
         question: "What does the Pro plan include?",
         answer:
-          "Pro ($199/user/mo, 100K events per user per month) includes everything in Open Source plus: cloud compliance dashboard, advanced anomaly detection (ML-powered), trust scoring API with history, compliance report templates (SOC 2, SAR), multi-chain support (Base, Ethereum, more), webhook alerts and notifications, email support with 24h response time, and team access controls. Event limits scale with your team size.",
+          "Pro ($199/user/mo, 100K events per user per month) includes everything in Free plus: all six anomaly detection rules (including new-destination, off-hours, rapid-succession, and round-amount), SAR/CTR report generation, OFAC sanctions screening, CSV export, multi-chain support (Ethereum, Polygon, Arbitrum, Optimism, Avalanche, Solana), webhook alerts, and email support with 24h response time. Event limits scale with your team size.",
       },
       {
         question: "Can I self-host the entire stack?",
         answer:
-          "Yes. The open-source SDK is designed for self-hosting with zero external dependencies. You control where data is stored and how it is processed. Enterprise plans also offer an on-premise deployment option for the full cloud feature set.",
+          "Yes. The open-source SDK is designed for self-hosting with zero external dependencies. You control where data is stored and how it is processed.",
       },
       {
         question: "What does the Enterprise plan include?",
         answer:
-          "Enterprise includes everything in Pro plus unlimited events (no caps), a custom compliance rule engine, dedicated support engineer, 99.9% uptime target (see Enterprise SLA terms), SOC 2 attestation support, custom audit report formats, on-premise deployment, SSO/SAML, and priority feature requests. Contact us for details.",
+          "Enterprise includes everything in Pro plus unlimited events (no caps), CFTC compliance module (Letter 26-05), Circle integrations (Programmable Wallets, Compliance Engine, Gas Station), CCTP cross-chain transfers, dedicated support engineer, 99.9% uptime SLA, and SOC 2 attestation support. Contact us for details.",
       },
     ],
   },

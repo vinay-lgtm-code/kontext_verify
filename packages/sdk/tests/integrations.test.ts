@@ -14,6 +14,7 @@ function createClient() {
   return Kontext.init({
     projectId: 'test-project',
     environment: 'development',
+    plan: 'enterprise',
   });
 }
 

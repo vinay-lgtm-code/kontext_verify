@@ -88,7 +88,16 @@ export default function ChangelogPage() {
             </h1>
             <p className="mt-6 text-lg text-muted-foreground leading-relaxed">
               Track every update to the SDK and platform. New features, bug
-              fixes, and improvements -- all in one place.
+              fixes, and improvements -- all in one place. Auto-generated from{" "}
+              <a
+                href="https://github.com/vinay-lgtm-code/kontext_verify/releases"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                GitHub Releases
+              </a>
+              .
             </p>
           </div>
         </div>
@@ -108,9 +117,16 @@ export default function ChangelogPage() {
               <article key={section.version} className="relative">
                 {/* Version badge + date */}
                 <div className="flex items-center gap-3 mb-6">
-                  <Badge variant="default" className="text-sm font-mono">
-                    v{section.version}
-                  </Badge>
+                  <a
+                    href={`https://github.com/vinay-lgtm-code/kontext_verify/releases/tag/v${section.version}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:opacity-80 transition-opacity"
+                  >
+                    <Badge variant="default" className="text-sm font-mono">
+                      v{section.version}
+                    </Badge>
+                  </a>
                   <time
                     dateTime={section.date}
                     className="text-sm text-muted-foreground"

@@ -65,9 +65,10 @@ const plans = [
       "20,000 events/month included",
       "Core SDK with full TypeScript support",
       "Action logging and audit trail",
-      "Basic anomaly detection rules",
-      "Local audit export (JSON)",
-      "Single-protocol support",
+      "Basic anomaly detection (unusual amount, frequency spike)",
+      "Trust scoring (local)",
+      "JSON export",
+      "Base chain support",
       "Digest chain integrity verification",
       "Community support via GitHub",
       "MIT License",
@@ -78,23 +79,22 @@ const plans = [
     price: "$199",
     period: "/user/mo",
     description:
-      "Everything in Open Source plus cloud dashboard, advanced detection, compliance templates, and team controls. 100K events/user/mo.",
+      "Everything in Free plus all detection rules, OFAC screening, compliance templates, and webhook alerts. 100K events/user/mo.",
     cta: "Start Pro",
     ctaHref: "#",
     ctaExternal: false,
     highlighted: true,
     isProCheckout: true,
     features: [
-      "Up to 100,000 events/user/month",
-      "Everything in Open Source, plus:",
-      "Cloud compliance dashboard",
-      "Advanced anomaly detection (ML-powered)",
-      "Trust scoring API with history",
-      "Compliance report templates (SOC 2, SAR)",
-      "Multi-chain support (Base, Ethereum, more)",
-      "Webhook alerts and notifications",
-      "Email support with 24h response time",
-      "Team access controls",
+      "100,000 events/user/month",
+      "Everything in Free, plus:",
+      "All anomaly detection rules (6 rules)",
+      "SAR/CTR report generation",
+      "OFAC sanctions screening",
+      "CSV export",
+      "Multi-chain support (Ethereum, Polygon, Arbitrum, Optimism, Avalanche, Solana)",
+      "Webhook alerts",
+      "Email support (24h response)",
     ],
   },
   {
@@ -102,7 +102,7 @@ const plans = [
     price: "Custom",
     period: "",
     description:
-      "Everything in Pro plus custom rules, dedicated support, SLA, and unlimited events. No event caps.",
+      "Everything in Pro plus CFTC compliance, Circle integrations, dedicated support, SLA, and unlimited events.",
     cta: "Contact Us",
     ctaHref: "https://cal.com/vinnaray",
     ctaExternal: true,
@@ -111,13 +111,12 @@ const plans = [
     features: [
       "Unlimited events — no caps",
       "Everything in Pro, plus:",
-      "Custom compliance rule engine",
+      "CFTC compliance module (Letter 26-05)",
+      "Circle integrations (Programmable Wallets, Compliance Engine, Gas Station)",
+      "CCTP cross-chain transfers",
       "Dedicated support engineer",
-      "99.9% uptime target (see Enterprise SLA terms)",
+      "99.9% uptime SLA",
       "SOC 2 attestation support",
-      "Custom audit report formats",
-      "On-premise deployment option",
-      "SSO/SAML",
     ],
   },
 ];
@@ -136,7 +135,7 @@ const faqs = [
   {
     question: "What does the Pro tier include for compliance?",
     answer:
-      "Pro includes 100,000 events per user per month, a cloud compliance dashboard, advanced ML-powered anomaly detection, trust scoring API with history, compliance report templates (SOC 2, SAR), multi-chain support, webhook alerts and notifications, email support with 24h response time, and team access controls. Enterprise gets unlimited events with no caps.",
+      "Pro includes 100,000 events per user per month, all six anomaly detection rules (including new-destination, off-hours, rapid-succession, and round-amount checks), SAR/CTR report generation, OFAC sanctions screening, CSV export, multi-chain support (Ethereum, Polygon, Arbitrum, Optimism, Avalanche, Solana), webhook alerts, and email support with 24h response time. Enterprise gets unlimited events with no caps.",
   },
   {
     question: "How does Kontext handle my transaction data?",
@@ -323,7 +322,7 @@ export default function PricingPage() {
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
               Start free with the open-source SDK. Upgrade to Pro when you need
-              cloud features, compliance templates, and advanced detection.
+              all detection rules, OFAC screening, and compliance templates.
             </p>
           </div>
         </div>

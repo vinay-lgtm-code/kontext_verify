@@ -42,6 +42,7 @@ import { TrustScorer } from './trust.js';
 import { AnomalyDetector } from './anomaly.js';
 import { UsdcCompliance } from './integrations/usdc.js';
 import { PlanManager } from './plans.js';
+import { requirePlan } from './plan-gate.js';
 import type { EventExporter } from './exporters.js';
 import { NoopExporter } from './exporters.js';
 import { FeatureFlagManager } from './feature-flags.js';
@@ -271,6 +272,11 @@ export class Kontext {
    * @returns The created transaction record
    */
   async logTransaction(input: LogTransactionInput): Promise<TransactionRecord> {
+    // Multi-chain support requires Pro plan
+    if (input.chain !== 'base') {
+      requirePlan('multi-chain', this.planManager.getTier());
+    }
+
     this.validateMetadata(input.metadata);
     const record = await this.logger.logTransaction(input);
 
@@ -398,6 +404,11 @@ export class Kontext {
    * @returns Export result with formatted data
    */
   async export(options: ExportOptions): Promise<ExportResult> {
+    // CSV export requires Pro plan
+    if (options.format === 'csv') {
+      requirePlan('csv-export', this.planManager.getTier());
+    }
+
     return this.auditExporter.export(options);
   }
 
@@ -421,6 +432,7 @@ export class Kontext {
    * @returns SAR report template
    */
   async generateSARReport(options: ReportOptions): Promise<SARReport> {
+    requirePlan('sar-ctr-reports', this.planManager.getTier());
     return this.auditExporter.generateSARReport(options);
   }
 
@@ -435,6 +447,7 @@ export class Kontext {
    * @returns CTR report template
    */
   async generateCTRReport(options: ReportOptions): Promise<CTRReport> {
+    requirePlan('sar-ctr-reports', this.planManager.getTier());
     return this.auditExporter.generateCTRReport(options);
   }
 
@@ -472,6 +485,13 @@ export class Kontext {
    * @param config - Detection configuration
    */
   enableAnomalyDetection(config: AnomalyDetectionConfig): void {
+    // Advanced anomaly rules require Pro plan
+    const advancedRules = ['newDestination', 'offHoursActivity', 'rapidSuccession', 'roundAmount'];
+    const hasAdvanced = config.rules.some((r) => advancedRules.includes(r));
+    if (hasAdvanced) {
+      requirePlan('advanced-anomaly-rules', this.planManager.getTier());
+    }
+
     this.anomalyDetector.enableAnomalyDetection(config);
   }
 

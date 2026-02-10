@@ -225,21 +225,20 @@ npx pnpm --filter web dev
 | | Free | Pro | Enterprise |
 |---|---|---|---|
 | **Price** | $0 | $199/user/mo | Custom |
-| **Events/mo** | Up to 20,000 | Up to 100,000 | Unlimited |
-| Action logging | Local | Cloud API | Cloud API |
-| Digest chain | Full | Full | Full |
-| Anomaly detection | Basic rules | Advanced (ML-powered) | Custom rules engine |
-| Trust scoring | Local | Trust scoring API + history | Advanced |
-| GENIUS Act templates | -- | Yes | Yes |
+| **Events/mo** | Up to 20,000 | 100,000/user | Unlimited |
+| Action logging | Yes | Yes | Yes |
+| Digest chain | Yes | Yes | Yes |
+| Anomaly detection | Basic rules (2) | All rules (6) | All rules + CFTC |
+| Trust scoring | Local | Full API | Full API |
 | SAR/CTR reports | -- | Yes | Yes |
-| OFAC screening | -- | Advanced | Advanced |
-| Audit export | JSON | JSON, CSV, PDF | Custom formats |
-| Protocol support | Single | All (x402 + UCP + Stripe) | All |
-| Team dashboard | -- | Yes | Yes |
+| OFAC screening | -- | Yes | Yes |
+| CFTC compliance | -- | -- | Yes |
+| Circle / CCTP | -- | -- | Yes |
+| Audit export | JSON | JSON, CSV | JSON, CSV |
+| Chain support | Base | All EVM chains | All EVM + custom |
 | Webhooks | -- | Yes | Yes |
-| Support | GitHub Issues | Email (24h) | Dedicated engineer |
+| Support | Community | Email (24h) | Dedicated engineer |
 | SLA | -- | -- | 99.9% |
-| On-prem | -- | -- | Yes |
 
 The free SDK is fully functional with up to 20,000 events/month. Run it self-hosted, no API key needed. [Pricing details](https://www.getkontext.com/pricing).
 

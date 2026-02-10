@@ -90,7 +90,7 @@ export function Footer() {
             <span className="text-sm font-medium">Kontext</span>
           </div>
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} Kontext. Open source under MIT License.
+            &copy; {new Date().getFullYear()} Legaci Labs. Open source under MIT Licence.
           </p>
         </div>
 
