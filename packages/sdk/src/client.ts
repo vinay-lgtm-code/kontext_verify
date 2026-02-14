@@ -52,6 +52,21 @@ import type { EventExporter } from './exporters.js';
 import { NoopExporter } from './exporters.js';
 import { FeatureFlagManager } from './feature-flags.js';
 import { ApprovalManager } from './approval.js';
+import { AgentIdentityRegistry } from './kya/identity-registry.js';
+import { WalletClusterer } from './kya/wallet-clustering.js';
+import { BehavioralFingerprinter } from './kya/behavioral-fingerprint.js';
+import { CrossSessionLinker } from './kya/cross-session-linker.js';
+import { KYAConfidenceScorer } from './kya/confidence-scorer.js';
+import type {
+  AgentIdentity,
+  RegisterIdentityInput,
+  UpdateIdentityInput,
+  WalletCluster,
+  BehavioralEmbedding,
+  AgentLink,
+  KYAConfidenceScore,
+  KYAEnvelope,
+} from './kya/types.js';
 import { createHash } from 'crypto';
 import { generateId, now } from './utils.js';
 
@@ -102,6 +117,13 @@ export class Kontext {
   private readonly exporter: EventExporter;
   private readonly featureFlagManager: FeatureFlagManager | null;
   private approvalManager: ApprovalManager | null;
+
+  // KYA modules (lazy-initialized on first use)
+  private kyaRegistry: AgentIdentityRegistry | null = null;
+  private walletClusterer: WalletClusterer | null = null;
+  private behavioralFingerprinter: BehavioralFingerprinter | null = null;
+  private crossSessionLinker: CrossSessionLinker | null = null;
+  private kyaConfidenceScorer: KYAConfidenceScorer | null = null;
 
   private constructor(config: KontextConfig) {
     this.config = config;
@@ -1000,6 +1022,255 @@ export class Kontext {
    */
   getPendingApprovals(): ApprovalRequest[] {
     return this.approvalManager?.getPendingRequests() ?? [];
+  }
+
+  // --------------------------------------------------------------------------
+  // KYA — Know Your Agent (Phase 1: Pro tier)
+  // --------------------------------------------------------------------------
+
+  /**
+   * Get the KYA identity registry, initializing on first use.
+   */
+  private getKYARegistry(): AgentIdentityRegistry {
+    if (!this.kyaRegistry) {
+      this.kyaRegistry = new AgentIdentityRegistry();
+    }
+    return this.kyaRegistry;
+  }
+
+  /**
+   * Get the wallet clusterer, initializing on first use.
+   */
+  private getWalletClusterer(): WalletClusterer {
+    if (!this.walletClusterer) {
+      this.walletClusterer = new WalletClusterer();
+    }
+    return this.walletClusterer;
+  }
+
+  /**
+   * Get the behavioral fingerprinter, initializing on first use.
+   */
+  private getBehavioralFingerprinter(): BehavioralFingerprinter {
+    if (!this.behavioralFingerprinter) {
+      this.behavioralFingerprinter = new BehavioralFingerprinter();
+    }
+    return this.behavioralFingerprinter;
+  }
+
+  /**
+   * Get the cross-session linker, initializing on first use.
+   */
+  private getCrossSessionLinker(): CrossSessionLinker {
+    if (!this.crossSessionLinker) {
+      this.crossSessionLinker = new CrossSessionLinker();
+    }
+    return this.crossSessionLinker;
+  }
+
+  /**
+   * Get the KYA confidence scorer, initializing on first use.
+   */
+  private getKYAConfidenceScorer(): KYAConfidenceScorer {
+    if (!this.kyaConfidenceScorer) {
+      this.kyaConfidenceScorer = new KYAConfidenceScorer();
+    }
+    return this.kyaConfidenceScorer;
+  }
+
+  /**
+   * Wire the KYA envelope provider into the audit exporter.
+   */
+  private ensureKYAAuditProvider(): void {
+    this.auditExporter.setKYAProvider((options) => {
+      return this.buildKYAEnvelope();
+    });
+  }
+
+  /**
+   * Build a KYA envelope from all available KYA data.
+   */
+  private buildKYAEnvelope(): KYAEnvelope {
+    const registry = this.getKYARegistry();
+    const clusterer = this.getWalletClusterer();
+
+    const identities = registry.getAll();
+    const clusters = clusterer.getClusters();
+
+    // Behavioral/linking data only available if enterprise modules were used
+    const embeddings: BehavioralEmbedding[] = [];
+    const links = this.crossSessionLinker?.getAllLinks() ?? [];
+    const scores: KYAConfidenceScore[] = [];
+
+    return {
+      identities,
+      clusters,
+      embeddings,
+      links,
+      scores,
+      generatedAt: now(),
+    };
+  }
+
+  /**
+   * Check if KYA feature flag is enabled (if feature flags are configured).
+   * Returns true if feature flags are not configured (no remote kill-switch).
+   */
+  private isKYAFlagEnabled(flag: string): boolean {
+    if (!this.featureFlagManager) return true;
+    return this.featureFlagManager.isEnabled(flag);
+  }
+
+  /**
+   * Register a new agent identity.
+   * Requires Pro plan.
+   */
+  registerAgentIdentity(input: RegisterIdentityInput): AgentIdentity {
+    requirePlan('kya-identity', this.planManager.getTier());
+    if (!this.isKYAFlagEnabled('kya-identity')) {
+      throw new KontextError(
+        KontextErrorCode.PLAN_REQUIRED,
+        'KYA identity resolution is currently disabled via feature flag.',
+      );
+    }
+    this.ensureKYAAuditProvider();
+    return this.getKYARegistry().register(input);
+  }
+
+  /**
+   * Update an existing agent identity.
+   * Requires Pro plan.
+   */
+  updateAgentIdentity(agentId: string, input: UpdateIdentityInput): AgentIdentity {
+    requirePlan('kya-identity', this.planManager.getTier());
+    return this.getKYARegistry().update(agentId, input);
+  }
+
+  /**
+   * Get an agent identity by agent ID.
+   * Requires Pro plan.
+   */
+  getAgentIdentity(agentId: string): AgentIdentity | undefined {
+    requirePlan('kya-identity', this.planManager.getTier());
+    return this.getKYARegistry().get(agentId);
+  }
+
+  /**
+   * Remove an agent identity.
+   * Requires Pro plan.
+   */
+  removeAgentIdentity(agentId: string): boolean {
+    requirePlan('kya-identity', this.planManager.getTier());
+    return this.getKYARegistry().remove(agentId);
+  }
+
+  /**
+   * Add a wallet to an agent identity.
+   * Requires Pro plan.
+   */
+  addAgentWallet(
+    agentId: string,
+    wallet: { address: string; chain: string; label?: string },
+  ): AgentIdentity {
+    requirePlan('kya-identity', this.planManager.getTier());
+    this.getWalletClusterer().invalidateCache();
+    return this.getKYARegistry().addWallet(agentId, wallet);
+  }
+
+  /**
+   * Look up an agent identity by wallet address.
+   * Requires Pro plan.
+   */
+  lookupAgentByWallet(address: string): AgentIdentity | undefined {
+    requirePlan('kya-identity', this.planManager.getTier());
+    return this.getKYARegistry().lookupByWallet(address);
+  }
+
+  /**
+   * Compute wallet clusters from transaction data and declared wallets.
+   * Requires Pro plan.
+   */
+  getWalletClusters(): WalletCluster[] {
+    requirePlan('kya-identity', this.planManager.getTier());
+    return this.getWalletClusterer().analyzeFromStore(
+      this.store,
+      this.kyaRegistry ?? undefined,
+    );
+  }
+
+  /**
+   * Get a KYA envelope containing all KYA data.
+   * Requires Pro plan.
+   */
+  getKYAExport(): KYAEnvelope {
+    requirePlan('kya-identity', this.planManager.getTier());
+    return this.buildKYAEnvelope();
+  }
+
+  // --------------------------------------------------------------------------
+  // KYA — Know Your Agent (Phase 2: Enterprise tier)
+  // --------------------------------------------------------------------------
+
+  /**
+   * Compute a behavioral embedding for an agent from their transaction history.
+   * Requires Enterprise plan.
+   */
+  computeBehavioralEmbedding(agentId: string): BehavioralEmbedding | null {
+    requirePlan('kya-behavioral', this.planManager.getTier());
+    return this.getBehavioralFingerprinter().computeEmbedding(agentId, this.store);
+  }
+
+  /**
+   * Analyze all agents and create links between those with sufficient signals.
+   * Requires Enterprise plan.
+   */
+  analyzeAgentLinks(): AgentLink[] {
+    requirePlan('kya-behavioral', this.planManager.getTier());
+
+    // Ensure clusters are computed
+    const clusterer = this.getWalletClusterer();
+    if (clusterer.getClusters().length === 0) {
+      clusterer.analyzeFromStore(this.store, this.kyaRegistry ?? undefined);
+    }
+
+    return this.getCrossSessionLinker().analyzeAndLink(
+      this.store,
+      this.getKYARegistry(),
+      clusterer,
+      this.getBehavioralFingerprinter(),
+    );
+  }
+
+  /**
+   * Get all agents linked to the given agent.
+   * Requires Enterprise plan.
+   */
+  getLinkedAgents(agentId: string): string[] {
+    requirePlan('kya-behavioral', this.planManager.getTier());
+    return this.getCrossSessionLinker().getLinkedAgents(agentId);
+  }
+
+  /**
+   * Compute a KYA confidence score for an agent.
+   * Requires Enterprise plan.
+   */
+  getKYAConfidenceScore(agentId: string): KYAConfidenceScore {
+    requirePlan('kya-behavioral', this.planManager.getTier());
+
+    // Ensure clusters are computed
+    const clusterer = this.getWalletClusterer();
+    if (clusterer.getClusters().length === 0) {
+      clusterer.analyzeFromStore(this.store, this.kyaRegistry ?? undefined);
+    }
+
+    return this.getKYAConfidenceScorer().computeScore(
+      agentId,
+      this.getKYARegistry(),
+      clusterer,
+      this.getBehavioralFingerprinter(),
+      this.getCrossSessionLinker(),
+      this.store,
+    );
   }
 
   // --------------------------------------------------------------------------

@@ -689,6 +689,110 @@ export function requireFlag(flagName: string, environment?: 'development' | 'sta
 }
 
 // ============================================================================
+// SDN Sync Routes (admin endpoints for Treasury SDN data)
+// ============================================================================
+
+// Lazy-loaded sync services (initialized on first use or startup)
+let sdnSyncService: import('./treasury-sdn-sync.js').TreasurySDNSyncService | null = null;
+let cslSyncService: import('./csl-sync.js').CSLSyncService | null = null;
+
+/**
+ * Initialize SDN and CSL sync services. Called on startup (non-blocking)
+ * and lazily from route handlers.
+ */
+async function initSyncServices(): Promise<void> {
+  if (!sdnSyncService) {
+    const { TreasurySDNSyncService } = await import('./treasury-sdn-sync.js');
+    sdnSyncService = new TreasurySDNSyncService({
+      gcpProjectId: GCP_PROJECT_ID,
+    });
+  }
+
+  const cslApiKey = process.env['TRADE_GOV_API_KEY'];
+  if (!cslSyncService && cslApiKey) {
+    const { CSLSyncService } = await import('./csl-sync.js');
+    cslSyncService = new CSLSyncService({
+      apiKey: cslApiKey,
+      gcpProjectId: GCP_PROJECT_ID,
+    });
+  }
+}
+
+// Startup: initialize sync services and run initial sync (non-blocking)
+void initSyncServices()
+  .then(async () => {
+    if (sdnSyncService) {
+      try {
+        await sdnSyncService.syncOnce();
+        sdnSyncService.startPeriodicSync();
+        console.log('[Kontext] Treasury SDN initial sync complete');
+      } catch (err) {
+        console.warn('[Kontext] Treasury SDN initial sync failed:', err instanceof Error ? err.message : String(err));
+      }
+    }
+    if (cslSyncService) {
+      try {
+        await cslSyncService.syncOnce();
+        cslSyncService.startPeriodicSync();
+        console.log('[Kontext] CSL initial sync complete');
+      } catch (err) {
+        console.warn('[Kontext] CSL initial sync failed:', err instanceof Error ? err.message : String(err));
+      }
+    }
+  })
+  .catch(() => {
+    console.warn('[Kontext] Sync service initialization failed — will retry lazily');
+  });
+
+// POST /v1/sdn/sync — Admin endpoint to trigger manual Treasury SDN sync
+app.post('/v1/sdn/sync', authMiddleware, async (c) => {
+  const apiKey = c.req.header('Authorization')?.slice(7) ?? '';
+  const planInfo = apiKeyPlans.get(apiKey);
+  const plan = planInfo?.plan ?? 'free';
+
+  if (plan !== 'enterprise') {
+    return c.json({ error: 'SDN sync requires Enterprise plan' }, 403);
+  }
+
+  try {
+    await initSyncServices();
+    if (!sdnSyncService) {
+      return c.json({ error: 'SDN sync service not available' }, 503);
+    }
+
+    const result = await sdnSyncService.syncOnce();
+    return c.json({
+      success: true,
+      version: result.list.version,
+      addressCount: result.list.addresses.length,
+      delta: result.delta,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'SDN sync failed';
+    return c.json({ error: message }, 500);
+  }
+});
+
+// GET /v1/sdn/status — Return sync metadata
+app.get('/v1/sdn/status', authMiddleware, (c) => {
+  const sdnStatus = sdnSyncService?.getStatus() ?? { syncing: false, metadata: null, hasData: false };
+  const cslStatus = cslSyncService?.getStatus() ?? {
+    syncing: false,
+    lastFetchedAt: null,
+    entityCount: 0,
+    digitalCurrencyEntityCount: 0,
+    sourceCounts: {},
+  };
+
+  return c.json({
+    sdn: sdnStatus,
+    csl: cslStatus,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// ============================================================================
 // Stripe Checkout + Billing Routes (no auth required — public checkout flow)
 // ============================================================================
 

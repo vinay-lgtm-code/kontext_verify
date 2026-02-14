@@ -76,7 +76,7 @@ const plans = [
   },
   {
     name: "Pro",
-    price: "$199",
+    price: "$449",
     period: "/user/mo",
     description:
       "Everything in Free plus all detection rules, unified screening (OFAC, Chainalysis, OpenSanctions), compliance templates, and webhook alerts. 100K events/user/mo.",
@@ -179,14 +179,14 @@ function EmailCaptureForm({
   const [email, setEmail] = useState("");
   const [seats, setSeats] = useState(1);
 
-  const total = seats * 199;
+  const total = seats * 449;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="mx-4 w-full max-w-md rounded-lg border border-border bg-background p-6 shadow-xl">
         <h3 className="text-lg font-semibold">Start your Pro subscription</h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          $199/user/month. Each seat includes 100K events/mo.
+          $449/user/month. Each seat includes 100K events/mo.
         </p>
         <form
           onSubmit={(e) => {

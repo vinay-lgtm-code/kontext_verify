@@ -57,7 +57,7 @@ All notable public changes to the Kontext SDK and platform are documented here.
 ### Added
 - Pluggable `EventExporter` interface with 6 built-in implementations (Noop, Console, JsonFile, HTTP, KontextCloud, Multi)
 - CFTC 26-05 compliance module for FCM digital asset margin requirements
-- Per-user pricing: $199/seat/mo with per-seat event limits
+- Per-user pricing: $449/seat/mo with per-seat event limits
 - Stripe Checkout integration with subscription billing
 - Comprehensive OFAC sanctions screening with SDN list support
 - Circle Programmable Wallets integration

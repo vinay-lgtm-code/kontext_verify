@@ -762,7 +762,7 @@ let allAddressSet: Set<string> = new Set();
 /** Map from lowercase address to entry */
 let addressToEntry: Map<string, SanctionedAddressEntry> = new Map();
 
-function rebuildIndexes(): void {
+export function rebuildIndexes(): void {
   activeAddressSet = new Set();
   allAddressSet = new Set();
   addressToEntry = new Map();

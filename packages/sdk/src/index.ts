@@ -130,7 +130,7 @@ export { UsdcCompliance } from './integrations/usdc.js';
 export type { SanctionsCheckResult } from './integrations/usdc.js';
 
 // Comprehensive OFAC Sanctions Screening
-export { OFACSanctionsScreener, ofacScreener } from './integrations/ofac-sanctions.js';
+export { OFACSanctionsScreener, ofacScreener, rebuildIndexes } from './integrations/ofac-sanctions.js';
 export type {
   SanctionsList,
   SanctionedJurisdiction,
@@ -259,8 +259,73 @@ export type {
   ScreeningAggregatorConfig,
 } from './integrations/screening-provider.js';
 
-// Screening Providers - OFAC Auto-Update & Chainalysis Oracle
-export { OFACListProvider, ChainalysisOracleProvider } from './integrations/provider-ofac.js';
+// Screening Providers - Treasury SDN Direct & Chainalysis Oracle
+export { TreasurySDNProvider } from './integrations/provider-treasury-sdn.js';
+export type { TreasurySDNProviderConfig } from './integrations/provider-treasury-sdn.js';
+export { ChainalysisOracleProvider } from './integrations/provider-ofac.js';
+
+// Screening Notification Manager
+export { ScreeningNotificationManager } from './integrations/screening-notification.js';
+export type {
+  ScreeningNotificationConfig,
+  PaymentProviderContact,
+  EmailTransport,
+  WebhookTransport,
+  SMTPTransport,
+  TransactionContext,
+  ScreeningNotificationPayload,
+  ScreeningNotificationBody,
+  NotificationDeliveryResult,
+} from './integrations/screening-notification.js';
 
 // Screening Providers - Chainalysis Free API & OpenSanctions
 export { ChainalysisFreeAPIProvider, OpenSanctionsProvider } from './integrations/provider-apis.js';
+
+// KYA (Know Your Agent) Identity Resolution Engine
+export {
+  AgentIdentityRegistry,
+  UnionFind,
+  WalletClusterer,
+  BehavioralFingerprinter,
+  CrossSessionLinker,
+  KYAConfidenceScorer,
+} from './kya/index.js';
+
+export type {
+  // KYA Identity
+  EntityType,
+  KYCStatus,
+  WalletMapping,
+  KYCProviderReference,
+  AgentIdentity,
+  RegisterIdentityInput,
+  UpdateIdentityInput,
+
+  // KYA Wallet Clustering
+  ClusteringHeuristic,
+  ClusteringEvidence,
+  WalletCluster,
+  WalletClusteringConfig,
+
+  // KYA Behavioral Fingerprinting
+  TemporalFeatures,
+  FinancialFeatures,
+  NetworkFeatures,
+  OperationalFeatures,
+  BehavioralEmbedding,
+
+  // KYA Cross-Session Linking
+  LinkSignal,
+  LinkStatus,
+  AgentLink,
+  CrossSessionLinkerConfig,
+
+  // KYA Confidence Scoring
+  KYAScoreComponent,
+  KYAConfidenceLevel,
+  KYAConfidenceScore,
+  KYAConfidenceScorerConfig,
+
+  // KYA Envelope
+  KYAEnvelope,
+} from './kya/index.js';

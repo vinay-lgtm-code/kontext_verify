@@ -26,19 +26,10 @@ secrets.yaml
 secrets.yml
 secrets.json
 
-# Internal docs (not public)
+# Internal docs, strategy, and evaluations (not public)
+docs/
 research/
-ROADMAP.md
-SECURITY-AUDIT-REPORT.md
-CHANGELOG-INTERNAL.md
-*_feb9.md
-*_assessment_*.md
-*_analysis_*.md
-*_audit_*.md
-*_prospects_*.md
-
-# PDFs (internal regulatory/compliance docs)
-*.pdf
+internal/
 
 # Binary documents (should never be in git)
 *.docx
@@ -46,6 +37,7 @@ CHANGELOG-INTERNAL.md
 *.xlsx
 *.xls
 *.pptx
+*.pdf
 
 # Office lock files
 .~lock.*
@@ -53,20 +45,10 @@ CHANGELOG-INTERNAL.md
 
 # Claude Code internal skills & config
 .claude/
+CLAUDE.md
 
 # Firestore config (internal GCP infrastructure)
 firestore.rules
 
-# Internal scripts
-generate_updated_eval.py
-kontext-architecture-evaluation.js
-pull_usage.py
-backend-engineer
-backend-engineer.skill
-
 # Local shell scripts
 *.local.sh
-
-# Architecture evaluations
-*-Evaluation*
-*-evaluation*

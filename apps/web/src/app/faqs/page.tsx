@@ -33,7 +33,7 @@ const faqCategories = [
       {
         question: "Is Kontext open source?",
         answer:
-          "Yes. The core SDK is fully open source and available on GitHub with 20,000 events/month included. You can self-host the entire stack with no feature gates on the free tier. Paid plans add all anomaly detection rules, best-in-class unified screening (OFAC, Chainalysis, OpenSanctions), SAR/CTR reports, and multi-chain support on the Pro plan at $199/user/month (100K events/user/mo). Enterprise plans have unlimited events.",
+          "Yes. The core SDK is fully open source and available on GitHub with 20,000 events/month included. You can self-host the entire stack with no feature gates on the free tier. Paid plans add all anomaly detection rules, best-in-class unified screening (OFAC, Chainalysis, OpenSanctions), SAR/CTR reports, and multi-chain support on the Pro plan at $449/user/month (100K events/user/mo). Enterprise plans have unlimited events.",
       },
       {
         question: "What license does Kontext use?",
@@ -115,6 +115,45 @@ const faqCategories = [
         answer:
           "Absolutely. Kontext does not depend on any specific agent framework. It is a standalone SDK that you call at the points in your agent's execution where compliance matters -- before financial actions, after completions, or at any decision point you want audited.",
       },
+      {
+        question:
+          "How do I integrate screening notifications with SendGrid, Mailgun, or Slack?",
+        answer:
+          "Configure the ScreeningNotificationManager with a webhook transport pointing to your service's API. The webhook POST includes X-Kontext-Event and X-Kontext-Notification-Id headers plus a structured JSON body. For SendGrid, point the URL to your SendGrid inbound webhook or mail send endpoint. For Slack, use a Slack incoming webhook URL. The payload is self-describing JSON that works with any webhook-capable service.",
+      },
+    ],
+  },
+  {
+    name: "Screening & Notifications",
+    faqs: [
+      {
+        question: "How does screening notification routing work?",
+        answer:
+          "When the unified screening aggregator returns a non-definitive result (REVIEW decision, risk score 40-79), the ScreeningNotificationManager sends a structured webhook POST to your configured endpoint. The payload includes transaction details (partially masked), risk assessment, provider results, and a recommended action. You route this webhook to your existing case management system, compliance dashboard, or email service. Kontext handles the screening and notification -- case creation, tracking, and resolution is handled by your systems.",
+      },
+      {
+        question:
+          "What if my team doesn't have a case management system?",
+        answer:
+          "Two options work out of the box. First, configure the webhook transport to POST to an email delivery service (SendGrid, Mailgun, Postmark) -- the payload includes a pre-formatted subject line and structured body that renders well in email. Set paymentProviderContacts with your compliance team's email addresses and each REVIEW decision forwards as an email. Second, pair the notification with Kontext's built-in ApprovalManager -- this gives your team a simple accept/reject flow with expiry timers, without building a full case management system.",
+      },
+      {
+        question: "Which screening decisions trigger notifications?",
+        answer:
+          "By default, only REVIEW decisions (risk score 40-79) trigger notifications -- these are non-definitive results where automated screening found signal but not enough confidence to block. You can optionally include BLOCK decisions by setting notifyOn: ['REVIEW', 'BLOCK']. APPROVE decisions (risk score 0-39) never trigger notifications.",
+      },
+      {
+        question:
+          "Can I route different payment flows to different contacts?",
+        answer:
+          "Yes. Each PaymentProviderContact specifies which flows they cover: circle-wallets, stripe, cctp, x402, or all. When a screening notification fires, only contacts matching the transaction's flow type receive the notification. This lets you route Circle wallet alerts to your crypto compliance team and Stripe alerts to your payments team.",
+      },
+      {
+        question:
+          "Does Kontext track case resolution or SLA compliance?",
+        answer:
+          "No. Kontext is a screening and notification bridge, not a case management system. Once a notification is delivered, resolution tracking is handled by your case management system (Jira, ServiceNow, Unit21, etc.) or via the ApprovalManager if you're using Kontext's built-in accept/reject flow. Delivery results are recorded for audit trail purposes via getDeliveryResults().",
+      },
     ],
   },
   {
@@ -158,7 +197,7 @@ const faqCategories = [
       {
         question: "What does the Pro plan include?",
         answer:
-          "Pro ($199/user/mo, 100K events per user per month) includes everything in Free plus: all six anomaly detection rules (including new-destination, off-hours, rapid-succession, and round-amount), SAR/CTR report generation, best-in-class unified screening aggregating OFAC SDN, Chainalysis Oracle, Chainalysis API, and OpenSanctions into a single result, custom blocklist/allowlist manager, CSV export, multi-chain support (Ethereum, Polygon, Arbitrum, Optimism, Avalanche, Solana), webhook alerts, and email support with 24h response time. Event limits scale with your team size.",
+          "Pro ($449/user/mo, 100K events per user per month) includes everything in Free plus: all six anomaly detection rules (including new-destination, off-hours, rapid-succession, and round-amount), SAR/CTR report generation, best-in-class unified screening aggregating OFAC SDN, Chainalysis Oracle, Chainalysis API, and OpenSanctions into a single result, custom blocklist/allowlist manager, CSV export, multi-chain support (Ethereum, Polygon, Arbitrum, Optimism, Avalanche, Solana), webhook alerts, and email support with 24h response time. Event limits scale with your team size.",
       },
       {
         question: "Can I self-host the entire stack?",

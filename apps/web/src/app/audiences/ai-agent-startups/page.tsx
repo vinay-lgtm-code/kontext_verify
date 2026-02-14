@@ -319,13 +319,13 @@ export default function AIAgentStartupsPage() {
               <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
                 The Free tier includes 20,000 events per month -- enough to
                 build and validate your agent workflows. Upgrade to Pro
-                ($199/user/month) for the cloud dashboard, ML-powered anomaly
+                ($449/user/month) for the cloud dashboard, ML-powered anomaly
                 detection, and 100,000 events per user.
               </p>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 {[
                   "Free: 20K events/month, local SDK, open source",
-                  "Pro: $199/user/month, cloud dashboard, ML detection",
+                  "Pro: $449/user/month, cloud dashboard, ML detection",
                   "Enterprise: Custom pricing, unlimited events, SLA",
                   "No credit card required to start",
                 ].map((item) => (

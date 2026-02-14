@@ -21,6 +21,10 @@ import type {
 import { KontextError, KontextErrorCode } from './types.js';
 import { KontextStore } from './store.js';
 import { generateId, now, isWithinDateRange, toCsv, parseAmount } from './utils.js';
+import type { KYAEnvelope } from './kya/types.js';
+
+/** Provider function that returns a KYA envelope for inclusion in audit exports */
+export type KYAProvider = (options: ExportOptions) => KYAEnvelope | null;
 
 /**
  * AuditExporter handles compliance data export and report generation.
@@ -34,10 +38,18 @@ import { generateId, now, isWithinDateRange, toCsv, parseAmount } from './utils.
 export class AuditExporter {
   private readonly config: KontextConfig;
   private readonly store: KontextStore;
+  private kyaProvider: KYAProvider | null = null;
 
   constructor(config: KontextConfig, store: KontextStore) {
     this.config = config;
     this.store = store;
+  }
+
+  /**
+   * Set a KYA envelope provider for inclusion in audit exports.
+   */
+  setKYAProvider(provider: KYAProvider): void {
+    this.kyaProvider = provider;
   }
 
   /**
@@ -63,7 +75,10 @@ export class AuditExporter {
     const tasks = options.includeTasks ? this.filterTasks(options) : [];
     const anomalies = options.includeAnomalies ? this.filterAnomalies(options) : [];
 
-    const records = {
+    // Build KYA envelope if provider is set
+    const kyaEnvelope = this.kyaProvider ? this.kyaProvider(options) : null;
+
+    const records: Record<string, unknown> = {
       actions,
       transactions,
       tasks,
@@ -81,6 +96,10 @@ export class AuditExporter {
         },
       },
     };
+
+    if (kyaEnvelope) {
+      records['kyaEnvelope'] = kyaEnvelope;
+    }
 
     const totalCount =
       actions.length + transactions.length + tasks.length + anomalies.length;

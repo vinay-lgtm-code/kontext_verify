@@ -73,8 +73,8 @@ describe('Stripe Integration', () => {
       expect(PRO_PLAN_CONFIG.product.name).toBe('Kontext Pro');
     });
 
-    it('should set price to $199 (19900 cents)', () => {
-      expect(PRO_PLAN_CONFIG.price.amount).toBe(19900);
+    it('should set price to $449 (44900 cents)', () => {
+      expect(PRO_PLAN_CONFIG.price.amount).toBe(44900);
       expect(PRO_PLAN_CONFIG.price.currency).toBe('usd');
     });
 
@@ -380,7 +380,7 @@ describe('Stripe Integration', () => {
           object: {
             id: 'in_success_1',
             customer: 'cus_paid_1',
-            amount_paid: 19900,
+            amount_paid: 44900,
           },
         },
       });
@@ -390,7 +390,7 @@ describe('Stripe Integration', () => {
       expect(result.type).toBe('invoice.payment_succeeded');
       expect(result.handled).toBe(true);
       expect(result.data?.['action']).toBe('payment_succeeded');
-      expect(result.data?.['amountPaid']).toBe(19900);
+      expect(result.data?.['amountPaid']).toBe(44900);
     });
 
     it('should handle invoice.payment_failed', async () => {

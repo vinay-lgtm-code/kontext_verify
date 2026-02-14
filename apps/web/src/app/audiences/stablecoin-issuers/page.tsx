@@ -329,14 +329,14 @@ export default function StablecoinIssuersPage() {
                 Pro or Enterprise -- built for your scale
               </h2>
               <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
-                Stablecoin issuers typically need Pro ($199/user/month) for
+                Stablecoin issuers typically need Pro ($449/user/month) for
                 cloud dashboard, unified compliance screening, and ML-powered anomaly
                 detection. Enterprise plans are available for issuers with
                 custom requirements, dedicated support, and SLAs.
               </p>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 {[
-                  "Pro: $199/user/month, 100K events/user, unified screening",
+                  "Pro: $449/user/month, 100K events/user, unified screening",
                   "Enterprise: Custom pricing, unlimited events, SLA",
                   "GENIUS Act alignment templates included",
                   "Dedicated compliance engineering support (Enterprise)",

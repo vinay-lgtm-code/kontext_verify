@@ -334,13 +334,13 @@ export default function DeFiProtocolsPage() {
               <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
                 The Free tier includes 20,000 events per month -- enough to add
                 compliance to governance and treasury operations. Upgrade to Pro
-                ($199/user/month) for ML-powered anomaly detection, cloud
+                ($449/user/month) for ML-powered anomaly detection, cloud
                 dashboard, and 100,000 events per user.
               </p>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 {[
                   "Free: 20K events/month, governance logging, local SDK",
-                  "Pro: $199/user/month, anomaly detection, cloud dashboard",
+                  "Pro: $449/user/month, anomaly detection, cloud dashboard",
                   "Enterprise: Custom pricing, unlimited events, SLA",
                   "Open source SDK -- audit the code yourself",
                 ].map((item) => (

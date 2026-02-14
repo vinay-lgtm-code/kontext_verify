@@ -35,6 +35,9 @@ import type {
   ScreeningAggregatorConfig,
 } from './screening-provider.js';
 
+import type { ScreeningNotificationManager } from './screening-notification.js';
+import type { TransactionContext } from './screening-notification.js';
+
 // ============================================================================
 // Severity Ordering (for comparison)
 // ============================================================================
@@ -168,6 +171,9 @@ export class ScreeningAggregator {
     providerWeights: Record<string, number>;
   };
 
+  /** Optional notification manager for REVIEW/BLOCK decision alerts */
+  private notificationManager: ScreeningNotificationManager | null = null;
+
   /**
    * Create a new ScreeningAggregator.
    *
@@ -194,23 +200,47 @@ export class ScreeningAggregator {
   // --------------------------------------------------------------------------
 
   /**
+   * Set an optional notification manager to receive alerts on REVIEW/BLOCK
+   * decisions. When set, the aggregator will fire notifications after
+   * computing the unified result.
+   *
+   * @param manager - The notification manager instance, or null to disable
+   */
+  setNotificationManager(manager: ScreeningNotificationManager | null): void {
+    this.notificationManager = manager;
+  }
+
+  /**
    * Screen a single address through all providers and return a unified result.
    *
    * Execution order:
    * 1. Run all providers (parallel or sequential) with per-provider timeout
    * 2. Aggregate results into a unified decision
+   * 3. If notification manager is configured and decision is REVIEW/BLOCK,
+   *    fire a notification (non-blocking)
    *
    * @param input - Address screening input
+   * @param transactionContext - Optional transaction context for notifications
    * @returns Unified screening result with aggregated decision
    */
-  async screenAddress(input: ScreenAddressInput): Promise<UnifiedScreeningResult> {
+  async screenAddress(
+    input: ScreenAddressInput,
+    transactionContext?: TransactionContext,
+  ): Promise<UnifiedScreeningResult> {
     const startTime = Date.now();
 
     // --- Run providers ---
     const providerResults = await this.runProviders(input);
 
     // --- Aggregate results ---
-    return this.aggregateResults(input, providerResults, Date.now() - startTime);
+    const result = this.aggregateResults(input, providerResults, Date.now() - startTime);
+
+    // --- Fire notification if configured and decision warrants it ---
+    if (this.notificationManager && this.notificationManager.shouldNotify(result)) {
+      void this.notificationManager.notifyReviewRequired(result, transactionContext);
+    }
+
+    return result;
   }
 
   // --------------------------------------------------------------------------

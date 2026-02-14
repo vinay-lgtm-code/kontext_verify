@@ -20,7 +20,9 @@ export type GatedFeature =
   | 'cctp-transfers'
   | 'approval-policies'
   | 'unified-screening'
-  | 'blocklist-manager';
+  | 'blocklist-manager'
+  | 'kya-identity'
+  | 'kya-behavioral';
 
 const FEATURE_MIN_PLAN: Record<GatedFeature, PlanTier> = {
   'advanced-anomaly-rules': 'pro',
@@ -37,6 +39,8 @@ const FEATURE_MIN_PLAN: Record<GatedFeature, PlanTier> = {
   'approval-policies': 'pro',
   'unified-screening': 'pro',
   'blocklist-manager': 'pro',
+  'kya-identity': 'pro',
+  'kya-behavioral': 'enterprise',
 };
 
 const PLAN_RANK: Record<PlanTier, number> = { free: 0, pro: 1, enterprise: 2 };
@@ -56,6 +60,8 @@ const FEATURE_LABELS: Record<GatedFeature, string> = {
   'approval-policies': 'Approval policies',
   'unified-screening': 'Unified screening (OFAC, Chainalysis, OpenSanctions)',
   'blocklist-manager': 'Custom blocklist/allowlist manager',
+  'kya-identity': 'KYA identity resolution (declared identity, wallet clustering)',
+  'kya-behavioral': 'KYA behavioral fingerprinting (cross-session linking, confidence scoring)',
 };
 
 /**

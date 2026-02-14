@@ -224,7 +224,7 @@ npx pnpm --filter web dev
 
 | | Free | Pro | Enterprise |
 |---|---|---|---|
-| **Price** | $0 | $199/user/mo | Custom |
+| **Price** | $0 | $449/user/mo | Custom |
 | **Events/mo** | Up to 20,000 | 100,000/user | Unlimited |
 | Action logging | Yes | Yes | Yes |
 | Digest chain | Yes | Yes | Yes |

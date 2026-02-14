@@ -2,18 +2,14 @@
 // Kontext SDK - OFAC Screening Providers
 // ============================================================================
 //
-// Two complementary sanctions screening providers that implement the unified
-// ScreeningProvider interface:
+// Sanctions screening provider implementing the unified ScreeningProvider
+// interface via the Chainalysis on-chain oracle.
 //
-//   1. OFACListProvider
-//      Auto-updates OFAC sanctioned digital currency addresses from the 0xB10C
-//      GitHub repository. The `lists` branch is regenerated nightly at 0 UTC
-//      from official OFAC SDN data, providing a machine-readable, line-per-
-//      address format ideal for fast bulk lookups.
+// Note: The OFACListProvider (0xB10C GitHub dependency) has been removed in
+// favor of the TreasurySDNProvider (direct Treasury SDN ingestion). See
+// provider-treasury-sdn.ts for the replacement.
 //
-//      Source: https://github.com/0xB10C/ofac-sanctioned-digital-currency-addresses
-//
-//   2. ChainalysisOracleProvider
+//   ChainalysisOracleProvider
 //      Integrates with the Chainalysis free on-chain sanctions oracle smart
 //      contract. The oracle is deployed at the same address across multiple EVM
 //      chains and exposes a single `isSanctioned(address)` view function. No
@@ -21,8 +17,8 @@
 //
 //      Oracle: 0x40C57923924B5c5c5455c48D93317139ADDaC8fb
 //
-// Both providers return structured RiskSignal data suitable for aggregation
-// by the ScreeningAggregator. They use only native `fetch()` -- no ethers.js,
+// The provider returns structured RiskSignal data suitable for aggregation
+// by the ScreeningAggregator. It uses only native `fetch()` -- no ethers.js,
 // web3.js, or other external dependencies.
 // ============================================================================
 
@@ -36,18 +32,9 @@ import type {
 
 import type { Chain } from '../types.js';
 
-import { ofacScreener } from './ofac-sanctions.js';
-
 // ============================================================================
 // Constants
 // ============================================================================
-
-/** GitHub raw URL for the auto-updated ETH sanctioned addresses list */
-const OFAC_ETH_LIST_URL =
-  'https://raw.githubusercontent.com/0xB10C/ofac-sanctioned-digital-currency-addresses/lists/sanctioned_addresses_ETH.txt';
-
-/** Default refresh interval: 24 hours (matches the nightly 0 UTC rebuild) */
-const DEFAULT_UPDATE_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 /** Chainalysis sanctions oracle contract address (same on all supported chains) */
 const CHAINALYSIS_ORACLE_ADDRESS = '0x40C57923924B5c5c5455c48D93317139ADDaC8fb';
@@ -61,16 +48,6 @@ const IS_SANCTIONED_SELECTOR = '0x01e43d40';
 /** Default cache TTL for oracle results: 5 minutes */
 const DEFAULT_CACHE_TIME_MS = 5 * 60 * 1000;
 
-/** EVM-compatible chains where ETH-format addresses are valid */
-const EVM_CHAINS: Chain[] = [
-  'ethereum',
-  'base',
-  'polygon',
-  'arbitrum',
-  'optimism',
-  'avalanche',
-];
-
 /** Chains where the Chainalysis oracle contract is deployed */
 const ORACLE_SUPPORTED_CHAINS: Chain[] = [
   'ethereum',
@@ -80,306 +57,6 @@ const ORACLE_SUPPORTED_CHAINS: Chain[] = [
   'base',
   'avalanche',
 ];
-
-// ============================================================================
-// OFACListProvider
-// ============================================================================
-
-/** Configuration for the OFACListProvider */
-export interface OFACListProviderConfig {
-  /**
-   * How often to re-fetch the address list from GitHub, in milliseconds.
-   * @default 86400000 (24 hours)
-   */
-  updateIntervalMs?: number;
-
-  /**
-   * GitHub branch containing the auto-generated list files.
-   * @default 'lists'
-   */
-  githubBranch?: string;
-
-  /**
-   * If true, fall back to the built-in `ofacScreener` from `./ofac-sanctions.js`
-   * when the GitHub fetch fails during initialization.
-   * @default false
-   */
-  fallbackToBuiltin?: boolean;
-}
-
-/**
- * OFAC sanctions screening provider backed by the 0xB10C GitHub repository.
- *
- * The repository's `lists` branch contains nightly-updated plain text files
- * with one sanctioned digital currency address per line, sourced from the
- * official U.S. Treasury OFAC SDN list. This provider fetches the ETH
- * address file, parses it into a `Set<string>` for O(1) lookups, and
- * periodically re-fetches to stay current.
- *
- * Because Ethereum-format addresses are valid across all EVM-compatible
- * chains, this provider supports screening on any EVM chain.
- *
- * @example
- * ```typescript
- * const provider = new OFACListProvider({ fallbackToBuiltin: true });
- * await provider.initialize();
- *
- * const result = await provider.screenAddress({
- *   address: '0x098B716B8Aaf21512996dC57EB0615e2383E2f96',
- *   chain: 'ethereum',
- * });
- *
- * if (result.matched) {
- *   console.log('OFAC sanctioned address detected');
- * }
- *
- * // Cleanup when done
- * provider.dispose();
- * ```
- */
-export class OFACListProvider implements ScreeningProvider {
-  // --------------------------------------------------------------------------
-  // ScreeningProvider interface fields
-  // --------------------------------------------------------------------------
-
-  readonly name = 'ofac-list-auto';
-  readonly supportedCategories: RiskCategory[] = ['SANCTIONS'];
-  readonly supportedChains: Chain[] = EVM_CHAINS;
-
-  // --------------------------------------------------------------------------
-  // Internal state
-  // --------------------------------------------------------------------------
-
-  /** Lowercased sanctioned addresses for O(1) lookup */
-  private sanctionedAddresses: Set<string> = new Set();
-
-  /** ISO timestamp of the last successful address list update */
-  private lastUpdatedAt: string | null = null;
-
-  /** Handle for the periodic re-fetch interval */
-  private refreshInterval: ReturnType<typeof setInterval> | null = null;
-
-  /** Resolved configuration with defaults applied */
-  private readonly config: Required<OFACListProviderConfig>;
-
-  // --------------------------------------------------------------------------
-  // Constructor
-  // --------------------------------------------------------------------------
-
-  constructor(config: OFACListProviderConfig = {}) {
-    this.config = {
-      updateIntervalMs: config.updateIntervalMs ?? DEFAULT_UPDATE_INTERVAL_MS,
-      githubBranch: config.githubBranch ?? 'lists',
-      fallbackToBuiltin: config.fallbackToBuiltin ?? false,
-    };
-  }
-
-  // --------------------------------------------------------------------------
-  // Initialization
-  // --------------------------------------------------------------------------
-
-  /**
-   * Fetch the initial address list from GitHub and schedule periodic refreshes.
-   *
-   * If the fetch fails and `fallbackToBuiltin` is enabled, the provider will
-   * populate its address set from the built-in `ofacScreener` instead of
-   * throwing. This ensures screening can proceed even if GitHub is unreachable.
-   */
-  async initialize(): Promise<void> {
-    await this.fetchAddressList();
-
-    // Schedule periodic re-fetch
-    this.refreshInterval = setInterval(() => {
-      void this.fetchAddressList();
-    }, this.config.updateIntervalMs);
-  }
-
-  // --------------------------------------------------------------------------
-  // Core screening
-  // --------------------------------------------------------------------------
-
-  /**
-   * Screen a single address against the OFAC sanctioned addresses set.
-   *
-   * @param input - The address and chain to screen
-   * @returns A ProviderScreeningResult with match information and risk signals
-   */
-  async screenAddress(input: ScreenAddressInput): Promise<ProviderScreeningResult> {
-    const start = Date.now();
-    const screenedAt = new Date().toISOString();
-    const normalizedAddress = input.address.toLowerCase();
-
-    try {
-      const matched = this.sanctionedAddresses.has(normalizedAddress);
-      const signals: RiskSignal[] = [];
-
-      if (matched) {
-        signals.push({
-          provider: this.name,
-          category: 'SANCTIONS',
-          severity: 'BLOCKLIST',
-          riskScore: 100,
-          actions: ['DENY', 'FREEZE_WALLET'],
-          description:
-            `Address ${input.address} found on OFAC sanctioned digital currency addresses list ` +
-            `(source: 0xB10C/ofac-sanctioned-digital-currency-addresses, ` +
-            `last updated: ${this.lastUpdatedAt ?? 'unknown'})`,
-          direction: 'BOTH',
-          metadata: {
-            source: 'ofac-sanctioned-digital-currency-addresses',
-            listBranch: this.config.githubBranch,
-            lastUpdated: this.lastUpdatedAt,
-            addressCount: this.sanctionedAddresses.size,
-          },
-        });
-      }
-
-      return {
-        provider: this.name,
-        matched,
-        signals,
-        success: true,
-        latencyMs: Date.now() - start,
-        screenedAt,
-      };
-    } catch (error) {
-      return {
-        provider: this.name,
-        matched: false,
-        signals: [],
-        success: false,
-        error: `OFACListProvider screening failed: ${error instanceof Error ? error.message : String(error)}`,
-        latencyMs: Date.now() - start,
-        screenedAt,
-      };
-    }
-  }
-
-  // --------------------------------------------------------------------------
-  // Health check
-  // --------------------------------------------------------------------------
-
-  /**
-   * Returns true if the address set has been successfully populated.
-   * A healthy provider has at least one address loaded.
-   */
-  async isHealthy(): Promise<boolean> {
-    return this.sanctionedAddresses.size > 0;
-  }
-
-  // --------------------------------------------------------------------------
-  // Observability
-  // --------------------------------------------------------------------------
-
-  /**
-   * Return provider statistics for observability and monitoring.
-   *
-   * @returns Object containing the current address count and last update timestamp
-   */
-  getStats(): { addressCount: number; lastUpdatedAt: string | null } {
-    return {
-      addressCount: this.sanctionedAddresses.size,
-      lastUpdatedAt: this.lastUpdatedAt,
-    };
-  }
-
-  // --------------------------------------------------------------------------
-  // Cleanup
-  // --------------------------------------------------------------------------
-
-  /**
-   * Clear the periodic refresh interval and release resources.
-   * Call this when the provider is no longer needed to prevent memory leaks.
-   */
-  dispose(): void {
-    if (this.refreshInterval !== null) {
-      clearInterval(this.refreshInterval);
-      this.refreshInterval = null;
-    }
-  }
-
-  // --------------------------------------------------------------------------
-  // Private helpers
-  // --------------------------------------------------------------------------
-
-  /**
-   * Fetch the sanctioned ETH address list from GitHub and parse it into
-   * the internal Set. Falls back to the built-in screener if configured.
-   */
-  private async fetchAddressList(): Promise<void> {
-    const url = OFAC_ETH_LIST_URL.replace('/lists/', `/${this.config.githubBranch}/`);
-
-    try {
-      const response = await fetch(url);
-
-      if (!response.ok) {
-        throw new Error(
-          `GitHub returned HTTP ${response.status} ${response.statusText} for ${url}`,
-        );
-      }
-
-      const text = await response.text();
-      const addresses = this.parseAddressList(text);
-
-      if (addresses.size === 0) {
-        throw new Error('Parsed address list is empty -- possible format change or empty file');
-      }
-
-      this.sanctionedAddresses = addresses;
-      this.lastUpdatedAt = new Date().toISOString();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-
-      if (this.config.fallbackToBuiltin) {
-        // Populate from the built-in ofacScreener as a fallback
-        const builtinAddresses = ofacScreener.getActiveSanctionedAddresses();
-        if (builtinAddresses.length > 0) {
-          this.sanctionedAddresses = new Set(
-            builtinAddresses.map((addr) => addr.toLowerCase()),
-          );
-          this.lastUpdatedAt = new Date().toISOString();
-        }
-        // If the built-in list is also empty, we leave the set as-is
-        // (could be a subsequent failed refresh; preserve the last good set)
-      }
-
-      // If this is the first load and we have no addresses, the caller should
-      // check isHealthy() to determine if the provider is usable.
-      if (this.sanctionedAddresses.size === 0) {
-        throw new Error(
-          `OFACListProvider: Failed to fetch address list and no fallback data available. ` +
-          `Cause: ${message}`,
-        );
-      }
-    }
-  }
-
-  /**
-   * Parse a plain text address list into a Set of lowercased addresses.
-   * Handles:
-   * - Empty lines
-   * - Lines with leading/trailing whitespace
-   * - Comment lines starting with '#'
-   * - Carriage return / line feed differences
-   */
-  private parseAddressList(text: string): Set<string> {
-    const addresses = new Set<string>();
-
-    const lines = text.split(/\r?\n/);
-    for (const rawLine of lines) {
-      const line = rawLine.trim();
-
-      // Skip empty lines and comments
-      if (line === '' || line.startsWith('#')) {
-        continue;
-      }
-
-      addresses.add(line.toLowerCase());
-    }
-
-    return addresses;
-  }
-}
 
 // ============================================================================
 // ChainalysisOracleProvider

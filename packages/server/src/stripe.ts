@@ -2,7 +2,7 @@
 // Kontext Server - Stripe Checkout + Billing Integration
 // ============================================================================
 // Handles Stripe Checkout sessions, Customer Portal, and webhook processing
-// for the Pro plan ($199/user/mo, 100K events).
+// for the Pro plan ($449/user/mo, 100K events).
 
 import Stripe from 'stripe';
 
@@ -44,7 +44,7 @@ export const PRO_PLAN_CONFIG = {
     description: 'Cloud compliance dashboard, advanced anomaly detection, trust scoring, compliance templates, multi-chain support, webhooks, team controls. 100K events/user/mo.',
   },
   price: {
-    amount: 19900, // $199.00 in cents
+    amount: 44900, // $449.00 in cents
     currency: 'usd',
     interval: 'month' as const,
     perSeat: true,

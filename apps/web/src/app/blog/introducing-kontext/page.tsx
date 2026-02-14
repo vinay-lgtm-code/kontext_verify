@@ -223,7 +223,7 @@ const result = await ctx.verify({
           You can run it entirely self-hosted with no API key required.
         </p>
         <p>
-          For teams that need more, Kontext Pro ($199/user/month) adds the
+          For teams that need more, Kontext Pro ($449/user/month) adds the
           cloud compliance dashboard, all protocol integrations (x402, UCP,
           Stripe), GENIUS Act alignment templates, SAR/CTR report generation,
           OFAC screening capabilities, ML-powered anomaly detection, trust scoring
