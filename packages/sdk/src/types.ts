@@ -27,7 +27,7 @@ export type TaskStatus = 'pending' | 'in_progress' | 'confirmed' | 'failed' | 'e
 export type ExportFormat = 'json' | 'csv';
 
 /** Report types */
-export type ReportType = 'compliance' | 'transaction' | 'anomaly' | 'sar' | 'ctr';
+export type ReportType = 'compliance' | 'transaction' | 'anomaly';
 
 /** Anomaly detection rule types */
 export type AnomalyRuleType =
@@ -73,9 +73,6 @@ export interface KontextConfig {
    * - `NoopExporter` (default) — discards events, current SDK behavior
    * - `ConsoleExporter` — prints events to stdout
    * - `JsonFileExporter` — writes JSONL files to disk
-   * - `HttpExporter` — sends batched events to any HTTP endpoint
-   * - `KontextCloudExporter` — ships to Kontext Cloud (Pro/Enterprise)
-   * - `MultiExporter` — fans out to multiple exporters
    *
    * @example
    * ```typescript
@@ -138,13 +135,6 @@ export interface KontextConfig {
    * `FeatureFlagManager` that fetches flags from Firestore REST API.
    */
   featureFlags?: FeatureFlagConfig;
-
-  /**
-   * Approval policies for human-in-the-loop review. When provided, the SDK
-   * initializes an `ApprovalManager` that evaluates actions against these
-   * policies and blocks execution until a human decides.
-   */
-  approvalPolicies?: ApprovalPolicy[];
 }
 
 /**
@@ -388,174 +378,8 @@ export interface ExportResult {
 }
 
 // ============================================================================
-// SAR/CTR Report Templates
-// ============================================================================
-
-/** Subject information for SAR/CTR reports */
-export interface ReportSubject {
-  /** Subject name or identifier */
-  name: string;
-  /** Agent ID (if applicable) */
-  agentId?: string;
-  /** Wallet addresses associated with the subject */
-  addresses: string[];
-  /** Additional identifying information */
-  identifiers?: Record<string, string>;
-}
-
-/** Suspicious Activity Report template */
-export interface SARReport {
-  /** Report ID */
-  id: string;
-  /** Report type discriminator */
-  type: 'sar';
-  /** Generation timestamp */
-  generatedAt: string;
-  /** Reporting period */
-  period: DateRange;
-  /** Project ID */
-  projectId: string;
-  /** Filing institution information */
-  filingInstitution: string;
-  /** Subject(s) of the report */
-  subjects: ReportSubject[];
-  /** Narrative summary of suspicious activity */
-  narrative: string;
-  /** Suspicious activity categories */
-  activityCategories: string[];
-  /** Total amount involved */
-  totalAmount: string;
-  /** Currency/token */
-  currency: string;
-  /** Transactions flagged as suspicious */
-  suspiciousTransactions: TransactionRecord[];
-  /** Related anomalies */
-  anomalies: AnomalyEvent[];
-  /** Supporting action logs */
-  supportingActions: ActionLog[];
-  /** Whether this is a continuing activity report */
-  isContinuingActivity: boolean;
-  /** Prior report ID if continuing */
-  priorReportId: string | null;
-  /** Status of the report */
-  status: 'draft' | 'review' | 'filed';
-}
-
-/** Currency Transaction Report template */
-export interface CTRReport {
-  /** Report ID */
-  id: string;
-  /** Report type discriminator */
-  type: 'ctr';
-  /** Generation timestamp */
-  generatedAt: string;
-  /** Reporting period */
-  period: DateRange;
-  /** Project ID */
-  projectId: string;
-  /** Filing institution information */
-  filingInstitution: string;
-  /** Person/entity conducting the transactions */
-  conductors: ReportSubject[];
-  /** Transactions included in the report */
-  transactions: TransactionRecord[];
-  /** Total cash-in amount */
-  totalCashIn: string;
-  /** Total cash-out amount */
-  totalCashOut: string;
-  /** Currency/token */
-  currency: string;
-  /** Whether multiple transactions are aggregated */
-  isAggregated: boolean;
-  /** Chains involved */
-  chainsInvolved: Chain[];
-  /** Supporting action logs */
-  supportingActions: ActionLog[];
-  /** Status of the report */
-  status: 'draft' | 'review' | 'filed';
-}
-
-// ============================================================================
-// Trust Scoring
-// ============================================================================
-
-/** Trust score result for an agent */
-export interface TrustScore {
-  /** Agent ID */
-  agentId: string;
-  /** Overall trust score (0-100) */
-  score: number;
-  /** Score breakdown by factor */
-  factors: TrustFactor[];
-  /** Timestamp of computation */
-  computedAt: string;
-  /** Trust level label */
-  level: 'untrusted' | 'low' | 'medium' | 'high' | 'verified';
-}
-
-/** Individual trust factor */
-export interface TrustFactor {
-  /** Factor name */
-  name: string;
-  /** Factor score (0-100) */
-  score: number;
-  /** Factor weight (0-1) */
-  weight: number;
-  /** Human-readable description */
-  description: string;
-}
-
-/** Transaction evaluation result */
-export interface TransactionEvaluation {
-  /** Transaction hash */
-  txHash: string;
-  /** Risk score (0-100, higher = more risky) */
-  riskScore: number;
-  /** Risk level */
-  riskLevel: 'low' | 'medium' | 'high' | 'critical';
-  /** Individual risk factors */
-  factors: RiskFactor[];
-  /** Whether the transaction should be flagged */
-  flagged: boolean;
-  /** Recommended action */
-  recommendation: 'approve' | 'review' | 'block';
-  /** Evaluation timestamp */
-  evaluatedAt: string;
-}
-
-/** Individual risk factor */
-export interface RiskFactor {
-  /** Factor name */
-  name: string;
-  /** Risk score contribution (0-100) */
-  score: number;
-  /** Human-readable description */
-  description: string;
-}
-
-// ============================================================================
 // Anomaly Detection
 // ============================================================================
-
-/** Anomaly detection configuration */
-export interface AnomalyDetectionConfig {
-  /** Detection rules to enable */
-  rules: AnomalyRuleType[];
-  /** Thresholds for detection */
-  thresholds?: AnomalyThresholds;
-}
-
-/** Configurable anomaly thresholds */
-export interface AnomalyThresholds {
-  /** Maximum transaction amount before flagging */
-  maxAmount?: string;
-  /** Maximum transactions per hour */
-  maxFrequency?: number;
-  /** Hours considered "off-hours" (24h format, e.g., [22, 23, 0, 1, 2, 3, 4, 5]) */
-  offHours?: number[];
-  /** Minimum seconds between transactions before "rapid succession" flag */
-  minIntervalSeconds?: number;
-}
 
 /** Detected anomaly event */
 export interface AnomalyEvent {
@@ -578,9 +402,6 @@ export interface AnomalyEvent {
   /** Whether the anomaly has been reviewed */
   reviewed: boolean;
 }
-
-/** Anomaly event callback */
-export type AnomalyCallback = (anomaly: AnomalyEvent) => void;
 
 // ============================================================================
 // USDC Integration
@@ -608,89 +429,6 @@ export interface ComplianceCheckResult {
   description: string;
   /** Severity if failed */
   severity: AnomalySeverity;
-}
-
-// ============================================================================
-// Agent Reasoning
-// ============================================================================
-
-/** Input for logging agent reasoning */
-export interface LogReasoningInput {
-  /** ID of the agent making the decision */
-  agentId: string;
-  /** What action was taken or is being considered */
-  action: string;
-  /** The agent's reasoning/justification */
-  reasoning: string;
-  /** Optional confidence score (0-1) */
-  confidence?: number;
-  /** Optional additional context */
-  context?: Record<string, unknown>;
-}
-
-/** A reasoning entry stored in the action log */
-export interface ReasoningEntry {
-  /** Unique reasoning entry identifier */
-  id: string;
-  /** Timestamp of the reasoning entry */
-  timestamp: string;
-  /** ID of the agent making the decision */
-  agentId: string;
-  /** What action was taken or is being considered */
-  action: string;
-  /** The agent's reasoning/justification */
-  reasoning: string;
-  /** Confidence score (0-1), defaults to 1.0 */
-  confidence: number;
-  /** Additional context */
-  context: Record<string, unknown>;
-}
-
-// ============================================================================
-// Compliance Certificates
-// ============================================================================
-
-/** Input for generating a compliance certificate */
-export interface GenerateComplianceCertificateInput {
-  /** ID of the agent to generate the certificate for */
-  agentId: string;
-  /** Optional time window */
-  timeRange?: { from: Date; to: Date };
-  /** Whether to include reasoning entries */
-  includeReasoning?: boolean;
-}
-
-/** Compliance certificate summarizing agent actions and verifying the digest chain */
-export interface ComplianceCertificate {
-  /** Unique certificate ID */
-  certificateId: string;
-  /** Agent ID */
-  agentId: string;
-  /** ISO timestamp of when the certificate was issued */
-  issuedAt: string;
-  /** Summary of counts */
-  summary: {
-    actions: number;
-    transactions: number;
-    toolCalls: number;
-    reasoningEntries: number;
-  };
-  /** Digest chain verification status */
-  digestChain: {
-    terminalDigest: string;
-    chainLength: number;
-    verified: boolean;
-  };
-  /** Agent's current trust score */
-  trustScore: number;
-  /** Overall compliance status */
-  complianceStatus: 'compliant' | 'non-compliant' | 'review-required';
-  /** Summary list of action types and counts */
-  actions: Array<{ type: string; count: number }>;
-  /** Reasoning entries (if includeReasoning is true) */
-  reasoning: ReasoningEntry[];
-  /** SHA-256 hash of the certificate content for integrity verification */
-  contentHash: string;
 }
 
 // ============================================================================
@@ -744,75 +482,24 @@ export interface FeatureFlagConfig {
 }
 
 // ============================================================================
-// Approval / Human-in-the-Loop
+// Verify
 // ============================================================================
 
-/** Types of approval policies that can trigger human review */
-export type ApprovalPolicyType = 'amount-threshold' | 'low-trust-score' | 'anomaly-detected' | 'new-destination' | 'manual';
+/** Input for the verify() convenience method (same shape as LogTransactionInput) */
+export interface VerifyInput extends LogTransactionInput {}
 
-/** Status of an approval request */
-export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'expired';
-
-/** Configurable policy that determines when human approval is required */
-export interface ApprovalPolicy {
-  type: ApprovalPolicyType;
-  enabled: boolean;
-  params: Record<string, unknown>;
-  requiredEvidence?: string[];
-}
-
-/** A pending or resolved approval request */
-export interface ApprovalRequest {
-  id: string;
-  actionId: string;
-  agentId: string;
-  status: ApprovalStatus;
-  triggeredPolicies: ApprovalPolicyType[];
-  riskAssessment: { score: number; factors: string[] };
-  requiredEvidence: string[];
-  decision: ApprovalDecision | null;
-  createdAt: string;
-  expiresAt: string;
-  metadata: Record<string, unknown>;
-}
-
-/** Decision made by a human reviewer */
-export interface ApprovalDecision {
-  decision: 'approve' | 'reject';
-  decidedBy: string;
-  reason: string;
-  evidence?: Record<string, unknown>;
-  conditions?: string[];
-  decidedAt: string;
-}
-
-/** Result of evaluating an action against approval policies */
-export interface ApprovalEvaluation {
-  required: boolean;
-  requestId?: string;
-  triggeredPolicies: ApprovalPolicyType[];
-  riskAssessment: { score: number; factors: string[] };
-}
-
-/** Input for evaluating whether an action requires approval */
-export interface EvaluateApprovalInput {
-  actionId: string;
-  agentId: string;
-  amount?: string;
-  destination?: string;
-  trustScore?: number;
-  anomalies?: Array<{ type: string; severity: string }>;
-  metadata?: Record<string, unknown>;
-}
-
-/** Input for submitting a human decision on an approval request */
-export interface SubmitDecisionInput {
-  requestId: string;
-  decision: 'approve' | 'reject';
-  decidedBy: string;
-  reason: string;
-  evidence?: Record<string, unknown>;
-  conditions?: string[];
+/** Result of the verify() convenience method */
+export interface VerifyResult {
+  /** Whether the transaction passed all compliance checks */
+  compliant: boolean;
+  /** Individual compliance check results */
+  checks: ComplianceCheckResult[];
+  /** Overall risk level */
+  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  /** Recommended actions */
+  recommendations: string[];
+  /** The logged transaction record */
+  transaction: TransactionRecord;
 }
 
 // ============================================================================

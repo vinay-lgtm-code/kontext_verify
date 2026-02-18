@@ -5,5 +5,28 @@
     "rootDir": "./src"
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist", "tests"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "tests",
+    "src/_future",
+    "src/trust.ts",
+    "src/anomaly.ts",
+    "src/approval.ts",
+    "src/webhooks.ts",
+    "src/kya",
+    "src/integrations/cctp.ts",
+    "src/integrations/circle-wallets.ts",
+    "src/integrations/circle-compliance.ts",
+    "src/integrations/gas-station.ts",
+    "src/integrations/cftc-compliance.ts",
+    "src/integrations/vercel-ai.ts",
+    "src/integrations/screening-aggregator.ts",
+    "src/integrations/screening-notification.ts",
+    "src/integrations/screening-provider.ts",
+    "src/integrations/provider-ofac.ts",
+    "src/integrations/provider-treasury-sdn.ts",
+    "src/integrations/provider-apis.ts",
+    "src/integrations/ofac-sanctions.ts"
+  ]
 }

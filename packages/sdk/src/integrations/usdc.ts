@@ -10,8 +10,6 @@ import type {
   Chain,
 } from '../types.js';
 import { parseAmount } from '../utils.js';
-import { ofacScreener } from './ofac-sanctions.js';
-import type { SanctionedAddressEntry, ComprehensiveSanctionsResult } from './ofac-sanctions.js';
 
 /** Known USDC contract addresses on supported chains */
 const USDC_CONTRACTS: Record<string, string> = {
@@ -308,40 +306,6 @@ export class UsdcCompliance {
    */
   static getSanctionsListSize(): number {
     return SANCTIONED_SET.size;
-  }
-
-  /**
-   * Perform comprehensive OFAC sanctions screening using the advanced
-   * OFACSanctionsScreener. This goes beyond simple address matching to
-   * include jurisdictional screening, delisted address detection, and
-   * entity metadata.
-   *
-   * @param address - The address to screen
-   * @param context - Optional context for enhanced screening
-   * @returns ComprehensiveSanctionsResult with full screening details
-   */
-  static screenComprehensive(
-    address: string,
-    context?: {
-      jurisdiction?: string;
-      counterpartyAddress?: string;
-      amount?: number;
-      chain?: string;
-    },
-  ): ComprehensiveSanctionsResult {
-    return ofacScreener.screenAddress(address, context as Parameters<typeof ofacScreener.screenAddress>[1]);
-  }
-
-  /**
-   * Check if an address is actively sanctioned (non-delisted).
-   * Unlike isSanctioned(), this excludes addresses that have been removed
-   * from the SDN list (e.g., Tornado Cash contracts post-March 2025).
-   *
-   * @param address - The address to check
-   * @returns true if the address is on an active sanctions list
-   */
-  static isActivelySanctioned(address: string): boolean {
-    return ofacScreener.isActivelySanctioned(address);
   }
 
   // --------------------------------------------------------------------------
