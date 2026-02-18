@@ -451,6 +451,26 @@ Features are organized into milestones gated by feature flags. Each milestone ha
 
 **Note:** Rename KYA module to "agent-forensics" before marketing. "Know Your Agent" is being branded by Sumsub ($1B+) and Vouched ($22M). Kontext's wallet clustering and behavioral fingerprinting are complementary capabilities, not competing KYA products.
 
+### Milestone 4 Addendum -- TEE Attestation Layer (Enterprise)
+
+**Background:** Catena Labs (https://catenalabs.com) has demonstrated a two-layer security model for agent money movement:
+- **Layer 1 (Intelligence):** Application-level identity/reputation checks (ACK-ID, ERC-8004)
+- **Layer 2 (Enforcement):** Policies enforced inside a Trusted Execution Enclave -- the enclave won't sign transactions that violate policy. That's not a promise, it's math.
+
+Catena uses **Turnkey** for enclave-backed signing. Turnkey runs on **AWS Nitro Enclaves** (not Intel SGX): isolated compute with no external network, no persistent storage, no interactive access, and a hardware-signed cryptographic attestation document that proves exactly what code has custody of the private keys. Quorum signing (2-of-2 or 2-of-3 across customer passkey + agent + treasury agent) ensures no single party can unilaterally move funds.
+
+**Catena is complementary, not competitive:** Catena enforces at signing; Kontext attests at audit. They solve adjacent problems. A Turnkey integration that bridges both is an enterprise differentiator -- Catena prevents bad transactions, Kontext proves good ones were reviewed correctly.
+
+**What to build in Milestone 4:**
+- `KontextEnclaveProvider` interface -- pluggable, so developers bring Turnkey, Fireblocks, or their own TEE
+- Attest that `verify()` ran *inside* a TEE, producing a hardware-signed proof that augments the digest chain link
+- Tie `ApprovalManager` (Milestone 3) to a 2-of-N quorum requirement enforced at the key level, not just application level
+- Feature flag: `tee-attestation` (Enterprise)
+
+**Trigger:** 3+ enterprise customers asking "can you prove the compliance check ran and wasn't tampered with at the infrastructure level?" The digest chain (Patent US 12,463,819 B1) answers this at the software layer; TEE attestation answers it at the hardware layer.
+
+**Partnership path:** Reach out to Catena Labs and Turnkey for co-marketing once Milestone 3 ships. They verify + enforce; we audit + prove. Natural GTM partners for GENIUS Act enterprise compliance.
+
 ---
 
 ## Feature Flag Configuration
