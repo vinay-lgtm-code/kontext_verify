@@ -1,14 +1,7 @@
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CodeBlock } from "@/components/code-block";
 import {
   Shield,
@@ -18,526 +11,527 @@ import {
   ClipboardCheck,
   BarChart3,
   ArrowRight,
-  ExternalLink,
-  Search,
+  CheckCircle2,
+  Link2,
 } from "lucide-react";
 
-const VideoDemo = dynamic(
-  () => import("@/components/video-demo").then((m) => ({ default: m.VideoDemo })),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="w-full mx-auto rounded-xl border border-border/40 bg-card/50 flex items-center justify-center" style={{ height: "700px" }}>
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground">Loading interactive demo...</p>
-        </div>
-      </div>
-    ),
-  }
-);
+// ---------------------------------------------------------------------------
+// Hero code snippet
+// ---------------------------------------------------------------------------
 
 const heroCode = `import { Kontext } from 'kontext-sdk';
 
-const ctx = new Kontext({ apiKey: process.env.KONTEXT_KEY });
+const ctx = Kontext.init({ projectId: 'payment-agent', environment: 'production' });
+const sessionId = Kontext.generateSessionId();
 
-// Log and verify every agent transaction
+// 1. verify() — compliance check + log in one call
 const result = await ctx.verify({
-  action: 'transfer',
-  amount: '50.00',
-  currency: 'USDC',
-  chain: 'base',
-  agent: 'payment-agent-v2',
+  txHash: '0xabc...', chain: 'base', amount: '5000', token: 'USDC',
+  from: '0xsender', to: '0xrecipient', agentId: 'agent-v1', sessionId,
 });
+// result.compliant = true   result.riskLevel = 'low'
 
-console.log(result.trustScore); // 0.97
-console.log(result.flagged);    // false`;
+// 2. logReasoning() — the why is auditable too
+await ctx.logReasoning({ agentId: 'agent-v1', sessionId, step: 1,
+  action: 'approve-transfer', reasoning: 'verify() passed. Proceeding.',
+  confidence: 0.98 });
+
+// 3. getTrustScore() — behavioral health over time
+const trust = await ctx.getTrustScore('agent-v1');
+// trust.score = 87   trust.level = 'high'
+
+// 4. export() — tamper-evident audit trail (Patent US 12,463,819 B1)
+const audit = await ctx.export({ format: 'json' });
+// audit.terminalDigest = 'sha256:4a8f...'`;
+
+const installCode = `npm install kontext-sdk`;
+
+const verifyCode = `const ctx = Kontext.init({ projectId: 'my-agent' });
+const result = await ctx.verify({
+  txHash: '0xabc...', chain: 'base',
+  amount: '5000', token: 'USDC',
+  from: '0xsender', to: '0xrecipient',
+  agentId: 'agent-v1',
+});
+// result.compliant = true`;
+
+const exportCode = `const audit = await ctx.export({ format: 'json' });
+const valid = ctx.verifyDigestChain();
+// valid.valid = true  valid.chainLength = 42`;
+
+// ---------------------------------------------------------------------------
+// Features
+// ---------------------------------------------------------------------------
 
 const features = [
   {
-    icon: ClipboardCheck,
-    title: "Action Logging",
-    description:
-      "Immutable audit trail for every agent action. Know what your agents did, when, and why.",
-  },
-  {
     icon: Shield,
-    title: "Task Confirmation",
+    name: "verify()",
     description:
-      "Human-in-the-loop confirmation for high-value or sensitive transactions before execution.",
+      "Compliance check + transaction log in a single call. OFAC screening, EDD thresholds ($3K Travel Rule, $10K CTR), and digest chain entry — all at once.",
+    badge: "Free",
+    badgeVariant: "green" as const,
   },
   {
     icon: FileCheck,
-    title: "Audit Export",
+    name: "logReasoning()",
     description:
-      "Export compliance-ready reports in standard formats. Ready for regulators, auditors, and your own records.",
+      'When regulators ask "why did your agent approve this?" — only Kontext users can answer. The why-chain is in the audit trail, tamper-evident.',
+    badge: "Free",
+    badgeVariant: "green" as const,
   },
   {
     icon: BarChart3,
-    title: "Trust Scoring",
+    name: "Trust Scoring",
     description:
-      "Real-time trust scores for agent actions based on historical behavior, amount, and context.",
+      "0–100 behavioral health score per agent, computed across 5 factors: history depth, task completion, anomaly frequency, transaction consistency, compliance adherence.",
+    badge: "Free",
+    badgeVariant: "green" as const,
   },
   {
     icon: AlertTriangle,
-    title: "Anomaly Detection",
+    name: "Anomaly Detection",
     description:
-      "Flag unusual patterns automatically. Velocity checks, amount thresholds, and behavioral analysis.",
+      "unusualAmount and frequencySpike detection are free. Advanced rules — newDestination, offHoursActivity, rapidSuccession, roundAmount — are Pay as you go at $0.10/anomaly.",
+    badge: "2 rules free",
+    badgeVariant: "yellow" as const,
+  },
+  {
+    icon: ClipboardCheck,
+    name: "Compliance Certificates",
+    description:
+      "Generate exportable certificates with digest chain proof, trust score, action counts, and reasoning entries. SHA-256 content hash for tamper detection.",
+    badge: "Free",
+    badgeVariant: "green" as const,
+  },
+  {
+    icon: CheckCircle2,
+    name: "createTask()",
+    description:
+      "Human-in-the-loop for high-value transfers. Create tasks with required evidence, confirm or fail them. Every decision is logged into the digest chain.",
+    badge: "Free",
+    badgeVariant: "green" as const,
   },
   {
     icon: Activity,
-    title: "Real-time Monitoring",
+    name: "export()",
     description:
-      "Live dashboard for all agent activity. Filter by agent, chain, action type, and risk level.",
+      "JSON audit export is free. CSV export is Pay as you go. Every export includes the terminal digest and full chain verification for tamper-evident proof.",
+    badge: "JSON free",
+    badgeVariant: "green" as const,
   },
   {
-    icon: Search,
-    title: "Unified Screening",
+    icon: Link2,
+    name: "Digest Chain",
     description:
-      "Best-in-class compliance screening aggregating OFAC SDN, Chainalysis, and OpenSanctions into a single result. Pluggable provider architecture.",
+      "SHA-256 rolling hash chain links every action, transaction, and reasoning entry into a tamper-evident sequence. Patent US 12,463,819 B1.",
+    badge: "Patent",
+    badgeVariant: "gray" as const,
   },
 ];
 
-const protocols = [
-  {
-    name: "USDC",
-    description: "Circle's stablecoin on Base & Ethereum",
-    highlight: true,
-  },
-  {
-    name: "x402",
-    description: "HTTP-native micropayments protocol",
-    highlight: false,
-  },
-  {
-    name: "Google UCP",
-    description: "Universal Checkout Protocol & A2A",
-    highlight: false,
-  },
-  {
-    name: "Stripe",
-    description: "Agentic commerce & payment intents",
-    highlight: false,
-  },
+// ---------------------------------------------------------------------------
+// GENIUS Act timeline
+// ---------------------------------------------------------------------------
+
+const geniusTimeline = [
+  { date: "July 18, 2025", event: "GENIUS Act signed into law" },
+  { date: "July 2026", event: "Implementing regulations published" },
+  { date: "November 2026", event: "Prohibitions take effect" },
 ];
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
 
 export default function HomePage() {
   return (
-    <>
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="grid-pattern absolute inset-0 opacity-30" />
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-background/95 to-background" />
-
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center pb-16 pt-20 text-center md:pb-24 md:pt-32">
-            {/* Announcement badges */}
-            <div className="mb-6 flex flex-wrap items-center justify-center gap-3">
-              <Badge
-                variant="outline"
-                className="gap-1.5 border-primary/20 bg-primary/5 px-3 py-1 text-primary"
-              >
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
-                </span>
-                Now open source on GitHub
+    <div className="bg-bg">
+      {/* ------------------------------------------------------------------ */}
+      {/* 1. HERO                                                              */}
+      {/* ------------------------------------------------------------------ */}
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+        <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 items-start">
+          {/* Left: headline + CTAs */}
+          <div>
+            <div className="mb-6">
+              <Badge variant="yellow" className="mb-4">
+                GENIUS Act — November 2026 deadline
               </Badge>
-              <Badge
-                variant="outline"
-                className="gap-1.5 border-blue-500/30 bg-blue-500/10 px-3 py-1 text-blue-400"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="shrink-0">
-                  <circle cx="12" cy="12" r="10" />
-                </svg>
-                USDC Native
-              </Badge>
-              <Badge
-                variant="outline"
-                className="gap-1.5 border-amber-500/30 bg-amber-500/10 px-3 py-1 text-amber-400"
-              >
-                <Shield size={14} className="shrink-0" />
-                GENIUS Act Aligned
-              </Badge>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-black leading-tight">
+                Five lines.
+                <br />
+                Full compliance.
+              </h1>
+              <p className="mt-5 text-lg text-black/70 max-w-lg">
+                The compliance logging SDK for developers building on Circle
+                Programmable Wallets. verify(), trust scoring, anomaly
+                detection, and tamper-evident audit trails — with zero runtime
+                dependencies.
+              </p>
             </div>
 
-            {/* Headline */}
-            <h1 className="max-w-4xl text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-              Trust Layer for the{" "}
-              <span className="gradient-text">Agent Economy</span>
-            </h1>
-
-            {/* Sub-headline */}
-            <p className="mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-              Compliance and audit infrastructure for agentic stablecoin and
-              fiat transactions. Log actions, score trust, detect anomalies,
-              and export audit trails — in five lines of code.
-            </p>
-
-            {/* CTAs */}
-            <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-              <Button size="lg" className="gap-2 px-6" asChild>
+            <div className="flex flex-wrap gap-3">
+              <Button size="lg" asChild>
+                <Link href="/docs">
+                  Get Started
+                  <ArrowRight size={16} className="ml-2" />
+                </Link>
+              </Button>
+              <Button variant="secondary" size="lg" asChild>
                 <a
                   href="https://github.com/vinay-lgtm-code/kontext_verify"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                  </svg>
                   View on GitHub
                 </a>
               </Button>
-              <Button variant="outline" size="lg" className="gap-2 px-6" asChild>
-                <Link href="/docs">
-                  Read the Docs
-                  <ArrowRight size={16} />
+            </div>
+
+            <p className="mt-4 text-xs font-mono text-black/50">
+              npm install kontext-sdk &middot; 20K events/mo free forever &middot; no credit card
+            </p>
+          </div>
+
+          {/* Right: hero code */}
+          <div className="border-2 border-black shadow-shadow rounded-base overflow-hidden">
+            <CodeBlock code={heroCode} language="typescript" filename="agent.ts" />
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* 2. SOCIAL PROOF STRIP                                               */}
+      {/* ------------------------------------------------------------------ */}
+      <section className="border-y-2 border-black bg-black text-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-sm font-mono font-bold">
+            <span>Patent US 12,463,819 B1</span>
+            <span className="text-white/30">&middot;</span>
+            <span>MIT License</span>
+            <span className="text-white/30">&middot;</span>
+            <span>GENIUS Act Aligned</span>
+            <span className="text-white/30">&middot;</span>
+            <span>Base Native</span>
+            <span className="text-white/30">&middot;</span>
+            <span>Zero Runtime Deps</span>
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* 3. THE PROBLEM                                                       */}
+      {/* ------------------------------------------------------------------ */}
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+        <div className="max-w-3xl">
+          <Badge variant="red" className="mb-4">The Problem</Badge>
+          <h2 className="text-3xl sm:text-4xl font-bold text-black mb-6">
+            Developers handling $3K+ USDC transfers with zero compliance infrastructure.
+          </h2>
+          <p className="text-lg text-black/70 mb-6">
+            Developers building on Circle Programmable Wallets handle material USDC
+            transfers with zero audit trails, reasoning logs, or tamper-evident proof
+            that compliance checks actually ran. The{" "}
+            <strong className="text-black">GENIUS Act</strong> (signed July 2025) treats
+            payment stablecoin issuers as financial institutions under the BSA.
+            Prohibitions take effect <strong className="text-black">November 2026</strong>.
+          </p>
+          <p className="text-lg text-black/70">
+            Bridge.xyz (acquired by Stripe for $1.1B) validates the thesis by embedding
+            compliance directly into its orchestration API. Developers who go
+            direct-to-chain without Bridge have no equivalent — until now.
+          </p>
+        </div>
+
+        {/* Countdown pill */}
+        <div className="mt-10 inline-flex items-center gap-3 rounded-base border-2 border-black bg-yellow px-5 py-3 shadow-shadow">
+          <div className="h-3 w-3 rounded-full bg-black animate-pulse" />
+          <span className="font-bold text-black text-sm">
+            November 2026 — GENIUS Act prohibitions take effect
+          </span>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* 4. THREE STEPS                                                       */}
+      {/* ------------------------------------------------------------------ */}
+      <section className="border-t-2 border-black bg-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+          <h2 className="text-3xl sm:text-4xl font-bold text-black mb-12 text-center">
+            From zero to compliant in 3 steps
+          </h2>
+          <div className="grid gap-8 md:grid-cols-3">
+            {/* Step 1 */}
+            <div className="rounded-base border-2 border-black p-6 shadow-shadow bg-bg">
+              <div className="mb-4 flex items-center gap-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-base border-2 border-black bg-black text-white font-bold text-sm">1</span>
+                <div>
+                  <p className="font-bold text-black">Install</p>
+                  <p className="text-xs text-black/50">30 seconds</p>
+                </div>
+              </div>
+              <div className="rounded-base border-2 border-black overflow-hidden">
+                <CodeBlock code={installCode} language="bash" />
+              </div>
+            </div>
+
+            {/* Step 2 */}
+            <div className="rounded-base border-2 border-black p-6 shadow-shadow bg-bg">
+              <div className="mb-4 flex items-center gap-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-base border-2 border-black bg-black text-white font-bold text-sm">2</span>
+                <div>
+                  <p className="font-bold text-black">verify()</p>
+                  <p className="text-xs text-black/50">2 minutes</p>
+                </div>
+              </div>
+              <div className="rounded-base border-2 border-black overflow-hidden">
+                <CodeBlock code={verifyCode} language="typescript" />
+              </div>
+            </div>
+
+            {/* Step 3 */}
+            <div className="rounded-base border-2 border-black p-6 shadow-shadow bg-bg">
+              <div className="mb-4 flex items-center gap-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-base border-2 border-black bg-black text-white font-bold text-sm">3</span>
+                <div>
+                  <p className="font-bold text-black">export()</p>
+                  <p className="text-xs text-black/50">1 minute</p>
+                </div>
+              </div>
+              <div className="rounded-base border-2 border-black overflow-hidden">
+                <CodeBlock code={exportCode} language="typescript" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* 5. FEATURES GRID (8 cards)                                           */}
+      {/* ------------------------------------------------------------------ */}
+      <section className="border-t-2 border-black bg-bg">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+          <h2 className="text-3xl sm:text-4xl font-bold text-black mb-4 text-center">
+            Everything in Phase 1
+          </h2>
+          <p className="text-center text-black/60 mb-12 max-w-2xl mx-auto">
+            Trust scoring, anomaly detection, and compliance certificates are in Phase 1.
+            All free features are free forever.
+          </p>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {features.map((feature) => {
+              const Icon = feature.icon;
+              return (
+                <Card key={feature.name} className="flex flex-col">
+                  <CardHeader className="pb-3">
+                    <div className="mb-3 flex items-start justify-between">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-base border-2 border-black bg-main">
+                        <Icon size={18} className="text-black" />
+                      </div>
+                      <Badge variant={feature.badgeVariant}>{feature.badge}</Badge>
+                    </div>
+                    <CardTitle className="text-base font-bold font-mono">
+                      {feature.name}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex-1">
+                    <p className="text-sm text-black/70">{feature.description}</p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* 6. HOW IT WORKS (digest chain)                                       */}
+      {/* ------------------------------------------------------------------ */}
+      <section className="border-t-2 border-black bg-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+          <div className="max-w-3xl mx-auto text-center">
+            <Badge variant="gray" className="mb-4">Patent US 12,463,819 B1</Badge>
+            <h2 className="text-3xl sm:text-4xl font-bold text-black mb-4">
+              Tamper-evident by design
+            </h2>
+            <p className="text-black/70 mb-12">
+              Every action, transaction, and reasoning entry is linked into a SHA-256
+              rolling hash chain. If any entry is altered, the chain verification fails.
+              The terminal digest is your cryptographic proof that compliance ran.
+            </p>
+          </div>
+
+          {/* Digest chain diagram */}
+          <div className="max-w-4xl mx-auto">
+            <div className="flex flex-col sm:flex-row items-center gap-0">
+              {["Genesis Block", "Action Hash", "Action Hash", "Terminal Digest"].map(
+                (label, i, arr) => (
+                  <div key={i} className="flex flex-col sm:flex-row items-center flex-1">
+                    <div className="flex flex-col items-center">
+                      <div
+                        className={`rounded-base border-2 border-black px-4 py-3 shadow-shadow text-center min-w-[120px] ${
+                          i === 0
+                            ? "bg-yellow"
+                            : i === arr.length - 1
+                            ? "bg-main"
+                            : "bg-white"
+                        }`}
+                      >
+                        <p className="text-xs font-mono font-bold text-black">{label}</p>
+                        <p className="text-[10px] font-mono text-black/50 mt-1">
+                          sha256:{i === 0 ? "0000" : i === arr.length - 1 ? "4a8f" : `${i}b3c`}...
+                        </p>
+                      </div>
+                    </div>
+                    {i < arr.length - 1 && (
+                      <div className="text-black font-bold text-xl sm:mx-2 my-2 sm:my-0">
+                        →
+                      </div>
+                    )}
+                  </div>
+                )
+              )}
+            </div>
+            <p className="text-center text-xs text-black/40 mt-6 font-mono">
+              Each hash includes the previous hash — altering any entry breaks the chain
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* 7. PRICING STRIP                                                     */}
+      {/* ------------------------------------------------------------------ */}
+      <section className="border-t-2 border-black bg-bg">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+          <h2 className="text-3xl sm:text-4xl font-bold text-black mb-4 text-center">
+            Simple, honest pricing
+          </h2>
+          <p className="text-center text-black/60 mb-12">
+            First 20,000 events are free forever. No credit card required.
+          </p>
+          <div className="grid gap-6 md:grid-cols-2 max-w-3xl mx-auto">
+            {/* Free */}
+            <div className="rounded-base border-2 border-black bg-white p-8 shadow-shadow">
+              <p className="text-sm font-bold text-black/50 uppercase tracking-wide mb-2">Free</p>
+              <p className="text-4xl font-bold text-black mb-1">$0</p>
+              <p className="text-sm text-black/60 mb-6">forever, no credit card</p>
+              <ul className="space-y-2 mb-8 text-sm text-black/70">
+                <li className="flex items-start gap-2">
+                  <span className="text-main font-bold">✓</span> 20,000 events/mo always free
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-main font-bold">✓</span> verify(), logReasoning(), createTask()
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-main font-bold">✓</span> Trust scoring + compliance certificates
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-main font-bold">✓</span> Basic anomaly detection (2 rules)
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-main font-bold">✓</span> JSON audit export
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-main font-bold">✓</span> Base chain
+                </li>
+              </ul>
+              <Button variant="secondary" size="lg" className="w-full" asChild>
+                <Link href="/docs">Get started free</Link>
+              </Button>
+            </div>
+
+            {/* Pay as you go */}
+            <div className="rounded-base border-2 border-black bg-main p-8 shadow-shadow">
+              <p className="text-sm font-bold text-black/60 uppercase tracking-wide mb-2">Pay as you go</p>
+              <p className="text-4xl font-bold text-black mb-1">$0 to start</p>
+              <p className="text-sm text-black/70 mb-6">then $2.00 / 1K events</p>
+              <ul className="space-y-2 mb-8 text-sm text-black/80">
+                <li className="flex items-start gap-2">
+                  <span className="font-bold">✓</span> First 20K events always free
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold">✓</span> $2.00 / 1K events after 20K
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold">✓</span> All 8 chains (after $5 spend)
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold">✓</span> Advanced anomaly detection ($0.10/anomaly)
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold">✓</span> CSV audit export
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold">✓</span> Email support
+                </li>
+              </ul>
+              <Button variant="outline" size="lg" className="w-full bg-white" asChild>
+                <Link href="/pricing">
+                  View pricing details
+                  <ArrowRight size={16} className="ml-2" />
                 </Link>
               </Button>
             </div>
-
-            {/* Install command */}
-            <div className="mt-8 inline-flex items-center gap-2 rounded-full border border-border/50 bg-card/50 px-4 py-2 font-mono text-sm text-muted-foreground backdrop-blur-sm">
-              <span className="text-primary">$</span>
-              npm install kontext-sdk
-            </div>
           </div>
         </div>
       </section>
 
-      {/* Demo Video */}
-      <section className="relative border-t border-border/40 bg-background">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <Badge variant="secondary" className="mb-4">
-              Interactive Demo
-            </Badge>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Try it live — no API keys required
+      {/* ------------------------------------------------------------------ */}
+      {/* 8. GENIUS ACT URGENCY                                               */}
+      {/* ------------------------------------------------------------------ */}
+      <section className="border-t-2 border-black bg-yellow">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-2xl sm:text-3xl font-bold text-black mb-6">
+              GENIUS Act — What you need to know
             </h2>
-            <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-              Chat with an AI agent that moves USDC. See the audit trail, digest chain,
-              trust score, and compliance checks update in real time.
-            </p>
-          </div>
-          <VideoDemo />
-        </div>
-      </section>
-
-      {/* Code Example */}
-      <section className="relative border-t border-border/40 bg-background">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="grid items-center gap-12 lg:grid-cols-2">
-            <div>
-              <Badge variant="secondary" className="mb-4">
-                Developer Experience
-              </Badge>
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                Five lines to production-ready compliance support
-              </h2>
-              <p className="mt-4 text-lg text-muted-foreground">
-                Initialize the SDK, call <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">verify()</code> on
-                every agent action, and you get a trust score, anomaly flags,
-                and a complete audit trail. No infrastructure to manage.
-              </p>
-              <ul className="mt-6 space-y-3">
-                {[
-                  "Works with any agent framework",
-                  "TypeScript-first with full type safety",
-                  "Zero runtime dependencies",
-                  "Under 10kb gzipped",
-                ].map((item) => (
-                  <li
-                    key={item}
-                    className="flex items-center gap-3 text-muted-foreground"
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      className="text-primary shrink-0"
-                    >
-                      <path d="m9 12 2 2 4-4" />
-                      <circle cx="12" cy="12" r="10" />
-                    </svg>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="glow rounded-xl">
-              <CodeBlock
-                code={heroCode}
-                language="typescript"
-                filename="agent.ts"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="border-t border-border/40 bg-background">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <Badge variant="secondary" className="mb-4">
-              Features
-            </Badge>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Everything you need to support agent compliance
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-              A trust and compliance-support toolkit designed for developers
-              building agentic workflows with stablecoins and fiat payments.
-            </p>
-          </div>
-
-          <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map((feature) => (
-              <Card
-                key={feature.title}
-                className="group relative overflow-hidden transition-colors hover:border-primary/30"
-              >
-                <CardHeader>
-                  <div className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <feature.icon size={20} />
-                  </div>
-                  <CardTitle className="text-lg">{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-sm leading-relaxed">
-                    {feature.description}
-                  </CardDescription>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Protocol Support */}
-      <section className="border-t border-border/40 bg-background">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <Badge variant="secondary" className="mb-4">
-              Integrations
-            </Badge>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Works with your stack
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-              First-class support for the leading agent commerce protocols,
-              stablecoin infrastructure, and fiat payment rails.
-            </p>
-          </div>
-
-          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {protocols.map((protocol) => (
-              <div
-                key={protocol.name}
-                className={`group relative flex flex-col items-center rounded-xl border p-8 text-center transition-colors ${
-                  protocol.highlight
-                    ? "border-blue-500/40 bg-blue-500/5 hover:border-blue-500/60 hover:bg-blue-500/10"
-                    : "border-border/50 bg-card/50 hover:border-primary/30 hover:bg-card"
-                }`}
-              >
-                {protocol.highlight && (
-                  <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-blue-600 text-white text-[10px] px-2 py-0.5 shadow-sm">
-                      Primary Integration
-                    </Badge>
-                  </div>
-                )}
-                <div className={`mb-4 flex h-14 w-14 items-center justify-center rounded-full text-2xl font-bold ${
-                  protocol.highlight
-                    ? "bg-blue-500/20 text-blue-400"
-                    : "bg-primary/10 text-primary"
-                }`}>
-                  {protocol.name[0]}
-                </div>
-                <h3 className="text-lg font-semibold">{protocol.name}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {protocol.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* GENIUS Act */}
-      <section className="border-t border-border/40 bg-background">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="relative overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/5 via-card to-card p-8 sm:p-12 md:p-16">
-            <div className="relative z-10 max-w-2xl">
-              <div className="mb-4 flex flex-wrap items-center gap-3">
-                <Badge variant="outline" className="border-amber-500/30 bg-amber-500/10 text-amber-400">
-                  <Shield size={12} className="mr-1.5" />
-                  Regulatory Readiness
-                </Badge>
-                <Badge variant="outline" className="border-blue-500/30 bg-blue-500/10 text-blue-400">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="mr-1.5">
-                    <circle cx="12" cy="12" r="10" />
-                  </svg>
-                  Built for USDC
-                </Badge>
-              </div>
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                Supports GENIUS Act compliance efforts
-              </h2>
-              <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
-                The GENIUS Act is reshaping stablecoin regulation in the United
-                States. Kontext provides developer tools that support your
-                compliance efforts -- audit trails, transaction logging, and
-                risk scoring aligned with where regulation is heading.
-              </p>
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                {[
-                  "Immutable audit trails for every USDC transaction",
-                  "Trust scoring aligned with regulatory expectations",
-                  "Exportable compliance reports (JSON, CSV, PDF)",
-                  "Anomaly detection with configurable risk thresholds",
-                ].map((item) => (
-                  <div key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      className="mt-0.5 shrink-0 text-amber-400"
-                    >
-                      <path d="m9 12 2 2 4-4" />
-                      <circle cx="12" cy="12" r="10" />
-                    </svg>
-                    {item}
-                  </div>
-                ))}
-              </div>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Button size="lg" asChild>
-                  <Link href="/docs">Get Started</Link>
-                </Button>
-                <Button variant="outline" size="lg" className="gap-2" asChild>
-                  <Link href="/faqs#compliance">
-                    Compliance FAQs
-                    <ArrowRight size={16} />
-                  </Link>
-                </Button>
-              </div>
-            </div>
-            {/* Decorative element */}
-            <div className="absolute -right-20 -top-20 h-80 w-80 rounded-full bg-amber-500/5 blur-3xl" />
-            <div className="absolute -bottom-20 -right-10 h-60 w-60 rounded-full bg-amber-500/3 blur-3xl" />
-          </div>
-        </div>
-      </section>
-
-      {/* Social Proof / Testimonials placeholder */}
-      <section className="border-t border-border/40 bg-background">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <Badge variant="secondary" className="mb-4">
-              Community
-            </Badge>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Trusted by builders
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-              Join the developers building the next generation of
-              compliance-ready agentic commerce.
-            </p>
-          </div>
-
-          <div className="mt-12 grid gap-6 sm:grid-cols-3">
-            {[
-              {
-                quote:
-                  "Kontext made it trivial to add compliance to our payment agents. The trust scoring API is exactly what we needed.",
-                author: "Coming soon",
-                role: "Early adopter testimonials",
-              },
-              {
-                quote:
-                  "We went from zero audit trail to comprehensive compliance reporting in under an hour. The DX is phenomenal.",
-                author: "Coming soon",
-                role: "Early adopter testimonials",
-              },
-              {
-                quote:
-                  "Finally, a compliance SDK that doesn't feel like it was built by lawyers. Developer-first approach is refreshing.",
-                author: "Coming soon",
-                role: "Early adopter testimonials",
-              },
-            ].map((testimonial, i) => (
-              <Card
-                key={i}
-                className="border-dashed border-border/30 bg-card/30"
-              >
-                <CardContent className="pt-6">
-                  <p className="text-sm italic text-muted-foreground/70 leading-relaxed">
-                    &ldquo;{testimonial.quote}&rdquo;
-                  </p>
-                  <div className="mt-4 border-t border-border/30 pt-4">
-                    <p className="text-sm font-medium text-muted-foreground/50">
-                      {testimonial.author}
-                    </p>
-                    <p className="text-xs text-muted-foreground/30">
-                      {testimonial.role}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="border-t border-border/40 bg-background">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center text-center">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Start building with trust
-            </h2>
-            <p className="mt-4 max-w-xl text-lg text-muted-foreground">
-              Add compliance to your agentic workflows in minutes. Open source,
-              TypeScript-first, and ready for production.
-            </p>
-            <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-              <Button size="lg" className="gap-2 px-6" asChild>
-                <a
-                  href="https://github.com/vinay-lgtm-code/kontext_verify"
-                  target="_blank"
-                  rel="noopener noreferrer"
+            <div className="flex flex-col sm:flex-row gap-4">
+              {geniusTimeline.map((item, i) => (
+                <div
+                  key={i}
+                  className="flex-1 rounded-base border-2 border-black bg-white p-4 shadow-shadow"
                 >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                  </svg>
-                  View on GitHub
-                </a>
-              </Button>
-              <Button variant="outline" size="lg" asChild>
-                <Link href="/docs">Read the Docs</Link>
-              </Button>
+                  <p className="text-xs font-mono font-bold text-black/50 mb-1">{item.date}</p>
+                  <p className="text-sm font-bold text-black">{item.event}</p>
+                </div>
+              ))}
             </div>
+            <p className="mt-6 text-sm text-black/70">
+              The GENIUS Act (S. 1582, signed July 18, 2025) treats payment stablecoin
+              issuers as financial institutions under the BSA. Implementing regulations
+              are due July 2026. Developers handling material USDC transfers need audit
+              infrastructure before prohibitions take effect November 2026.
+            </p>
           </div>
         </div>
       </section>
-    </>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* 9. FINAL CTA                                                         */}
+      {/* ------------------------------------------------------------------ */}
+      <section className="border-t-2 border-black bg-black text-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 text-center">
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+            Ship compliance today.
+          </h2>
+          <p className="text-white/60 mb-8 max-w-xl mx-auto">
+            20,000 events free forever. No credit card. Five minutes to integration.
+          </p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <Button size="lg" asChild>
+              <Link href="/docs">
+                Get Started
+                <ArrowRight size={16} className="ml-2" />
+              </Link>
+            </Button>
+            <Button variant="secondary" size="lg" asChild>
+              <Link href="/pricing">View Pricing</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }

@@ -17,50 +17,49 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://kontext.dev"),
+  metadataBase: new URL("https://getkontext.com"),
   title: {
-    default: "Kontext - Trust Layer for the Agent Economy",
+    default: "Kontext — Compliance Logging for AI Payment Agents",
     template: "%s | Kontext",
   },
   description:
-    "Compliance and trust infrastructure for agentic stablecoin and fiat transactions. Action logging, audit export, trust scoring, and anomaly detection for USDC, Stripe, x402, and more.",
+    "Compliance logging SDK for developers building on Circle Programmable Wallets. verify(), trust scoring, anomaly detection, and tamper-evident audit trails. GENIUS Act aligned.",
   keywords: [
-    "agentic commerce",
+    "USDC compliance SDK",
+    "AI agent audit trail",
+    "Circle Programmable Wallets compliance",
+    "GENIUS Act developer",
     "stablecoin compliance",
-    "fiat payments compliance",
-    "USDC",
-    "x402 protocol",
     "trust scoring",
-    "audit trail",
-    "GENIUS Act",
-    "agent economy",
-    "crypto compliance",
+    "anomaly detection",
+    "digest chain",
     "TypeScript SDK",
+    "kontext-sdk",
   ],
-  authors: [{ name: "Kontext" }],
-  creator: "Kontext",
+  authors: [{ name: "Legaci Labs" }],
+  creator: "Legaci Labs",
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://kontext.dev",
+    url: "https://getkontext.com",
     siteName: "Kontext",
-    title: "Kontext - Trust Layer for the Agent Economy",
+    title: "Kontext — Compliance Logging for AI Payment Agents",
     description:
-      "Compliance-support and trust infrastructure for agentic stablecoin and fiat transactions. Aligned with GENIUS Act requirements.",
+      "Five lines. Full compliance. verify(), trust scoring, anomaly detection, and tamper-evident audit trails for USDC payment agents.",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Kontext - Trust Layer for the Agent Economy",
+        alt: "Kontext — Compliance Logging for AI Payment Agents",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Kontext - Trust Layer for the Agent Economy",
+    title: "Kontext — Compliance Logging for AI Payment Agents",
     description:
-      "Compliance and trust infrastructure for agentic stablecoin and fiat transactions.",
+      "Five lines. Full compliance. GENIUS Act aligned SDK for autonomous wallet developers.",
     images: ["/og-image.png"],
     creator: "@kontextverify",
   },
@@ -78,7 +77,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`dark ${inter.variable} ${jetbrainsMono.variable}`}
+      className={`${inter.variable} ${jetbrainsMono.variable}`}
     >
       <body className="min-h-screen bg-background font-sans antialiased">
         <Navbar />

@@ -1,104 +1,53 @@
 import Link from "next/link";
 
-const footerLinks = {
-  Product: [
-    { href: "/docs", label: "Documentation" },
-    { href: "/use-cases", label: "Use Cases" },
-    { href: "/integrations", label: "Integrations" },
-    { href: "/pricing", label: "Pricing" },
-    { href: "/changelog", label: "Changelog" },
-    { href: "/faqs", label: "FAQs" },
-  ],
-  Integrations: [
-    { href: "/use-cases#usdc-payments", label: "USDC on Base" },
-    { href: "/use-cases#x402-protocol", label: "x402 Protocol" },
-    { href: "/use-cases#google-ucp", label: "Google UCP/A2A" },
-    { href: "/use-cases#stripe-agentic", label: "Stripe Agentic" },
-    { href: "/integrations#agent-frameworks", label: "Agent Frameworks" },
-  ],
-  Company: [
-    { href: "/about", label: "About" },
-    { href: "/blog", label: "Blog" },
-    {
-      href: "https://github.com/vinay-lgtm-code/kontext_verify",
-      label: "GitHub",
-      external: true,
-    },
-    { href: "https://x.com/kontextverify", label: "X (Twitter)", external: true },
-  ],
-  Legal: [
-    { href: "/privacy", label: "Privacy Policy" },
-    { href: "/terms", label: "Terms of Service" },
-  ],
-};
-
 export function Footer() {
   return (
-    <footer className="border-t border-border/40 bg-background">
+    <footer className="border-t-2 border-black bg-bg">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 gap-8 py-12 md:grid-cols-4">
-          {Object.entries(footerLinks).map(([category, links]) => (
-            <div key={category}>
-              <h3 className="text-sm font-semibold text-foreground">
-                {category}
-              </h3>
-              <ul className="mt-4 space-y-3">
-                {links.map((link) => (
-                  <li key={link.href}>
-                    {"external" in link && link.external ? (
-                      <a
-                        href={link.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                      >
-                        {link.label}
-                      </a>
-                    ) : (
-                      <Link
-                        href={link.href}
-                        className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                      >
-                        {link.label}
-                      </Link>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex flex-col items-center justify-between gap-4 border-t border-border/40 py-8 md:flex-row">
+        <div className="flex flex-col items-center justify-between gap-3 py-8 sm:flex-row">
+          {/* Logo + tagline */}
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/20">
+            <div className="flex h-7 w-7 items-center justify-center rounded-base border-2 border-black bg-main">
               <svg
-                width="14"
-                height="14"
+                width="13"
+                height="13"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="text-primary"
+                className="text-black"
               >
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                 <path d="m9 12 2 2 4-4" />
               </svg>
             </div>
-            <span className="text-sm font-medium">Kontext</span>
+            <span className="text-sm font-bold text-black">Kontext</span>
           </div>
-          <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} Legaci Labs. Open source under MIT Licence.
+
+          {/* Center: patent + license */}
+          <p className="text-xs font-mono text-black/60 text-center">
+            Patent US 12,463,819 B1 &middot; MIT License &middot; &copy; {new Date().getFullYear()} Legaci Labs
           </p>
+
+          {/* GitHub link */}
+          <a
+            href="https://github.com/vinay-lgtm-code/kontext_verify"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 rounded-base border-2 border-black bg-white px-3 py-1.5 text-xs font-bold shadow-shadow-sm transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" className="text-black">
+              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+            </svg>
+            GitHub
+          </a>
         </div>
 
-        <div className="border-t border-border/40 py-4">
-          <p className="text-center text-xs text-muted-foreground/60 leading-relaxed max-w-3xl mx-auto">
-            Kontext provides developer tools that support compliance efforts. It
-            does not constitute legal advice or guarantee regulatory compliance.
-            Consult qualified legal counsel for compliance certification.
+        <div className="border-t border-black/10 py-3">
+          <p className="text-center text-xs text-black/40">
+            Kontext provides developer tools that support compliance efforts. Not legal advice. Consult qualified counsel for compliance certification.
           </p>
         </div>
       </div>

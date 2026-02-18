@@ -1,490 +1,279 @@
-"use client";
-
-import { useState } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Check, ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Pricing",
+  description:
+    "Kontext pricing — 20,000 events free forever. Pay as you go at $2.00 per 1,000 events after the free tier. No monthly minimum.",
+};
 
 // ---------------------------------------------------------------------------
-// Upgrade helper — calls the server to create a Stripe Checkout session
+// Feature comparison table data
 // ---------------------------------------------------------------------------
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+type FeatureRow = {
+  category: string;
+  feature: string;
+  free: string | boolean;
+  payg: string | boolean;
+};
 
-async function initiateUpgrade(
-  email: string,
-  seats?: number,
-): Promise<string> {
-  const res = await fetch(`${API_URL}/v1/checkout`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, seats }),
-  });
+const featureRows: FeatureRow[] = [
+  // Events
+  { category: "Events", feature: "Included events / month", free: "20,000", payg: "20,000 free" },
+  { category: "Events", feature: "Additional events", free: false, payg: "$2.00 / 1K events" },
+  // Chains
+  { category: "Chains", feature: "Base", free: true, payg: true },
+  { category: "Chains", feature: "All 8 chains (Ethereum, Polygon, Arbitrum, Optimism, Arc, Avalanche, Solana)", free: false, payg: "after $5 spend" },
+  // Core methods
+  { category: "Core", feature: "verify()", free: true, payg: true },
+  { category: "Core", feature: "logReasoning()", free: true, payg: true },
+  { category: "Core", feature: "createTask() / confirmTask()", free: true, payg: true },
+  { category: "Core", feature: "Digest chain (tamper-evident)", free: true, payg: true },
+  // Trust & anomaly
+  { category: "Trust & Compliance", feature: "Trust scoring (0–100, 5 factors)", free: true, payg: true },
+  { category: "Trust & Compliance", feature: "Compliance certificates", free: true, payg: true },
+  { category: "Trust & Compliance", feature: "Basic anomaly detection (unusualAmount, frequencySpike)", free: true, payg: true },
+  { category: "Trust & Compliance", feature: "Advanced anomaly detection (4 rules)", free: false, payg: "$0.10 / anomaly" },
+  // Audit
+  { category: "Audit Trails", feature: "JSON audit export", free: true, payg: true },
+  { category: "Audit Trails", feature: "CSV audit export", free: false, payg: true },
+  { category: "Audit Trails", feature: "OFAC SDN screening (built-in)", free: true, payg: true },
+  // Storage
+  { category: "Storage", feature: "In-memory storage", free: true, payg: true },
+  { category: "Storage", feature: "File storage (local)", free: true, payg: true },
+  { category: "Storage", feature: "Cloud persistence (Firestore)", free: false, payg: true },
+  // Support
+  { category: "Support", feature: "GitHub support", free: true, payg: true },
+  { category: "Support", feature: "Email support", free: false, payg: true },
+];
 
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({ error: "Checkout failed" }));
-    throw new Error(body.error ?? "Failed to start checkout");
+// Cost calculator breakpoints
+const costBreakpoints = [
+  { label: "50K events", events: 50_000, cost: 0.06 },
+  { label: "250K events", events: 250_000, cost: 0.46 },
+  { label: "1M events", events: 1_000_000, cost: 1.96 },
+  { label: "5M events", events: 5_000_000, cost: 9.96 },
+];
+
+function renderCell(value: string | boolean) {
+  if (value === true) {
+    return (
+      <span className="inline-flex items-center justify-center">
+        <Badge variant="green" className="text-xs">✓</Badge>
+      </span>
+    );
   }
-
-  const { url } = await res.json();
-  return url; // Redirect to this Stripe Checkout URL
+  if (value === false) {
+    return <span className="text-black/30 font-bold">—</span>;
+  }
+  return <Badge variant="yellow" className="text-xs font-mono">{value}</Badge>;
 }
 
-// ---------------------------------------------------------------------------
-// Plan data
-// ---------------------------------------------------------------------------
-
-const plans = [
-  {
-    name: "Free",
-    price: "$0",
-    period: "",
-    description:
-      "Everything you need to add basic compliance to your agentic workflows. Includes 20,000 events/month.",
-    cta: "Get Started",
-    ctaHref: "https://github.com/vinay-lgtm-code/kontext_verify",
-    ctaExternal: true,
-    highlighted: false,
-    isProCheckout: false,
-    features: [
-      "20,000 events/month included",
-      "Core SDK with full TypeScript support",
-      "Action logging and audit trail",
-      "Basic anomaly detection (unusual amount, frequency spike)",
-      "Trust scoring (local)",
-      "JSON export",
-      "Base chain support",
-      "Digest chain integrity verification",
-      "Community support via GitHub",
-      "MIT License",
-    ],
-  },
-  {
-    name: "Pro",
-    price: "$449",
-    period: "/user/mo",
-    description:
-      "Everything in Free plus all detection rules, unified screening (OFAC, Chainalysis, OpenSanctions), compliance templates, and webhook alerts. 100K events/user/mo.",
-    cta: "Start Pro",
-    ctaHref: "#",
-    ctaExternal: false,
-    highlighted: true,
-    isProCheckout: true,
-    features: [
-      "100,000 events/user/month",
-      "Everything in Free, plus:",
-      "All anomaly detection rules (6 rules)",
-      "SAR/CTR report generation",
-      "Best-in-class unified screening (OFAC, Chainalysis, OpenSanctions)",
-      "Custom blocklist/allowlist manager",
-      "CSV export",
-      "Multi-chain support (Ethereum, Polygon, Arbitrum, Optimism, Avalanche, Solana)",
-      "Webhook alerts",
-      "Email support (24h response)",
-    ],
-  },
-  {
-    name: "Enterprise",
-    price: "Custom",
-    period: "",
-    description:
-      "Everything in Pro plus CFTC compliance, Circle integrations, dedicated support, SLA, and unlimited events.",
-    cta: "Contact Us",
-    ctaHref: "https://cal.com/vinnaray",
-    ctaExternal: true,
-    highlighted: false,
-    isProCheckout: false,
-    features: [
-      "Unlimited events — no caps",
-      "Everything in Pro, plus:",
-      "CFTC compliance module (Letter 26-05)",
-      "Unified screening with custom provider weights and SLAs",
-      "Circle integrations (Programmable Wallets, Compliance Engine, Gas Station)",
-      "CCTP cross-chain transfers",
-      "Dedicated support engineer",
-      "99.9% uptime SLA",
-      "SOC 2 attestation support",
-    ],
-  },
-];
-
-const faqs = [
-  {
-    question: "Is the free tier really free?",
-    answer:
-      "Yes. The core Kontext SDK is MIT-licensed and free to use in production with 20,000 events/month included. Beyond that, events are soft-capped with a clear upgrade prompt. It includes action logging, basic anomaly detection, and local audit export. You can run it entirely self-hosted.",
-  },
-  {
-    question: "Can I try Pro features before committing?",
-    answer:
-      "Absolutely. All paid plans come with a 14-day free trial with full access to all features. No credit card required to start. If it is not the right fit, you can continue using the free tier with 20K events/month.",
-  },
-  {
-    question: "What does the Pro tier include for compliance?",
-    answer:
-      "Pro includes 100,000 events per user per month, all six anomaly detection rules (including new-destination, off-hours, rapid-succession, and round-amount checks), SAR/CTR report generation, best-in-class unified screening (OFAC SDN, Chainalysis, OpenSanctions), custom blocklist/allowlist manager, CSV export, multi-chain support (Ethereum, Polygon, Arbitrum, Optimism, Avalanche, Solana), webhook alerts, and email support with 24h response time. Enterprise gets unlimited events with no caps.",
-  },
-  {
-    question: "How does Kontext handle my transaction data?",
-    answer:
-      "With the free tier, all data stays on your infrastructure. With Pro, data is encrypted at rest and in transit, stored in GCP following SOC 2-aligned practices. You retain full ownership of your data and can export or delete it at any time.",
-  },
-  {
-    question: "Do you support chains beyond Base and Ethereum?",
-    answer:
-      "The free SDK works with any EVM chain. Pro adds first-class support for multiple chains with chain-specific anomaly detection and trust scoring. Enterprise customers can request support for non-EVM chains.",
-  },
-  {
-    question: "What kind of support do I get?",
-    answer:
-      "Free tier users get community support through GitHub Issues and Discussions. Pro includes email support with a 24-hour response time. Enterprise includes a dedicated support engineer and custom SLA.",
-  },
-  {
-    question: "Does Kontext support GENIUS Act compliance efforts?",
-    answer:
-      "Kontext provides developer tools that support compliance efforts aligned with emerging stablecoin regulations including the GENIUS Act. The Pro tier includes GENIUS Act alignment templates, SAR/CTR report generation, and best-in-class unified screening (OFAC, Chainalysis, OpenSanctions). However, Kontext is a developer tool, not a legal advisor or compliance certifier -- consult qualified legal counsel for specific regulatory requirements.",
-  },
-];
-
-// ---------------------------------------------------------------------------
-// Email Capture Modal (inline)
-// ---------------------------------------------------------------------------
-
-function EmailCaptureForm({
-  onSubmit,
-  onCancel,
-  isLoading,
-  error,
-}: {
-  onSubmit: (email: string, seats: number) => void;
-  onCancel: () => void;
-  isLoading: boolean;
-  error: string | null;
-}) {
-  const [email, setEmail] = useState("");
-  const [seats, setSeats] = useState(1);
-
-  const total = seats * 449;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="mx-4 w-full max-w-md rounded-lg border border-border bg-background p-6 shadow-xl">
-        <h3 className="text-lg font-semibold">Start your Pro subscription</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          $449/user/month. Each seat includes 100K events/mo.
-        </p>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (email.trim()) onSubmit(email.trim(), seats);
-          }}
-          className="mt-4 space-y-3"
-        >
-          <input
-            type="email"
-            required
-            autoFocus
-            placeholder="you@company.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none ring-primary focus:ring-2"
-            disabled={isLoading}
-          />
-          <div>
-            <label className="mb-1 block text-sm font-medium text-foreground">
-              Team size
-            </label>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setSeats(Math.max(1, seats - 1))}
-                className="flex h-8 w-8 items-center justify-center rounded-md border border-border text-sm hover:bg-muted"
-                disabled={seats <= 1 || isLoading}
-              >
-                -
-              </button>
-              <span className="w-12 text-center text-sm font-medium">
-                {seats} {seats === 1 ? "user" : "users"}
-              </span>
-              <button
-                type="button"
-                onClick={() => setSeats(seats + 1)}
-                className="flex h-8 w-8 items-center justify-center rounded-md border border-border text-sm hover:bg-muted"
-                disabled={isLoading}
-              >
-                +
-              </button>
-              <span className="ml-auto text-sm text-muted-foreground">
-                ${total}/mo
-              </span>
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {(seats * 100000).toLocaleString()} events/mo total
-            </p>
-          </div>
-          {error && (
-            <p className="text-sm text-red-500">{error}</p>
-          )}
-          <div className="flex gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              className="flex-1"
-              onClick={onCancel}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" className="flex-1 gap-2" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" />
-                  Redirecting...
-                </>
-              ) : (
-                <>
-                  Continue to Checkout
-                  <ArrowRight size={16} />
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
-        <p className="mt-3 text-center text-xs text-muted-foreground">
-          Powered by Stripe. Cancel anytime.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Page Component
-// ---------------------------------------------------------------------------
+const categories = Array.from(new Set(featureRows.map((r) => r.category)));
 
 export default function PricingPage() {
-  const [showEmailCapture, setShowEmailCapture] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [checkoutError, setCheckoutError] = useState<string | null>(null);
-
-  async function handleProCheckout(email: string, seats: number) {
-    setIsLoading(true);
-    setCheckoutError(null);
-
-    try {
-      const url = await initiateUpgrade(email, seats);
-      window.location.href = url;
-    } catch (err) {
-      setCheckoutError(
-        err instanceof Error ? err.message : "Something went wrong. Please try again.",
-      );
-      setIsLoading(false);
-    }
-  }
-
   return (
-    <>
-      {/* Email Capture Modal */}
-      {showEmailCapture && (
-        <EmailCaptureForm
-          onSubmit={handleProCheckout}
-          onCancel={() => {
-            setShowEmailCapture(false);
-            setCheckoutError(null);
-          }}
-          isLoading={isLoading}
-          error={checkoutError}
-        />
-      )}
-
-      {/* Hero */}
-      <section className="border-b border-border/40">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
-          <div className="text-center">
-            <Badge variant="secondary" className="mb-4">
-              Pricing
-            </Badge>
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-              Simple, transparent pricing
-            </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-              Start free with the open-source SDK. Upgrade to Pro when you need
-              all detection rules, unified screening, and compliance templates.
-            </p>
-          </div>
+    <div className="bg-bg">
+      {/* Header */}
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+        <div className="text-center mb-16">
+          <Badge variant="green" className="mb-4">Pricing</Badge>
+          <h1 className="text-4xl sm:text-5xl font-bold text-black mb-4">
+            Simple, honest pricing
+          </h1>
+          <p className="text-lg text-black/70 max-w-xl mx-auto">
+            First 20,000 events are free forever. No credit card. No monthly minimum.
+            Pay only for what you use beyond the free tier.
+          </p>
         </div>
-      </section>
 
-      {/* Plans */}
-      <section className="bg-background">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="grid gap-6 md:grid-cols-3">
-            {plans.map((plan) => (
-              <Card
-                key={plan.name}
-                className={`relative flex flex-col ${
-                  plan.highlighted
-                    ? "border-primary/50 shadow-lg shadow-primary/5"
-                    : ""
-                }`}
-              >
-                {plan.highlighted && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-primary text-primary-foreground shadow-sm">
-                      Most Popular
-                    </Badge>
-                  </div>
-                )}
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-xl">{plan.name}</CardTitle>
-                  <div className="mt-2 flex items-baseline gap-1">
-                    <span className="text-4xl font-bold tracking-tight">
-                      {plan.price}
-                    </span>
-                    {plan.period && (
-                      <span className="text-sm text-muted-foreground">
-                        {plan.period}
-                      </span>
-                    )}
-                  </div>
-                  <CardDescription className="mt-2">
-                    {plan.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1">
-                  <ul className="space-y-3">
-                    {plan.features.map((feature) => (
-                      <li
-                        key={feature}
-                        className="flex items-start gap-3 text-sm"
-                      >
-                        <Check
-                          size={16}
-                          className="mt-0.5 shrink-0 text-primary"
-                        />
-                        <span className="text-muted-foreground">
-                          {feature}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-                <CardFooter>
-                  {plan.isProCheckout ? (
-                    <Button
-                      className="w-full gap-2"
-                      variant="default"
-                      onClick={() => setShowEmailCapture(true)}
-                    >
-                      {plan.cta}
-                      <ArrowRight size={16} />
-                    </Button>
-                  ) : (
-                    <Button
-                      className="w-full gap-2"
-                      variant={plan.highlighted ? "default" : "outline"}
-                      asChild
-                    >
-                      {plan.ctaExternal ? (
-                        <a
-                          href={plan.ctaHref}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {plan.cta}
-                          <ArrowRight size={16} />
-                        </a>
-                      ) : (
-                        <Link href={plan.ctaHref}>
-                          {plan.cta}
-                          <ArrowRight size={16} />
-                        </Link>
-                      )}
-                    </Button>
-                  )}
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="border-t border-border/40 bg-background">
-        <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold tracking-tight">
-              Frequently asked questions
-            </h2>
-            <p className="mt-4 text-muted-foreground">
-              Can&apos;t find what you&apos;re looking for? Reach out on{" "}
-              <a
-                href="https://github.com/vinay-lgtm-code/kontext_verify"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
-              >
-                GitHub Discussions
-              </a>
-              .
-            </p>
-          </div>
-
-          <Accordion type="single" collapsible className="mt-12">
-            {faqs.map((faq, index) => (
-              <AccordionItem key={index} value={`faq-${index}`}>
-                <AccordionTrigger className="text-left">
-                  {faq.question}
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground leading-relaxed">
-                  {faq.answer}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </div>
-      </section>
-
-      {/* Bottom CTA */}
-      <section className="border-t border-border/40 bg-background">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center text-center">
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-              Ready to get started?
-            </h2>
-            <p className="mt-4 max-w-md text-muted-foreground">
-              Install the SDK and add compliance to your first agent in under 5
-              minutes.
-            </p>
-            <div className="mt-6 flex flex-col sm:flex-row gap-4">
-              <Button size="lg" asChild>
-                <a
-                  href="https://github.com/vinay-lgtm-code/kontext_verify"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Get Started Free
-                </a>
-              </Button>
+        {/* Plan cards */}
+        <div className="grid gap-8 md:grid-cols-2 max-w-4xl mx-auto">
+          {/* Free */}
+          <div className="rounded-base border-2 border-black bg-white p-8 shadow-shadow flex flex-col">
+            <div className="mb-6">
+              <p className="text-xs font-bold uppercase tracking-widest text-black/40 mb-2">Free</p>
+              <div className="flex items-end gap-2 mb-1">
+                <span className="text-5xl font-bold text-black">$0</span>
+                <span className="text-black/50 mb-2">/mo forever</span>
+              </div>
+              <p className="text-sm text-black/60">20,000 events included. No credit card required.</p>
             </div>
+            <ul className="space-y-3 flex-1 mb-8 text-sm">
+              <li className="flex items-start gap-2 text-black/70">
+                <Badge variant="green" className="mt-0.5 shrink-0">✓</Badge>
+                20,000 events/mo always free
+              </li>
+              <li className="flex items-start gap-2 text-black/70">
+                <Badge variant="green" className="mt-0.5 shrink-0">✓</Badge>
+                verify(), logReasoning(), createTask()
+              </li>
+              <li className="flex items-start gap-2 text-black/70">
+                <Badge variant="green" className="mt-0.5 shrink-0">✓</Badge>
+                Trust scoring + compliance certificates
+              </li>
+              <li className="flex items-start gap-2 text-black/70">
+                <Badge variant="green" className="mt-0.5 shrink-0">✓</Badge>
+                Basic anomaly detection (2 rules)
+              </li>
+              <li className="flex items-start gap-2 text-black/70">
+                <Badge variant="green" className="mt-0.5 shrink-0">✓</Badge>
+                JSON audit export + digest chain
+              </li>
+              <li className="flex items-start gap-2 text-black/70">
+                <Badge variant="green" className="mt-0.5 shrink-0">✓</Badge>
+                Base chain, in-memory + file storage
+              </li>
+            </ul>
+            <Button variant="secondary" size="lg" className="w-full" asChild>
+              <Link href="/docs">Get started free</Link>
+            </Button>
+          </div>
+
+          {/* Pay as you go */}
+          <div className="rounded-base border-2 border-black bg-main p-8 shadow-shadow flex flex-col">
+            <div className="mb-6">
+              <p className="text-xs font-bold uppercase tracking-widest text-black/60 mb-2">Pay as you go</p>
+              <div className="flex items-end gap-2 mb-1">
+                <span className="text-5xl font-bold text-black">$0</span>
+                <span className="text-black/70 mb-2">to start</span>
+              </div>
+              <p className="text-sm text-black/70">
+                First 20K events free. Then $2.00 / 1K events. No minimum.
+              </p>
+            </div>
+            <ul className="space-y-3 flex-1 mb-8 text-sm">
+              <li className="flex items-start gap-2 text-black/80">
+                <span className="font-bold shrink-0">✓</span>
+                Everything in Free
+              </li>
+              <li className="flex items-start gap-2 text-black/80">
+                <span className="font-bold shrink-0">✓</span>
+                $2.00 / 1K events after 20K free
+              </li>
+              <li className="flex items-start gap-2 text-black/80">
+                <span className="font-bold shrink-0">✓</span>
+                All 8 chains (after $5 cumulative spend)
+              </li>
+              <li className="flex items-start gap-2 text-black/80">
+                <span className="font-bold shrink-0">✓</span>
+                Advanced anomaly detection — $0.10/anomaly detected
+              </li>
+              <li className="flex items-start gap-2 text-black/80">
+                <span className="font-bold shrink-0">✓</span>
+                CSV audit export + Firestore persistence
+              </li>
+              <li className="flex items-start gap-2 text-black/80">
+                <span className="font-bold shrink-0">✓</span>
+                Email support
+              </li>
+            </ul>
+            <Button variant="outline" size="lg" className="w-full bg-white" asChild>
+              <a href="https://buy.stripe.com/placeholder" target="_blank" rel="noopener noreferrer">
+                Add payment method
+                <ArrowRight size={16} className="ml-2" />
+              </a>
+            </Button>
           </div>
         </div>
       </section>
-    </>
+
+      {/* Cost calculator */}
+      <section className="border-t-2 border-black bg-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
+          <div className="max-w-2xl mx-auto">
+            <h2 className="text-2xl font-bold text-black mb-2 text-center">Estimated monthly cost</h2>
+            <p className="text-sm text-black/60 text-center mb-10">
+              First 20K events always free. $2.00 / 1K events beyond that. No minimum charge.
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {costBreakpoints.map((bp) => (
+                <div
+                  key={bp.label}
+                  className="rounded-base border-2 border-black bg-bg p-4 shadow-shadow text-center"
+                >
+                  <p className="text-xs font-mono font-bold text-black/50 mb-2">{bp.label}</p>
+                  <p className="text-2xl font-bold text-black">
+                    ${bp.cost.toFixed(2)}
+                  </p>
+                  <p className="text-xs text-black/40 mt-1">/mo</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-center text-xs text-black/40 mt-6 font-mono">
+              Formula: max(0, events − 20,000) / 1,000 × $2.00
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Feature comparison table */}
+      <section className="border-t-2 border-black bg-bg">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
+          <h2 className="text-2xl font-bold text-black mb-8 text-center">Full feature comparison</h2>
+          <div className="overflow-x-auto rounded-base border-2 border-black shadow-shadow">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-black text-white">
+                  <th className="text-left px-4 py-3 font-bold">Feature</th>
+                  <th className="text-center px-4 py-3 font-bold w-28">Free</th>
+                  <th className="text-center px-4 py-3 font-bold w-36">Pay as you go</th>
+                </tr>
+              </thead>
+              <tbody>
+                {categories.flatMap((cat) => {
+                  const rows = featureRows.filter((r) => r.category === cat);
+                  return [
+                    <tr key={`cat-${cat}`} className="border-t-2 border-black">
+                      <td
+                        colSpan={3}
+                        className="px-4 py-2 font-bold text-xs uppercase tracking-wide text-black/40 bg-black/5"
+                      >
+                        {cat}
+                      </td>
+                    </tr>,
+                    ...rows.map((row, i) => (
+                      <tr
+                        key={`${cat}-${row.feature}`}
+                        className={i % 2 === 0 ? "bg-white" : "bg-bg"}
+                      >
+                        <td className="px-4 py-3 text-black/80">{row.feature}</td>
+                        <td className="px-4 py-3 text-center">{renderCell(row.free)}</td>
+                        <td className="px-4 py-3 text-center">{renderCell(row.payg)}</td>
+                      </tr>
+                    )),
+                  ];
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="border-t-2 border-black bg-black text-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14 text-center">
+          <h2 className="text-3xl font-bold mb-4">Start free. Pay only when you scale.</h2>
+          <p className="text-white/60 mb-8 max-w-lg mx-auto">
+            20,000 events/mo free forever. No monthly minimum. No credit card to get started.
+          </p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <Button size="lg" asChild>
+              <Link href="/docs">
+                Get started free
+                <ArrowRight size={16} className="ml-2" />
+              </Link>
+            </Button>
+            <Button variant="secondary" size="lg" asChild>
+              <Link href="/faqs">Read FAQs</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }

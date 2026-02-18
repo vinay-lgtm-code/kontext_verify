@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Accordion,
   AccordionContent,
@@ -13,344 +13,128 @@ import { ArrowRight } from "lucide-react";
 export const metadata: Metadata = {
   title: "FAQs",
   description:
-    "Frequently asked questions about Kontext -- the trust and compliance-support SDK for agentic stablecoin and fiat transactions. Technical details, integrations, pricing, and more.",
+    "Frequently asked questions about Kontext — the compliance logging SDK for developers building on Circle Programmable Wallets.",
 };
 
-const faqCategories = [
+const faqs = [
   {
-    name: "General",
-    faqs: [
-      {
-        question: "What is Kontext?",
-        answer:
-          "Kontext is a TypeScript SDK that provides trust and compliance-support infrastructure for AI agents performing stablecoin and fiat transactions. It handles action logging, trust scoring, anomaly detection, and audit trail export so you can ship compliance-ready agentic workflows without building compliance tooling from scratch.",
-      },
-      {
-        question: "Who is Kontext built for?",
-        answer:
-          "Kontext is built for developers integrating AI agents with stablecoin and fiat payments -- whether USDC on Base, Stripe payment intents, or any workflow where AI agents move money. Kontext provides the compliance-support layer.",
-      },
-      {
-        question: "Is Kontext open source?",
-        answer:
-          "Yes. The core SDK is fully open source and available on GitHub with 20,000 events/month included. You can self-host the entire stack with no feature gates on the free tier. Paid plans add all anomaly detection rules, best-in-class unified screening (OFAC, Chainalysis, OpenSanctions), SAR/CTR reports, and multi-chain support on the Pro plan at $449/user/month (100K events/user/mo). Enterprise plans have unlimited events.",
-      },
-      {
-        question: "What license does Kontext use?",
-        answer:
-          "Kontext is released under the MIT License. You can use it freely in commercial and non-commercial projects without restrictions. Contributions are welcome via GitHub pull requests.",
-      },
-    ],
+    question: "What is the GENIUS Act and why does it matter?",
+    answer:
+      "The GENIUS Act (S. 1582, Guiding and Establishing National Innovation for U.S. Stablecoins) was signed into law on July 18, 2025. It treats payment stablecoin issuers as financial institutions under the Bank Secrecy Act (BSA). Implementing regulations are due July 2026, and prohibitions take effect November 2026. Developers handling material USDC transfers ($3,000+) need audit infrastructure — audit trails, compliance logs, and tamper-evident proof that checks ran — before that deadline.",
   },
   {
-    name: "Technical",
-    faqs: [
-      {
-        question: "What languages and runtimes are supported?",
-        answer:
-          "The SDK is TypeScript-first with full type safety and ships with zero runtime dependencies. It runs on Node.js 18+, Bun, and Deno. The core API is also accessible via REST for non-JavaScript environments.",
-      },
-      {
-        question: "What blockchain chains are supported?",
-        answer:
-          "The open-source SDK works with any EVM-compatible chain. First-class integrations are provided for Base and Ethereum. Paid plans (Pro and above) add chain-specific anomaly detection for additional networks, and Enterprise customers can request non-EVM chain support.",
-      },
-      {
-        question: "How does trust scoring work?",
-        answer:
-          "Each verified action receives a trust score between 0 and 1 computed from multiple weighted factors: agent history, amount normality relative to the agent's baseline, transaction velocity, recipient trust, and contextual pattern matching. The factors and weights are configurable.",
-      },
-      {
-        question: "How does anomaly detection work?",
-        answer:
-          "Anomaly detection runs a configurable rule engine on every verify() call. The free tier includes two basic rules: unusual amount and frequency spike. Pro plans unlock all six detection rules including new-destination, off-hours, rapid-succession, and round-amount checks.",
-      },
-      {
-        question: "What is the digest chain?",
-        answer:
-          "The digest chain is Kontext's patented append-only audit structure that cryptographically links each logged action to the full history before it. This creates a tamper-evident chain of records -- if any entry is modified, the chain breaks, making unauthorized changes immediately detectable.",
-      },
-      {
-        question: "How is audit data stored?",
-        answer:
-          "With the open-source SDK, all data stays on your infrastructure -- you control storage entirely. On paid plans (Pro and above), audit data is encrypted at rest (AES-256) and in transit (TLS 1.3), stored in cloud infrastructure following SOC 2-aligned practices. You retain full ownership and can export or delete data at any time.",
-      },
-      {
-        question: "What are the performance characteristics?",
-        answer:
-          "The verify() call adds sub-5ms overhead for local rule evaluation. The SDK is under 10kb gzipped with zero runtime dependencies. Cloud-powered trust scoring (Pro) adds a network round-trip but is optimized for P95 latency under 50ms via edge deployment.",
-      },
-    ],
+    question: "Does Kontext replace Circle's Compliance Engine?",
+    answer:
+      "No. Circle's paid Compliance Engine handles transaction screening. Kontext handles the audit trail and proof that screening ran. They're complementary, not competitive. You can use both: Circle screens the transaction, Kontext logs that the screen happened, stores the result in a tamper-evident digest chain, and generates exportable compliance certificates.",
   },
   {
-    name: "Integration",
-    faqs: [
-      {
-        question: "How do I integrate Kontext with USDC transfers?",
-        answer:
-          "Call ctx.verify() before executing any USDC transfer. Pass the amount, recipient, chain, and agent ID. Kontext returns a trust score and flag status. If the action is not flagged, proceed with the on-chain transfer using viem, ethers, or your preferred library. See the USDC integration guide in our docs for a complete example.",
-      },
-      {
-        question: "Does Kontext work with the x402 protocol?",
-        answer:
-          "Yes. Kontext can be used as middleware in x402 HTTP-native payment flows. Intercept the x-402-payment header, run ctx.verify() against the payment details, and either allow or reject the request based on the trust score and flag status.",
-      },
-      {
-        question: "How does the Google UCP / A2A integration work?",
-        answer:
-          "Kontext wraps Google Universal Checkout Protocol transactions with trust scoring and audit logging. Pass the UCP payload (amount, currency, agent ID, session ID) to ctx.verify() and use the result to approve or reject the agent-to-agent transaction.",
-      },
-      {
-        question: "Can I use Kontext with Stripe?",
-        answer:
-          "Yes. Verify agent-initiated payments with Kontext before creating Stripe payment intents. The Kontext audit ID can be attached to Stripe metadata for full end-to-end traceability between your compliance logs and payment records.",
-      },
-      {
-        question: "Does Kontext work with LangChain, CrewAI, or AutoGen?",
-        answer:
-          "Yes. Kontext is framework-agnostic -- it works with any agent framework. Wrap your agent's tool calls or action steps with ctx.verify() or ctx.log(). We provide integration examples for LangChain, CrewAI, AutoGen, and other popular frameworks in the docs.",
-      },
-      {
-        question: "Can I use Kontext with any agent framework?",
-        answer:
-          "Absolutely. Kontext does not depend on any specific agent framework. It is a standalone SDK that you call at the points in your agent's execution where compliance matters -- before financial actions, after completions, or at any decision point you want audited.",
-      },
-      {
-        question:
-          "How do I integrate screening notifications with SendGrid, Mailgun, or Slack?",
-        answer:
-          "Configure the ScreeningNotificationManager with a webhook transport pointing to your service's API. The webhook POST includes X-Kontext-Event and X-Kontext-Notification-Id headers plus a structured JSON body. For SendGrid, point the URL to your SendGrid inbound webhook or mail send endpoint. For Slack, use a Slack incoming webhook URL. The payload is self-describing JSON that works with any webhook-capable service.",
-      },
-    ],
+    question: "What's the difference between Free and Pay as you go?",
+    answer:
+      "Free gives you 20,000 events/mo forever, Base chain, basic anomaly detection (2 rules), JSON audit export, trust scoring, and compliance certificates — all at $0, no credit card required. Pay as you go unlocks everything: all 8 chains (after $5 cumulative spend), advanced anomaly detection at $0.10/anomaly, CSV export, and Firestore cloud persistence. You pay $2.00 per 1,000 events beyond the 20K free tier. No monthly minimum — if you don't go over 20K events, you pay nothing.",
   },
   {
-    name: "Screening & Notifications",
-    faqs: [
-      {
-        question: "How does screening notification routing work?",
-        answer:
-          "When the unified screening aggregator returns a non-definitive result (REVIEW decision, risk score 40-79), the ScreeningNotificationManager sends a structured webhook POST to your configured endpoint. The payload includes transaction details (partially masked), risk assessment, provider results, and a recommended action. You route this webhook to your existing case management system, compliance dashboard, or email service. Kontext handles the screening and notification -- case creation, tracking, and resolution is handled by your systems.",
-      },
-      {
-        question:
-          "What if my team doesn't have a case management system?",
-        answer:
-          "Two options work out of the box. First, configure the webhook transport to POST to an email delivery service (SendGrid, Mailgun, Postmark) -- the payload includes a pre-formatted subject line and structured body that renders well in email. Set paymentProviderContacts with your compliance team's email addresses and each REVIEW decision forwards as an email. Second, pair the notification with Kontext's built-in ApprovalManager -- this gives your team a simple accept/reject flow with expiry timers, without building a full case management system.",
-      },
-      {
-        question: "Which screening decisions trigger notifications?",
-        answer:
-          "By default, only REVIEW decisions (risk score 40-79) trigger notifications -- these are non-definitive results where automated screening found signal but not enough confidence to block. You can optionally include BLOCK decisions by setting notifyOn: ['REVIEW', 'BLOCK']. APPROVE decisions (risk score 0-39) never trigger notifications.",
-      },
-      {
-        question:
-          "Can I route different payment flows to different contacts?",
-        answer:
-          "Yes. Each PaymentProviderContact specifies which flows they cover: circle-wallets, stripe, cctp, x402, or all. When a screening notification fires, only contacts matching the transaction's flow type receive the notification. This lets you route Circle wallet alerts to your crypto compliance team and Stripe alerts to your payments team.",
-      },
-      {
-        question:
-          "Does Kontext track case resolution or SLA compliance?",
-        answer:
-          "No. Kontext is a screening and notification bridge, not a case management system. Once a notification is delivered, resolution tracking is handled by your case management system (Jira, ServiceNow, Unit21, etc.) or via the ApprovalManager if you're using Kontext's built-in accept/reject flow. Delivery results are recorded for audit trail purposes via getDeliveryResults().",
-      },
-    ],
+    question: "How does the digest chain work?",
+    answer:
+      "The digest chain is a SHA-256 rolling hash chain (Patent US 12,463,819 B1). Every action, transaction, and reasoning entry generates a hash that includes the previous hash. This creates a tamper-evident sequence: if any entry is altered after the fact, the hash verification fails. The terminal digest is your cryptographic proof that compliance ran in the exact sequence recorded. Call verifyDigestChain() at any time to verify the chain integrity.",
   },
   {
-    name: "Compliance",
-    faqs: [
-      {
-        question: "What is the GENIUS Act?",
-        answer:
-          "The GENIUS Act (Guiding and Establishing National Innovation for U.S. Stablecoins) is U.S. legislation establishing a regulatory framework for stablecoin issuers and the ecosystems around them. It introduces requirements around reserves, transparency, and consumer protection that impact how stablecoin transactions are logged and audited.",
-      },
-      {
-        question: "How does Kontext support GENIUS Act compliance efforts?",
-        answer:
-          "Kontext provides technical infrastructure aligned with where stablecoin regulation is heading: immutable audit trails, transaction-level logging, risk scoring, and exportable compliance reports. It supports your compliance efforts but does not make you compliant on its own -- it gives your compliance team the data and tooling they need.",
-      },
-      {
-        question: "Is Kontext itself a certified compliance product?",
-        answer:
-          "Kontext is a developer tool, not a regulated financial entity. Paid plan infrastructure follows SOC 2-aligned practices for data handling. However, Kontext does not guarantee regulatory compliance and is not a substitute for legal counsel -- it provides the technical building blocks your compliance program needs.",
-      },
-      {
-        question: "What audit export formats are supported?",
-        answer:
-          "The SDK supports JSON and CSV export. Exports can be filtered by date range, agent, action type, and flag status. Streaming export is available for large datasets.",
-      },
-      {
-        question: "Is Kontext a replacement for legal counsel?",
-        answer:
-          "No. Kontext is infrastructure tooling, not legal advice. It provides the technical capabilities -- logging, scoring, detection, and reporting -- that your legal and compliance teams need to build a compliance program. Always consult qualified legal counsel for regulatory requirements specific to your jurisdiction and use case.",
-      },
-    ],
+    question: "Is there a Python SDK?",
+    answer:
+      "Not yet. Kontext is TypeScript-only for now. We're not publishing a 'coming soon' timeline because we'd rather ship Python when there's a concrete timeline and proven demand. If you need Python support, file an issue on GitHub with your use case.",
   },
   {
-    name: "Pricing & Plans",
-    faqs: [
-      {
-        question: "What is included in the free tier?",
-        answer:
-          "The free tier includes the full SDK with 20,000 events/month (soft cap), action logging, JSON export, basic anomaly detection (2 rules: unusual amount and frequency spike), trust scoring (local), digest chain verification, and Base chain support. It is MIT-licensed and free forever.",
-      },
-      {
-        question: "What does the Pro plan include?",
-        answer:
-          "Pro ($449/user/mo, 100K events per user per month) includes everything in Free plus: all six anomaly detection rules (including new-destination, off-hours, rapid-succession, and round-amount), SAR/CTR report generation, best-in-class unified screening aggregating OFAC SDN, Chainalysis Oracle, Chainalysis API, and OpenSanctions into a single result, custom blocklist/allowlist manager, CSV export, multi-chain support (Ethereum, Polygon, Arbitrum, Optimism, Avalanche, Solana), webhook alerts, and email support with 24h response time. Event limits scale with your team size.",
-      },
-      {
-        question: "Can I self-host the entire stack?",
-        answer:
-          "Yes. The open-source SDK is designed for self-hosting with zero external dependencies. You control where data is stored and how it is processed.",
-      },
-      {
-        question: "What does the Enterprise plan include?",
-        answer:
-          "Enterprise includes everything in Pro plus unlimited events (no caps), unified screening with custom provider weights and SLAs, CFTC compliance module (Letter 26-05), Circle integrations (Programmable Wallets, Compliance Engine, Gas Station), CCTP cross-chain transfers, dedicated support engineer, 99.9% uptime SLA, and SOC 2 attestation support. Contact us for details.",
-      },
-    ],
+    question: "What chains are supported?",
+    answer:
+      "Free tier: Base only. Pay as you go (after $5 cumulative spend): all 8 chains — Ethereum, Base, Polygon, Arbitrum, Optimism, Arc, Avalanche, and Solana. All chains require the logTransaction() or verify() call to specify the chain parameter.",
   },
   {
-    name: "Security",
-    faqs: [
-      {
-        question: "How is data encrypted?",
-        answer:
-          "All data in transit is encrypted with TLS 1.3. On paid plans (Pro and above), data at rest is encrypted with AES-256. API keys are hashed and never stored in plaintext. The free tier keeps all data on your infrastructure, so encryption is governed by your own setup.",
-      },
-      {
-        question: "Where is cloud data stored?",
-        answer:
-          "Paid plan data is stored in GCP infrastructure following SOC 2-aligned practices. Data residency options are available on Enterprise plans for organizations with geographic data requirements. All data is encrypted at rest and in transit.",
-      },
-      {
-        question: "Is Kontext SOC2 certified?",
-        answer:
-          "Kontext's cloud infrastructure follows SOC 2-aligned practices. Enterprise customers receive SOC 2 attestation support and can request detailed security documentation. We are actively pursuing formal SOC 2 Type II certification.",
-      },
-      {
-        question: "How does Kontext handle PII?",
-        answer:
-          "Kontext logs action metadata, not user PII. The SDK is designed so that you control what data is passed in the metadata fields. We recommend against including raw PII in action logs -- instead, use anonymized identifiers. Enterprise plans include data retention policies and automated PII scrubbing options.",
-      },
-    ],
+    question: "What OFAC screening is included on the free tier?",
+    answer:
+      "Both tiers include the built-in SDN list screening via the UsdcCompliance class. This checks transaction addresses against the OFAC Specially Designated Nationals list. The verify() call runs OFAC screening, EDD thresholds ($3K Travel Rule, $10K CTR), and large transaction detection ($50K+) in a single call. Advanced multi-provider screening (Chainalysis, OpenSanctions) is a later milestone for developers who bring their own API keys.",
+  },
+  {
+    question: "Can I use Kontext without an API key?",
+    answer:
+      "Yes. Local mode requires no API key. Pass just a projectId and environment to Kontext.init(). All features including verify(), trust scoring, anomaly detection, and compliance certificates work locally. Cloud persistence (Firestore) and cloud event shipping require an API key, available on Pay as you go.",
+  },
+  {
+    question: "How do I store logs persistently?",
+    answer:
+      "Two local options are included in both tiers: MemoryStorage (default, resets on restart) and FileStorage (writes JSON to disk). Pass storage: new FileStorage('./compliance-data') to Kontext.init(). For cloud persistence across restarts and deployments, Firestore storage is available on Pay as you go.",
+  },
+  {
+    question: "What is Patent US 12,463,819 B1?",
+    answer:
+      "Patent US 12,463,819 B1 covers Kontext's tamper-evident digest chain for agent audit trails. The digest chain links every action, transaction, and reasoning entry into a cryptographically verifiable sequence using SHA-256 rolling hashes. This is the core innovation that makes Kontext audit trails provably tamper-evident — not just stored, but cryptographically proven.",
+  },
+  {
+    question: "How does trust scoring work?",
+    answer:
+      "Trust scoring computes a 0–100 behavioral health score for each agent, calculated across 5 weighted factors: history depth (0.15), task completion rate (0.25), anomaly frequency (0.25), transaction consistency (0.20), and compliance adherence (0.15). Scores map to levels: untrusted (0–20), low (21–40), medium (41–60), high (61–80), and verified (81–100). Call getTrustScore(agentId) to retrieve the current score and factor breakdown. Trust scoring is included on both Free and Pay as you go.",
+  },
+  {
+    question: "What anomalies does Kontext detect for free?",
+    answer:
+      "Free tier includes two anomaly rules: unusualAmount (transaction above a configured threshold or 5× the agent's historical average) and frequencySpike (too many transactions within a rolling time window). Four advanced rules are available on Pay as you go at $0.10/anomaly detected: newDestination (first-time recipient address), offHoursActivity (transaction outside configured active hours), rapidSuccession (transactions too close together in time), and roundAmount (suspiciously round transaction amounts, a common structuring indicator).",
   },
 ];
 
 export default function FAQsPage() {
   return (
-    <>
-      {/* Hero */}
-      <section className="border-b border-border/40">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
-          <div className="text-center">
-            <Badge variant="secondary" className="mb-4">
-              FAQs
-            </Badge>
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-              Frequently Asked Questions
-            </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-              Technical answers for developers building with Kontext. Can&apos;t
-              find what you need? Reach out on{" "}
+    <div className="bg-bg">
+      {/* Header */}
+      <section className="border-b-2 border-black bg-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
+          <Badge variant="gray" className="mb-4">FAQs</Badge>
+          <h1 className="text-4xl sm:text-5xl font-bold text-black mb-4">
+            Frequently Asked Questions
+          </h1>
+          <p className="text-lg text-black/70 max-w-2xl">
+            Questions about Kontext, the GENIUS Act, pricing, and how the SDK works.
+          </p>
+        </div>
+      </section>
+
+      {/* FAQ accordion */}
+      <section className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-16">
+        <Accordion type="single" collapsible className="space-y-0">
+          {faqs.map((faq, i) => (
+            <AccordionItem key={i} value={`faq-${i}`}>
+              <AccordionTrigger className="text-left text-base font-bold text-black py-5">
+                {faq.question}
+              </AccordionTrigger>
+              <AccordionContent>
+                <p className="text-black/70 leading-relaxed pb-2">{faq.answer}</p>
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      </section>
+
+      {/* CTA */}
+      <section className="border-t-2 border-black bg-black text-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 text-center">
+          <h2 className="text-2xl font-bold mb-4">Still have questions?</h2>
+          <p className="text-white/60 mb-6">Open an issue on GitHub or read the docs.</p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <Button size="lg" asChild>
+              <Link href="/docs">
+                Read the docs
+                <ArrowRight size={16} className="ml-2" />
+              </Link>
+            </Button>
+            <Button variant="secondary" size="lg" asChild>
               <a
-                href="https://github.com/vinay-lgtm-code/kontext_verify"
+                href="https://github.com/vinay-lgtm-code/kontext_verify/issues"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary hover:underline"
               >
-                GitHub Discussions
+                Open an issue
               </a>
-              .
-            </p>
+            </Button>
           </div>
         </div>
       </section>
-
-      {/* Category Navigation */}
-      <section className="sticky top-16 z-40 border-b border-border/40 bg-background/95 backdrop-blur-sm">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-2 overflow-x-auto py-3 scrollbar-none">
-            {faqCategories.map((category) => (
-              <a
-                key={category.name}
-                href={`#${category.name.toLowerCase().replace(/\s+&\s+/g, "-").replace(/\s+/g, "-")}`}
-                className="inline-flex shrink-0 rounded-full border border-border/50 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground hover:bg-accent"
-              >
-                {category.name}
-              </a>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ Sections */}
-      <section className="bg-background">
-        <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
-          {faqCategories.map((category) => (
-            <div
-              key={category.name}
-              id={category.name.toLowerCase().replace(/\s+&\s+/g, "-").replace(/\s+/g, "-")}
-              className="mb-16 last:mb-0 scroll-mt-32"
-            >
-              <Badge
-                variant="outline"
-                className="mb-4 border-primary/20 text-primary"
-              >
-                {category.name}
-              </Badge>
-              <Accordion type="single" collapsible>
-                {category.faqs.map((faq, index) => (
-                  <AccordionItem
-                    key={index}
-                    value={`${category.name}-${index}`}
-                  >
-                    <AccordionTrigger className="text-left">
-                      {faq.question}
-                    </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground leading-relaxed">
-                      {faq.answer}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Bottom CTA */}
-      <section className="border-t border-border/40 bg-background">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center text-center">
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-              Still have questions?
-            </h2>
-            <p className="mt-4 max-w-md text-muted-foreground">
-              Check the docs for detailed guides and API reference, or open an
-              issue on GitHub.
-            </p>
-            <div className="mt-6 flex flex-col gap-4 sm:flex-row">
-              <Button size="lg" asChild>
-                <Link href="/docs">
-                  Read the Docs
-                  <ArrowRight size={16} className="ml-2" />
-                </Link>
-              </Button>
-              <Button variant="outline" size="lg" asChild>
-                <a
-                  href="https://github.com/vinay-lgtm-code/kontext_verify"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  GitHub Discussions
-                </a>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-    </>
+    </div>
   );
 }

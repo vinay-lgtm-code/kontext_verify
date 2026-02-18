@@ -10,6 +10,13 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Neobrutalism palette
+        bg: "#FFF8F0",      // warm cream background
+        main: "#00C46A",    // USDC green — primary CTAs, compliant badges
+        yellow: "#FFD60A",  // urgency, warnings, GENIUS Act strip
+        red: "#FF4D4F",     // blocked, critical anomalies, danger
+        black: "#0D0D0D",   // borders, shadows, primary text
+        // shadcn-compat semantic aliases (used by existing Radix components)
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -37,9 +44,16 @@ const config: Config = {
         },
       },
       borderRadius: {
+        base: "4px",         // neobrutalism: blunt, deliberate corners
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      boxShadow: {
+        // Neobrutalism hard offset shadows (no blur)
+        shadow: "4px 4px 0 0 #0D0D0D",
+        "shadow-sm": "2px 2px 0 0 #0D0D0D",
+        "shadow-none": "0 0 0 0 #0D0D0D",
       },
       fontFamily: {
         sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],
