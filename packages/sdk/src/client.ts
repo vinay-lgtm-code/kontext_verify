@@ -23,7 +23,16 @@ import type {
   VerifyResult,
   LogReasoningInput,
   ReasoningEntry,
+  TrustScore,
+  TransactionEvaluation,
+  AnomalyDetectionConfig,
+  AnomalyCallback,
+  GenerateComplianceCertificateInput,
+  ComplianceCertificate,
 } from './types.js';
+import { TrustScorer } from './trust.js';
+import { AnomalyDetector } from './anomaly.js';
+import { createHash } from 'crypto';
 import type { DigestVerification, DigestLink } from './digest.js';
 import type { PlanTier, PlanUsage, LimitEvent } from './plans.js';
 import { KontextError, KontextErrorCode } from './types.js';
@@ -83,6 +92,8 @@ export class Kontext {
   private readonly planManager: PlanManager;
   private readonly exporter: EventExporter;
   private readonly featureFlagManager: FeatureFlagManager | null;
+  private readonly trustScorer: TrustScorer;
+  private readonly anomalyDetector: AnomalyDetector;
 
   private constructor(config: KontextConfig) {
     this.config = config;
@@ -117,6 +128,8 @@ export class Kontext {
     this.logger = new ActionLogger(config, this.store);
     this.taskManager = new TaskManager(config, this.store);
     this.auditExporter = new AuditExporter(config, this.store);
+    this.trustScorer = new TrustScorer(config, this.store);
+    this.anomalyDetector = new AnomalyDetector(config, this.store);
 
     // Initialize feature flag manager if configured
     this.featureFlagManager = config.featureFlags
@@ -240,6 +253,11 @@ export class Kontext {
       action.metadata = { ...action.metadata, limitExceeded: true };
     }
 
+    // Run anomaly detection if enabled
+    if (this.anomalyDetector.isEnabled()) {
+      this.anomalyDetector.evaluateAction(action);
+    }
+
     // Ship to exporter (fire-and-forget to avoid blocking the caller)
     this.exporter.export([action]).catch(() => {});
 
@@ -265,6 +283,11 @@ export class Kontext {
     const limitExceeded = this.planManager.recordEvent();
     if (limitExceeded) {
       record.metadata = { ...record.metadata, limitExceeded: true };
+    }
+
+    // Run anomaly detection if enabled
+    if (this.anomalyDetector.isEnabled()) {
+      this.anomalyDetector.evaluateTransaction(record);
     }
 
     // Ship to exporter (fire-and-forget to avoid blocking the caller)
@@ -623,6 +646,220 @@ export class Kontext {
       recommendations: compliance.recommendations,
       transaction,
     };
+  }
+
+  // --------------------------------------------------------------------------
+  // Trust Scoring
+  // --------------------------------------------------------------------------
+
+  /**
+   * Get the trust score for an agent based on historical behavioral signals.
+   *
+   * Computes a 0–100 score across 5 factors: history depth, task completion
+   * rate, anomaly frequency, transaction consistency, and compliance adherence.
+   *
+   * @param agentId - Agent identifier
+   * @returns Trust score with factor breakdown and level ('untrusted'|'low'|'medium'|'high'|'verified')
+   */
+  async getTrustScore(agentId: string): Promise<TrustScore> {
+    return this.trustScorer.getTrustScore(agentId);
+  }
+
+  /**
+   * Evaluate the risk of a specific transaction before or after executing it.
+   *
+   * @param tx - Transaction to evaluate
+   * @returns Risk evaluation with score, factors, and recommendation (approve/review/block)
+   */
+  async evaluateTransaction(tx: LogTransactionInput): Promise<TransactionEvaluation> {
+    return this.trustScorer.evaluateTransaction(tx);
+  }
+
+  // --------------------------------------------------------------------------
+  // Anomaly Detection
+  // --------------------------------------------------------------------------
+
+  /**
+   * Enable anomaly detection with the specified rules and thresholds.
+   *
+   * Free-tier rules: `unusualAmount`, `frequencySpike`
+   * Pay as you go rules: `newDestination`, `offHoursActivity`, `rapidSuccession`, `roundAmount`
+   *
+   * @param config - Detection configuration with rules and optional thresholds
+   *
+   * @example
+   * ```typescript
+   * ctx.enableAnomalyDetection({
+   *   rules: ['unusualAmount', 'frequencySpike'],
+   *   thresholds: { maxAmount: '10000', maxFrequency: 30 },
+   * });
+   * ctx.onAnomaly((event) => {
+   *   console.log(`Anomaly: ${event.type} [${event.severity}]`);
+   * });
+   * ```
+   */
+  enableAnomalyDetection(config: AnomalyDetectionConfig): void {
+    // Advanced anomaly rules require Pro plan (Pay as you go)
+    const advancedRules = ['newDestination', 'offHoursActivity', 'rapidSuccession', 'roundAmount'];
+    const hasAdvanced = config.rules.some((r) => advancedRules.includes(r));
+    if (hasAdvanced) {
+      requirePlan('advanced-anomaly-rules', this.planManager.getTier());
+    }
+    this.anomalyDetector.enableAnomalyDetection(config);
+  }
+
+  /**
+   * Disable anomaly detection.
+   */
+  disableAnomalyDetection(): void {
+    this.anomalyDetector.disableAnomalyDetection();
+  }
+
+  /**
+   * Register a callback for anomaly events.
+   *
+   * @param callback - Function to call when an anomaly is detected
+   * @returns Unsubscribe function
+   */
+  onAnomaly(callback: AnomalyCallback): () => void {
+    return this.anomalyDetector.onAnomaly(callback);
+  }
+
+  // --------------------------------------------------------------------------
+  // Compliance Certificates
+  // --------------------------------------------------------------------------
+
+  /**
+   * Generate a compliance certificate that summarizes an agent's actions
+   * and cryptographically verifies the digest chain integrity.
+   *
+   * The certificate includes: action/transaction/reasoning counts, digest chain
+   * verification status (Patent US 12,463,819 B1), the agent's current trust
+   * score, and an overall compliance status. A SHA-256 content hash of the
+   * certificate itself is included for tamper-evidence.
+   *
+   * @param input - Certificate generation options (agentId, optional timeRange, includeReasoning)
+   * @returns Compliance certificate with digest chain proof and trust score
+   *
+   * @example
+   * ```typescript
+   * const cert = await ctx.generateComplianceCertificate({
+   *   agentId: 'payment-agent-v1',
+   *   includeReasoning: true,
+   * });
+   * console.log(cert.complianceStatus);       // 'compliant'
+   * console.log(cert.digestChain.verified);   // true
+   * console.log(cert.trustScore);             // 87
+   * console.log(cert.contentHash);            // sha256 of certificate
+   * ```
+   */
+  async generateComplianceCertificate(
+    input: GenerateComplianceCertificateInput,
+  ): Promise<ComplianceCertificate> {
+    const { agentId, timeRange, includeReasoning } = input;
+
+    // Get all actions for the agent, optionally filtered by time range
+    let agentActions = this.store.getActionsByAgent(agentId);
+    if (timeRange) {
+      const from = timeRange.from.getTime();
+      const to = timeRange.to.getTime();
+      agentActions = agentActions.filter((a) => {
+        const ts = new Date(a.timestamp).getTime();
+        return ts >= from && ts <= to;
+      });
+    }
+
+    const transactions = agentActions.filter((a) => a.type === 'transaction');
+    const toolCalls = agentActions.filter((a) => a.type === 'tool_call');
+    const reasoningActions = agentActions.filter((a) => a.type === 'reasoning');
+
+    // Build action type summary
+    const typeCounts = new Map<string, number>();
+    for (const action of agentActions) {
+      typeCounts.set(action.type, (typeCounts.get(action.type) ?? 0) + 1);
+    }
+    const actionSummary = Array.from(typeCounts.entries()).map(([type, count]) => ({ type, count }));
+
+    // Verify digest chain
+    const verification = this.verifyDigestChain();
+    const chainLength = this.logger.getDigestChain().getChainLength();
+    const terminalDigest = this.getTerminalDigest();
+
+    // Get trust score
+    const trustScore = await this.trustScorer.getTrustScore(agentId);
+
+    // Determine compliance status
+    let agentAnomalies = this.store.queryAnomalies((a) => a.agentId === agentId);
+    if (timeRange) {
+      const from = timeRange.from.getTime();
+      const to = timeRange.to.getTime();
+      agentAnomalies = agentAnomalies.filter((a) => {
+        const ts = new Date(a.detectedAt).getTime();
+        return ts >= from && ts <= to;
+      });
+    }
+
+    const criticalAnomalies = agentAnomalies.filter((a) => a.severity === 'critical');
+    const highAnomalies = agentAnomalies.filter((a) => a.severity === 'high');
+
+    let complianceStatus: ComplianceCertificate['complianceStatus'];
+    if (!verification.valid || criticalAnomalies.length > 0) {
+      complianceStatus = 'non-compliant';
+    } else if (highAnomalies.length > 0 || trustScore.score < 50) {
+      complianceStatus = 'review-required';
+    } else {
+      complianceStatus = 'compliant';
+    }
+
+    // Build reasoning entries if requested
+    let reasoningEntries: ReasoningEntry[] = [];
+    if (includeReasoning) {
+      reasoningEntries = reasoningActions.map((action) => ({
+        id: action.metadata['reasoningId'] as string,
+        timestamp: action.timestamp,
+        agentId: action.agentId,
+        ...(action.sessionId ? { sessionId: action.sessionId } : {}),
+        ...(action.metadata['step'] !== undefined ? { step: action.metadata['step'] as number } : {}),
+        ...(action.metadata['parentStep'] !== undefined ? { parentStep: action.metadata['parentStep'] as number } : {}),
+        action: action.metadata['action'] as string,
+        reasoning: action.metadata['reasoning'] as string,
+        confidence: action.metadata['confidence'] as number,
+        ...(action.metadata['toolCall'] ? { toolCall: action.metadata['toolCall'] as string } : {}),
+        ...(action.metadata['toolResult'] !== undefined ? { toolResult: action.metadata['toolResult'] } : {}),
+        context: (action.metadata['context'] as Record<string, unknown>) ?? {},
+      }));
+    }
+
+    const certificateId = generateId();
+    const issuedAt = now();
+
+    const certificateContent = {
+      certificateId,
+      agentId,
+      issuedAt,
+      summary: {
+        actions: agentActions.length,
+        transactions: transactions.length,
+        toolCalls: toolCalls.length,
+        reasoningEntries: reasoningActions.length,
+      },
+      digestChain: {
+        terminalDigest,
+        chainLength,
+        verified: verification.valid,
+      },
+      trustScore: trustScore.score,
+      complianceStatus,
+      actions: actionSummary,
+      reasoning: reasoningEntries,
+    };
+
+    // Compute SHA-256 hash of the certificate content for integrity verification
+    const hash = createHash('sha256');
+    hash.update(JSON.stringify(certificateContent));
+    const contentHash = hash.digest('hex');
+
+    return { ...certificateContent, contentHash };
   }
 
   // --------------------------------------------------------------------------

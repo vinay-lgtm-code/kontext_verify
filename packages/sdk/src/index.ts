@@ -61,10 +61,23 @@ export type {
   LogReasoningInput,
   ReasoningEntry,
 
-  // Anomaly Events (used by ComplianceReport)
+  // Anomaly Events and Detection Config
   AnomalyEvent,
   AnomalyRuleType,
   AnomalySeverity,
+  AnomalyDetectionConfig,
+  AnomalyThresholds,
+  AnomalyCallback,
+
+  // Trust Scoring
+  TrustScore,
+  TrustFactor,
+  TransactionEvaluation,
+  RiskFactor,
+
+  // Compliance Certificates
+  GenerateComplianceCertificateInput,
+  ComplianceCertificate,
 
   // USDC Integration
   UsdcComplianceCheck,
@@ -102,3 +115,8 @@ export type { DigestLink, DigestVerification, PrecisionTimestamp } from './diges
 // USDC Integration (for direct use)
 export { UsdcCompliance } from './integrations/usdc.js';
 export type { SanctionsCheckResult } from './integrations/usdc.js';
+
+// Trust Scoring and Anomaly Detection (for direct use)
+export { TrustScorer } from './trust.js';
+export type { AgentData } from './trust.js';
+export { AnomalyDetector } from './anomaly.js';

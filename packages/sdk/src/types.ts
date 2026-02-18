@@ -420,6 +420,134 @@ export interface AnomalyEvent {
   reviewed: boolean;
 }
 
+/** Anomaly detection configuration */
+export interface AnomalyDetectionConfig {
+  /** Detection rules to enable */
+  rules: AnomalyRuleType[];
+  /** Thresholds for detection */
+  thresholds?: AnomalyThresholds;
+}
+
+/** Configurable anomaly thresholds */
+export interface AnomalyThresholds {
+  /** Maximum transaction amount before flagging */
+  maxAmount?: string;
+  /** Maximum transactions per hour */
+  maxFrequency?: number;
+  /** Hours considered "off-hours" (24h format, e.g., [22, 23, 0, 1, 2, 3, 4, 5]) */
+  offHours?: number[];
+  /** Minimum seconds between transactions before "rapid succession" flag */
+  minIntervalSeconds?: number;
+}
+
+/** Anomaly event callback */
+export type AnomalyCallback = (anomaly: AnomalyEvent) => void;
+
+// ============================================================================
+// Trust Scoring
+// ============================================================================
+
+/** Trust score result for an agent */
+export interface TrustScore {
+  /** Agent ID */
+  agentId: string;
+  /** Overall trust score (0-100) */
+  score: number;
+  /** Score breakdown by factor */
+  factors: TrustFactor[];
+  /** Timestamp of computation */
+  computedAt: string;
+  /** Trust level label */
+  level: 'untrusted' | 'low' | 'medium' | 'high' | 'verified';
+}
+
+/** Individual trust factor */
+export interface TrustFactor {
+  /** Factor name */
+  name: string;
+  /** Factor score (0-100) */
+  score: number;
+  /** Factor weight (0-1) */
+  weight: number;
+  /** Human-readable description */
+  description: string;
+}
+
+/** Transaction evaluation result */
+export interface TransactionEvaluation {
+  /** Transaction hash */
+  txHash: string;
+  /** Risk score (0-100, higher = more risky) */
+  riskScore: number;
+  /** Risk level */
+  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  /** Individual risk factors */
+  factors: RiskFactor[];
+  /** Whether the transaction should be flagged */
+  flagged: boolean;
+  /** Recommended action */
+  recommendation: 'approve' | 'review' | 'block';
+  /** Evaluation timestamp */
+  evaluatedAt: string;
+}
+
+/** Individual risk factor */
+export interface RiskFactor {
+  /** Factor name */
+  name: string;
+  /** Risk score contribution (0-100) */
+  score: number;
+  /** Human-readable description */
+  description: string;
+}
+
+// ============================================================================
+// Compliance Certificates
+// ============================================================================
+
+/** Input for generating a compliance certificate */
+export interface GenerateComplianceCertificateInput {
+  /** ID of the agent to generate the certificate for */
+  agentId: string;
+  /** Optional time window */
+  timeRange?: { from: Date; to: Date };
+  /** Whether to include reasoning entries */
+  includeReasoning?: boolean;
+}
+
+/** Compliance certificate summarizing agent actions and verifying the digest chain */
+export interface ComplianceCertificate {
+  /** Unique certificate ID */
+  certificateId: string;
+  /** Agent ID */
+  agentId: string;
+  /** ISO timestamp of when the certificate was issued */
+  issuedAt: string;
+  /** Summary of counts */
+  summary: {
+    actions: number;
+    transactions: number;
+    toolCalls: number;
+    reasoningEntries: number;
+  };
+  /** Digest chain verification status */
+  digestChain: {
+    terminalDigest: string;
+    chainLength: number;
+    verified: boolean;
+  };
+  /** Agent's current trust score */
+  trustScore: number;
+  /** Overall compliance status */
+  complianceStatus: 'compliant' | 'non-compliant' | 'review-required';
+  /** Summary list of action types and counts */
+  actions: Array<{ type: string; count: number }>;
+  /** Reasoning entries (if includeReasoning is true) */
+  reasoning: ReasoningEntry[];
+  /** SHA-256 hash of the certificate content for integrity verification */
+  contentHash: string;
+}
+
 // ============================================================================
 // USDC Integration
 // ============================================================================

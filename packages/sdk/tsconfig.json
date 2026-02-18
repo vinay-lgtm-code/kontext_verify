@@ -10,8 +10,6 @@
     "dist",
     "tests",
     "src/_future",
-    "src/trust.ts",
-    "src/anomaly.ts",
     "src/approval.ts",
     "src/webhooks.ts",
     "src/kya",
