@@ -135,6 +135,17 @@ export interface KontextConfig {
    * `FeatureFlagManager` that fetches flags from Firestore REST API.
    */
   featureFlags?: FeatureFlagConfig;
+
+  /**
+   * User / tenant identifier for storage isolation.
+   * Required when using FirestoreStorageAdapter. Logs for each userId
+   * are stored under separate Firestore paths:
+   * users/{userId}/projects/{projectId}/...
+   *
+   * Use a stable, opaque identifier: your auth system's user ID,
+   * a Stripe customer ID, or a hash of the API key.
+   */
+  userId?: string;
 }
 
 /**
@@ -160,6 +171,8 @@ export interface ActionLog {
   projectId: string;
   /** ID of the agent performing the action */
   agentId: string;
+  /** Session ID grouping all steps in one agent run */
+  sessionId?: string;
   /** Correlation ID for tracing related actions */
   correlationId: string;
   /** Type of action */
@@ -182,6 +195,8 @@ export interface LogActionInput {
   description: string;
   /** ID of the agent performing the action */
   agentId: string;
+  /** Optional session ID grouping all steps in a single agent run */
+  sessionId?: string;
   /** Optional correlation ID (auto-generated if not provided) */
   correlationId?: string;
   /** Arbitrary metadata */
@@ -204,6 +219,8 @@ export interface LogTransactionInput {
   to: string;
   /** ID of the agent initiating the transaction */
   agentId: string;
+  /** Optional session ID grouping all steps in a single agent run */
+  sessionId?: string;
   /** Optional correlation ID */
   correlationId?: string;
   /** Additional transaction metadata */
@@ -500,6 +517,69 @@ export interface VerifyResult {
   recommendations: string[];
   /** The logged transaction record */
   transaction: TransactionRecord;
+}
+
+// ============================================================================
+// Agent Reasoning & Session Tracing
+// ============================================================================
+
+/**
+ * Input for logging an agent's reasoning/decision step.
+ * Supports full trace reconstruction via sessionId + step sequencing.
+ */
+export interface LogReasoningInput {
+  /** ID of the agent performing the reasoning */
+  agentId: string;
+  /**
+   * Session ID grouping all steps in one agent run.
+   * Use Kontext.generateSessionId() or your framework's run ID
+   * (LangGraph thread_id, Vercel AI id, OpenAI run_id).
+   */
+  sessionId?: string;
+  /** Step number within the session (for ordering) */
+  step?: number;
+  /** Parent step number (links this step to a prior decision) */
+  parentStep?: number;
+  /** The action or decision being made (e.g., 'evaluate-transfer') */
+  action: string;
+  /** Natural language explanation of the reasoning */
+  reasoning: string;
+  /** Confidence level 0–1 */
+  confidence?: number;
+  /** Tool or method called as a result of this reasoning */
+  toolCall?: string;
+  /** Result returned by the tool call */
+  toolResult?: unknown;
+  /** Additional context */
+  context?: Record<string, unknown>;
+}
+
+/** A stored reasoning/decision entry in the audit trail */
+export interface ReasoningEntry {
+  /** Unique entry ID */
+  id: string;
+  /** Timestamp */
+  timestamp: string;
+  /** Agent ID */
+  agentId: string;
+  /** Session ID */
+  sessionId?: string;
+  /** Step number */
+  step?: number;
+  /** Parent step */
+  parentStep?: number;
+  /** Action name */
+  action: string;
+  /** Reasoning text */
+  reasoning: string;
+  /** Confidence 0–1 */
+  confidence: number;
+  /** Tool called */
+  toolCall?: string;
+  /** Tool result */
+  toolResult?: unknown;
+  /** Context */
+  context: Record<string, unknown>;
 }
 
 // ============================================================================

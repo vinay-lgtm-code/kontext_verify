@@ -9,6 +9,10 @@ export { Kontext } from './client.js';
 export { MemoryStorage, FileStorage } from './storage.js';
 export type { StorageAdapter } from './storage.js';
 
+// Firestore storage adapter (persistent, hierarchical — GCP project "Kontext")
+export { FirestoreStorageAdapter } from './storage-firestore.js';
+export type { FirestoreStorageConfig } from './storage-firestore.js';
+
 // Event exporters
 export {
   NoopExporter,
@@ -52,6 +56,10 @@ export type {
   // Verify
   VerifyInput,
   VerifyResult,
+
+  // Agent Reasoning & Session Tracing
+  LogReasoningInput,
+  ReasoningEntry,
 
   // Anomaly Events (used by ComplianceReport)
   AnomalyEvent,

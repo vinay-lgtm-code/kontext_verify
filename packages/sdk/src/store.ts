@@ -144,6 +144,11 @@ export class KontextStore {
     return this.actions.filter((a) => a.agentId === agentId);
   }
 
+  /** Get actions for a specific session (across all agents). */
+  getActionsBySession(sessionId: string): ActionLog[] {
+    return this.actions.filter((a) => a.sessionId === sessionId);
+  }
+
   // --------------------------------------------------------------------------
   // Transactions
   // --------------------------------------------------------------------------

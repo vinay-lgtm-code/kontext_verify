@@ -21,6 +21,8 @@ import type {
   Environment,
   VerifyInput,
   VerifyResult,
+  LogReasoningInput,
+  ReasoningEntry,
 } from './types.js';
 import type { DigestVerification, DigestLink } from './digest.js';
 import type { PlanTier, PlanUsage, LimitEvent } from './plans.js';
@@ -439,6 +441,156 @@ export class Kontext {
    */
   getActions(): ActionLog[] {
     return this.store.getActions();
+  }
+
+  // --------------------------------------------------------------------------
+  // Agent Reasoning & Session Tracing
+  // --------------------------------------------------------------------------
+
+  /**
+   * Generate a unique session ID for a single agent run.
+   * Pass this as `sessionId` to logReasoning(), log(), logTransaction(),
+   * and verify() calls within the same run to group them in the audit trail.
+   *
+   * Compatible with framework run IDs: pass LangGraph thread_id,
+   * Vercel AI id, or OpenAI run_id directly instead if you prefer.
+   *
+   * @returns A short unique session identifier
+   */
+  static generateSessionId(): string {
+    return generateId();
+  }
+
+  /**
+   * Log an agent's reasoning step into the tamper-evident digest chain.
+   *
+   * Each entry records why the agent took an action, optionally linked
+   * to a tool call. All entries for a sessionId can be replayed in
+   * order via step numbering to reconstruct the full decision trace.
+   *
+   * @param input - Reasoning details including agentId, action, reasoning text
+   * @returns The created reasoning entry
+   *
+   * @example
+   * ```typescript
+   * const sessionId = Kontext.generateSessionId();
+   *
+   * await ctx.logReasoning({
+   *   agentId: 'payment-agent-v1',
+   *   sessionId,
+   *   step: 1,
+   *   action: 'evaluate-transfer',
+   *   reasoning: 'User requested $5K USDC to 0xabc. Running compliance check first.',
+   *   confidence: 0.95,
+   *   toolCall: 'verify',
+   * });
+   *
+   * const result = await ctx.verify({ ..., sessionId });
+   *
+   * await ctx.logReasoning({
+   *   agentId: 'payment-agent-v1',
+   *   sessionId,
+   *   step: 2,
+   *   parentStep: 1,
+   *   action: 'compliance-passed',
+   *   reasoning: 'verify() returned compliant=true, riskLevel=low. Proceeding.',
+   *   confidence: 0.99,
+   *   context: { riskLevel: result.riskLevel },
+   * });
+   * ```
+   */
+  async logReasoning(input: LogReasoningInput): Promise<ReasoningEntry> {
+    if (!input.agentId || input.agentId.trim() === '') {
+      throw new KontextError(
+        KontextErrorCode.VALIDATION_ERROR,
+        'agentId is required for reasoning entries',
+      );
+    }
+    if (!input.action || input.action.trim() === '') {
+      throw new KontextError(
+        KontextErrorCode.VALIDATION_ERROR,
+        'action is required for reasoning entries',
+      );
+    }
+    if (!input.reasoning || input.reasoning.trim() === '') {
+      throw new KontextError(
+        KontextErrorCode.VALIDATION_ERROR,
+        'reasoning is required for reasoning entries',
+      );
+    }
+    if (input.confidence !== undefined && (input.confidence < 0 || input.confidence > 1)) {
+      throw new KontextError(
+        KontextErrorCode.VALIDATION_ERROR,
+        'confidence must be between 0 and 1',
+      );
+    }
+
+    const entry: ReasoningEntry = {
+      id: generateId(),
+      timestamp: now(),
+      agentId: input.agentId,
+      ...(input.sessionId ? { sessionId: input.sessionId } : {}),
+      ...(input.step !== undefined ? { step: input.step } : {}),
+      ...(input.parentStep !== undefined ? { parentStep: input.parentStep } : {}),
+      action: input.action,
+      reasoning: input.reasoning,
+      confidence: input.confidence ?? 1.0,
+      ...(input.toolCall ? { toolCall: input.toolCall } : {}),
+      ...(input.toolResult !== undefined ? { toolResult: input.toolResult } : {}),
+      context: input.context ?? {},
+    };
+
+    // Log into the digest chain as a 'reasoning' action
+    await this.log({
+      type: 'reasoning',
+      description: `[${input.agentId}${input.sessionId ? `/${input.sessionId}` : ''}] step ${input.step ?? '?'}: ${input.action}`,
+      agentId: input.agentId,
+      sessionId: input.sessionId,
+      metadata: {
+        reasoningId: entry.id,
+        action: entry.action,
+        reasoning: entry.reasoning,
+        confidence: entry.confidence,
+        ...(entry.step !== undefined ? { step: entry.step } : {}),
+        ...(entry.parentStep !== undefined ? { parentStep: entry.parentStep } : {}),
+        ...(entry.toolCall ? { toolCall: entry.toolCall } : {}),
+        ...(entry.toolResult !== undefined ? { toolResult: entry.toolResult } : {}),
+        context: entry.context,
+      },
+    });
+
+    return entry;
+  }
+
+  /**
+   * Get all reasoning entries for a specific agent, optionally filtered
+   * by session ID to retrieve a single run's decision trace.
+   *
+   * @param agentId - Agent identifier
+   * @param sessionId - Optional: filter to a single run
+   * @returns Array of reasoning entries in chronological order
+   */
+  getReasoningEntries(agentId: string, sessionId?: string): ReasoningEntry[] {
+    const reasoningActions = this.store.queryActions((a) => {
+      if (a.agentId !== agentId || a.type !== 'reasoning') return false;
+      if (sessionId && a.sessionId !== sessionId) return false;
+      return true;
+    });
+
+    return reasoningActions.map((action) => ({
+      id: action.metadata['reasoningId'] as string,
+      timestamp: action.timestamp,
+      agentId: action.agentId,
+      ...(action.sessionId ? { sessionId: action.sessionId } : {}),
+      ...(action.metadata['step'] !== undefined ? { step: action.metadata['step'] as number } : {}),
+      ...(action.metadata['parentStep'] !== undefined ? { parentStep: action.metadata['parentStep'] as number } : {}),
+      action: action.metadata['action'] as string,
+      reasoning: action.metadata['reasoning'] as string,
+      confidence: action.metadata['confidence'] as number,
+      ...(action.metadata['toolCall'] ? { toolCall: action.metadata['toolCall'] as string } : {}),
+      ...(action.metadata['toolResult'] !== undefined ? { toolResult: action.metadata['toolResult'] } : {}),
+      context: (action.metadata['context'] as Record<string, unknown>) ?? {},
+    }));
   }
 
   // --------------------------------------------------------------------------
