@@ -46,9 +46,8 @@ internal/
 # Claude Code internal skills & config
 .claude/
 
-# Non-Phase-1 / Milestone 2+ (kept locally, not tracked in git)
-packages/sdk/src/trust.ts
-packages/sdk/src/anomaly.ts
+# Pay-as-you-go / Pro / Enterprise (kept locally, not in public repo)
+packages/sdk/src/storage-firestore.ts
 packages/sdk/src/approval.ts
 packages/sdk/src/webhooks.ts
 packages/sdk/src/kya/
@@ -72,17 +71,14 @@ packages/sdk/tests/cctp.test.ts
 packages/sdk/tests/cftc-compliance.test.ts
 packages/sdk/tests/circle-compliance.test.ts
 packages/sdk/tests/circle-wallets.test.ts
-packages/sdk/tests/compliance-certificate.test.ts
 packages/sdk/tests/e2e-vercel-ai.test.ts
 packages/sdk/tests/gas-station.test.ts
 packages/sdk/tests/integrations.test.ts
 packages/sdk/tests/kya-*.test.ts
 packages/sdk/tests/ofac-sanctions.test.ts
 packages/sdk/tests/provider-treasury-sdn.test.ts
-packages/sdk/tests/reasoning.test.ts
 packages/sdk/tests/screening-providers.test.ts
 packages/sdk/tests/stripe.test.ts
-packages/sdk/tests/tx-risk-scoring.test.ts
 packages/sdk/tests/vercel-ai.test.ts
 packages/sdk/tests/webhooks.test.ts
 packages/server/src/treasury-sdn-sync.ts
