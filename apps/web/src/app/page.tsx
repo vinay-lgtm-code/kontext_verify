@@ -238,9 +238,10 @@ export default function HomePage() {
             Prohibitions take effect <strong className="text-black">November 2026</strong>.
           </p>
           <p className="text-lg text-black/70">
-            Bridge.xyz (acquired by Stripe for $1.1B) validates the thesis by embedding
-            compliance directly into its orchestration API. Developers who go
-            direct-to-chain without Bridge have no equivalent — until now.
+            Compliance infrastructure exists for enterprises paying $100K+/year.
+            Nothing exists for developers shipping autonomous agents with{" "}
+            <span className="font-mono text-sm bg-white border border-black/10 px-1 py-0.5 rounded-sm">npm install</span>.
+            That&apos;s what Kontext fixes.
           </p>
         </div>
 
@@ -313,11 +314,11 @@ export default function HomePage() {
       <section className="border-t-2 border-black bg-bg">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
           <h2 className="text-3xl sm:text-4xl font-bold text-black mb-4 text-center">
-            Everything in Phase 1
+            Everything you need to ship compliant
           </h2>
           <p className="text-center text-black/60 mb-12 max-w-2xl mx-auto">
-            Trust scoring, anomaly detection, and compliance certificates are in Phase 1.
-            All free features are free forever.
+            Verify transactions, score agent trust, detect anomalies, and generate
+            compliance certificates. All included. Free features are free forever.
           </p>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {features.map((feature) => {

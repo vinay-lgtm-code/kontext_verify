@@ -50,7 +50,7 @@ const faqs = [
   {
     question: "What OFAC screening is included on the free tier?",
     answer:
-      "Both tiers include the built-in SDN list screening via the UsdcCompliance class. This checks transaction addresses against the OFAC Specially Designated Nationals list. The verify() call runs OFAC screening, EDD thresholds ($3K Travel Rule, $10K CTR), and large transaction detection ($50K+) in a single call. Advanced multi-provider screening (Chainalysis, OpenSanctions) is a later milestone for developers who bring their own API keys.",
+      "Both tiers include the built-in SDN list screening via the UsdcCompliance class. This checks transaction addresses against the OFAC Specially Designated Nationals list. The verify() call runs OFAC screening, EDD thresholds ($3K Travel Rule, $10K CTR), and large transaction detection ($50K+) in a single call. Advanced multi-provider screening (Chainalysis, OpenSanctions) is on the roadmap for developers who bring their own API keys.",
   },
   {
     question: "Can I use Kontext without an API key?",
