@@ -83,6 +83,7 @@ packages/sdk/tests/vercel-ai.test.ts
 packages/sdk/tests/webhooks.test.ts
 packages/server/src/treasury-sdn-sync.ts
 packages/server/src/csl-sync.ts
+apps/web/
 apps/video/
 examples/
 templates/
