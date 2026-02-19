@@ -16,7 +16,7 @@ Kontext is the compliance logging SDK for developers building on Circle Programm
 
 Kontext is NOT a KYA (Know Your Agent) platform. Sumsub ($1B+ valuation, 900 employees) and Vouched ($22M funding) own agent identity verification. Kontext is complementary: they verify the agent before the transaction, Kontext logs what happened during and after.
 
-Kontext is NOT a blockchain analytics platform. Chainalysis, Elliptic, and TRM Labs own transaction monitoring at $100K+/yr for enterprises. Kontext is the developer SDK that costs $49/mo and installs with `npm install`.
+Kontext is NOT a blockchain analytics platform. Chainalysis, Elliptic, and TRM Labs own transaction monitoring at $100K+/yr for enterprises. Kontext is the developer SDK that starts free and installs with `npm install`.
 
 **One-line positioning:** Compliance logging at agent speed for autonomous wallet developers.
 
@@ -30,10 +30,10 @@ Kontext is NOT a blockchain analytics platform. Chainalysis, Elliptic, and TRM L
 
 ## Goals
 
-1. Ship `verify()` convenience method that combines `logTransaction()` + `UsdcCompliance.checkTransaction()` in a single call, making the homepage "five lines" promise literally true (Release 1, Week 1-2)
+1. ~~Ship `verify()` convenience method~~ -- DONE (v0.4.0). `verify()` combines `logTransaction()` + `UsdcCompliance.checkTransaction()` in a single call.
 2. Publish LabLab.ai tutorial "Add compliance logging to your autonomous wallet agent in 5 minutes" before SURGE hackathon March 9 (Week 3-4)
 3. Reach 100 organic npm installs within 30 days of tutorial publication
-4. Convert 5% of free-tier users to Pro ($49/mo) within 90 days of launch
+4. Convert 5% of free-tier users to Pay as you go within 90 days of launch
 5. Be indexed for "USDC compliance SDK" and "AI agent audit trail" before GENIUS Act implementing regulations drop in July 2026
 
 ## Non-Goals
@@ -117,15 +117,18 @@ NEXT_PUBLIC_API_URL=https://api.getkontext.com
 
 pnpm monorepo (`pnpm-workspace.yaml` -> `packages/*`).
 
+**Public repo:** `github.com/Legaci-Labs/kontext` -- free-tier SDK only, no website, no paid features.
+**Private repo:** `github.com/vinay-lgtm-code/kontext_verify` -- full codebase including paid features, website, server.
+
 ```
 packages/
   sdk/          # Core SDK (zero runtime deps, published as `kontext-sdk`)
   server/       # Hono API server (GCP Cloud Run)
   demo/         # CLI demo
 apps/
-  web/          # Next.js marketing site (Vercel)
+  web/          # Next.js marketing site (Vercel) -- gitignored from public repo
   demo/         # Interactive web demo (Vercel)
-  video/        # Video content
+  video/        # Video content -- gitignored from public repo
 ```
 
 ## SDK Architecture (`packages/sdk/`)
@@ -202,7 +205,7 @@ src/
 
 **Action Logging:**
 - `async log(input: LogActionInput): Promise<ActionLog>`
-- `async logTransaction(input: LogTransactionInput): Promise<TransactionRecord>` -- multi-chain requires Pro
+- `async logTransaction(input: LogTransactionInput): Promise<TransactionRecord>` -- multi-chain requires Pay as you go
 - `async flushLogs(): Promise<void>`
 
 **Persistence:**
@@ -218,17 +221,17 @@ src/
 - `getTasks(status?: TaskStatus): Task[]`
 
 **Audit Export:**
-- `async export(options: ExportOptions): Promise<ExportResult>` -- CSV requires Pro
+- `async export(options: ExportOptions): Promise<ExportResult>` -- CSV requires Pay as you go
 - `async generateReport(options: ReportOptions): Promise<ComplianceReport>`
-- `async generateSARReport(options: ReportOptions): Promise<SARReport>` -- Pro
-- `async generateCTRReport(options: ReportOptions): Promise<CTRReport>` -- Pro
+- `async generateSARReport(options: ReportOptions): Promise<SARReport>` -- Pay as you go
+- `async generateCTRReport(options: ReportOptions): Promise<CTRReport>` -- Pay as you go
 
 **Trust Scoring:**
 - `async getTrustScore(agentId: string): Promise<TrustScore>`
 - `async evaluateTransaction(tx: LogTransactionInput): Promise<TransactionEvaluation>`
 
 **Anomaly Detection:**
-- `enableAnomalyDetection(config: AnomalyDetectionConfig): void` -- advanced rules require Pro
+- `enableAnomalyDetection(config: AnomalyDetectionConfig): void` -- advanced rules require Pay as you go
 - `disableAnomalyDetection(): void`
 - `onAnomaly(callback: AnomalyCallback): () => void`
 
@@ -256,14 +259,14 @@ src/
 - `isFeatureEnabled(flagName, environment?, plan?): boolean`
 - `getFeatureFlagManager(): FeatureFlagManager | null`
 
-**Approval / Human-in-the-Loop:** -- Pro
+**Approval / Human-in-the-Loop:** -- Pay as you go
 - `setApprovalPolicies(policies: ApprovalPolicy[]): void`
 - `evaluateApproval(input: EvaluateApprovalInput): ApprovalEvaluation`
 - `submitApprovalDecision(input: SubmitDecisionInput): ApprovalRequest`
 - `getApprovalRequest(requestId): ApprovalRequest | undefined`
 - `getPendingApprovals(): ApprovalRequest[]`
 
-**KYA -- Agent Identity (Pro):**
+**KYA -- Agent Identity (Pay as you go):**
 - `registerAgentIdentity(input): AgentIdentity`
 - `updateAgentIdentity(agentId, input): AgentIdentity`
 - `getAgentIdentity(agentId): AgentIdentity | undefined`
@@ -302,11 +305,11 @@ src/
 | gas-station.ts | `GasStationManager` | `checkEligibility()`, `estimateGas()`, `logGasSponsorship()` | Enterprise |
 | cftc-compliance.ts | `CFTCCompliance` | `logCollateralValuation()`, `logSegregationCalculation()`, `generateWeeklyDigitalAssetReport()` | Enterprise |
 | vercel-ai.ts | (functions) | `kontextMiddleware()`, `kontextWrapModel()`, `createKontextAI()` | Free |
-| screening-aggregator.ts | `ScreeningAggregator` | `screenAddress()`, `screenTransaction()` | Pro |
-| provider-ofac.ts | `ChainalysisOracleProvider` | `screen()` | Pro (via unified-screening) |
-| provider-treasury-sdn.ts | `TreasurySDNProvider` | `screen()`, `sync()` | Pro (via unified-screening) |
-| provider-apis.ts | `ChainalysisFreeAPIProvider`, `OpenSanctionsProvider` | `screen()` | Pro |
-| screening-notification.ts | `ScreeningNotificationManager` | `notify()` | Pro |
+| screening-aggregator.ts | `ScreeningAggregator` | `screenAddress()`, `screenTransaction()` | Pay as you go |
+| provider-ofac.ts | `ChainalysisOracleProvider` | `screen()` | Pay as you go (via unified-screening) |
+| provider-treasury-sdn.ts | `TreasurySDNProvider` | `screen()`, `sync()` | Pay as you go (via unified-screening) |
+| provider-apis.ts | `ChainalysisFreeAPIProvider`, `OpenSanctionsProvider` | `screen()` | Pay as you go |
+| screening-notification.ts | `ScreeningNotificationManager` | `notify()` | Pay as you go |
 
 ### Event Exporters
 
@@ -316,7 +319,7 @@ src/
 | `ConsoleExporter` | Development -- prints to stdout | Free |
 | `JsonFileExporter` | Local backup -- writes JSONL to disk | Free |
 | `HttpExporter` | Generic -- sends batched events to any HTTP endpoint | Free |
-| `KontextCloudExporter` | Cloud -- ships to api.getkontext.com with retry | Pro |
+| `KontextCloudExporter` | Cloud -- ships to api.getkontext.com with retry | Pay as you go |
 | `MultiExporter` | Composite -- fans out to multiple exporters | Free |
 
 ### Storage Adapters
@@ -332,18 +335,25 @@ src/
 
 Features are organized into milestones gated by feature flags. Each milestone has a clear launch trigger and success criteria. Features not in the current milestone are feature-flagged OFF in production.
 
-### Milestone 1 -- Compliance Core (IMMEDIATE -- Ship by March 7, before SURGE hackathon)
+### Milestone 1 -- Compliance Core + Intelligence Layer (SHIPPED -- v0.4.0)
 
-**Status:** In progress. Most code exists. `verify()` must be built.
+**Status:** SHIPPED. Released as v0.4.0. All features below are live in the free tier.
 
-**What ships:**
+**What shipped (free tier, no API key required):**
 - `Kontext.init(config)` -- local mode (no API key) and cloud mode
-- **`verify(input)` -- NEW** convenience method combining `logTransaction()` + `UsdcCompliance.checkTransaction()` in a single call
+- `verify(input)` -- convenience method combining `logTransaction()` + `UsdcCompliance.checkTransaction()` in a single call
 - `log(input)` -- generic agent action logging into digest chain
 - `logTransaction(input)` -- transaction logging (Base chain on free tier)
+- `logReasoning(input)` -- agent decision reasoning into digest chain
+- `getReasoningEntries(agentId)` -- retrieve reasoning entries
+- `getTrustScore(agentId)` -- agent trust score (0-100) with 5-factor breakdown
+- `evaluateTransaction(tx)` -- transaction risk evaluation
+- `enableAnomalyDetection(config)` -- basic rules free (`unusualAmount`, `frequencySpike`)
+- `onAnomaly(callback)` -- anomaly event callback
+- `generateComplianceCertificate(input)` -- certificate with digest proof + trust score + reasoning
 - `UsdcCompliance.checkTransaction(tx)` -- static OFAC + EDD + CTR checks
 - `createTask(input)` / `confirmTask(input)` -- human-in-the-loop
-- `export(options)` -- JSON audit export (CSV gated to Pro)
+- `export(options)` -- JSON audit export (CSV gated to Pay as you go)
 - `generateReport(options)` -- compliance report generation
 - Digest chain: `getTerminalDigest()`, `verifyDigestChain()`, `exportDigestChain()`, `verifyExportedChain()`
 - Storage: `MemoryStorage` (default), `FileStorage(baseDir)` for persistence
@@ -352,41 +362,31 @@ Features are organized into milestones gated by feature flags. Each milestone ha
 
 **Feature flags (ON in production):**
 - Core logging, tasks, digest chain, JSON export, basic compliance checks
+- Trust scoring, basic anomaly detection, reasoning logging, compliance certificates
 
-**Feature flags (OFF in production -- gated to Pro/Enterprise):**
-- `csv-export`, `multi-chain`, `ofac-screening` (advanced), all other gated features
+**Feature flags (OFF in production -- gated to Pay as you go/Enterprise):**
+- `csv-export`, `multi-chain`, `advanced-anomaly-rules`, `ofac-screening` (advanced), all other gated features
 
 **Deploy:**
 - SDK published to npm as `kontext-sdk`
+- Public repo at github.com/Legaci-Labs/kontext (free tier only)
 - API server deployed to GCP Cloud Run
 - Web + demo on Vercel
 
-**Success criteria:**
-- Homepage `ctx.verify()` code snippet works exactly as shown
-- npm install -> working compliance check in under 3 minutes
-- Interactive demo at demo-lemon-one-19.vercel.app loads fast and shows full flow
-
-### Milestone 2 -- Intelligence Layer (Ship by May 2026)
+### Milestone 2 -- Operational Layer (Ship by May 2026)
 
 **Launch trigger:** 50+ npm installs, 5+ SURGE hackathon teams using Kontext
 
 **What ships:**
-- `logReasoning(input)` -- agent decision reasoning into digest chain
-- `getReasoningEntries(agentId)` -- retrieve reasoning entries
-- `generateComplianceCertificate(input)` -- certificate with digest proof + trust score + reasoning
-- `getTrustScore(agentId)` -- agent trust score (0-100) with factor breakdown
-- `evaluateTransaction(tx)` -- transaction risk evaluation
-- `enableAnomalyDetection(config)` -- rule-based detection (free: `unusualAmount`, `frequencySpike`)
-- `onAnomaly(callback)` -- anomaly event callback
-- `generateSARReport(options)` -- SAR template (Pro)
-- `generateCTRReport(options)` -- CTR template (Pro)
-- Advanced anomaly rules (Pro): `newDestination`, `offHoursActivity`, `rapidSuccession`, `roundAmount`
+- `generateSARReport(options)` -- SAR template (Pay as you go)
+- `generateCTRReport(options)` -- CTR template (Pay as you go)
+- Advanced anomaly rules (Pay as you go, $0.10/anomaly): `newDestination`, `offHoursActivity`, `rapidSuccession`, `roundAmount`
 - `KontextCloudExporter` -- ships events to Cloud Run API
 - Plan metering persisted to Firestore
+- CSV audit export (Pay as you go)
 
 **Feature flags (turn ON):**
-- Trust scoring, basic anomaly detection, reasoning logging, compliance certificates
-- Pro-gated: `sar-ctr-reports`, `advanced-anomaly-rules`
+- Pay-as-you-go-gated: `sar-ctr-reports`, `advanced-anomaly-rules`, `csv-export`
 
 **GCP services activated:**
 - Firestore for plan metering state and API key management
@@ -394,26 +394,24 @@ Features are organized into milestones gated by feature flags. Each milestone ha
 - Cloud Scheduler for monthly plan reset
 
 **Success criteria:**
-- `logReasoning()` featured on homepage with own section
-- 5% free-to-Pro conversion rate
-- Pro MRR reaches $500+
+- 5% free-to-Pay-as-you-go conversion rate
+- Pay-as-you-go MRR reaches $500+
 
-### Milestone 3 -- Operational Layer (Ship by July 2026 -- before GENIUS Act regulations)
+### Milestone 3 -- Integrations Layer (Ship by July 2026 -- before GENIUS Act regulations)
 
-**Launch trigger:** 10+ Pro customers, inbound compliance officer inquiries
+**Launch trigger:** 10+ Pay-as-you-go customers, inbound compliance officer inquiries
 
 **What ships:**
-- `WebhookManager` -- anomaly/task/action webhooks with retry (Pro)
-- `ApprovalManager` -- policy-based human-in-the-loop (Pro): `amount-threshold`, `low-trust-score`, `anomaly-detected`, `new-destination`, `manual`
-- `ScreeningAggregator` -- pluggable multi-provider screening (Pro)
+- `WebhookManager` -- anomaly/task/action webhooks with retry (Pay as you go)
+- `ApprovalManager` -- policy-based human-in-the-loop (Pay as you go): `amount-threshold`, `low-trust-score`, `anomaly-detected`, `new-destination`, `manual`
+- `ScreeningAggregator` -- pluggable multi-provider screening (Pay as you go)
 - `TreasurySDNProvider` (built-in), `ChainalysisOracleProvider`, `OpenSanctionsProvider`
 - `ScreeningNotificationManager` -- webhook/SMTP alerts on flagged addresses
-- CSV export (Pro)
-- Multi-chain support -- all 8 chains (Pro): ethereum, base, polygon, arbitrum, optimism, arc, avalanche, solana
-- Blocklist/allowlist manager (Pro)
+- Multi-chain support -- all 8 chains (Pay as you go, after $5 cumulative spend): ethereum, base, polygon, arbitrum, optimism, arc, avalanche, solana
+- Blocklist/allowlist manager (Pay as you go)
 
 **Feature flags (turn ON):**
-- `webhooks`, `approval-policies`, `unified-screening`, `csv-export`, `multi-chain`, `blocklist-manager`, `ofac-screening`
+- `webhooks`, `approval-policies`, `unified-screening`, `multi-chain`, `blocklist-manager`, `ofac-screening`
 
 **GCP services activated:**
 - Pub/Sub for webhook delivery queue and anomaly event fanout
@@ -430,9 +428,9 @@ Features are organized into milestones gated by feature flags. Each milestone ha
 **Launch trigger:** 3+ inbound enterprise inquiries, proven need for multi-agent analysis
 
 **What ships:**
-- `registerAgentIdentity(input)` -- agent identity with wallet mappings (Pro)
-- `getWalletClusters()` -- wallet cluster computation (Pro)
-- `getKYAExport()` -- identity + clustering data export (Pro)
+- `registerAgentIdentity(input)` -- agent identity with wallet mappings (Pay as you go)
+- `getWalletClusters()` -- wallet cluster computation (Pay as you go)
+- `getKYAExport()` -- identity + clustering data export (Pay as you go)
 - `computeBehavioralEmbedding(agentId)` -- feature vectors from transaction history (Enterprise)
 - `analyzeAgentLinks()` -- cross-session agent linking (Enterprise)
 - `getKYAConfidenceScore(agentId)` -- composite identity confidence score (Enterprise)
@@ -497,19 +495,20 @@ All features use Firestore-backed flags with per-environment, per-plan targeting
 
 ### Flag States by Milestone
 
-| Flag | M1 (Now) | M2 (May) | M3 (Jul) | M4 (Demand) |
+| Flag | M1 (Shipped) | M2 (May) | M3 (Jul) | M4 (Demand) |
 |------|----------|----------|----------|-------------|
 | Core logging / tasks / digest | ON all | ON all | ON all | ON all |
-| `csv-export` | OFF | OFF | ON pro+ | ON pro+ |
-| `multi-chain` | OFF | OFF | ON pro+ | ON pro+ |
-| `advanced-anomaly-rules` | OFF | ON pro+ | ON pro+ | ON pro+ |
-| `sar-ctr-reports` | OFF | ON pro+ | ON pro+ | ON pro+ |
-| `ofac-screening` (advanced) | OFF | OFF | ON pro+ | ON pro+ |
-| `webhooks` | OFF | OFF | ON pro+ | ON pro+ |
-| `approval-policies` | OFF | OFF | ON pro+ | ON pro+ |
-| `unified-screening` | OFF | OFF | ON pro+ | ON pro+ |
-| `blocklist-manager` | OFF | OFF | ON pro+ | ON pro+ |
-| `kya-identity` | OFF | OFF | OFF | ON pro+ |
+| Trust scoring / anomaly (basic) / reasoning / certificates | ON all | ON all | ON all | ON all |
+| `csv-export` | OFF | ON payg+ | ON payg+ | ON payg+ |
+| `multi-chain` | OFF | OFF | ON payg+ | ON payg+ |
+| `advanced-anomaly-rules` | OFF | ON payg+ | ON payg+ | ON payg+ |
+| `sar-ctr-reports` | OFF | ON payg+ | ON payg+ | ON payg+ |
+| `ofac-screening` (advanced) | OFF | OFF | ON payg+ | ON payg+ |
+| `webhooks` | OFF | OFF | ON payg+ | ON payg+ |
+| `approval-policies` | OFF | OFF | ON payg+ | ON payg+ |
+| `unified-screening` | OFF | OFF | ON payg+ | ON payg+ |
+| `blocklist-manager` | OFF | OFF | ON payg+ | ON payg+ |
+| `kya-identity` | OFF | OFF | OFF | ON payg+ |
 | `kya-behavioral` | OFF | OFF | OFF | ON ent |
 | `cctp-transfers` | OFF | OFF | OFF | ON ent |
 | `circle-wallets` | OFF | OFF | OFF | ON ent |
@@ -521,16 +520,16 @@ All features use Firestore-backed flags with per-environment, per-plan targeting
 
 | Feature | Minimum Plan | Label |
 |---------|-------------|-------|
-| `advanced-anomaly-rules` | Pro | Advanced anomaly detection rules |
-| `sar-ctr-reports` | Pro | SAR/CTR report generation |
-| `webhooks` | Pro | Webhook alerts |
-| `ofac-screening` | Pro | OFAC sanctions screening |
-| `csv-export` | Pro | CSV export |
-| `multi-chain` | Pro | Multi-chain support (8 networks) |
-| `approval-policies` | Pro | Approval policies |
-| `unified-screening` | Pro | Unified screening (OFAC, Chainalysis, OpenSanctions) |
-| `blocklist-manager` | Pro | Custom blocklist/allowlist manager |
-| `kya-identity` | Pro | Agent identity resolution, wallet clustering |
+| `advanced-anomaly-rules` | Pay as you go | Advanced anomaly detection rules ($0.10/anomaly) |
+| `sar-ctr-reports` | Pay as you go | SAR/CTR report generation |
+| `webhooks` | Pay as you go | Webhook alerts |
+| `ofac-screening` | Pay as you go | OFAC sanctions screening (advanced) |
+| `csv-export` | Pay as you go | CSV export |
+| `multi-chain` | Pay as you go | Multi-chain support (8 networks, after $5 spend) |
+| `approval-policies` | Pay as you go | Approval policies |
+| `unified-screening` | Pay as you go | Unified screening (OFAC, Chainalysis, OpenSanctions) |
+| `blocklist-manager` | Pay as you go | Custom blocklist/allowlist manager |
+| `kya-identity` | Pay as you go | Agent identity resolution, wallet clustering |
 | `cftc-compliance` | Enterprise | CFTC compliance module |
 | `circle-wallets` | Enterprise | Circle Programmable Wallets |
 | `circle-compliance` | Enterprise | Circle Compliance Engine |
@@ -546,15 +545,25 @@ All features use Firestore-backed flags with per-environment, per-plan targeting
 
 | Tier | Price | Event Limit | Target User |
 |------|-------|-------------|-------------|
-| Free | $0 | 20,000/mo | Hackathon builders, side projects, evaluation |
-| Pro | $49/mo | 100,000/user/mo | Production autonomous wallet developers |
+| Free | $0 forever | 20,000/mo | Hackathon builders, side projects, evaluation |
+| Pay as you go | $2.00/1K events after 20K free | No cap (usage-based) | Production autonomous wallet developers |
 | Enterprise | Remove from website | Unlimited | Negotiate custom when demand proves it |
+
+**Pay as you go details:**
+- First 20,000 events always free, no credit card required
+- $2.00 per 1,000 events beyond the free tier
+- No monthly minimum, no commitment
+- All 8 chains unlocked after $5 cumulative spend
+- Advanced anomaly detection: $0.10 per anomaly detected
+- Cloud persistence (Firestore), CSV export, email support included
+
+**Formula:** `max(0, events - 20,000) / 1,000 x $2.00`
 
 ### Supported Chains
 
 `ethereum`, `base`, `polygon`, `arbitrum`, `optimism`, `arc`, `avalanche`, `solana`
 
-Free tier: Base only. Pro/Enterprise: all 8 chains.
+Free tier: Base only. Pay as you go: all 8 chains (after $5 cumulative spend).
 
 ### Supported Tokens
 
@@ -636,9 +645,9 @@ const ctx = Kontext.init({
 });
 ```
 
-**Conversion trigger:** Side project graduates from testnet to mainnet. Real USDC flowing. Hits 20K event limit. Upgrades to Pro at $49/mo for cloud persistence and multi-chain support.
+**Conversion trigger:** Side project graduates from testnet to mainnet. Real USDC flowing. Hits 20K event limit. Upgrades to Pay as you go for cloud persistence and multi-chain support.
 
-### Journey 2: Circle Wallet Developer (Free -> Pro -- Milestones 1-2)
+### Journey 2: Circle Wallet Developer (Free -> Pay as you go)
 
 **Persona:** Alex builds autonomous treasury management on Circle Programmable Wallets. Handles $5K-50K USDC transfers. Needs Travel Rule compliance ($3K threshold), OFAC screening, and exportable audit trails for their compliance officer.
 
@@ -652,7 +661,7 @@ const ctx = Kontext.init({
   apiKey: 'sk_live_...',
   projectId: 'treasury-agent',
   environment: 'production',
-  plan: 'pro',
+  plan: 'payg',
 });
 ```
 
@@ -676,7 +685,7 @@ if (!compliance.compliant) {
 }
 ```
 
-**Step 3 -- Log agent reasoning (Milestone 2)**
+**Step 3 -- Log agent reasoning**
 ```typescript
 await ctx.logReasoning({
   agentId: 'treasury-agent-v2',
@@ -688,7 +697,7 @@ await ctx.logReasoning({
 ```
 When regulators ask "why did your agent approve this?" -- only Kontext users can answer.
 
-**Step 4 -- Trust scoring and anomaly detection (Milestone 2)**
+**Step 4 -- Trust scoring and anomaly detection**
 ```typescript
 const trust = await ctx.getTrustScore('treasury-agent-v2');
 // trust.score = 87, trust.level = 'high', trust.factors = [...]
@@ -716,15 +725,15 @@ const cert = await ctx.generateComplianceCertificate({
 // cert.contentHash = SHA-256 of certificate (tamper-evident)
 ```
 
-**Conversion trigger:** Compliance officer sees the certificate with digest proofs and reasoning entries. Asks for CSV exports and SAR/CTR templates. Pro plan at $49/mo.
+**Conversion trigger:** Compliance officer sees the certificate with digest proofs and reasoning entries. Asks for CSV exports and SAR/CTR templates. Upgrades to Pay as you go.
 
-### Journey 3: Cross-Chain Builder (Pro -- Milestones 2-3)
+### Journey 3: Cross-Chain Builder (Pay as you go -- Milestones 2-3)
 
 **Persona:** Maya runs DeFi agents across Base and Ethereum using CCTP. $110B+ in cross-chain USDC volume with zero compliance layer. Needs unified audit trail across chains and regulatory-ready exports.
 
 **Discovery:** x402 ecosystem listing, Circle CCTP documentation.
 
-**Step 1 -- Multi-chain transaction logging (Pro)**
+**Step 1 -- Multi-chain transaction logging (Pay as you go)**
 ```typescript
 // Log transfers across multiple chains
 await ctx.verify({
@@ -751,7 +760,7 @@ await ctx.verify({
 **Step 2 -- Webhook alerts for compliance team (Milestone 3)**
 ```typescript
 // Webhooks deliver anomaly alerts to external systems
-// Configured via WebhookManager (Pro tier)
+// Configured via WebhookManager (Pay as you go)
 ```
 
 **Step 3 -- Unified screening across providers (Milestone 3)**
@@ -772,7 +781,7 @@ const sar = await ctx.generateSARReport({
 // sar.supportingActions = full action log with digest proofs
 ```
 
-**Conversion trigger:** $49/mo is 100x cheaper than Chainalysis ($100K+/yr). Maya needs multi-chain + CSV exports + SAR templates that the free tier doesn't offer.
+**Conversion trigger:** Usage-based pricing at $2.00/1K events is 1000x cheaper than Chainalysis ($100K+/yr). Maya needs multi-chain + CSV exports + SAR templates that the free tier doesn't offer.
 
 ---
 
@@ -781,7 +790,7 @@ const sar = await ctx.generateSARReport({
 | Category | Players | Kontext's Relationship |
 |----------|---------|----------------------|
 | Agent Identity (KYA) | Sumsub ($1B+), Vouched ($22M) | Complementary. They verify agents. We log what agents do after verification. |
-| Blockchain Analytics | Chainalysis, Elliptic, TRM Labs | Complementary. They monitor chains at $100K+/yr. We provide developer SDK at $49/mo. |
+| Blockchain Analytics | Chainalysis, Elliptic, TRM Labs | Complementary. They monitor chains at $100K+/yr. We provide developer SDK starting free. |
 | AI Observability | Langfuse, Braintrust, Arize | Different problem. They debug LLM performance. We log compliance-relevant actions with cryptographic proof. |
 | AI Governance | Credo AI, IBM watsonx.governance | Different buyer. They serve model governance teams. We serve developers building payment agents. |
 | Stablecoin Infrastructure | Bridge.xyz (Stripe), BVNK, Zero Hash | Validates our thesis. Bridge embeds compliance into orchestration. Developers who go direct-to-chain need Kontext. |
@@ -793,7 +802,7 @@ const sar = await ctx.generateSARReport({
 
 ### Phase 1: Hackathon Pipeline (Now - March 2026)
 
-1. Ship `verify()` method (Week 1-2)
+1. ~~Ship `verify()` method~~ -- DONE (v0.4.0)
 2. Make interactive demo at `demo-lemon-one-19.vercel.app` load fast and show the full flow: verify() call -> audit trail appearing -> trust score calculating -> digest chain forming (Week 2-3)
 3. Publish LabLab.ai tutorial: "Add compliance logging to your autonomous wallet agent in 5 minutes" using Circle Programmable Wallets stack (before March 9)
 4. Sponsor SURGE x OpenClaw hackathon "Best Compliance Implementation" track prize ($500-1,000 USDC)
@@ -811,15 +820,15 @@ const sar = await ctx.generateSARReport({
 2. Every developer who shipped autonomous wallet integrations without compliance logging now has a problem. That problem is Kontext's market.
 3. Partnership outreach to Sumsub and Vouched: "Your KYA verifies the agent. Our SDK logs what the agent does after verification."
 
-### Website Fixes (Immediate)
+### Website Fixes (Status)
 
-1. **Remove placeholder testimonials.** Three fake quotes with "Coming soon -- Early adopter testimonials" actively undermines trust for a trust and compliance company. Replace with npm download count, GitHub stars, patent number.
-2. **Fix pricing.** $449/user/mo -> $49/mo for Pro. Remove Enterprise tier page entirely.
-3. **Add `logReasoning()` to features grid.** Currently not mentioned. It's the single strongest differentiator.
-4. **Fix hero code snippet.** Currently shows `ctx.verify()` which doesn't exist yet. Ship the method first, then the code sample is accurate.
+1. ~~**Remove placeholder testimonials.**~~ DONE -- replaced with social proof strip (patent, MIT, GENIUS Act, Base Native).
+2. ~~**Fix pricing.**~~ DONE -- now Free (20K events/mo, $0 forever) vs Pay as you go ($2.00/1K events). No Enterprise tier on site.
+3. ~~**Add `logReasoning()` to features grid.**~~ DONE -- featured in hero code snippet and features grid.
+4. ~~**Fix hero code snippet.**~~ DONE -- `verify()` shipped, hero code is accurate.
 5. **Verify interactive demo loads.** The iframe points to `demo-lemon-one-19.vercel.app`. If it doesn't load fast, it's a broken conversion touchpoint.
-6. **Update "Unified Screening" copy.** Currently says "aggregating OFAC SDN, Chainalysis, and OpenSanctions into a single result." Clarify: "OFAC SDN included. Chainalysis and OpenSanctions available via pluggable provider architecture."
-7. **Update regulatory reference.** Old CLAUDE.md referenced "CLARITY Act (H.R. 3633)" -- the correct reference is the GENIUS Act (S. 1582), signed July 18, 2025.
+6. ~~**Update "Unified Screening" copy.**~~ DONE -- clarified in FAQs.
+7. ~~**Update regulatory reference.**~~ DONE -- GENIUS Act (S. 1582), signed July 18, 2025.
 
 ---
 
@@ -840,24 +849,24 @@ const sar = await ctx.generateSARReport({
 | Metric | Target | Timeframe |
 |--------|--------|-----------|
 | Monthly active SDK users (unique projectIds) | 50+ | 90 days post-launch |
-| Free -> Pro conversion rate | 5%+ | 90 days post-launch |
-| Pro MRR | $500+ | 90 days post-launch |
+| Free -> Pay-as-you-go conversion rate | 5%+ | 90 days post-launch |
+| Pay-as-you-go MRR | $500+ | 90 days post-launch |
 | Inbound enterprise inquiries | 3+ | By July 2026 (regulations drop) |
 
 ---
 
 ## Open Questions
 
-| Question | Owner | Priority |
-|----------|-------|----------|
-| Should `verify()` be async and hit an external API, or purely local like `checkUsdcCompliance()`? | Engineering | P0 (blocks Milestone 1) |
-| What's the actual demo app state at `demo-lemon-one-19.vercel.app`? Does it load? Is it functional? | Engineering | P0 (blocks launch) |
-| Can we get a "Best Compliance Implementation" track at SURGE x OpenClaw? What's the cost? | Founder | P0 (deadline: before March 9) |
-| Should the free tier include `logReasoning()` or gate it to Pro? Including it free maximizes adoption; gating it drives conversion. | Product | P1 |
-| OFAC SDN list: how often is the built-in list updated? Ship Cloud Scheduler for daily sync? | Engineering | P1 |
-| Is there a partnership path with Circle DevRel for co-marketing the compliance tutorial? | Founder | P1 |
-| Migrate server in-memory store (ServerStore) to Firestore for persistence across Cloud Run restarts? | Engineering | P1 |
-| Rename KYA module internally to "agent-forensics" to avoid Sumsub/Vouched branding collision? | Engineering | P2 |
+| Question | Owner | Priority | Status |
+|----------|-------|----------|--------|
+| ~~Should `verify()` be async and hit an external API, or purely local?~~ | Engineering | P0 | RESOLVED -- async, local compliance checks via `UsdcCompliance.checkTransaction()` |
+| What's the actual demo app state at `demo-lemon-one-19.vercel.app`? Does it load? Is it functional? | Engineering | P0 (blocks launch) | Open |
+| Can we get a "Best Compliance Implementation" track at SURGE x OpenClaw? What's the cost? | Founder | P0 (deadline: before March 9) | Open |
+| ~~Should the free tier include `logReasoning()` or gate it to Pro?~~ | Product | P1 | RESOLVED -- included in free tier |
+| OFAC SDN list: how often is the built-in list updated? Ship Cloud Scheduler for daily sync? | Engineering | P1 | Open |
+| Is there a partnership path with Circle DevRel for co-marketing the compliance tutorial? | Founder | P1 | Open |
+| Migrate server in-memory store (ServerStore) to Firestore for persistence across Cloud Run restarts? | Engineering | P1 | Open |
+| Rename KYA module internally to "agent-forensics" to avoid Sumsub/Vouched branding collision? | Engineering | P2 | Open |
 
 ---
 
@@ -867,15 +876,15 @@ Hono framework, Stripe integration for billing. Deployed to GCP Cloud Run (prima
 
 **Routes (no auth):** `GET /` (health), `GET /health`
 **Routes (auth required):** `POST /v1/actions`, `POST /v1/tasks`, `PUT /v1/tasks/:id/confirm`, `GET /v1/tasks/:id`, `GET /v1/audit/export`, `GET /v1/trust/:agentId`, `POST /v1/anomalies/evaluate`
-**Stripe routes:** `POST /checkout/pro`, `POST /webhooks/stripe`
+**Stripe routes:** `POST /checkout/payg`, `POST /webhooks/stripe`
 
 **Rate limiting:** 100 requests per 60 seconds per IP (sliding window).
 
-## Web App (`apps/web/`)
+## Web App (`apps/web/`) -- Private
 
-Next.js 14.2 marketing site. Deployed to Vercel.
+Next.js 14.2 marketing site at getkontext.com. Deployed to Vercel. Neobrutalism design (2px black borders, hard offset shadows, cream `#FFF8F0` background, no dark mode). **Gitignored from public repo** -- only in private repo at `vinay-lgtm-code/kontext_verify`.
 
-**Pages:** `/`, `/pricing`, `/audiences/:slug`, `/blog/:slug`, `/docs`, `/faqs`, `/use-cases`, `/integrations`, `/about`, `/changelog`, `/checkout/success`, `/checkout/cancel`
+**Pages:** `/`, `/pricing`, `/docs`, `/faqs`, `/checkout/success`, `/checkout/cancel`
 
 ## Commands
 

@@ -197,4 +197,82 @@ describe('verify() — unified API', () => {
     // Should have unusualAmount anomaly (5000 > 1000)
     expect(result.anomalies.some((a) => a.type === 'unusualAmount')).toBe(true);
   });
+
+  // ---------------------------------------------------------------------------
+  // approvalThreshold — auto human-in-the-loop
+  // ---------------------------------------------------------------------------
+
+  it('should auto-create approval task when amount exceeds approvalThreshold', async () => {
+    ctx = Kontext.init({
+      projectId: 'test',
+      environment: 'development',
+      approvalThreshold: '3000',
+    });
+
+    // $5000 exceeds $3000 threshold
+    const result = await ctx.verify(TX_INPUT);
+
+    expect(result.requiresApproval).toBe(true);
+    expect(result.task).toBeDefined();
+    expect(result.task!.status).toBe('pending');
+    expect(result.task!.agentId).toBe('agent-v1');
+    expect(result.task!.description).toContain('5000');
+    expect(result.task!.metadata['approvalThreshold']).toBe('3000');
+  });
+
+  it('should not create approval task when amount is within threshold', async () => {
+    ctx = Kontext.init({
+      projectId: 'test',
+      environment: 'development',
+      approvalThreshold: '10000',
+    });
+
+    // $5000 is under $10000 threshold
+    const result = await ctx.verify(TX_INPUT);
+
+    expect(result.requiresApproval).toBeUndefined();
+    expect(result.task).toBeUndefined();
+  });
+
+  it('should not create approval task when approvalThreshold is not set', async () => {
+    ctx = Kontext.init({ projectId: 'test', environment: 'development' });
+
+    const result = await ctx.verify(TX_INPUT);
+
+    expect(result.requiresApproval).toBeUndefined();
+    expect(result.task).toBeUndefined();
+  });
+
+  it('should allow confirming the auto-created approval task', async () => {
+    ctx = Kontext.init({
+      projectId: 'test',
+      environment: 'development',
+      approvalThreshold: '3000',
+    });
+
+    const result = await ctx.verify(TX_INPUT);
+    expect(result.task).toBeDefined();
+
+    // Confirm the task
+    const confirmed = await ctx.confirmTask({
+      taskId: result.task!.id,
+      evidence: { txHash: TX_INPUT.txHash },
+    });
+
+    expect(confirmed.status).toBe('confirmed');
+  });
+
+  it('should not create approval task when amount equals threshold exactly', async () => {
+    ctx = Kontext.init({
+      projectId: 'test',
+      environment: 'development',
+      approvalThreshold: '5000',
+    });
+
+    // $5000 equals $5000 — not exceeded, so no approval needed
+    const result = await ctx.verify(TX_INPUT);
+
+    expect(result.requiresApproval).toBeUndefined();
+    expect(result.task).toBeUndefined();
+  });
 });

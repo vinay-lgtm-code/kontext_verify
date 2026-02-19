@@ -46,7 +46,7 @@ import { requirePlan } from './plan-gate.js';
 import type { EventExporter } from './exporters.js';
 import { NoopExporter } from './exporters.js';
 import { FeatureFlagManager } from './feature-flags.js';
-import { generateId, now } from './utils.js';
+import { generateId, now, parseAmount } from './utils.js';
 
 /** Storage key for plan metering data */
 const PLAN_STORAGE_KEY = 'kontext:plan';
@@ -702,6 +702,31 @@ export class Kontext {
     const chainLength = this.logger.getDigestChain().getChainLength();
     const terminalDigest = this.getTerminalDigest();
 
+    // 7. Auto-create approval task if amount exceeds threshold
+    let requiresApproval: boolean | undefined;
+    let task: Task | undefined;
+    if (this.config.approvalThreshold) {
+      const amount = parseAmount(input.amount);
+      const threshold = parseAmount(this.config.approvalThreshold);
+      if (amount > threshold) {
+        requiresApproval = true;
+        task = await this.createTask({
+          description: `Approve ${input.token} ${input.amount} transfer from ${input.from} to ${input.to}`,
+          agentId: input.agentId,
+          requiredEvidence: ['txHash'],
+          metadata: {
+            txHash: input.txHash,
+            chain: input.chain,
+            amount: input.amount,
+            token: input.token,
+            from: input.from,
+            to: input.to,
+            approvalThreshold: this.config.approvalThreshold,
+          },
+        });
+      }
+    }
+
     return {
       compliant: compliance.compliant,
       checks: compliance.checks,
@@ -716,6 +741,7 @@ export class Kontext {
         valid: verification.valid,
       },
       ...(reasoningId ? { reasoningId } : {}),
+      ...(requiresApproval ? { requiresApproval, task } : {}),
     };
   }
 

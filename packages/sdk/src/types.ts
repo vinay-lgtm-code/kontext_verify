@@ -161,6 +161,26 @@ export interface KontextConfig {
    * a Stripe customer ID, or a hash of the API key.
    */
   userId?: string;
+
+  /**
+   * When set, verify() auto-creates a pending task if the transaction
+   * amount exceeds this threshold (string, to preserve decimal precision).
+   * The task is returned in `result.task` and `result.requiresApproval`
+   * is set to `true`. Your agent should wait for confirmTask() before
+   * executing the transfer.
+   *
+   * Free tier feature — works with createTask() / confirmTask().
+   *
+   * @example
+   * ```typescript
+   * const ctx = Kontext.init({
+   *   projectId: 'my-agent',
+   *   environment: 'production',
+   *   approvalThreshold: '3000', // auto-task above $3K
+   * });
+   * ```
+   */
+  approvalThreshold?: string;
 }
 
 /**
@@ -679,6 +699,10 @@ export interface VerifyResult {
   };
   /** Reasoning entry ID (present when reasoning was provided in input) */
   reasoningId?: string;
+  /** True when the transaction amount exceeds the approvalThreshold */
+  requiresApproval?: boolean;
+  /** The pending approval task (present when requiresApproval is true) */
+  task?: Task;
 }
 
 // ============================================================================
