@@ -66,6 +66,21 @@ export interface KontextConfig {
   storage?: import('./storage.js').StorageAdapter;
 
   /**
+   * Anomaly detection rules to enable at init time.
+   * When provided, anomaly detection is automatically enabled and every
+   * verify() call includes anomaly results in its response.
+   *
+   * Free-tier rules: `unusualAmount`, `frequencySpike`
+   * Pay as you go rules: `newDestination`, `offHoursActivity`, `rapidSuccession`, `roundAmount`
+   */
+  anomalyRules?: AnomalyRuleType[];
+
+  /**
+   * Thresholds for anomaly detection. Only used when `anomalyRules` is set.
+   */
+  anomalyThresholds?: AnomalyThresholds;
+
+  /**
    * Pluggable event exporter for shipping events to external systems.
    * Follows the OpenTelemetry exporter pattern.
    *
@@ -630,8 +645,15 @@ export interface FeatureFlagConfig {
 // Verify
 // ============================================================================
 
-/** Input for the verify() convenience method (same shape as LogTransactionInput) */
-export interface VerifyInput extends LogTransactionInput {}
+/** Input for the verify() convenience method */
+export interface VerifyInput extends LogTransactionInput {
+  /** Agent reasoning for this transaction (logged into digest chain if provided) */
+  reasoning?: string;
+  /** Confidence level 0–1 for the reasoning */
+  confidence?: number;
+  /** Additional reasoning context */
+  context?: Record<string, unknown>;
+}
 
 /** Result of the verify() convenience method */
 export interface VerifyResult {
@@ -645,6 +667,18 @@ export interface VerifyResult {
   recommendations: string[];
   /** The logged transaction record */
   transaction: TransactionRecord;
+  /** Agent trust score (auto-computed when agentId is present) */
+  trustScore: TrustScore;
+  /** Anomalies detected for this transaction (empty if anomaly detection not configured) */
+  anomalies: AnomalyEvent[];
+  /** Digest chain proof at time of verification */
+  digestProof: {
+    terminalDigest: string;
+    chainLength: number;
+    valid: boolean;
+  };
+  /** Reasoning entry ID (present when reasoning was provided in input) */
+  reasoningId?: string;
 }
 
 // ============================================================================

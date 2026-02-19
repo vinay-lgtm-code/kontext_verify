@@ -135,6 +135,19 @@ export class Kontext {
     this.featureFlagManager = config.featureFlags
       ? new FeatureFlagManager(config.featureFlags)
       : null;
+
+    // Auto-enable anomaly detection if rules provided in config
+    if (config.anomalyRules && config.anomalyRules.length > 0) {
+      const advancedRules = ['newDestination', 'offHoursActivity', 'rapidSuccession', 'roundAmount'];
+      const hasAdvanced = config.anomalyRules.some((r) => advancedRules.includes(r));
+      if (hasAdvanced) {
+        requirePlan('advanced-anomaly-rules', planTier);
+      }
+      this.anomalyDetector.enableAnomalyDetection({
+        rules: config.anomalyRules,
+        thresholds: config.anomalyThresholds,
+      });
+    }
   }
 
   /**
@@ -631,20 +644,78 @@ export class Kontext {
   }
 
   /**
-   * Log and compliance-check a transaction in a single call.
+   * Verify a transaction: compliance check, transaction log, trust score,
+   * anomaly detection, reasoning, and digest proof — all in one call.
    *
-   * @param input - Transaction details (same as logTransaction)
-   * @returns Compliance result with the logged transaction record
+   * @param input - Transaction details with optional reasoning
+   * @returns Full verification result including compliance, trust, anomalies, and digest proof
+   *
+   * @example
+   * ```typescript
+   * const result = await ctx.verify({
+   *   txHash: '0xabc...', chain: 'base', amount: '5000', token: 'USDC',
+   *   from: '0xsender', to: '0xrecipient', agentId: 'agent-v1',
+   *   reasoning: 'Transfer within daily limit. Recipient in allowlist.',
+   *   confidence: 0.95,
+   * });
+   *
+   * // result.compliant        — boolean
+   * // result.trustScore       — { score: 87, level: 'high', factors: [...] }
+   * // result.anomalies        — any flags triggered
+   * // result.digestProof      — { terminalDigest, chainLength, valid }
+   * // result.reasoningId      — ID of the reasoning entry (if reasoning provided)
+   * ```
    */
   async verify(input: VerifyInput): Promise<VerifyResult> {
+    // 1. Log the transaction (includes anomaly eval via logTransaction)
     const transaction = await this.logTransaction(input);
+
+    // 2. Run compliance checks
     const compliance = UsdcCompliance.checkTransaction(input);
+
+    // 3. Log reasoning if provided
+    let reasoningId: string | undefined;
+    if (input.reasoning) {
+      const entry = await this.logReasoning({
+        agentId: input.agentId,
+        sessionId: input.sessionId,
+        action: 'verify',
+        reasoning: input.reasoning,
+        confidence: input.confidence,
+        toolCall: 'verify',
+        toolResult: { compliant: compliance.compliant, riskLevel: compliance.riskLevel },
+        context: input.context,
+      });
+      reasoningId = entry.id;
+    }
+
+    // 4. Auto-compute trust score
+    const trustScore = await this.trustScorer.getTrustScore(input.agentId);
+
+    // 5. Collect anomalies for this transaction
+    const anomalies = this.store.queryAnomalies(
+      (a) => a.actionId === transaction.id,
+    );
+
+    // 6. Digest proof
+    const verification = this.verifyDigestChain();
+    const chainLength = this.logger.getDigestChain().getChainLength();
+    const terminalDigest = this.getTerminalDigest();
+
     return {
       compliant: compliance.compliant,
       checks: compliance.checks,
       riskLevel: compliance.riskLevel,
       recommendations: compliance.recommendations,
       transaction,
+      trustScore,
+      anomalies,
+      digestProof: {
+        terminalDigest,
+        chainLength,
+        valid: verification.valid,
+      },
+      ...(reasoningId ? { reasoningId } : {}),
     };
   }
 
