@@ -278,7 +278,7 @@ export class ActionLogger {
       );
     }
 
-    const validTokens: Token[] = ['USDC', 'USDT', 'DAI', 'EURC'];
+    const validTokens: Token[] = ['USDC', 'USDT', 'DAI', 'EURC', 'USDP', 'USDG'];
     if (!validTokens.includes(input.token)) {
       throw new KontextError(
         KontextErrorCode.VALIDATION_ERROR,

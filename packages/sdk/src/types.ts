@@ -6,7 +6,7 @@
 export type Chain = 'ethereum' | 'base' | 'polygon' | 'arbitrum' | 'optimism' | 'arc' | 'avalanche' | 'solana';
 
 /** Supported stablecoin tokens */
-export type Token = 'USDC' | 'USDT' | 'DAI' | 'EURC';
+export type Token = 'USDC' | 'USDT' | 'DAI' | 'EURC' | 'USDP' | 'USDG';
 
 /** SDK operating mode */
 export type KontextMode = 'local' | 'cloud';
