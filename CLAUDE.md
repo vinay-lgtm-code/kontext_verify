@@ -2,7 +2,7 @@
 
 ## Company Context
 
-Legaci Labs Inc. Bootstrapped with $50,000 ($25K cash, $25K GCP credits). Solo founder. Patent US 12,463,819 B1 (tamper-evident digest chain for agent audit trails).
+Legaci Labs Inc. Bootstrapped with $50,000 ($25K cash, $25K GCP credits). Solo founder. Patented tamper-evident digest chain for agent audit trails.
 
 ## Problem Statement
 
@@ -235,7 +235,7 @@ src/
 - `disableAnomalyDetection(): void`
 - `onAnomaly(callback: AnomalyCallback): () => void`
 
-**Digest Chain (Tamper-Evidence -- Patent US 12,463,819 B1):**
+**Digest Chain (Tamper-Evidence -- Patented):**
 - `getTerminalDigest(): string`
 - `verifyDigestChain(): DigestVerification`
 - `exportDigestChain(): { genesisHash, links, terminalDigest }`
@@ -465,7 +465,7 @@ Catena uses **Turnkey** for enclave-backed signing. Turnkey runs on **AWS Nitro 
 - Tie `ApprovalManager` (Milestone 3) to a 2-of-N quorum requirement enforced at the key level, not just application level
 - Feature flag: `tee-attestation` (Enterprise)
 
-**Trigger:** 3+ enterprise customers asking "can you prove the compliance check ran and wasn't tampered with at the infrastructure level?" The digest chain (Patent US 12,463,819 B1) answers this at the software layer; TEE attestation answers it at the hardware layer.
+**Trigger:** 3+ enterprise customers asking "can you prove the compliance check ran and wasn't tampered with at the infrastructure level?" The digest chain (patented) answers this at the software layer; TEE attestation answers it at the hardware layer.
 
 **Partnership path:** Reach out to Catena Labs and Turnkey for co-marketing once Milestone 3 ships. They verify + enforce; we audit + prove. Natural GTM partners for GENIUS Act enterprise compliance.
 

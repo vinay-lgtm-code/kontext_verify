@@ -831,7 +831,7 @@ export class Kontext {
    * and cryptographically verifies the digest chain integrity.
    *
    * The certificate includes: action/transaction/reasoning counts, digest chain
-   * verification status (Patent US 12,463,819 B1), the agent's current trust
+   * verification status (patented), the agent's current trust
    * score, and an overall compliance status. A SHA-256 content hash of the
    * certificate itself is included for tamper-evidence.
    *
