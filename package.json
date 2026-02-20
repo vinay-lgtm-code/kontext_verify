@@ -20,6 +20,6 @@
   "author": "Kontext Team",
   "license": "MIT",
   "devDependencies": {
-    "pnpm": "^9.15.9"
+    "pnpm": "^10.30.0"
   }
 }

@@ -15,6 +15,7 @@ import type { GatedFeature } from '../src/plan-gate.js';
 
 // Phase 1 gated features only (methods exist on the client)
 const PRO_FEATURES: GatedFeature[] = [
+  'advanced-anomaly-rules',
   'csv-export',
   'multi-chain',
   'ofac-screening',

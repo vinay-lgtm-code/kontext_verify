@@ -1,6 +1,6 @@
 {
   "name": "kontext-sdk",
-  "version": "0.3.1",
+  "version": "0.5.0",
   "description": "Trust and compliance layer for agentic stablecoin and fiat transactions. Vercel AI SDK integration, tamper-evident digest chains, agent reasoning, compliance certificates, trust scoring, OFAC sanctions, Circle wallet support, and CCTP V2.",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -50,11 +50,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/vinay-lgtm-code/kontext_verify"
+    "url": "https://www.github.com/legaci-labs/kontext"
   },
   "homepage": "https://getkontext.com",
   "bugs": {
-    "url": "https://github.com/vinay-lgtm-code/kontext_verify/issues"
+    "url": "https://www.github.com/legaci-labs/kontext/issues"
   },
   "publishConfig": {
     "access": "public"
