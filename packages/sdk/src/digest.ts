@@ -146,6 +146,19 @@ export class DigestChain {
   }
 
   /**
+   * Restore the terminal digest from persisted state.
+   * Called after loading actions from storage so that new actions
+   * chain correctly from the last stored digest instead of genesis.
+   *
+   * Does NOT reconstruct the links array — in-memory verification
+   * via verify() will not work after restore. Use the stored action
+   * digest/priorDigest fields for cross-process chain verification.
+   */
+  restoreTerminalDigest(digest: string): void {
+    this.currentDigest = digest;
+  }
+
+  /**
    * Get the number of links in the chain.
    */
   getChainLength(): number {

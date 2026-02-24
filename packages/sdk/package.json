@@ -1,7 +1,10 @@
 {
   "name": "kontext-sdk",
   "version": "0.5.0",
-  "description": "Trust and compliance layer for agentic stablecoin and fiat transactions. Vercel AI SDK integration, tamper-evident digest chains, agent reasoning, compliance certificates, trust scoring, OFAC sanctions, Circle wallet support, and CCTP V2.",
+  "description": "Compliance audit trail CLI and SDK for AI agents making stablecoin payments on Base. Tamper-evident digest chains, OFAC screening, compliance certificates. x402 + Circle Programmable Wallets.",
+  "bin": {
+    "kontext": "./dist/cli.js"
+  },
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -23,7 +26,7 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && node -e \"const fs=require('fs');const f='dist/cli.js';const c=fs.readFileSync(f,'utf8');if(!c.startsWith('#!')){fs.writeFileSync(f,'#!/usr/bin/env node\\n'+c)}\"",
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -33,20 +36,23 @@
   "keywords": [
     "kontext",
     "compliance",
-    "crypto",
+    "cli",
     "usdc",
     "stablecoin",
     "agent",
     "trust",
-    "audit",
+    "audit-trail",
     "genius-act",
-    "cctp",
-    "cross-chain",
+    "travel-rule",
+    "ai-agent",
+    "digest-chain",
     "anomaly-detection",
     "agentic",
-    "web3"
+    "x402",
+    "base",
+    "circle"
   ],
-  "author": "Kontext Team",
+  "author": "Legaci Labs Inc.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -67,5 +73,8 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.0"
   }
 }

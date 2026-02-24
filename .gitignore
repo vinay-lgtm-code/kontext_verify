@@ -6,6 +6,12 @@ dist/
 coverage/
 .turbo/
 .kontext/
+
+# Track the OFAC SDN cache (synced weekly from U.S. Treasury)
+!packages/sdk/.kontext/
+packages/sdk/.kontext/**
+!packages/sdk/.kontext/ofac-sdn-cache.json
+
 .kontext-demo/
 *.tsbuildinfo
 package-lock.json

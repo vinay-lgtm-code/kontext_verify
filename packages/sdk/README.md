@@ -1,98 +1,207 @@
 # kontext-sdk
 
-Trust and compliance layer for agentic crypto workflows.
+Compliance audit trail CLI and SDK for AI agents making stablecoin payments on Base.
 
-Kontext provides structured action logging, tamper-evident audit trails, trust scoring, anomaly detection, and compliance tooling for AI agents operating in crypto and stablecoin ecosystems.
+**USDC** · **USDT** · **DAI** · **EURC** · **USDP** · **USDG** · **x402** · **Circle Programmable Wallets**
+
+---
+
+## 30-Second Demo
+
+```bash
+npx kontext-sdk check 0xAgentWallet 0xMerchant --amount 5000 --token USDC
+```
+
+```
+OFAC Sanctions:  CLEAR
+Travel Rule:     TRIGGERED ($5,000 >= $3,000 EDD threshold)
+CTR Threshold:   CLEAR ($5,000 < $10,000)
+Large TX Alert:  CLEAR ($5,000 < $50,000)
+Risk Level:      medium
+```
+
+No install. No config. No API key. One command.
 
 ## Install
 
 ```bash
-npm install kontext-sdk
+npm install -g kontext-sdk
 ```
 
-## Quick Start
+Then run `kontext` from anywhere. Or use `npx kontext-sdk` for one-off checks.
+
+## Claude Code / Cursor / Windsurf
+
+```json
+{
+  "mcpServers": {
+    "kontext": {
+      "command": "npx",
+      "args": ["-y", "kontext-sdk", "mcp"]
+    }
+  }
+}
+```
+
+Then ask: *"verify this USDC transaction for compliance"*
+
+## CLI Commands
+
+### `kontext check <from> <to>` — stateless compliance check
+
+```bash
+npx kontext-sdk check 0xSender 0xReceiver --amount 5000 --token USDC
+```
+
+Instant OFAC screening + threshold checks. No state, no persistence.
+
+### `kontext verify` — log + check + digest proof
+
+```bash
+npx kontext-sdk verify --tx 0xabc123 --amount 5000 --token USDC \
+  --from 0xAgent --to 0xMerchant --agent my-bot
+```
+
+Runs compliance checks, logs the transaction, appends to the tamper-evident digest chain. Persists to `.kontext/` in the current directory.
+
+### `kontext reason` — log agent reasoning
+
+```bash
+npx kontext-sdk reason "API returned data I need. Price within budget." \
+  --agent my-bot --session sess_abc --step 1
+```
+
+### `kontext cert` — export compliance certificate
+
+```bash
+npx kontext-sdk cert --agent my-bot --output cert.json
+```
+
+### `kontext audit` — verify digest chain integrity
+
+```bash
+npx kontext-sdk audit --verify
+```
+
+### `kontext mcp` — MCP server mode
+
+```bash
+npx kontext-sdk mcp
+```
+
+Starts an MCP server on stdio for Claude Code, Cursor, and Windsurf.
+
+### Flags
+
+- `--json` on any command outputs structured JSON
+- `--amount <number>` transaction amount in token units
+- `--token <symbol>` one of USDC, USDT, DAI, EURC, USDP, USDG
+
+## SDK — Programmatic Usage
+
+For tighter integration, use the SDK directly:
 
 ```typescript
-import { Kontext } from 'kontext-sdk';
+import { Kontext, FileStorage } from 'kontext-sdk';
 
-// Initialize in local mode (no API key needed)
-const kontext = Kontext.init({
-  projectId: 'my-project',
-  environment: 'development',
+const ctx = Kontext.init({
+  projectId: 'my-agent',
+  environment: 'production',
+  storage: new FileStorage('.kontext'),
 });
 
-// Log an agent action
-await kontext.log({
-  type: 'transfer',
-  description: 'Agent initiated USDC transfer',
-  agentId: 'payment-agent-1',
-});
-
-// Log a transaction with full chain details
-await kontext.logTransaction({
+// One-call: compliance check + transaction log + digest proof
+const result = await ctx.verify({
   txHash: '0xabc...',
   chain: 'base',
-  amount: '100',
+  amount: '5000',
   token: 'USDC',
-  from: '0xSender...',
-  to: '0xReceiver...',
-  agentId: 'payment-agent-1',
+  from: '0xAgent...',
+  to: '0xMerchant...',
+  agentId: 'payment-agent',
 });
 
-// Get trust score for an agent
-const score = await kontext.getTrustScore('payment-agent-1');
-console.log(`Trust: ${score.score}/100 (${score.level})`);
-
-// Export audit data
-const audit = await kontext.export({ format: 'json' });
-
-// Verify digest chain integrity
-const verification = kontext.verifyDigestChain();
-console.log(`Chain valid: ${verification.valid}`);
+// result.compliant = true/false
+// result.checks = [{ name: 'OFAC Sanctions', passed: true }, ...]
+// result.riskLevel = 'low' | 'medium' | 'high' | 'critical'
+// result.digestProof = 'sha256:a1b2c3...'
 ```
 
-## Features
-
-- **Action Logging** -- Structured logging for all agent actions with timestamps, correlation IDs, and metadata.
-- **Transaction Tracking** -- Full chain details for crypto transactions across Base, Ethereum, Polygon, Arbitrum, and Optimism.
-- **Tamper-Evident Digest Chain** -- Patented cryptographic digest chain that detects any modification to the audit trail.
-- **Trust Scoring** -- Rule-based trust scores for agents based on history, task completion, anomaly rate, and consistency.
-- **Anomaly Detection** -- Configurable rules for unusual amounts, frequency spikes, new destinations, off-hours activity, rapid succession, and round amounts.
-- **Task Confirmation** -- Evidence-based task tracking with required proof for completion.
-- **USDC Compliance** -- Pre-built compliance checks aligned with stablecoin regulatory requirements across all supported chains.
-- **CCTP Integration** -- Cross-chain transfer tracking for Circle's Cross-Chain Transfer Protocol with full lifecycle management.
-- **Webhook Notifications** -- Event-driven webhooks for anomalies, task updates, and trust score changes with retry logic.
-- **Audit Export** -- JSON and CSV export with date range and entity filtering.
-- **SAR/CTR Templates** -- Structured report templates for suspicious activity and currency transaction reporting.
-
-## Supported Chains
-
-| Chain    | USDC Contract | CCTP Domain |
-|----------|---------------|-------------|
-| Ethereum | 0xA0b8...eB48 | 0           |
-| Base     | 0x8335...2913 | 6           |
-| Polygon  | 0x3c49...3359 | 7           |
-| Arbitrum | 0xaf88...5831 | 3           |
-| Optimism | 0x0b2C...Ff85 | 2           |
-
-## Operating Modes
-
-- **Local mode** (no API key): All data stored in-memory and optionally written to local JSON files. Suitable for development and open-source usage.
-- **Cloud mode** (with API key): Data synced to Kontext API for persistent storage and advanced features.
+### Log Reasoning
 
 ```typescript
-// Cloud mode
-const kontext = Kontext.init({
-  apiKey: 'sk_live_...',
-  projectId: 'my-project',
-  environment: 'production',
+await ctx.logReasoning({
+  agentId: 'payment-agent',
+  action: 'approve-transfer',
+  reasoning: 'Price within budget. Merchant verified.',
+  confidence: 0.95,
 });
 ```
 
-## Documentation
+### Compliance Certificate
 
-For full documentation, visit [getkontext.com](https://getkontext.com).
+```typescript
+const cert = await ctx.generateComplianceCertificate({
+  agentId: 'payment-agent',
+  includeReasoning: true,
+});
+```
+
+### Trust Score
+
+```typescript
+const score = await ctx.getTrustScore('payment-agent');
+// score.score = 87, score.level = 'high'
+```
+
+### Verify Digest Chain
+
+```typescript
+const chain = ctx.verifyDigestChain();
+console.log(chain.valid); // true — no tampering
+```
+
+### Persist Across Restarts
+
+```typescript
+import { FileStorage } from 'kontext-sdk';
+
+const ctx = Kontext.init({
+  projectId: 'my-agent',
+  environment: 'production',
+  storage: new FileStorage('.kontext'),
+});
+
+// Data persists to .kontext/ directory
+// Call ctx.flush() to write, ctx.restore() to reload
+```
+
+## Compliance Thresholds
+
+| Threshold | Amount | Trigger |
+|-----------|--------|---------|
+| **EDD / Travel Rule** | $3,000 | Enhanced Due Diligence required |
+| **CTR** | $10,000 | Currency Transaction Report |
+| **Large TX Alert** | $50,000 | Large Transaction Alert |
+
+OFAC sanctions screening uses the built-in SDN list. No API key required.
+
+## What's Included
+
+- Tamper-evident audit trail (patented digest chain)
+- OFAC sanctions screening (SDN list, no API key)
+- Compliance certificates with SHA-256 proof
+- Agent reasoning logs
+- Trust scoring and anomaly detection
+- MCP server mode for AI coding tools
+- Zero runtime dependencies
 
 ## License
 
-MIT -- see [LICENSE](./LICENSE) for details.
+MIT
+
+---
+
+Kontext provides compliance logging tools. Regulatory responsibility remains with the operator. This software does not constitute legal advice and does not guarantee regulatory compliance. Consult qualified legal counsel for your specific obligations.
+
+Built by [Legaci Labs](https://www.getkontext.com)
