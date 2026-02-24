@@ -47,15 +47,19 @@ jobs:
             echo "Public repo is up to date (both at $PRIVATE_HEAD)"
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
           else
-            # Show what's new
+            # Show what's new (handle diverged histories gracefully)
             echo "Changes to sync:"
-            git log --oneline "$LEGACI_HEAD".."$PRIVATE_HEAD" -- \
-              ':!.claude/' ':!*.local.sh'
+            if git merge-base --is-ancestor "$LEGACI_HEAD" "$PRIVATE_HEAD" 2>/dev/null; then
+              git log --oneline "$LEGACI_HEAD".."$PRIVATE_HEAD" -- \
+                ':!.claude/' ':!*.local.sh'
+            else
+              echo "Histories have diverged — force push required"
+            fi
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Push to public repo
         if: steps.check.outputs.has_changes == 'true'
         run: |
-          git push legaci main:main
+          git push legaci main:main --force
           echo "Synced to public repo: github.com/legaci-labs/kontext"
