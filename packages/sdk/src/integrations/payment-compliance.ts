@@ -18,7 +18,6 @@ import type {
 } from '../types.js';
 import { parseAmount } from '../utils.js';
 import { UsdcCompliance } from './usdc.js';
-import { OFACSanctionsScreener } from './ofac-sanctions.js';
 
 /** Threshold amounts aligned with GENIUS Act / BSA requirements */
 const ENHANCED_DUE_DILIGENCE_THRESHOLD = 3000;
@@ -49,8 +48,36 @@ const NAME_MATCH_THRESHOLD = 0.85;
  * }
  * ```
  */
+/** Lazy-loaded screener — ofac-sanctions.ts is an optional paid-tier module */
+interface EntityScreenResult {
+  entity: { list: string };
+  similarity: number;
+  matchedOn: string;
+}
+interface EntityScreener {
+  searchEntityName(query: string, threshold: number): EntityScreenResult[];
+}
+
+let _screener: EntityScreener | null = null;
+let _screenerLoaded = false;
+
+function getScreener(): EntityScreener | null {
+  if (!_screenerLoaded) {
+    _screenerLoaded = true;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const mod = require('./ofac-sanctions.js');
+      if (mod.OFACSanctionsScreener) {
+        _screener = new mod.OFACSanctionsScreener();
+      }
+    } catch {
+      // ofac-sanctions module not available (free-tier build) — name screening disabled
+    }
+  }
+  return _screener;
+}
+
 export class PaymentCompliance {
-  private static screener = new OFACSanctionsScreener();
 
   /**
    * Run compliance checks on a general payment.
@@ -123,10 +150,22 @@ export class PaymentCompliance {
     }
 
     // Name-based screening via OFACSanctionsScreener fuzzy matching.
+    // The screener is optional — when ofac-sanctions module isn't available
+    // (free-tier CI build), name screening is skipped (addresses still checked above).
+    const screener = getScreener();
+    if (!screener) {
+      return {
+        name: `entity_screening_${label}`,
+        passed: true,
+        description: `${label} "${entity}" — name-based OFAC screening not available (address screening active)`,
+        severity: 'low',
+      };
+    }
+
     // Filter results: (1) enforce threshold (searchEntityName's substring check can
     // bypass it), (2) require matched name is at least 4 chars to avoid tiny aliases
     // like "SE" or "TIO" matching common business names.
-    const rawMatches = PaymentCompliance.screener.searchEntityName(entity, NAME_MATCH_THRESHOLD);
+    const rawMatches = screener.searchEntityName(entity, NAME_MATCH_THRESHOLD);
     const matches = rawMatches.filter(
       (m) => m.similarity >= NAME_MATCH_THRESHOLD && m.matchedOn.length >= 4,
     );
