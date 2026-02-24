@@ -693,8 +693,15 @@ export function requireFlag(flagName: string, environment?: 'development' | 'sta
 // ============================================================================
 
 // Lazy-loaded sync services (initialized on first use or startup)
-let sdnSyncService: import('./treasury-sdn-sync.js').TreasurySDNSyncService | null = null;
-let cslSyncService: import('./csl-sync.js').CSLSyncService | null = null;
+// treasury-sdn-sync and csl-sync are optional paid-tier modules
+interface SyncService {
+  syncOnce(): Promise<{ list: { version: string; addresses: unknown[] }; delta: unknown }>;
+  startPeriodicSync(): void;
+  getStatus(): { syncing: boolean; metadata: unknown; hasData: boolean };
+}
+
+let sdnSyncService: SyncService | null = null;
+let cslSyncService: SyncService | null = null;
 
 /**
  * Initialize SDN and CSL sync services. Called on startup (non-blocking)
@@ -702,19 +709,27 @@ let cslSyncService: import('./csl-sync.js').CSLSyncService | null = null;
  */
 async function initSyncServices(): Promise<void> {
   if (!sdnSyncService) {
-    const { TreasurySDNSyncService } = await import('./treasury-sdn-sync.js');
-    sdnSyncService = new TreasurySDNSyncService({
-      gcpProjectId: GCP_PROJECT_ID,
-    });
+    try {
+      const { TreasurySDNSyncService } = await import('./treasury-sdn-sync.js');
+      sdnSyncService = new TreasurySDNSyncService({
+        gcpProjectId: GCP_PROJECT_ID,
+      });
+    } catch {
+      // treasury-sdn-sync module not available in free-tier build
+    }
   }
 
   const cslApiKey = process.env['TRADE_GOV_API_KEY'];
   if (!cslSyncService && cslApiKey) {
-    const { CSLSyncService } = await import('./csl-sync.js');
-    cslSyncService = new CSLSyncService({
-      apiKey: cslApiKey,
-      gcpProjectId: GCP_PROJECT_ID,
-    });
+    try {
+      const { CSLSyncService } = await import('./csl-sync.js');
+      cslSyncService = new CSLSyncService({
+        apiKey: cslApiKey,
+        gcpProjectId: GCP_PROJECT_ID,
+      });
+    } catch {
+      // csl-sync module not available in free-tier build
+    }
   }
 }
 

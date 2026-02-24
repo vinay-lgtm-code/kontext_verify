@@ -1,6 +1,15 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { Kontext } from '../src/index.js';
 
+// Name-based OFAC screening requires the optional ofac-sanctions module.
+let hasNameScreening = false;
+try {
+  require('../src/integrations/ofac-sanctions.js');
+  hasNameScreening = true;
+} catch {
+  // module not available
+}
+
 const PAYMENT_INPUT = {
   amount: '15000',
   currency: 'USD',
@@ -52,7 +61,7 @@ describe('verify() — general payments', () => {
     expect(screeningChecks.every((c) => c.passed)).toBe(true);
   });
 
-  it('should flag sanctioned entity name', async () => {
+  it.skipIf(!hasNameScreening)('should flag sanctioned entity name', async () => {
     ctx = Kontext.init({ projectId: 'test', environment: 'development' });
     const result = await ctx.verify({
       ...PAYMENT_INPUT,
