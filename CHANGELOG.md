@@ -2,6 +2,18 @@
 
 All notable public changes to the Kontext SDK and platform are documented here.
 
+## [0.5.1] - 2026-02-24
+
+### Added
+- Add KYA module, Treasury SDN provider, screening notifications, and FAQ updates
+- Remove BlocklistManager from open-source main branch
+- Add custom blocklist/allowlist to Pro tier on pricing page and FAQs
+
+### Fixed
+- server and SDK builds for free-tier CI (#2)
+- unblock CI pipeline and enable public repo sync (#1)
+
+
 ## [0.4.0] - 2026-02-18
 
 ### Added

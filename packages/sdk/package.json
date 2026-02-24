@@ -1,6 +1,6 @@
 {
   "name": "kontext-sdk",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Compliance audit trail CLI and SDK for AI agents making stablecoin payments on Base. Tamper-evident digest chains, OFAC screening, compliance certificates. x402 + Circle Programmable Wallets.",
   "bin": {
     "kontext": "./dist/cli.js"
