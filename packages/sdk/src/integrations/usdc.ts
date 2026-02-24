@@ -10,8 +10,8 @@ import type {
   Chain,
 } from '../types.js';
 import { parseAmount } from '../utils.js';
-import { ofacScreener } from './ofac-sanctions.js';
-import type { SanctionedAddressEntry, ComprehensiveSanctionsResult } from './ofac-sanctions.js';
+import * as fs from 'fs';
+import * as path from 'path';
 
 /** Known USDC contract addresses on supported chains */
 const USDC_CONTRACTS: Record<string, string> = {
@@ -98,10 +98,30 @@ let SANCTIONED_ADDRESSES: string[] = [
 
 /**
  * Pre-computed set of lowercased sanctioned addresses for O(1) lookups.
+ * Initialized from hardcoded list, then merged with OFAC SLS cache if available.
  */
 let SANCTIONED_SET: Set<string> = new Set(
   SANCTIONED_ADDRESSES.map((addr) => addr.toLowerCase()),
 );
+
+// Load cached OFAC SDN addresses from `kontext sync` if available
+function loadCachedSDN(): void {
+  try {
+    const dataDir = process.env['KONTEXT_DATA_DIR'] || '.kontext';
+    const cachePath = path.join(dataDir, 'ofac-sdn-cache.json');
+    if (fs.existsSync(cachePath)) {
+      const cache = JSON.parse(fs.readFileSync(cachePath, 'utf-8'));
+      if (Array.isArray(cache.addresses)) {
+        for (const addr of cache.addresses) {
+          SANCTIONED_SET.add(String(addr).toLowerCase());
+        }
+      }
+    }
+  } catch {
+    // Cache not available — fall back to hardcoded list
+  }
+}
+loadCachedSDN();
 
 /** Threshold amounts that trigger enhanced due diligence (GENIUS Act aligned) */
 const ENHANCED_DUE_DILIGENCE_THRESHOLD = 3000;
@@ -166,7 +186,7 @@ export class UsdcCompliance {
     const checks: ComplianceCheckResult[] = [];
 
     checks.push(UsdcCompliance.checkTokenType(tx));
-    checks.push(UsdcCompliance.checkChainSupport(tx.chain));
+    checks.push(UsdcCompliance.checkChainSupport(tx.chain!));
     checks.push(UsdcCompliance.checkAddressFormat(tx.from, 'sender'));
     checks.push(UsdcCompliance.checkAddressFormat(tx.to, 'recipient'));
     checks.push(UsdcCompliance.checkAmountValid(tx.amount));
@@ -308,40 +328,6 @@ export class UsdcCompliance {
    */
   static getSanctionsListSize(): number {
     return SANCTIONED_SET.size;
-  }
-
-  /**
-   * Perform comprehensive OFAC sanctions screening using the advanced
-   * OFACSanctionsScreener. This goes beyond simple address matching to
-   * include jurisdictional screening, delisted address detection, and
-   * entity metadata.
-   *
-   * @param address - The address to screen
-   * @param context - Optional context for enhanced screening
-   * @returns ComprehensiveSanctionsResult with full screening details
-   */
-  static screenComprehensive(
-    address: string,
-    context?: {
-      jurisdiction?: string;
-      counterpartyAddress?: string;
-      amount?: number;
-      chain?: string;
-    },
-  ): ComprehensiveSanctionsResult {
-    return ofacScreener.screenAddress(address, context as Parameters<typeof ofacScreener.screenAddress>[1]);
-  }
-
-  /**
-   * Check if an address is actively sanctioned (non-delisted).
-   * Unlike isSanctioned(), this excludes addresses that have been removed
-   * from the SDN list (e.g., Tornado Cash contracts post-March 2025).
-   *
-   * @param address - The address to check
-   * @returns true if the address is on an active sanctions list
-   */
-  static isActivelySanctioned(address: string): boolean {
-    return ofacScreener.isActivelySanctioned(address);
   }
 
   // --------------------------------------------------------------------------

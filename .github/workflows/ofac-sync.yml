@@ -1,0 +1,72 @@
+name: OFAC SDN Sync
+
+on:
+  schedule:
+    # Every Monday at 09:00 UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch: # Allow manual trigger
+
+concurrency:
+  group: ofac-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Sync OFAC SDN List
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build SDK
+        run: pnpm --filter kontext-sdk build
+
+      - name: Authenticate to GCP
+        if: env.GCP_PROJECT_ID != ''
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Run OFAC sync (full — all entities + crypto addresses)
+        run: node packages/sdk/dist/cli.js sync --full --json > /tmp/sync-result.json
+        env:
+          KONTEXT_DATA_DIR: packages/sdk/.kontext
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          KONTEXT_GCS_BUCKET: ${{ secrets.KONTEXT_GCS_BUCKET }}
+
+      - name: Show sync result
+        run: cat /tmp/sync-result.json
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet packages/sdk/.kontext/ofac-sdn-cache.json 2>/dev/null; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit updated cache
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add packages/sdk/.kontext/ofac-sdn-cache.json
+          git commit -m "chore: weekly OFAC SDN list sync
+
+          Automated sync from U.S. Treasury Sanctions List Service API.
+          Source: https://sanctionslistservice.ofac.treas.gov"
+          git push

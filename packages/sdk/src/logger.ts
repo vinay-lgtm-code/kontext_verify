@@ -90,6 +90,7 @@ export class ActionLogger {
       timestamp: now(),
       projectId: this.config.projectId,
       agentId: input.agentId,
+      ...(input.sessionId ? { sessionId: input.sessionId } : {}),
       correlationId: input.correlationId ?? generateId(),
       type: input.type,
       description: input.description,
@@ -137,23 +138,31 @@ export class ActionLogger {
 
     const correlationId = input.correlationId ?? generateId();
 
+    const description = input.token && input.chain
+      ? `${input.token} transfer of ${input.amount} on ${input.chain}`
+      : `${input.currency ?? 'USD'} payment of ${input.amount}${input.paymentMethod ? ` via ${input.paymentMethod}` : ''}`;
+
     const record: TransactionRecord = {
       id: generateId(),
       timestamp: now(),
       projectId: this.config.projectId,
       agentId: input.agentId,
+      ...(input.sessionId ? { sessionId: input.sessionId } : {}),
       correlationId,
       type: 'transaction',
-      description: `${input.token} transfer of ${input.amount} on ${input.chain}`,
+      description,
       metadata: {
         ...input.metadata,
       },
-      txHash: input.txHash,
-      chain: input.chain,
       amount: input.amount,
-      token: input.token,
       from: input.from,
       to: input.to,
+      ...(input.txHash ? { txHash: input.txHash } : {}),
+      ...(input.chain ? { chain: input.chain } : {}),
+      ...(input.token ? { token: input.token } : {}),
+      ...(input.currency ? { currency: input.currency } : {}),
+      ...(input.paymentMethod ? { paymentMethod: input.paymentMethod } : {}),
+      ...(input.paymentReference ? { paymentReference: input.paymentReference } : {}),
     };
 
     // Compute rolling SHA-256 digest
@@ -229,6 +238,14 @@ export class ActionLogger {
     return this.digestChain.verify(actions);
   }
 
+  /**
+   * Restore chain state from persisted actions so that new actions
+   * chain correctly across process boundaries.
+   */
+  restoreChainState(terminalDigest: string): void {
+    this.digestChain.restoreTerminalDigest(terminalDigest);
+  }
+
   // --------------------------------------------------------------------------
   // Private helpers
   // --------------------------------------------------------------------------
@@ -243,18 +260,10 @@ export class ActionLogger {
       );
     }
 
-    if (!input.txHash || input.txHash.trim() === '') {
-      throw new KontextError(
-        KontextErrorCode.VALIDATION_ERROR,
-        'Transaction hash is required',
-        { field: 'txHash' },
-      );
-    }
-
     if (!input.from || input.from.trim() === '') {
       throw new KontextError(
         KontextErrorCode.VALIDATION_ERROR,
-        'Sender address (from) is required',
+        'Sender (from) is required',
         { field: 'from' },
       );
     }
@@ -262,27 +271,39 @@ export class ActionLogger {
     if (!input.to || input.to.trim() === '') {
       throw new KontextError(
         KontextErrorCode.VALIDATION_ERROR,
-        'Recipient address (to) is required',
+        'Recipient (to) is required',
         { field: 'to' },
       );
     }
 
-    const validChains: Chain[] = ['ethereum', 'base', 'polygon', 'arbitrum', 'optimism', 'arc', 'avalanche', 'solana'];
-    if (!validChains.includes(input.chain)) {
-      throw new KontextError(
-        KontextErrorCode.VALIDATION_ERROR,
-        `Invalid chain: ${input.chain}. Must be one of: ${validChains.join(', ')}`,
-        { field: 'chain', value: input.chain },
-      );
-    }
+    // Crypto-specific validation: if any blockchain field is present, all must be
+    const hasCryptoFields = input.txHash !== undefined || input.chain !== undefined || input.token !== undefined;
+    if (hasCryptoFields) {
+      if (!input.txHash || input.txHash.trim() === '') {
+        throw new KontextError(
+          KontextErrorCode.VALIDATION_ERROR,
+          'Transaction hash is required for crypto transactions',
+          { field: 'txHash' },
+        );
+      }
 
-    const validTokens: Token[] = ['USDC', 'USDT', 'DAI', 'EURC'];
-    if (!validTokens.includes(input.token)) {
-      throw new KontextError(
-        KontextErrorCode.VALIDATION_ERROR,
-        `Invalid token: ${input.token}. Must be one of: ${validTokens.join(', ')}`,
-        { field: 'token', value: input.token },
-      );
+      const validChains: Chain[] = ['ethereum', 'base', 'polygon', 'arbitrum', 'optimism', 'arc', 'avalanche', 'solana'];
+      if (!input.chain || !validChains.includes(input.chain)) {
+        throw new KontextError(
+          KontextErrorCode.VALIDATION_ERROR,
+          `Invalid chain: ${input.chain}. Must be one of: ${validChains.join(', ')}`,
+          { field: 'chain', value: input.chain },
+        );
+      }
+
+      const validTokens: Token[] = ['USDC', 'USDT', 'DAI', 'EURC', 'USDP', 'USDG'];
+      if (!input.token || !validTokens.includes(input.token)) {
+        throw new KontextError(
+          KontextErrorCode.VALIDATION_ERROR,
+          `Invalid token: ${input.token}. Must be one of: ${validTokens.join(', ')}`,
+          { field: 'token', value: input.token },
+        );
+      }
     }
   }
 

@@ -1,0 +1,61 @@
+name: Sync to Public Repo
+
+on:
+  schedule:
+    # 12:00 AM PST = 08:00 UTC (PST is UTC-8)
+    - cron: '0 8 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+concurrency:
+  group: sync-public
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Sync free-tier changes to public repo
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout private repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure public remote
+        run: |
+          git remote add legaci https://x-access-token:${{ secrets.PUBLIC_REPO_TOKEN }}@github.com/legaci-labs/kontext.git
+          git fetch legaci main 2>/dev/null || true
+
+      - name: Check for new free-tier changes
+        id: check
+        run: |
+          # All paid-tier files are .gitignored and untracked in this repo.
+          # Only committed (free-tier) files exist in git history.
+          # We just need to check if private main is ahead of public main.
+
+          LEGACI_HEAD=$(git rev-parse legaci/main 2>/dev/null || echo "")
+
+          if [ -z "$LEGACI_HEAD" ]; then
+            echo "Public repo not yet initialized — full sync needed"
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          PRIVATE_HEAD=$(git rev-parse HEAD)
+
+          if [ "$LEGACI_HEAD" = "$PRIVATE_HEAD" ]; then
+            echo "Public repo is up to date (both at $PRIVATE_HEAD)"
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            # Show what's new
+            echo "Changes to sync:"
+            git log --oneline "$LEGACI_HEAD".."$PRIVATE_HEAD" -- \
+              ':!.claude/' ':!*.local.sh'
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Push to public repo
+        if: steps.check.outputs.has_changes == 'true'
+        run: |
+          git push legaci main:main
+          echo "Synced to public repo: github.com/legaci-labs/kontext"

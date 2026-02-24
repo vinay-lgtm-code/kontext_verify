@@ -17,25 +17,22 @@ import type {
   ExportResult,
   ReportOptions,
   ComplianceReport,
+  UsdcComplianceCheck,
+  Environment,
+  VerifyInput,
+  VerifyResult,
+  LogReasoningInput,
+  ReasoningEntry,
   TrustScore,
   TransactionEvaluation,
   AnomalyDetectionConfig,
   AnomalyCallback,
-  AnomalyEvent,
-  UsdcComplianceCheck,
-  SARReport,
-  CTRReport,
-  LogReasoningInput,
-  ReasoningEntry,
   GenerateComplianceCertificateInput,
   ComplianceCertificate,
-  Environment,
-  ApprovalPolicy,
-  ApprovalRequest,
-  ApprovalEvaluation,
-  EvaluateApprovalInput,
-  SubmitDecisionInput,
 } from './types.js';
+import { TrustScorer } from './trust.js';
+import { AnomalyDetector } from './anomaly.js';
+import { createHash } from 'crypto';
 import type { DigestVerification, DigestLink } from './digest.js';
 import type { PlanTier, PlanUsage, LimitEvent } from './plans.js';
 import { KontextError, KontextErrorCode } from './types.js';
@@ -43,32 +40,15 @@ import { KontextStore } from './store.js';
 import { ActionLogger } from './logger.js';
 import { TaskManager } from './tasks.js';
 import { AuditExporter } from './audit.js';
-import { TrustScorer } from './trust.js';
-import { AnomalyDetector } from './anomaly.js';
 import { UsdcCompliance } from './integrations/usdc.js';
+import { PaymentCompliance } from './integrations/payment-compliance.js';
+import { isCryptoTransaction } from './types.js';
 import { PlanManager } from './plans.js';
 import { requirePlan } from './plan-gate.js';
 import type { EventExporter } from './exporters.js';
 import { NoopExporter } from './exporters.js';
 import { FeatureFlagManager } from './feature-flags.js';
-import { ApprovalManager } from './approval.js';
-import { AgentIdentityRegistry } from './kya/identity-registry.js';
-import { WalletClusterer } from './kya/wallet-clustering.js';
-import { BehavioralFingerprinter } from './kya/behavioral-fingerprint.js';
-import { CrossSessionLinker } from './kya/cross-session-linker.js';
-import { KYAConfidenceScorer } from './kya/confidence-scorer.js';
-import type {
-  AgentIdentity,
-  RegisterIdentityInput,
-  UpdateIdentityInput,
-  WalletCluster,
-  BehavioralEmbedding,
-  AgentLink,
-  KYAConfidenceScore,
-  KYAEnvelope,
-} from './kya/types.js';
-import { createHash } from 'crypto';
-import { generateId, now } from './utils.js';
+import { generateId, now, parseAmount } from './utils.js';
 
 /** Storage key for plan metering data */
 const PLAN_STORAGE_KEY = 'kontext:plan';
@@ -110,20 +90,12 @@ export class Kontext {
   private readonly logger: ActionLogger;
   private readonly taskManager: TaskManager;
   private readonly auditExporter: AuditExporter;
-  private readonly trustScorer: TrustScorer;
-  private readonly anomalyDetector: AnomalyDetector;
   private readonly mode: KontextMode;
   private readonly planManager: PlanManager;
   private readonly exporter: EventExporter;
   private readonly featureFlagManager: FeatureFlagManager | null;
-  private approvalManager: ApprovalManager | null;
-
-  // KYA modules (lazy-initialized on first use)
-  private kyaRegistry: AgentIdentityRegistry | null = null;
-  private walletClusterer: WalletClusterer | null = null;
-  private behavioralFingerprinter: BehavioralFingerprinter | null = null;
-  private crossSessionLinker: CrossSessionLinker | null = null;
-  private kyaConfidenceScorer: KYAConfidenceScorer | null = null;
+  private readonly trustScorer: TrustScorer;
+  private readonly anomalyDetector: AnomalyDetector;
 
   private constructor(config: KontextConfig) {
     this.config = config;
@@ -166,10 +138,18 @@ export class Kontext {
       ? new FeatureFlagManager(config.featureFlags)
       : null;
 
-    // Initialize approval manager if policies are configured
-    this.approvalManager = config.approvalPolicies
-      ? new ApprovalManager(config.approvalPolicies)
-      : null;
+    // Auto-enable anomaly detection if rules provided in config
+    if (config.anomalyRules && config.anomalyRules.length > 0) {
+      const advancedRules = ['newDestination', 'offHoursActivity', 'rapidSuccession', 'roundAmount'];
+      const hasAdvanced = config.anomalyRules.some((r) => advancedRules.includes(r));
+      if (hasAdvanced) {
+        requirePlan('advanced-anomaly-rules', planTier);
+      }
+      this.anomalyDetector.enableAnomalyDetection({
+        rules: config.anomalyRules,
+        thresholds: config.anomalyThresholds,
+      });
+    }
   }
 
   /**
@@ -307,7 +287,7 @@ export class Kontext {
    */
   async logTransaction(input: LogTransactionInput): Promise<TransactionRecord> {
     // Multi-chain support requires Pro plan
-    if (input.chain !== 'base') {
+    if (input.chain && input.chain !== 'base') {
       requirePlan('multi-chain', this.planManager.getTier());
     }
 
@@ -355,10 +335,24 @@ export class Kontext {
   /**
    * Restore state from the attached storage adapter.
    * Loads previously persisted actions, transactions, tasks, and anomalies.
+   * Also restores the digest chain's terminal digest so that new actions
+   * chain correctly across process boundaries.
    * No-op if no storage adapter is configured.
    */
   async restore(): Promise<void> {
     await this.store.restore();
+
+    // Restore digest chain continuity: set terminal digest from last stored action
+    const actions = this.store.getActions();
+    if (actions.length > 0) {
+      const sorted = [...actions].sort(
+        (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+      );
+      const lastAction = sorted[sorted.length - 1]!;
+      if (lastAction.digest) {
+        this.logger.restoreChainState(lastAction.digest);
+      }
+    }
   }
 
   // --------------------------------------------------------------------------
@@ -456,96 +450,6 @@ export class Kontext {
     return this.auditExporter.generateReport(options);
   }
 
-  /**
-   * Generate a Suspicious Activity Report (SAR) template.
-   *
-   * This produces a structured SAR template populated with data from the SDK.
-   * It is a template/structure, not an actual regulatory filing.
-   *
-   * @param options - Report configuration
-   * @returns SAR report template
-   */
-  async generateSARReport(options: ReportOptions): Promise<SARReport> {
-    requirePlan('sar-ctr-reports', this.planManager.getTier());
-    return this.auditExporter.generateSARReport(options);
-  }
-
-  /**
-   * Generate a Currency Transaction Report (CTR) template.
-   *
-   * This produces a structured CTR template for transactions that meet or
-   * exceed reporting thresholds. It is a template/structure, not an actual
-   * regulatory filing.
-   *
-   * @param options - Report configuration
-   * @returns CTR report template
-   */
-  async generateCTRReport(options: ReportOptions): Promise<CTRReport> {
-    requirePlan('sar-ctr-reports', this.planManager.getTier());
-    return this.auditExporter.generateCTRReport(options);
-  }
-
-  // --------------------------------------------------------------------------
-  // Trust Scoring
-  // --------------------------------------------------------------------------
-
-  /**
-   * Get the trust score for an agent.
-   *
-   * @param agentId - Agent identifier
-   * @returns Trust score with factor breakdown
-   */
-  async getTrustScore(agentId: string): Promise<TrustScore> {
-    return this.trustScorer.getTrustScore(agentId);
-  }
-
-  /**
-   * Evaluate the risk of a specific transaction.
-   *
-   * @param tx - Transaction to evaluate
-   * @returns Transaction evaluation with risk score and recommendation
-   */
-  async evaluateTransaction(tx: LogTransactionInput): Promise<TransactionEvaluation> {
-    return this.trustScorer.evaluateTransaction(tx);
-  }
-
-  // --------------------------------------------------------------------------
-  // Anomaly Detection
-  // --------------------------------------------------------------------------
-
-  /**
-   * Enable anomaly detection with the specified rules and thresholds.
-   *
-   * @param config - Detection configuration
-   */
-  enableAnomalyDetection(config: AnomalyDetectionConfig): void {
-    // Advanced anomaly rules require Pro plan
-    const advancedRules = ['newDestination', 'offHoursActivity', 'rapidSuccession', 'roundAmount'];
-    const hasAdvanced = config.rules.some((r) => advancedRules.includes(r));
-    if (hasAdvanced) {
-      requirePlan('advanced-anomaly-rules', this.planManager.getTier());
-    }
-
-    this.anomalyDetector.enableAnomalyDetection(config);
-  }
-
-  /**
-   * Disable anomaly detection.
-   */
-  disableAnomalyDetection(): void {
-    this.anomalyDetector.disableAnomalyDetection();
-  }
-
-  /**
-   * Register a callback for anomaly events.
-   *
-   * @param callback - Function to call when an anomaly is detected
-   * @returns Unsubscribe function
-   */
-  onAnomaly(callback: AnomalyCallback): () => void {
-    return this.anomalyDetector.onAnomaly(callback);
-  }
-
   // --------------------------------------------------------------------------
   // Digest Chain
   // --------------------------------------------------------------------------
@@ -592,6 +496,156 @@ export class Kontext {
   }
 
   // --------------------------------------------------------------------------
+  // Agent Reasoning & Session Tracing
+  // --------------------------------------------------------------------------
+
+  /**
+   * Generate a unique session ID for a single agent run.
+   * Pass this as `sessionId` to logReasoning(), log(), logTransaction(),
+   * and verify() calls within the same run to group them in the audit trail.
+   *
+   * Compatible with framework run IDs: pass LangGraph thread_id,
+   * Vercel AI id, or OpenAI run_id directly instead if you prefer.
+   *
+   * @returns A short unique session identifier
+   */
+  static generateSessionId(): string {
+    return generateId();
+  }
+
+  /**
+   * Log an agent's reasoning step into the tamper-evident digest chain.
+   *
+   * Each entry records why the agent took an action, optionally linked
+   * to a tool call. All entries for a sessionId can be replayed in
+   * order via step numbering to reconstruct the full decision trace.
+   *
+   * @param input - Reasoning details including agentId, action, reasoning text
+   * @returns The created reasoning entry
+   *
+   * @example
+   * ```typescript
+   * const sessionId = Kontext.generateSessionId();
+   *
+   * await ctx.logReasoning({
+   *   agentId: 'payment-agent-v1',
+   *   sessionId,
+   *   step: 1,
+   *   action: 'evaluate-transfer',
+   *   reasoning: 'User requested $5K USDC to 0xabc. Running compliance check first.',
+   *   confidence: 0.95,
+   *   toolCall: 'verify',
+   * });
+   *
+   * const result = await ctx.verify({ ..., sessionId });
+   *
+   * await ctx.logReasoning({
+   *   agentId: 'payment-agent-v1',
+   *   sessionId,
+   *   step: 2,
+   *   parentStep: 1,
+   *   action: 'compliance-passed',
+   *   reasoning: 'verify() returned compliant=true, riskLevel=low. Proceeding.',
+   *   confidence: 0.99,
+   *   context: { riskLevel: result.riskLevel },
+   * });
+   * ```
+   */
+  async logReasoning(input: LogReasoningInput): Promise<ReasoningEntry> {
+    if (!input.agentId || input.agentId.trim() === '') {
+      throw new KontextError(
+        KontextErrorCode.VALIDATION_ERROR,
+        'agentId is required for reasoning entries',
+      );
+    }
+    if (!input.action || input.action.trim() === '') {
+      throw new KontextError(
+        KontextErrorCode.VALIDATION_ERROR,
+        'action is required for reasoning entries',
+      );
+    }
+    if (!input.reasoning || input.reasoning.trim() === '') {
+      throw new KontextError(
+        KontextErrorCode.VALIDATION_ERROR,
+        'reasoning is required for reasoning entries',
+      );
+    }
+    if (input.confidence !== undefined && (input.confidence < 0 || input.confidence > 1)) {
+      throw new KontextError(
+        KontextErrorCode.VALIDATION_ERROR,
+        'confidence must be between 0 and 1',
+      );
+    }
+
+    const entry: ReasoningEntry = {
+      id: generateId(),
+      timestamp: now(),
+      agentId: input.agentId,
+      ...(input.sessionId ? { sessionId: input.sessionId } : {}),
+      ...(input.step !== undefined ? { step: input.step } : {}),
+      ...(input.parentStep !== undefined ? { parentStep: input.parentStep } : {}),
+      action: input.action,
+      reasoning: input.reasoning,
+      confidence: input.confidence ?? 1.0,
+      ...(input.toolCall ? { toolCall: input.toolCall } : {}),
+      ...(input.toolResult !== undefined ? { toolResult: input.toolResult } : {}),
+      context: input.context ?? {},
+    };
+
+    // Log into the digest chain as a 'reasoning' action
+    await this.log({
+      type: 'reasoning',
+      description: `[${input.agentId}${input.sessionId ? `/${input.sessionId}` : ''}] step ${input.step ?? '?'}: ${input.action}`,
+      agentId: input.agentId,
+      sessionId: input.sessionId,
+      metadata: {
+        reasoningId: entry.id,
+        action: entry.action,
+        reasoning: entry.reasoning,
+        confidence: entry.confidence,
+        ...(entry.step !== undefined ? { step: entry.step } : {}),
+        ...(entry.parentStep !== undefined ? { parentStep: entry.parentStep } : {}),
+        ...(entry.toolCall ? { toolCall: entry.toolCall } : {}),
+        ...(entry.toolResult !== undefined ? { toolResult: entry.toolResult } : {}),
+        context: entry.context,
+      },
+    });
+
+    return entry;
+  }
+
+  /**
+   * Get all reasoning entries for a specific agent, optionally filtered
+   * by session ID to retrieve a single run's decision trace.
+   *
+   * @param agentId - Agent identifier
+   * @param sessionId - Optional: filter to a single run
+   * @returns Array of reasoning entries in chronological order
+   */
+  getReasoningEntries(agentId: string, sessionId?: string): ReasoningEntry[] {
+    const reasoningActions = this.store.queryActions((a) => {
+      if (a.agentId !== agentId || a.type !== 'reasoning') return false;
+      if (sessionId && a.sessionId !== sessionId) return false;
+      return true;
+    });
+
+    return reasoningActions.map((action) => ({
+      id: action.metadata['reasoningId'] as string,
+      timestamp: action.timestamp,
+      agentId: action.agentId,
+      ...(action.sessionId ? { sessionId: action.sessionId } : {}),
+      ...(action.metadata['step'] !== undefined ? { step: action.metadata['step'] as number } : {}),
+      ...(action.metadata['parentStep'] !== undefined ? { parentStep: action.metadata['parentStep'] as number } : {}),
+      action: action.metadata['action'] as string,
+      reasoning: action.metadata['reasoning'] as string,
+      confidence: action.metadata['confidence'] as number,
+      ...(action.metadata['toolCall'] ? { toolCall: action.metadata['toolCall'] as string } : {}),
+      ...(action.metadata['toolResult'] !== undefined ? { toolResult: action.metadata['toolResult'] } : {}),
+      context: (action.metadata['context'] as Record<string, unknown>) ?? {},
+    }));
+  }
+
+  // --------------------------------------------------------------------------
   // USDC Integration
   // --------------------------------------------------------------------------
 
@@ -605,105 +659,191 @@ export class Kontext {
     return UsdcCompliance.checkTransaction(tx);
   }
 
-  // --------------------------------------------------------------------------
-  // Agent Reasoning
-  // --------------------------------------------------------------------------
-
   /**
-   * Log an agent's reasoning/justification for an action.
-   * The reasoning entry is recorded into the digest chain as a tamper-evident
-   * part of the audit trail (type: 'reasoning').
+   * Verify a transaction: compliance check, transaction log, trust score,
+   * anomaly detection, reasoning, and digest proof — all in one call.
    *
-   * @param input - Reasoning details
-   * @returns The created reasoning entry
+   * @param input - Transaction details with optional reasoning
+   * @returns Full verification result including compliance, trust, anomalies, and digest proof
    *
    * @example
    * ```typescript
-   * const entry = await kontext.logReasoning({
-   *   agentId: 'payment-agent-1',
-   *   action: 'approve_transfer',
-   *   reasoning: 'Recipient is a verified vendor with 50+ prior transactions',
+   * const result = await ctx.verify({
+   *   txHash: '0xabc...', chain: 'base', amount: '5000', token: 'USDC',
+   *   from: '0xsender', to: '0xrecipient', agentId: 'agent-v1',
+   *   reasoning: 'Transfer within daily limit. Recipient in allowlist.',
    *   confidence: 0.95,
-   *   context: { recipientId: 'vendor-42' },
    * });
+   *
+   * // result.compliant        — boolean
+   * // result.trustScore       — { score: 87, level: 'high', factors: [...] }
+   * // result.anomalies        — any flags triggered
+   * // result.digestProof      — { terminalDigest, chainLength, valid }
+   * // result.reasoningId      — ID of the reasoning entry (if reasoning provided)
    * ```
    */
-  async logReasoning(input: LogReasoningInput): Promise<ReasoningEntry> {
-    if (!input.agentId || input.agentId.trim() === '') {
-      throw new KontextError(
-        KontextErrorCode.VALIDATION_ERROR,
-        'agentId is required for reasoning entries',
-      );
-    }
+  async verify(input: VerifyInput): Promise<VerifyResult> {
+    // 1. Log the transaction (includes anomaly eval via logTransaction)
+    const transaction = await this.logTransaction(input);
 
-    if (!input.action || input.action.trim() === '') {
-      throw new KontextError(
-        KontextErrorCode.VALIDATION_ERROR,
-        'action is required for reasoning entries',
-      );
-    }
+    // 2. Run compliance checks (crypto vs general payment)
+    const compliance = isCryptoTransaction(input)
+      ? UsdcCompliance.checkTransaction(input)
+      : PaymentCompliance.checkPayment(input);
 
-    if (!input.reasoning || input.reasoning.trim() === '') {
-      throw new KontextError(
-        KontextErrorCode.VALIDATION_ERROR,
-        'reasoning is required for reasoning entries',
-      );
-    }
-
-    if (input.confidence !== undefined && (input.confidence < 0 || input.confidence > 1)) {
-      throw new KontextError(
-        KontextErrorCode.VALIDATION_ERROR,
-        'confidence must be between 0 and 1',
-      );
-    }
-
-    const reasoningEntry: ReasoningEntry = {
-      id: generateId(),
-      timestamp: now(),
-      agentId: input.agentId,
-      action: input.action,
-      reasoning: input.reasoning,
-      confidence: input.confidence ?? 1.0,
-      context: input.context ?? {},
-    };
-
-    // Log into the digest chain as a 'reasoning' action
-    await this.log({
-      type: 'reasoning',
-      description: `Reasoning for ${input.action}: ${input.reasoning}`,
-      agentId: input.agentId,
-      metadata: {
-        reasoningId: reasoningEntry.id,
-        action: input.action,
+    // 3. Log reasoning if provided
+    let reasoningId: string | undefined;
+    if (input.reasoning) {
+      const entry = await this.logReasoning({
+        agentId: input.agentId,
+        sessionId: input.sessionId,
+        action: 'verify',
         reasoning: input.reasoning,
-        confidence: reasoningEntry.confidence,
-        context: reasoningEntry.context,
-      },
-    });
+        confidence: input.confidence,
+        toolCall: 'verify',
+        toolResult: { compliant: compliance.compliant, riskLevel: compliance.riskLevel },
+        context: input.context,
+      });
+      reasoningId = entry.id;
+    }
 
-    return reasoningEntry;
+    // 4. Auto-compute trust score
+    const trustScore = await this.trustScorer.getTrustScore(input.agentId);
+
+    // 5. Collect anomalies for this transaction
+    const anomalies = this.store.queryAnomalies(
+      (a) => a.actionId === transaction.id,
+    );
+
+    // 6. Digest proof
+    const verification = this.verifyDigestChain();
+    const chainLength = this.logger.getDigestChain().getChainLength();
+    const terminalDigest = this.getTerminalDigest();
+
+    // 7. Auto-create approval task if amount exceeds threshold
+    let requiresApproval: boolean | undefined;
+    let task: Task | undefined;
+    if (this.config.approvalThreshold) {
+      const amount = parseAmount(input.amount);
+      const threshold = parseAmount(this.config.approvalThreshold);
+      if (amount > threshold) {
+        requiresApproval = true;
+        const label = input.token
+          ? `${input.token} ${input.amount} transfer`
+          : `${input.currency ?? 'USD'} ${input.amount} payment`;
+        task = await this.createTask({
+          description: `Approve ${label} from ${input.from} to ${input.to}`,
+          agentId: input.agentId,
+          requiredEvidence: input.txHash ? ['txHash'] : ['paymentReference'],
+          metadata: {
+            amount: input.amount,
+            from: input.from,
+            to: input.to,
+            approvalThreshold: this.config.approvalThreshold,
+            ...(input.txHash ? { txHash: input.txHash } : {}),
+            ...(input.chain ? { chain: input.chain } : {}),
+            ...(input.token ? { token: input.token } : {}),
+            ...(input.currency ? { currency: input.currency } : {}),
+            ...(input.paymentMethod ? { paymentMethod: input.paymentMethod } : {}),
+            ...(input.paymentReference ? { paymentReference: input.paymentReference } : {}),
+          },
+        });
+      }
+    }
+
+    return {
+      compliant: compliance.compliant,
+      checks: compliance.checks,
+      riskLevel: compliance.riskLevel,
+      recommendations: compliance.recommendations,
+      transaction,
+      trustScore,
+      anomalies,
+      digestProof: {
+        terminalDigest,
+        chainLength,
+        valid: verification.valid,
+      },
+      ...(reasoningId ? { reasoningId } : {}),
+      ...(requiresApproval ? { requiresApproval, task } : {}),
+    };
+  }
+
+  // --------------------------------------------------------------------------
+  // Trust Scoring
+  // --------------------------------------------------------------------------
+
+  /**
+   * Get the trust score for an agent based on historical behavioral signals.
+   *
+   * Computes a 0–100 score across 5 factors: history depth, task completion
+   * rate, anomaly frequency, transaction consistency, and compliance adherence.
+   *
+   * @param agentId - Agent identifier
+   * @returns Trust score with factor breakdown and level ('untrusted'|'low'|'medium'|'high'|'verified')
+   */
+  async getTrustScore(agentId: string): Promise<TrustScore> {
+    return this.trustScorer.getTrustScore(agentId);
   }
 
   /**
-   * Get all reasoning entries for a specific agent.
+   * Evaluate the risk of a specific transaction before or after executing it.
    *
-   * @param agentId - Agent identifier
-   * @returns Array of reasoning entries
+   * @param tx - Transaction to evaluate
+   * @returns Risk evaluation with score, factors, and recommendation (approve/review/block)
    */
-  getReasoningEntries(agentId: string): ReasoningEntry[] {
-    const reasoningActions = this.store.queryActions(
-      (a) => a.agentId === agentId && a.type === 'reasoning',
-    );
+  async evaluateTransaction(tx: LogTransactionInput): Promise<TransactionEvaluation> {
+    return this.trustScorer.evaluateTransaction(tx);
+  }
 
-    return reasoningActions.map((action) => ({
-      id: action.metadata['reasoningId'] as string,
-      timestamp: action.timestamp,
-      agentId: action.agentId,
-      action: action.metadata['action'] as string,
-      reasoning: action.metadata['reasoning'] as string,
-      confidence: action.metadata['confidence'] as number,
-      context: (action.metadata['context'] as Record<string, unknown>) ?? {},
-    }));
+  // --------------------------------------------------------------------------
+  // Anomaly Detection
+  // --------------------------------------------------------------------------
+
+  /**
+   * Enable anomaly detection with the specified rules and thresholds.
+   *
+   * Free-tier rules: `unusualAmount`, `frequencySpike`
+   * Pay as you go rules: `newDestination`, `offHoursActivity`, `rapidSuccession`, `roundAmount`
+   *
+   * @param config - Detection configuration with rules and optional thresholds
+   *
+   * @example
+   * ```typescript
+   * ctx.enableAnomalyDetection({
+   *   rules: ['unusualAmount', 'frequencySpike'],
+   *   thresholds: { maxAmount: '10000', maxFrequency: 30 },
+   * });
+   * ctx.onAnomaly((event) => {
+   *   console.log(`Anomaly: ${event.type} [${event.severity}]`);
+   * });
+   * ```
+   */
+  enableAnomalyDetection(config: AnomalyDetectionConfig): void {
+    // Advanced anomaly rules require Pro plan (Pay as you go)
+    const advancedRules = ['newDestination', 'offHoursActivity', 'rapidSuccession', 'roundAmount'];
+    const hasAdvanced = config.rules.some((r) => advancedRules.includes(r));
+    if (hasAdvanced) {
+      requirePlan('advanced-anomaly-rules', this.planManager.getTier());
+    }
+    this.anomalyDetector.enableAnomalyDetection(config);
+  }
+
+  /**
+   * Disable anomaly detection.
+   */
+  disableAnomalyDetection(): void {
+    this.anomalyDetector.disableAnomalyDetection();
+  }
+
+  /**
+   * Register a callback for anomaly events.
+   *
+   * @param callback - Function to call when an anomaly is detected
+   * @returns Unsubscribe function
+   */
+  onAnomaly(callback: AnomalyCallback): () => void {
+    return this.anomalyDetector.onAnomaly(callback);
   }
 
   // --------------------------------------------------------------------------
@@ -711,20 +851,27 @@ export class Kontext {
   // --------------------------------------------------------------------------
 
   /**
-   * Generate a compliance certificate that summarizes agent actions and
-   * verifies the terminal digest.
+   * Generate a compliance certificate that summarizes an agent's actions
+   * and cryptographically verifies the digest chain integrity.
    *
-   * @param input - Certificate generation options
-   * @returns A compliance certificate with digest chain verification
+   * The certificate includes: action/transaction/reasoning counts, digest chain
+   * verification status (patented), the agent's current trust
+   * score, and an overall compliance status. A SHA-256 content hash of the
+   * certificate itself is included for tamper-evidence.
+   *
+   * @param input - Certificate generation options (agentId, optional timeRange, includeReasoning)
+   * @returns Compliance certificate with digest chain proof and trust score
    *
    * @example
    * ```typescript
-   * const cert = await kontext.generateComplianceCertificate({
-   *   agentId: 'payment-agent-1',
+   * const cert = await ctx.generateComplianceCertificate({
+   *   agentId: 'payment-agent-v1',
    *   includeReasoning: true,
    * });
-   * console.log(cert.complianceStatus); // 'compliant'
-   * console.log(cert.digestChain.verified); // true
+   * console.log(cert.complianceStatus);       // 'compliant'
+   * console.log(cert.digestChain.verified);   // true
+   * console.log(cert.trustScore);             // 87
+   * console.log(cert.contentHash);            // sha256 of certificate
    * ```
    */
   async generateComplianceCertificate(
@@ -743,13 +890,8 @@ export class Kontext {
       });
     }
 
-    // Count transactions
     const transactions = agentActions.filter((a) => a.type === 'transaction');
-
-    // Count tool calls
     const toolCalls = agentActions.filter((a) => a.type === 'tool_call');
-
-    // Count reasoning entries
     const reasoningActions = agentActions.filter((a) => a.type === 'reasoning');
 
     // Build action type summary
@@ -757,10 +899,7 @@ export class Kontext {
     for (const action of agentActions) {
       typeCounts.set(action.type, (typeCounts.get(action.type) ?? 0) + 1);
     }
-    const actionSummary = Array.from(typeCounts.entries()).map(([type, count]) => ({
-      type,
-      count,
-    }));
+    const actionSummary = Array.from(typeCounts.entries()).map(([type, count]) => ({ type, count }));
 
     // Verify digest chain
     const verification = this.verifyDigestChain();
@@ -771,21 +910,20 @@ export class Kontext {
     const trustScore = await this.trustScorer.getTrustScore(agentId);
 
     // Determine compliance status
-    const anomalies = this.store.queryAnomalies((a) => a.agentId === agentId);
-    let filteredAnomalies = anomalies;
+    let agentAnomalies = this.store.queryAnomalies((a) => a.agentId === agentId);
     if (timeRange) {
       const from = timeRange.from.getTime();
       const to = timeRange.to.getTime();
-      filteredAnomalies = anomalies.filter((a) => {
+      agentAnomalies = agentAnomalies.filter((a) => {
         const ts = new Date(a.detectedAt).getTime();
         return ts >= from && ts <= to;
       });
     }
 
-    let complianceStatus: ComplianceCertificate['complianceStatus'];
-    const criticalAnomalies = filteredAnomalies.filter((a) => a.severity === 'critical');
-    const highAnomalies = filteredAnomalies.filter((a) => a.severity === 'high');
+    const criticalAnomalies = agentAnomalies.filter((a) => a.severity === 'critical');
+    const highAnomalies = agentAnomalies.filter((a) => a.severity === 'high');
 
+    let complianceStatus: ComplianceCertificate['complianceStatus'];
     if (!verification.valid || criticalAnomalies.length > 0) {
       complianceStatus = 'non-compliant';
     } else if (highAnomalies.length > 0 || trustScore.score < 50) {
@@ -801,14 +939,18 @@ export class Kontext {
         id: action.metadata['reasoningId'] as string,
         timestamp: action.timestamp,
         agentId: action.agentId,
+        ...(action.sessionId ? { sessionId: action.sessionId } : {}),
+        ...(action.metadata['step'] !== undefined ? { step: action.metadata['step'] as number } : {}),
+        ...(action.metadata['parentStep'] !== undefined ? { parentStep: action.metadata['parentStep'] as number } : {}),
         action: action.metadata['action'] as string,
         reasoning: action.metadata['reasoning'] as string,
         confidence: action.metadata['confidence'] as number,
+        ...(action.metadata['toolCall'] ? { toolCall: action.metadata['toolCall'] as string } : {}),
+        ...(action.metadata['toolResult'] !== undefined ? { toolResult: action.metadata['toolResult'] } : {}),
         context: (action.metadata['context'] as Record<string, unknown>) ?? {},
       }));
     }
 
-    // Build the certificate content (before signature)
     const certificateId = generateId();
     const issuedAt = now();
 
@@ -838,10 +980,7 @@ export class Kontext {
     hash.update(JSON.stringify(certificateContent));
     const contentHash = hash.digest('hex');
 
-    return {
-      ...certificateContent,
-      contentHash,
-    };
+    return { ...certificateContent, contentHash };
   }
 
   // --------------------------------------------------------------------------
@@ -955,322 +1094,6 @@ export class Kontext {
    */
   getFeatureFlagManager(): FeatureFlagManager | null {
     return this.featureFlagManager;
-  }
-
-  // --------------------------------------------------------------------------
-  // Approval / Human-in-the-Loop
-  // --------------------------------------------------------------------------
-
-  /**
-   * Set or replace approval policies. Creates a new ApprovalManager.
-   *
-   * @param policies - Approval policy configurations
-   */
-  setApprovalPolicies(policies: ApprovalPolicy[]): void {
-    requirePlan('approval-policies', this.planManager.getTier());
-    this.approvalManager = new ApprovalManager(policies);
-  }
-
-  /**
-   * Evaluate an action against the configured approval policies.
-   *
-   * @param input - Action details to evaluate
-   * @returns Evaluation result indicating whether approval is required
-   * @throws KontextError if no approval policies are configured
-   */
-  evaluateApproval(input: EvaluateApprovalInput): ApprovalEvaluation {
-    if (!this.approvalManager) {
-      throw new KontextError(
-        KontextErrorCode.INITIALIZATION_ERROR,
-        'Approval policies are not configured. Call setApprovalPolicies() or pass approvalPolicies in init config.',
-      );
-    }
-    return this.approvalManager.evaluate(input);
-  }
-
-  /**
-   * Submit a human decision on a pending approval request.
-   *
-   * @param input - Decision details
-   * @returns The updated ApprovalRequest
-   * @throws KontextError if no approval policies are configured
-   */
-  submitApprovalDecision(input: SubmitDecisionInput): ApprovalRequest {
-    if (!this.approvalManager) {
-      throw new KontextError(
-        KontextErrorCode.INITIALIZATION_ERROR,
-        'Approval policies are not configured. Call setApprovalPolicies() or pass approvalPolicies in init config.',
-      );
-    }
-    return this.approvalManager.submitDecision(input);
-  }
-
-  /**
-   * Get an approval request by ID.
-   *
-   * @param requestId - The approval request identifier
-   * @returns The approval request, or undefined if not found
-   */
-  getApprovalRequest(requestId: string): ApprovalRequest | undefined {
-    return this.approvalManager?.getRequest(requestId);
-  }
-
-  /**
-   * Get all pending approval requests.
-   *
-   * @returns Array of pending approval requests
-   */
-  getPendingApprovals(): ApprovalRequest[] {
-    return this.approvalManager?.getPendingRequests() ?? [];
-  }
-
-  // --------------------------------------------------------------------------
-  // KYA — Know Your Agent (Phase 1: Pro tier)
-  // --------------------------------------------------------------------------
-
-  /**
-   * Get the KYA identity registry, initializing on first use.
-   */
-  private getKYARegistry(): AgentIdentityRegistry {
-    if (!this.kyaRegistry) {
-      this.kyaRegistry = new AgentIdentityRegistry();
-    }
-    return this.kyaRegistry;
-  }
-
-  /**
-   * Get the wallet clusterer, initializing on first use.
-   */
-  private getWalletClusterer(): WalletClusterer {
-    if (!this.walletClusterer) {
-      this.walletClusterer = new WalletClusterer();
-    }
-    return this.walletClusterer;
-  }
-
-  /**
-   * Get the behavioral fingerprinter, initializing on first use.
-   */
-  private getBehavioralFingerprinter(): BehavioralFingerprinter {
-    if (!this.behavioralFingerprinter) {
-      this.behavioralFingerprinter = new BehavioralFingerprinter();
-    }
-    return this.behavioralFingerprinter;
-  }
-
-  /**
-   * Get the cross-session linker, initializing on first use.
-   */
-  private getCrossSessionLinker(): CrossSessionLinker {
-    if (!this.crossSessionLinker) {
-      this.crossSessionLinker = new CrossSessionLinker();
-    }
-    return this.crossSessionLinker;
-  }
-
-  /**
-   * Get the KYA confidence scorer, initializing on first use.
-   */
-  private getKYAConfidenceScorer(): KYAConfidenceScorer {
-    if (!this.kyaConfidenceScorer) {
-      this.kyaConfidenceScorer = new KYAConfidenceScorer();
-    }
-    return this.kyaConfidenceScorer;
-  }
-
-  /**
-   * Wire the KYA envelope provider into the audit exporter.
-   */
-  private ensureKYAAuditProvider(): void {
-    this.auditExporter.setKYAProvider((options) => {
-      return this.buildKYAEnvelope();
-    });
-  }
-
-  /**
-   * Build a KYA envelope from all available KYA data.
-   */
-  private buildKYAEnvelope(): KYAEnvelope {
-    const registry = this.getKYARegistry();
-    const clusterer = this.getWalletClusterer();
-
-    const identities = registry.getAll();
-    const clusters = clusterer.getClusters();
-
-    // Behavioral/linking data only available if enterprise modules were used
-    const embeddings: BehavioralEmbedding[] = [];
-    const links = this.crossSessionLinker?.getAllLinks() ?? [];
-    const scores: KYAConfidenceScore[] = [];
-
-    return {
-      identities,
-      clusters,
-      embeddings,
-      links,
-      scores,
-      generatedAt: now(),
-    };
-  }
-
-  /**
-   * Check if KYA feature flag is enabled (if feature flags are configured).
-   * Returns true if feature flags are not configured (no remote kill-switch).
-   */
-  private isKYAFlagEnabled(flag: string): boolean {
-    if (!this.featureFlagManager) return true;
-    return this.featureFlagManager.isEnabled(flag);
-  }
-
-  /**
-   * Register a new agent identity.
-   * Requires Pro plan.
-   */
-  registerAgentIdentity(input: RegisterIdentityInput): AgentIdentity {
-    requirePlan('kya-identity', this.planManager.getTier());
-    if (!this.isKYAFlagEnabled('kya-identity')) {
-      throw new KontextError(
-        KontextErrorCode.PLAN_REQUIRED,
-        'KYA identity resolution is currently disabled via feature flag.',
-      );
-    }
-    this.ensureKYAAuditProvider();
-    return this.getKYARegistry().register(input);
-  }
-
-  /**
-   * Update an existing agent identity.
-   * Requires Pro plan.
-   */
-  updateAgentIdentity(agentId: string, input: UpdateIdentityInput): AgentIdentity {
-    requirePlan('kya-identity', this.planManager.getTier());
-    return this.getKYARegistry().update(agentId, input);
-  }
-
-  /**
-   * Get an agent identity by agent ID.
-   * Requires Pro plan.
-   */
-  getAgentIdentity(agentId: string): AgentIdentity | undefined {
-    requirePlan('kya-identity', this.planManager.getTier());
-    return this.getKYARegistry().get(agentId);
-  }
-
-  /**
-   * Remove an agent identity.
-   * Requires Pro plan.
-   */
-  removeAgentIdentity(agentId: string): boolean {
-    requirePlan('kya-identity', this.planManager.getTier());
-    return this.getKYARegistry().remove(agentId);
-  }
-
-  /**
-   * Add a wallet to an agent identity.
-   * Requires Pro plan.
-   */
-  addAgentWallet(
-    agentId: string,
-    wallet: { address: string; chain: string; label?: string },
-  ): AgentIdentity {
-    requirePlan('kya-identity', this.planManager.getTier());
-    this.getWalletClusterer().invalidateCache();
-    return this.getKYARegistry().addWallet(agentId, wallet);
-  }
-
-  /**
-   * Look up an agent identity by wallet address.
-   * Requires Pro plan.
-   */
-  lookupAgentByWallet(address: string): AgentIdentity | undefined {
-    requirePlan('kya-identity', this.planManager.getTier());
-    return this.getKYARegistry().lookupByWallet(address);
-  }
-
-  /**
-   * Compute wallet clusters from transaction data and declared wallets.
-   * Requires Pro plan.
-   */
-  getWalletClusters(): WalletCluster[] {
-    requirePlan('kya-identity', this.planManager.getTier());
-    return this.getWalletClusterer().analyzeFromStore(
-      this.store,
-      this.kyaRegistry ?? undefined,
-    );
-  }
-
-  /**
-   * Get a KYA envelope containing all KYA data.
-   * Requires Pro plan.
-   */
-  getKYAExport(): KYAEnvelope {
-    requirePlan('kya-identity', this.planManager.getTier());
-    return this.buildKYAEnvelope();
-  }
-
-  // --------------------------------------------------------------------------
-  // KYA — Know Your Agent (Phase 2: Enterprise tier)
-  // --------------------------------------------------------------------------
-
-  /**
-   * Compute a behavioral embedding for an agent from their transaction history.
-   * Requires Enterprise plan.
-   */
-  computeBehavioralEmbedding(agentId: string): BehavioralEmbedding | null {
-    requirePlan('kya-behavioral', this.planManager.getTier());
-    return this.getBehavioralFingerprinter().computeEmbedding(agentId, this.store);
-  }
-
-  /**
-   * Analyze all agents and create links between those with sufficient signals.
-   * Requires Enterprise plan.
-   */
-  analyzeAgentLinks(): AgentLink[] {
-    requirePlan('kya-behavioral', this.planManager.getTier());
-
-    // Ensure clusters are computed
-    const clusterer = this.getWalletClusterer();
-    if (clusterer.getClusters().length === 0) {
-      clusterer.analyzeFromStore(this.store, this.kyaRegistry ?? undefined);
-    }
-
-    return this.getCrossSessionLinker().analyzeAndLink(
-      this.store,
-      this.getKYARegistry(),
-      clusterer,
-      this.getBehavioralFingerprinter(),
-    );
-  }
-
-  /**
-   * Get all agents linked to the given agent.
-   * Requires Enterprise plan.
-   */
-  getLinkedAgents(agentId: string): string[] {
-    requirePlan('kya-behavioral', this.planManager.getTier());
-    return this.getCrossSessionLinker().getLinkedAgents(agentId);
-  }
-
-  /**
-   * Compute a KYA confidence score for an agent.
-   * Requires Enterprise plan.
-   */
-  getKYAConfidenceScore(agentId: string): KYAConfidenceScore {
-    requirePlan('kya-behavioral', this.planManager.getTier());
-
-    // Ensure clusters are computed
-    const clusterer = this.getWalletClusterer();
-    if (clusterer.getClusters().length === 0) {
-      clusterer.analyzeFromStore(this.store, this.kyaRegistry ?? undefined);
-    }
-
-    return this.getKYAConfidenceScorer().computeScore(
-      agentId,
-      this.getKYARegistry(),
-      clusterer,
-      this.getBehavioralFingerprinter(),
-      this.getCrossSessionLinker(),
-      this.store,
-    );
   }
 
   // --------------------------------------------------------------------------

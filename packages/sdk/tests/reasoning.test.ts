@@ -1,5 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { Kontext, KontextError } from '../src/index.js';
+import type { LogReasoningInput } from '../src/index.js';
 
 function createClient() {
   return Kontext.init({
@@ -227,5 +228,121 @@ describe('Agent Reasoning', () => {
     const verification = kontext.verifyDigestChain();
     expect(verification.valid).toBe(true);
     expect(verification.linksVerified).toBe(3);
+  });
+});
+
+describe('Session ID tracing', () => {
+  let kontext: Kontext;
+
+  afterEach(async () => {
+    if (kontext) await kontext.destroy();
+  });
+
+  it('generateSessionId() returns unique IDs', () => {
+    const a = Kontext.generateSessionId();
+    const b = Kontext.generateSessionId();
+    expect(typeof a).toBe('string');
+    expect(a.length).toBeGreaterThan(0);
+    expect(a).not.toBe(b);
+  });
+
+  it('sessionId is stored on reasoning action log entries', async () => {
+    kontext = createClient();
+    const sessionId = Kontext.generateSessionId();
+
+    await kontext.logReasoning({
+      agentId: 'agent-1',
+      sessionId,
+      action: 'decide',
+      reasoning: 'Decided to proceed.',
+    });
+
+    const actions = kontext.getActions();
+    const reasoning = actions.find((a) => a.type === 'reasoning');
+    expect(reasoning?.sessionId).toBe(sessionId);
+  });
+
+  it('getReasoningEntries() filters by sessionId', async () => {
+    kontext = createClient();
+    const sessionA = Kontext.generateSessionId();
+    const sessionB = Kontext.generateSessionId();
+
+    await kontext.logReasoning({ agentId: 'agent-1', sessionId: sessionA, action: 'a', reasoning: 'r' });
+    await kontext.logReasoning({ agentId: 'agent-1', sessionId: sessionB, action: 'b', reasoning: 'r' });
+    await kontext.logReasoning({ agentId: 'agent-1', action: 'c', reasoning: 'r' });
+
+    const sessionAOnly = kontext.getReasoningEntries('agent-1', sessionA);
+    expect(sessionAOnly).toHaveLength(1);
+    expect(sessionAOnly[0]?.action).toBe('a');
+
+    const all = kontext.getReasoningEntries('agent-1');
+    expect(all).toHaveLength(3);
+  });
+
+  it('step + parentStep link reasoning entries in a trace', async () => {
+    kontext = createClient();
+    const sessionId = Kontext.generateSessionId();
+
+    await kontext.logReasoning({ agentId: 'agent-1', sessionId, step: 1, action: 'plan', reasoning: 'r' });
+    await kontext.logReasoning({ agentId: 'agent-1', sessionId, step: 2, parentStep: 1, action: 'execute', reasoning: 'r' });
+    await kontext.logReasoning({ agentId: 'agent-1', sessionId, step: 3, parentStep: 2, action: 'confirm', reasoning: 'r' });
+
+    const entries = kontext.getReasoningEntries('agent-1', sessionId);
+    expect(entries).toHaveLength(3);
+    expect(entries[0]?.step).toBe(1);
+    expect(entries[1]?.parentStep).toBe(1);
+    expect(entries[2]?.parentStep).toBe(2);
+  });
+
+  it('full agent trace: logReasoning + verify() share a sessionId in the digest chain', async () => {
+    kontext = createClient();
+    const sessionId = Kontext.generateSessionId();
+
+    // Step 1: agent reasons before verify()
+    await kontext.logReasoning({
+      agentId: 'payment-agent',
+      sessionId,
+      step: 1,
+      action: 'evaluate-transfer',
+      reasoning: 'Checking compliance before sending $5K USDC.',
+      toolCall: 'verify',
+    });
+
+    // Step 2: run compliance
+    const result = await kontext.verify({
+      txHash: '0xfeed',
+      chain: 'base',
+      amount: '5000',
+      token: 'USDC',
+      from: '0xSender',
+      to: '0xRecipient',
+      agentId: 'payment-agent',
+      sessionId,
+    });
+
+    // Step 3: record outcome
+    await kontext.logReasoning({
+      agentId: 'payment-agent',
+      sessionId,
+      step: 2,
+      parentStep: 1,
+      action: 'compliance-result',
+      reasoning: `verify() returned compliant=${result.compliant}.`,
+      toolResult: { compliant: result.compliant, riskLevel: result.riskLevel },
+    });
+
+    // All session actions share sessionId
+    const sessionActions = kontext.getActions().filter((a) => a.sessionId === sessionId);
+    expect(sessionActions.length).toBeGreaterThanOrEqual(3);
+
+    // Digest chain is intact
+    const verification = kontext.verifyDigestChain();
+    expect(verification.valid).toBe(true);
+
+    // Reasoning trace is reconstructible
+    const trace = kontext.getReasoningEntries('payment-agent', sessionId);
+    expect(trace).toHaveLength(2);
+    expect(trace[0]?.toolCall).toBe('verify');
+    expect((trace[1]?.toolResult as Record<string, unknown>)?.compliant).toBe(result.compliant);
   });
 });

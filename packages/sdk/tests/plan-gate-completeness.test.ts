@@ -13,24 +13,17 @@ import type { GatedFeature } from '../src/plan-gate.js';
 // Complete feature list — must match FEATURE_MIN_PLAN in plan-gate.ts
 // ============================================================================
 
+// Phase 1 gated features only (methods exist on the client)
 const PRO_FEATURES: GatedFeature[] = [
   'advanced-anomaly-rules',
-  'sar-ctr-reports',
-  'webhooks',
-  'ofac-screening',
   'csv-export',
   'multi-chain',
-  'approval-policies',
-  'unified-screening',
+  'ofac-screening',
 ];
 
-const ENTERPRISE_FEATURES: GatedFeature[] = [
-  'cftc-compliance',
-  'circle-wallets',
-  'circle-compliance',
-  'gas-station',
-  'cctp-transfers',
-];
+// No enterprise features are wired to client methods in Phase 1;
+// plan-gate.ts still defines them for future use.
+const ENTERPRISE_FEATURES: GatedFeature[] = [];
 
 const ALL_FEATURES: GatedFeature[] = [...PRO_FEATURES, ...ENTERPRISE_FEATURES];
 

@@ -1,246 +1,224 @@
-<p align="center">
-  <strong>Kontext</strong><br/>
-  Trust &amp; compliance infrastructure for agentic stablecoin transactions
-</p>
+# kontext
 
-<p align="center">
-  <a href="https://www.getkontext.com/docs">Docs</a> &middot;
-  <a href="https://www.getkontext.com">Website</a> &middot;
-  <a href="https://www.getkontext.com/blog/introducing-kontext">Blog</a>
-</p>
+Compliance audit trail for AI agents making stablecoin payments on Base.
+
+**USDC** · **USDT** · **DAI** · **EURC** · **USDP** · **USDG** · **x402** · **Circle Programmable Wallets** · **Patented Technology**
 
 ---
 
-AI agents are moving real money. Kontext gives them an audit trail.
+## 30-Second Demo
 
-Kontext is a TypeScript SDK that logs agent actions, scores trust, detects anomalies, and exports compliance-ready audit data — built for USDC, Base, Ethereum, and the GENIUS Act era.
+```bash
+npx kontext-sdk check 0xAgentWallet 0xMerchant --amount 5000 --token USDC
+```
+
+```
+OFAC Sanctions:  CLEAR
+Travel Rule:     TRIGGERED ($5,000 >= $3,000 EDD threshold)
+CTR Threshold:   CLEAR ($5,000 < $10,000)
+Large TX Alert:  CLEAR ($5,000 < $50,000)
+Risk Level:      medium
+```
+
+No install. No config. No API key. One command.
+
+## Install
+
+```bash
+npm install -g kontext-sdk
+```
+
+Then run `kontext` from anywhere. Or use `npx kontext-sdk` for one-off checks.
+
+## Claude Code / Cursor / Windsurf
+
+Add to your MCP config:
+
+```json
+{
+  "mcpServers": {
+    "kontext": {
+      "command": "npx",
+      "args": ["-y", "kontext-sdk", "mcp"]
+    }
+  }
+}
+```
+
+Then ask: *"verify this USDC transaction for compliance"*
+
+## Commands
+
+### `kontext check` — stateless compliance check
+
+```bash
+npx kontext-sdk check 0xSender 0xReceiver --amount 5000 --token USDC
+```
+
+Instant OFAC screening + threshold checks. No state, no persistence.
+
+### `kontext verify` — log + check + digest proof
+
+```bash
+npx kontext-sdk verify --tx 0xabc123 --amount 5000 --token USDC \
+  --from 0xAgent --to 0xMerchant --agent my-bot
+```
+
+Runs compliance checks, logs the transaction, and appends to the tamper-evident digest chain. Persists to `.kontext/` in the current directory.
+
+### `kontext reason` — log agent reasoning
+
+```bash
+npx kontext-sdk reason "API returned data I need. Price within budget." \
+  --agent my-bot --session sess_abc --step 1
+```
+
+When regulators ask "why did your agent approve this?" — you have the answer.
+
+### `kontext cert` — export compliance certificate
+
+```bash
+npx kontext-sdk cert --agent my-bot --output cert.json
+```
+
+Generates a certificate with action count, trust score, chain validity, and SHA-256 content hash.
+
+### `kontext audit` — verify digest chain integrity
+
+```bash
+npx kontext-sdk audit --verify
+```
+
+Walks the full digest chain and verifies every link. Detects any tampering.
+
+### `kontext mcp` — MCP server mode
+
+```bash
+npx kontext-sdk mcp
+```
+
+Starts an MCP server on stdio exposing compliance tools to Claude Code, Cursor, and Windsurf.
+
+### Flags
+
+- `--json` on any command outputs structured JSON instead of human-readable text
+- `--amount <number>` transaction amount in token units
+- `--token <symbol>` one of USDC, USDT, DAI, EURC, USDP, USDG
+
+## x402 Agent Flow
+
+```typescript
+// Agent hits an API, gets 402 Payment Required
+const quote = await fetch('https://api.example.com/data');
+// 402: { amount: "0.50", token: "USDC", to: "0xMerchant...", network: "base" }
+
+// Agent decides to pay — LOG THE REASONING
+await exec('npx kontext-sdk reason "Price within budget. Merchant not sanctioned." --agent weather-bot');
+
+// Agent pays via Circle Programmable Wallet
+const tx = await circleWallet.sendPayment({ amount: "0.50", token: "USDC", to: "0xMerchant..." });
+
+// LOG THE PAYMENT + RUN COMPLIANCE CHECKS
+await exec(`npx kontext-sdk verify --tx ${tx.hash} --amount 0.50 --token USDC --from 0xAgent --to 0xMerchant --agent weather-bot`);
+
+// End of session — EXPORT PROOF
+await exec('npx kontext-sdk cert --agent weather-bot -o compliance.json');
+```
+
+## SDK — Programmatic Usage
+
+The CLI wraps the SDK. For tighter integration, use it directly:
 
 ```bash
 npm install kontext-sdk
 ```
 
 ```typescript
-import { Kontext } from 'kontext-sdk';
+import { Kontext, FileStorage } from 'kontext-sdk';
 
 const ctx = Kontext.init({
-  projectId: 'my-project',
+  projectId: 'my-agent',
   environment: 'production',
+  storage: new FileStorage('.kontext'),
 });
 
-// Log a USDC transfer
-await ctx.logTransaction({
+// One-call compliance check + transaction log + digest proof
+const result = await ctx.verify({
   txHash: '0xabc...',
   chain: 'base',
-  amount: '500.00',
+  amount: '5000',
   token: 'USDC',
-  from: '0xSender...',
-  to: '0xReceiver...',
+  from: '0xAgent...',
+  to: '0xMerchant...',
   agentId: 'payment-agent',
 });
 
-// Check trust score
-const score = await ctx.getTrustScore('payment-agent');
-console.log(score.score); // 87/100
+// result.compliant = true/false
+// result.checks = [{ name: 'OFAC Sanctions', passed: true }, ...]
+// result.riskLevel = 'low' | 'medium' | 'high' | 'critical'
+// result.digestProof = 'sha256:a1b2c3...'
 
-// Verify digest chain integrity
-const result = ctx.verifyDigestChain();
-console.log(result.valid); // true — no tampering
-```
-
-## Why
-
-Agents are executing transfers, approvals, and settlements autonomously. Most teams track this with console logs. That's not going to work when regulators come knocking.
-
-Kontext adds structured logging, tamper-evident audit trails, anomaly detection, and trust scoring to any agent workflow — in a few lines of code.
-
-## Features
-
-| Feature | What it does |
-|---|---|
-| **Action Logging** | Structured audit trail for every agent action with timestamps, correlation IDs, and metadata |
-| **Digest Chain** | Patented cryptographic hash chain — tamper with any past event and verification fails |
-| **Task Confirmation** | Human-in-the-loop approval for high-value actions with evidence requirements |
-| **Trust Scoring** | Per-agent trust scores based on transaction patterns, consistency, and compliance |
-| **Anomaly Detection** | Flag unusual amounts, velocity spikes, new destinations, off-hours activity, rapid succession |
-| **Audit Export** | Export to JSON or CSV with date range, agent, and type filters |
-| **USDC Compliance** | Pre-built checks for USDC on Base, Ethereum, Polygon, Arbitrum, and Optimism |
-
-## Quick start
-
-### 1. Install
-
-```bash
-npm install kontext-sdk
-# or
-pnpm add kontext-sdk
-```
-
-### 2. Initialize
-
-```typescript
-import { Kontext } from 'kontext-sdk';
-
-// Local mode — no API key, no external dependencies
-const ctx = Kontext.init({
-  projectId: 'my-agent-project',
-  environment: 'development',
-});
-```
-
-### 3. Log actions
-
-```typescript
-// Log any agent action
-await ctx.log({
-  type: 'approval',
-  description: 'Agent approved vendor payment',
-  agentId: 'finance-agent',
-  metadata: { vendor: 'acme-corp', invoiceId: 'inv_123' },
+// Log reasoning
+await ctx.logReasoning({
+  agentId: 'payment-agent',
+  action: 'approve-transfer',
+  reasoning: 'Price within budget. Merchant verified.',
+  confidence: 0.95,
 });
 
-// Log a transaction with chain details
-await ctx.logTransaction({
-  txHash: '0xabc123...',
-  chain: 'base',
-  amount: '2500.00',
-  token: 'USDC',
-  from: '0xTreasury...',
-  to: '0xVendor...',
-  agentId: 'finance-agent',
+// Generate compliance certificate
+const cert = await ctx.generateComplianceCertificate({
+  agentId: 'payment-agent',
+  includeReasoning: true,
 });
+
+// Verify digest chain
+const chain = ctx.verifyDigestChain();
+console.log(chain.valid); // true — no tampering
 ```
 
-### 4. Track tasks
+## Compliance Thresholds
 
-```typescript
-// Create a task requiring evidence
-const task = await ctx.createTask({
-  description: 'Transfer 2500 USDC to vendor',
-  agentId: 'finance-agent',
-  requiredEvidence: ['txHash', 'receipt'],
-});
+| Threshold | Amount | Trigger |
+|-----------|--------|---------|
+| **EDD / Travel Rule** | $3,000 | Enhanced Due Diligence required |
+| **CTR** | $10,000 | Currency Transaction Report |
+| **Large TX Alert** | $50,000 | Large Transaction Alert |
 
-// Confirm with evidence
-await ctx.confirmTask({
-  taskId: task.id,
-  evidence: {
-    txHash: '0xabc123...',
-    receipt: { status: 'confirmed', blockNumber: 18234567 },
-  },
-});
-```
+All thresholds are hardcoded for the GENIUS Act era. OFAC sanctions screening uses the built-in SDN list — no API key required.
 
-### 5. Score trust & detect anomalies
+## What This Is
 
-```typescript
-// Get agent trust score
-const score = await ctx.getTrustScore('finance-agent');
-console.log(`${score.level}: ${score.score}/100`);
+- Tamper-evident audit trail for AI agent payments (patented digest chain)
+- OFAC sanctions screening against the SDN list
+- Compliance certificates with cryptographic proof
+- Agent reasoning logs — why the agent approved each transaction
+- Trust scoring and anomaly detection
+- Zero runtime dependencies. Zero config. It just runs.
 
-// Enable anomaly detection
-ctx.enableAnomalyDetection({
-  rules: ['unusualAmount', 'frequencySpike', 'newDestination', 'rapidSuccession'],
-  thresholds: { maxAmount: '10000', maxFrequency: 50 },
-});
+## What This Is Not
 
-ctx.onAnomaly((anomaly) => {
-  console.warn(`[${anomaly.severity}] ${anomaly.description}`);
-});
-```
+- Not a KYA (Know Your Agent) platform — [Sumsub](https://sumsub.com) and [Vouched](https://vouched.id) do that
+- Not a blockchain analytics tool — [Chainalysis](https://chainalysis.com) does that at $100K+/yr
+- Not a wallet provider — [Circle](https://circle.com) does that
+- Not a payment protocol — [x402](https://www.x402.org) does that
 
-### 6. Export audit data
+Kontext fills the gap between the wallet and the regulator.
 
-```typescript
-const audit = await ctx.export({
-  format: 'json',
-  dateRange: { start: new Date('2026-01-01'), end: new Date() },
-  includeTasks: true,
-  includeAnomalies: true,
-});
-
-console.log(`Exported ${audit.recordCount} records`);
-console.log(`Terminal digest: ${audit.terminalDigest}`);
-```
-
-## Digest chain
-
-Every action logged through Kontext gets a cryptographic digest that chains to all prior actions. The patented linking mechanism ensures that tampering with any past event breaks the chain. Export it for independent third-party verification:
-
-```typescript
-const chain = ctx.exportDigestChain();
-// { genesisHash, links, terminalDigest }
-
-// Third party can verify independently
-import { verifyExportedChain } from 'kontext-sdk';
-const result = verifyExportedChain(chain, actions);
-console.log(result.valid); // true
-```
-
-## Integrations
-
-Kontext works with any agent framework and has first-class support for:
-
-- **USDC** — compliance checks for Circle's stablecoin across EVM chains
-- **x402** — HTTP-native micropayment verification
-- **Google UCP / A2A** — agent-to-agent transaction trust scoring
-- **Stripe** — agentic commerce payment verification
-
-See the [integration docs](https://www.getkontext.com/docs#usdc) for code examples.
-
-## Architecture
+## Monorepo
 
 ```
 packages/
-  sdk/       kontext-sdk — core TypeScript SDK (npm package)
+  sdk/       kontext-sdk — CLI + SDK (npm package)
   server/    API server (Hono on GCP Cloud Run)
-  demo/      Interactive demo showing all features
-apps/
-  web/       Marketing site & docs (Next.js)
+  demo/      CLI demo
 ```
 
 ## Development
 
 ```bash
-# Install dependencies
-npx pnpm install
-
-# Build all packages
-npx pnpm build
-
-# Run tests (44 tests across 3 suites)
-npx pnpm test
-
-# Run the interactive demo
-npx pnpm demo
-
-# Start the API server
-npx pnpm dev:server
-
-# Start the website
-npx pnpm --filter web dev
+pnpm install && pnpm -r build && pnpm -r test
 ```
-
-## Plans & Pricing
-
-| | Free | Pro | Enterprise |
-|---|---|---|---|
-| **Price** | $0 | $449/user/mo | Custom |
-| **Events/mo** | Up to 20,000 | 100,000/user | Unlimited |
-| Action logging | Yes | Yes | Yes |
-| Digest chain | Yes | Yes | Yes |
-| Anomaly detection | Basic rules (2) | All rules (6) | All rules + CFTC |
-| Trust scoring | Local | Full API | Full API |
-| SAR/CTR reports | -- | Yes | Yes |
-| OFAC screening | -- | Yes | Yes |
-| CFTC compliance | -- | -- | Yes |
-| Circle / CCTP | -- | -- | Yes |
-| Audit export | JSON | JSON, CSV | JSON, CSV |
-| Chain support | Base | All EVM chains | All EVM + custom |
-| Webhooks | -- | Yes | Yes |
-| Support | Community | Email (24h) | Dedicated engineer |
-| SLA | -- | -- | 99.9% |
-
-The free SDK is fully functional with up to 20,000 events/month. Run it self-hosted, no API key needed. [Pricing details](https://www.getkontext.com/pricing).
 
 ## License
 
@@ -248,6 +226,6 @@ MIT
 
 ---
 
-<p align="center">
-  Built by <a href="https://www.getkontext.com/about">Kontext</a>
-</p>
+Kontext provides compliance logging tools. Regulatory responsibility remains with the operator. This software does not constitute legal advice and does not guarantee regulatory compliance. Consult qualified legal counsel for your specific obligations.
+
+Built by [Legaci Labs](https://www.getkontext.com)

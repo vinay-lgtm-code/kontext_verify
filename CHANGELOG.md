@@ -2,6 +2,22 @@
 
 All notable public changes to the Kontext SDK and platform are documented here.
 
+## [0.4.0] - 2026-02-18
+
+### Added
+- `verify()` convenience method: logs a transaction and runs USDC compliance checks in one call, returning a `VerifyResult` with compliance status, risk level, checks, recommendations, and the logged `TransactionRecord`
+- `VerifyInput` and `VerifyResult` types exported from the SDK
+
+### Changed
+- Phase 1 cleanup: removed all Milestone 2–4 source files from git tracking (trust scoring, anomaly detection, SAR/CTR reports, compliance certificates, agent reasoning, approval manager, KYA module, CCTP, Circle Wallets, Circle Compliance, Gas Station, CFTC, screening aggregator/providers, Vercel AI integration, webhooks). All removed code is preserved locally and excluded from the TypeScript compile and test runs.
+- Removed `HttpExporter`, `KontextCloudExporter`, and `MultiExporter` from the public SDK surface (Phase 2)
+- Removed `sar` and `ctr` from `ReportType`; removed approval-related types from `KontextConfig`
+- Updated `tsconfig.json` to explicitly exclude non-Phase-1 source paths from compilation
+
+### Removed
+- Non-Phase-1 exports: KYA, CCTP, Circle Wallets/Compliance, Gas Station, CFTC, Webhooks, Vercel AI integration, screening providers, approval manager, Http/Cloud/Multi exporters, trust scoring types, anomaly config types, reasoning types, certificate types, approval types
+
+
 ## [0.3.1] - 2026-02-10
 
 ### Added
