@@ -21,6 +21,7 @@ env:
 jobs:
   deploy:
     name: Build & Deploy
+    if: github.repository == 'vinay-lgtm-code/kontext_verify'
     runs-on: ubuntu-latest
     permissions:
       contents: read
