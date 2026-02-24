@@ -13,6 +13,7 @@ concurrency:
 jobs:
   analyze:
     name: Analyze
+    if: github.repository == 'vinay-lgtm-code/kontext_verify'
     runs-on: ubuntu-latest
     permissions:
       security-events: write
