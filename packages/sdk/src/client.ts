@@ -41,6 +41,8 @@ import { ActionLogger } from './logger.js';
 import { TaskManager } from './tasks.js';
 import { AuditExporter } from './audit.js';
 import { UsdcCompliance } from './integrations/usdc.js';
+import { PaymentCompliance } from './integrations/payment-compliance.js';
+import { isCryptoTransaction } from './types.js';
 import { PlanManager } from './plans.js';
 import { requirePlan } from './plan-gate.js';
 import type { EventExporter } from './exporters.js';
@@ -285,7 +287,7 @@ export class Kontext {
    */
   async logTransaction(input: LogTransactionInput): Promise<TransactionRecord> {
     // Multi-chain support requires Pro plan
-    if (input.chain !== 'base') {
+    if (input.chain && input.chain !== 'base') {
       requirePlan('multi-chain', this.planManager.getTier());
     }
 
@@ -333,10 +335,24 @@ export class Kontext {
   /**
    * Restore state from the attached storage adapter.
    * Loads previously persisted actions, transactions, tasks, and anomalies.
+   * Also restores the digest chain's terminal digest so that new actions
+   * chain correctly across process boundaries.
    * No-op if no storage adapter is configured.
    */
   async restore(): Promise<void> {
     await this.store.restore();
+
+    // Restore digest chain continuity: set terminal digest from last stored action
+    const actions = this.store.getActions();
+    if (actions.length > 0) {
+      const sorted = [...actions].sort(
+        (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+      );
+      const lastAction = sorted[sorted.length - 1]!;
+      if (lastAction.digest) {
+        this.logger.restoreChainState(lastAction.digest);
+      }
+    }
   }
 
   // --------------------------------------------------------------------------
@@ -670,8 +686,10 @@ export class Kontext {
     // 1. Log the transaction (includes anomaly eval via logTransaction)
     const transaction = await this.logTransaction(input);
 
-    // 2. Run compliance checks
-    const compliance = UsdcCompliance.checkTransaction(input);
+    // 2. Run compliance checks (crypto vs general payment)
+    const compliance = isCryptoTransaction(input)
+      ? UsdcCompliance.checkTransaction(input)
+      : PaymentCompliance.checkPayment(input);
 
     // 3. Log reasoning if provided
     let reasoningId: string | undefined;
@@ -710,18 +728,24 @@ export class Kontext {
       const threshold = parseAmount(this.config.approvalThreshold);
       if (amount > threshold) {
         requiresApproval = true;
+        const label = input.token
+          ? `${input.token} ${input.amount} transfer`
+          : `${input.currency ?? 'USD'} ${input.amount} payment`;
         task = await this.createTask({
-          description: `Approve ${input.token} ${input.amount} transfer from ${input.from} to ${input.to}`,
+          description: `Approve ${label} from ${input.from} to ${input.to}`,
           agentId: input.agentId,
-          requiredEvidence: ['txHash'],
+          requiredEvidence: input.txHash ? ['txHash'] : ['paymentReference'],
           metadata: {
-            txHash: input.txHash,
-            chain: input.chain,
             amount: input.amount,
-            token: input.token,
             from: input.from,
             to: input.to,
             approvalThreshold: this.config.approvalThreshold,
+            ...(input.txHash ? { txHash: input.txHash } : {}),
+            ...(input.chain ? { chain: input.chain } : {}),
+            ...(input.token ? { token: input.token } : {}),
+            ...(input.currency ? { currency: input.currency } : {}),
+            ...(input.paymentMethod ? { paymentMethod: input.paymentMethod } : {}),
+            ...(input.paymentReference ? { paymentReference: input.paymentReference } : {}),
           },
         });
       }

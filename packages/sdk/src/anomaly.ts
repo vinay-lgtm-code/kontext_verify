@@ -241,10 +241,10 @@ export class AnomalyDetector {
       return this.createAnomaly(
         'unusualAmount',
         amount > threshold * 5 ? 'critical' : amount > threshold * 2 ? 'high' : 'medium',
-        `Transaction amount ${tx.amount} ${tx.token} exceeds threshold of ${this.thresholds.maxAmount}`,
+        `Transaction amount ${tx.amount} ${tx.token ?? tx.currency ?? ''} exceeds threshold of ${this.thresholds.maxAmount}`,
         tx.agentId,
         tx.id,
-        { amount: tx.amount, threshold: this.thresholds.maxAmount, token: tx.token },
+        { amount: tx.amount, threshold: this.thresholds.maxAmount, token: tx.token ?? tx.currency },
       );
     }
 

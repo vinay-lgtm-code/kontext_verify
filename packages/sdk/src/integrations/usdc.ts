@@ -10,6 +10,8 @@ import type {
   Chain,
 } from '../types.js';
 import { parseAmount } from '../utils.js';
+import * as fs from 'fs';
+import * as path from 'path';
 
 /** Known USDC contract addresses on supported chains */
 const USDC_CONTRACTS: Record<string, string> = {
@@ -96,10 +98,30 @@ let SANCTIONED_ADDRESSES: string[] = [
 
 /**
  * Pre-computed set of lowercased sanctioned addresses for O(1) lookups.
+ * Initialized from hardcoded list, then merged with OFAC SLS cache if available.
  */
 let SANCTIONED_SET: Set<string> = new Set(
   SANCTIONED_ADDRESSES.map((addr) => addr.toLowerCase()),
 );
+
+// Load cached OFAC SDN addresses from `kontext sync` if available
+function loadCachedSDN(): void {
+  try {
+    const dataDir = process.env['KONTEXT_DATA_DIR'] || '.kontext';
+    const cachePath = path.join(dataDir, 'ofac-sdn-cache.json');
+    if (fs.existsSync(cachePath)) {
+      const cache = JSON.parse(fs.readFileSync(cachePath, 'utf-8'));
+      if (Array.isArray(cache.addresses)) {
+        for (const addr of cache.addresses) {
+          SANCTIONED_SET.add(String(addr).toLowerCase());
+        }
+      }
+    }
+  } catch {
+    // Cache not available — fall back to hardcoded list
+  }
+}
+loadCachedSDN();
 
 /** Threshold amounts that trigger enhanced due diligence (GENIUS Act aligned) */
 const ENHANCED_DUE_DILIGENCE_THRESHOLD = 3000;
@@ -164,7 +186,7 @@ export class UsdcCompliance {
     const checks: ComplianceCheckResult[] = [];
 
     checks.push(UsdcCompliance.checkTokenType(tx));
-    checks.push(UsdcCompliance.checkChainSupport(tx.chain));
+    checks.push(UsdcCompliance.checkChainSupport(tx.chain!));
     checks.push(UsdcCompliance.checkAddressFormat(tx.from, 'sender'));
     checks.push(UsdcCompliance.checkAddressFormat(tx.to, 'recipient'));
     checks.push(UsdcCompliance.checkAmountValid(tx.amount));

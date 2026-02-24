@@ -185,7 +185,7 @@ export class AuditExporter {
       if (options.agentIds && !options.agentIds.includes(tx.agentId)) {
         return false;
       }
-      if (options.chains && !options.chains.includes(tx.chain)) {
+      if (options.chains && (!tx.chain || !options.chains.includes(tx.chain))) {
         return false;
       }
       return true;

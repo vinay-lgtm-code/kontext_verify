@@ -171,7 +171,7 @@ export class TrustScorer {
       : 'approve' as const;
 
     return {
-      txHash: tx.txHash,
+      ...(tx.txHash ? { txHash: tx.txHash } : {}),
       riskScore,
       riskLevel,
       factors,
@@ -503,7 +503,7 @@ export class TrustScorer {
     return {
       name: 'amount_risk',
       score,
-      description: `Transaction amount ${tx.amount} ${tx.token}`,
+      description: `Transaction amount ${tx.amount} ${tx.token ?? tx.currency ?? ''}`,
     };
   }
 

@@ -112,6 +112,12 @@ export type { DigestLink, DigestVerification, PrecisionTimestamp } from './diges
 export { UsdcCompliance } from './integrations/usdc.js';
 export type { SanctionsCheckResult } from './integrations/usdc.js';
 
+// General Payment Compliance (for direct use)
+export { PaymentCompliance } from './integrations/payment-compliance.js';
+
+// Type guards
+export { isCryptoTransaction } from './types.js';
+
 // Trust Scoring and Anomaly Detection (for direct use)
 export { TrustScorer } from './trust.js';
 export type { AgentData } from './trust.js';

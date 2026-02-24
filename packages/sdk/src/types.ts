@@ -238,19 +238,19 @@ export interface LogActionInput {
   metadata?: Record<string, unknown>;
 }
 
-/** Input for logging a cryptocurrency transaction */
+/** Input for logging a transaction (crypto or general payment) */
 export interface LogTransactionInput {
-  /** On-chain transaction hash */
-  txHash: string;
-  /** Blockchain network */
-  chain: Chain;
+  /** On-chain transaction hash (required for crypto, optional for general payments) */
+  txHash?: string;
+  /** Blockchain network (required for crypto, optional for general payments) */
+  chain?: Chain;
   /** Transaction amount (string to preserve decimal precision) */
   amount: string;
-  /** Token being transferred */
-  token: Token;
-  /** Sender address */
+  /** Token being transferred (required for crypto, optional for general payments) */
+  token?: Token;
+  /** Sender address or entity name */
   from: string;
-  /** Recipient address */
+  /** Recipient address or entity name */
   to: string;
   /** ID of the agent initiating the transaction */
   agentId: string;
@@ -260,17 +260,31 @@ export interface LogTransactionInput {
   correlationId?: string;
   /** Additional transaction metadata */
   metadata?: Record<string, unknown>;
+  /** Currency code for general payments (e.g., 'USD', 'EUR'). Inferred from token for crypto. */
+  currency?: string;
+  /** Payment method (e.g., 'wire', 'ach', 'card', 'crypto') */
+  paymentMethod?: string;
+  /** External payment reference (invoice ID, wire reference, etc.) */
+  paymentReference?: string;
 }
 
 /** Stored transaction record */
 export interface TransactionRecord extends ActionLog {
   type: 'transaction';
-  txHash: string;
-  chain: Chain;
+  txHash?: string;
+  chain?: Chain;
   amount: string;
-  token: Token;
+  token?: Token;
   from: string;
   to: string;
+  currency?: string;
+  paymentMethod?: string;
+  paymentReference?: string;
+}
+
+/** Check whether a transaction input has all crypto-specific fields */
+export function isCryptoTransaction(input: LogTransactionInput): boolean {
+  return !!input.txHash && !!input.chain && !!input.token;
 }
 
 // ============================================================================
@@ -510,8 +524,8 @@ export interface TrustFactor {
 
 /** Transaction evaluation result */
 export interface TransactionEvaluation {
-  /** Transaction hash */
-  txHash: string;
+  /** Transaction hash (present for crypto transactions) */
+  txHash?: string;
   /** Risk score (0-100, higher = more risky) */
   riskScore: number;
   /** Risk level */
