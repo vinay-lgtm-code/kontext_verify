@@ -13,6 +13,7 @@ concurrency:
 jobs:
   sync:
     name: Sync free-tier changes to public repo
+    if: github.repository == 'vinay-lgtm-code/kontext_verify'
     runs-on: ubuntu-latest
 
     steps:

@@ -13,6 +13,7 @@ concurrency:
 jobs:
   sync:
     name: Sync OFAC SDN List
+    if: github.repository == 'vinay-lgtm-code/kontext_verify'
     runs-on: ubuntu-latest
 
     permissions:
