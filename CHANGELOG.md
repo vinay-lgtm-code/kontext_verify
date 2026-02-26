@@ -2,6 +2,24 @@
 
 All notable public changes to the Kontext SDK and platform are documented here.
 
+## [0.5.2] - 2026-02-26
+
+### Added
+- Add KYA module, Treasury SDN provider, screening notifications, and FAQ updates
+- Remove BlocklistManager from open-source main branch
+- Add custom blocklist/allowlist to Pro tier on pricing page and FAQs
+
+### Fixed
+- explicitly disable npm provenance in release workflow (#10)
+- drop --provenance from npm publish (#9)
+- skip CodeQL on public repo (no Advanced Security license) (#7)
+- add actions:read to CodeQL + repo guards (#6)
+- skip private-repo workflows when running on public repo (#5)
+- handle diverged histories in sync-public workflow (#4)
+- server and SDK builds for free-tier CI (#2)
+- unblock CI pipeline and enable public repo sync (#1)
+
+
 ## [0.4.0] - 2026-02-18
 
 ### Added
