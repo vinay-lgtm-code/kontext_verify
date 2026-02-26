@@ -139,7 +139,7 @@ jobs:
           npm install -g npm@latest
           npm config delete //registry.npmjs.org/:_authToken 2>/dev/null || true
           cd packages/sdk
-          npm publish --provenance --access public
+          npm publish --access public
 
       - name: Create GitHub Release
         if: steps.check.outputs.should_release == 'true'
@@ -214,7 +214,7 @@ jobs:
           npm install -g npm@latest
           npm config delete //registry.npmjs.org/:_authToken 2>/dev/null || true
           cd packages/sdk
-          npm publish --provenance --access public
+          npm publish --access public
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
