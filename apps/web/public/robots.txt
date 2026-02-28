@@ -1,4 +1,65 @@
+# Kontext — Trust SDK for agents that move money
+# https://getkontext.com
+
+# Default: allow all crawlers
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /checkout/
+Disallow: /_next/
 
-Sitemap: https://kontext.dev/sitemap.xml
+# LLM crawlers — explicitly welcome
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+User-agent: Meta-ExternalAgent
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: YouBot
+Allow: /
+
+# Sitemap
+Sitemap: https://getkontext.com/sitemap.xml
+
+# LLM context files
+# llms.txt: https://getkontext.com/llms.txt
+# llms-full.txt: https://getkontext.com/llms-full.txt

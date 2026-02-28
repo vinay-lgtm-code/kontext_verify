@@ -17,7 +17,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://kontext.dev"),
+  metadataBase: new URL("https://getkontext.com"),
   title: {
     default: "Kontext — Trust SDK for agents that move money",
     template: "%s | Kontext",
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://kontext.dev",
+    url: "https://getkontext.com",
     siteName: "Kontext",
     title: "Kontext — Trust SDK for agents that move money",
     description:
@@ -74,6 +74,74 @@ export const metadata: Metadata = {
   },
 };
 
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Kontext",
+  legalName: "Legaci Labs Inc.",
+  url: "https://getkontext.com",
+  logo: "https://getkontext.com/og-image.png",
+  sameAs: [
+    "https://github.com/Legaci-Labs/kontext",
+    "https://x.com/kontextverify",
+    "https://www.npmjs.com/package/kontext-sdk",
+  ],
+  contactPoint: {
+    "@type": "ContactPoint",
+    email: "hello@kontext.dev",
+    contactType: "technical support",
+  },
+};
+
+const softwareJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Kontext SDK",
+  applicationCategory: "DeveloperApplication",
+  operatingSystem: "Cross-platform (Node.js 18+)",
+  programmingLanguage: "TypeScript",
+  softwareVersion: "0.7.0",
+  license: "https://opensource.org/licenses/MIT",
+  url: "https://getkontext.com",
+  downloadUrl: "https://www.npmjs.com/package/kontext-sdk",
+  codeRepository: "https://github.com/Legaci-Labs/kontext",
+  description:
+    "Trust infrastructure for AI agents that move money. Audit trails, OFAC screening, on-chain anchoring, and agent-to-agent attestation for every wallet transfer. Zero runtime dependencies.",
+  offers: [
+    {
+      "@type": "Offer",
+      name: "Free",
+      price: "0",
+      priceCurrency: "USD",
+      description: "20,000 events/month. Core SDK, digest chain, trust scoring, Base chain.",
+    },
+    {
+      "@type": "Offer",
+      name: "Pro",
+      price: "2.00",
+      priceCurrency: "USD",
+      unitText: "per 1,000 events above 20K free",
+      description: "Usage-based. All 6 anomaly rules, unified screening, 8 chains, CSV export, cloud persistence.",
+    },
+  ],
+  author: {
+    "@type": "Organization",
+    name: "Legaci Labs Inc.",
+  },
+  featureList: [
+    "Transaction verification with OFAC screening",
+    "Tamper-evident SHA-256 digest chain",
+    "On-chain anchoring to Base smart contracts",
+    "Agent-to-agent (A2A) attestation",
+    "Trust scoring (0-100) with 5-factor breakdown",
+    "Rule-based anomaly detection",
+    "Agent reasoning logs",
+    "Compliance certificate generation",
+    "Human-in-the-loop task confirmation",
+    "MCP server for AI coding assistants",
+  ],
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -84,6 +152,20 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${jetbrainsMono.variable}`}
     >
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationJsonLd),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(softwareJsonLd),
+          }}
+        />
+      </head>
       <body className="min-h-screen bg-background font-sans antialiased">
         <Navbar />
         <main>{children}</main>
