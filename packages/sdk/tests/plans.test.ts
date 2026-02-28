@@ -22,13 +22,13 @@ function createClient(plan?: PlanTier, opts?: { upgradeUrl?: string; storage?: M
 describe('PlanManager', () => {
   it('should define correct plan limits', () => {
     expect(PLAN_LIMITS.free).toBe(20_000);
-    expect(PLAN_LIMITS.pro).toBe(100_000);
+    expect(PLAN_LIMITS.pro).toBe(Infinity);
     expect(PLAN_LIMITS.enterprise).toBe(Infinity);
   });
 
   it('should return plan limits via static method', () => {
     expect(PlanManager.getPlanLimits('free')).toEqual({ tier: 'free', eventLimit: 20_000 });
-    expect(PlanManager.getPlanLimits('pro')).toEqual({ tier: 'pro', eventLimit: 100_000 });
+    expect(PlanManager.getPlanLimits('pro')).toEqual({ tier: 'pro', eventLimit: Infinity });
     expect(PlanManager.getPlanLimits('enterprise')).toEqual({ tier: 'enterprise', eventLimit: Infinity });
   });
 
@@ -45,7 +45,9 @@ describe('PlanManager', () => {
   it('should initialize with explicit pro tier', () => {
     const pm = new PlanManager('pro');
     expect(pm.getTier()).toBe('pro');
-    expect(pm.getLimit()).toBe(100_000);
+    expect(pm.getLimit()).toBe(Infinity);
+    expect(pm.getRemainingEvents()).toBe(Infinity);
+    expect(pm.getUsagePercentage()).toBe(0);
   });
 
   it('should initialize with enterprise tier', () => {
@@ -139,14 +141,14 @@ describe('PlanManager', () => {
     // Upgrade to pro — warning state resets
     pm.setPlan('pro');
     expect(pm.getTier()).toBe('pro');
-    expect(pm.getLimit()).toBe(100_000);
+    expect(pm.getLimit()).toBe(Infinity);
 
     // Event count is NOT reset by setPlan (count persists)
     expect(pm.getEventCount()).toBe(16_000);
 
-    // But warning is not re-emitted until 80% of the new 100K limit (80K)
+    // Pro has Infinity limit, so no warnings are emitted regardless of event count
     for (let i = 0; i < 64_001; i++) pm.recordEvent();
-    expect(warnings.length).toBe(2);
+    expect(warnings.length).toBe(1); // no new warnings after upgrade to pro
   });
 
   it('should reset billing period', () => {
@@ -214,7 +216,8 @@ describe('Kontext Plan Integration', () => {
     kontext = createClient('pro');
     const usage = kontext.getUsage();
     expect(usage.plan).toBe('pro');
-    expect(usage.limit).toBe(100_000);
+    expect(usage.limit).toBe(Infinity);
+    expect(usage.remainingEvents).toBe(Infinity);
   });
 
   it('should initialize with enterprise plan', () => {
@@ -292,7 +295,7 @@ describe('Kontext Plan Integration', () => {
 
     kontext.setPlan('pro');
     expect(kontext.getUsage().plan).toBe('pro');
-    expect(kontext.getUsage().limit).toBe(100_000);
+    expect(kontext.getUsage().limit).toBe(Infinity);
 
     kontext.setPlan('enterprise');
     expect(kontext.getUsage().plan).toBe('enterprise');
@@ -313,9 +316,9 @@ describe('Kontext Plan Integration', () => {
     const usage = kontext.getUsage();
     expect(usage.plan).toBe('pro');
     expect(usage.eventCount).toBe(5);
-    expect(usage.limit).toBe(100_000);
-    expect(usage.remainingEvents).toBe(99_995);
-    expect(usage.usagePercentage).toBeCloseTo(0.005, 3);
+    expect(usage.limit).toBe(Infinity);
+    expect(usage.remainingEvents).toBe(Infinity);
+    expect(usage.usagePercentage).toBe(0);
     expect(usage.limitExceeded).toBe(false);
   });
 
@@ -383,31 +386,19 @@ describe('Plan Limit Enforcement', () => {
     warnSpy.mockRestore();
   });
 
-  it('should log console warning for pro tier limit', () => {
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  it('should not emit any warnings for pro plan (usage-based, no cap)', () => {
     const pm = new PlanManager('pro');
+    const warnings: LimitEvent[] = [];
+    const limits: LimitEvent[] = [];
+    pm.onUsageWarning((e) => warnings.push(e));
+    pm.onLimitReached((e) => limits.push(e));
 
     for (let i = 0; i < 100_000; i++) pm.recordEvent();
 
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining("You've reached the 100,000 event limit on Pro"),
-    );
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('https://cal.com/vinnaray'),
-    );
-
-    warnSpy.mockRestore();
-  });
-
-  it('should emit warning at 80K for pro plan', () => {
-    const pm = new PlanManager('pro');
-    const warnings: LimitEvent[] = [];
-    pm.onUsageWarning((e) => warnings.push(e));
-
-    for (let i = 0; i < 80_000; i++) pm.recordEvent();
-
-    expect(warnings.length).toBe(1);
-    expect(warnings[0]!.usagePercentage).toBeGreaterThanOrEqual(80);
+    expect(warnings.length).toBe(0);
+    expect(limits.length).toBe(0);
+    expect(pm.isLimitExceeded()).toBe(false);
+    expect(pm.getRemainingEvents()).toBe(Infinity);
   });
 
   it('should emit warning at 16K for free plan', () => {

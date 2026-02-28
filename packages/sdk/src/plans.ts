@@ -23,7 +23,7 @@ export interface PlanUsage {
   seats: number;
   /** Number of events logged in the current billing period */
   eventCount: number;
-  /** Maximum events allowed (Pro: seats x 100K) */
+  /** Maximum events allowed */
   limit: number;
   /** Remaining events before limit */
   remainingEvents: number;
@@ -54,7 +54,7 @@ export interface LimitEvent {
 /** Base plan definitions with their event limits (per seat for Pro) */
 export const PLAN_LIMITS: Record<PlanTier, number> = {
   free: 20_000,
-  pro: 100_000, // per user/seat
+  pro: Infinity, // usage-based: $2/1K events above 20K free
   enterprise: Infinity,
 };
 
@@ -122,11 +122,7 @@ export class PlanManager {
 
   /** Get the event limit for the current plan (Pro is multiplied by seats) */
   getLimit(): number {
-    const base = PLAN_LIMITS[this.tier];
-    if (base === Infinity) return Infinity;
-    // Pro plan: 100K events per user/seat
-    if (this.tier === 'pro') return base * this.seats;
-    return base;
+    return PLAN_LIMITS[this.tier];
   }
 
   /** Get the current number of seats */
@@ -388,12 +384,7 @@ export class PlanManager {
   private logLimitMessage(): void {
     if (this.tier === 'free') {
       console.warn(
-        `You've reached the 20,000 event limit on the Free plan. Upgrade to Pro for 100K events/user/mo and full compliance features → ${this.upgradeUrl}`,
-      );
-    } else if (this.tier === 'pro') {
-      const effectiveLimit = (100_000 * this.seats).toLocaleString();
-      console.warn(
-        `You've reached the ${effectiveLimit} event limit on Pro (${this.seats} seat${this.seats !== 1 ? 's' : ''}). Add seats or contact us for Enterprise pricing → ${this.enterpriseContactUrl}`,
+        `You've reached the 20,000 event limit on the Free plan. Upgrade to Pro ($2/1K events above 20K free) → ${this.upgradeUrl}`,
       );
     }
   }
