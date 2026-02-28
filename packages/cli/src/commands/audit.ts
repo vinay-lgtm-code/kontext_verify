@@ -2,8 +2,8 @@
 // kontext audit — verify digest chain integrity from persisted actions
 // ============================================================================
 
-import { FileStorage } from '../storage.js';
-import type { ActionLog } from '../types.js';
+import { FileStorage } from 'kontext-sdk';
+import type { ActionLog } from 'kontext-sdk';
 
 const GENESIS_HASH = '0000000000000000000000000000000000000000000000000000000000000000';
 

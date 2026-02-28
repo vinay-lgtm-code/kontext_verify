@@ -1,10 +1,7 @@
 {
   "name": "kontext-sdk",
   "version": "0.5.0",
-  "description": "Compliance audit trail CLI and SDK for AI agents making stablecoin payments on Base. Tamper-evident digest chains, OFAC screening, compliance certificates. x402 + Circle Programmable Wallets.",
-  "bin": {
-    "kontext": "./dist/cli.js"
-  },
+  "description": "Compliance audit trail SDK for AI agents making stablecoin payments on Base. Tamper-evident digest chains, OFAC screening, compliance certificates. x402 + Circle Programmable Wallets.",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -26,7 +23,7 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "tsup && node -e \"const fs=require('fs');const f='dist/cli.js';const c=fs.readFileSync(f,'utf8');if(!c.startsWith('#!')){fs.writeFileSync(f,'#!/usr/bin/env node\\n'+c)}\"",
+    "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -36,7 +33,6 @@
   "keywords": [
     "kontext",
     "compliance",
-    "cli",
     "usdc",
     "stablecoin",
     "agent",
@@ -73,8 +69,5 @@
   },
   "engines": {
     "node": ">=18.0.0"
-  },
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.27.0"
   }
 }

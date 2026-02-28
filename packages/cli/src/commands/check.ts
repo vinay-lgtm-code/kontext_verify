@@ -2,8 +2,8 @@
 // kontext check — stateless OFAC + threshold compliance check
 // ============================================================================
 
-import { UsdcCompliance } from '../integrations/usdc.js';
-import type { Token, Chain } from '../types.js';
+import { UsdcCompliance } from 'kontext-sdk';
+import type { Token, Chain } from 'kontext-sdk';
 
 interface CheckArgs {
   from: string;
