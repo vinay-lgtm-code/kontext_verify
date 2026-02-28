@@ -29,6 +29,8 @@ import type {
   AnomalyCallback,
   GenerateComplianceCertificateInput,
   ComplianceCertificate,
+  AnchorResult,
+  CounterpartyAttestation,
 } from './types.js';
 import { TrustScorer } from './trust.js';
 import { AnomalyDetector } from './anomaly.js';
@@ -720,6 +722,28 @@ export class Kontext {
     const chainLength = this.logger.getDigestChain().getChainLength();
     const terminalDigest = this.getTerminalDigest();
 
+    // 6b. On-chain anchor (optional)
+    let anchorProof: AnchorResult | undefined;
+    if (input.anchor) {
+      const { anchorDigest } = await import('./onchain.js');
+      anchorProof = await anchorDigest(input.anchor, terminalDigest, this.config.projectId);
+    }
+
+    // 6c. A2A attestation exchange (optional)
+    let counterpartyResult: CounterpartyAttestation | undefined;
+    if (input.counterparty) {
+      const { exchangeAttestation } = await import('./attestation.js');
+      counterpartyResult = await exchangeAttestation(input.counterparty, {
+        senderDigest: terminalDigest,
+        senderAgentId: input.agentId,
+        txHash: input.txHash,
+        chain: input.chain,
+        amount: input.amount,
+        token: input.token,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
     // 7. Auto-create approval task if amount exceeds threshold
     let requiresApproval: boolean | undefined;
     let task: Task | undefined;
@@ -766,6 +790,8 @@ export class Kontext {
       },
       ...(reasoningId ? { reasoningId } : {}),
       ...(requiresApproval ? { requiresApproval, task } : {}),
+      ...(anchorProof ? { anchorProof } : {}),
+      ...(counterpartyResult ? { counterparty: counterpartyResult } : {}),
     };
   }
 

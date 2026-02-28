@@ -95,6 +95,8 @@ Commands:
   reason <text>       Log agent reasoning into digest chain
   cert                Export compliance certificate
   audit               Verify digest chain integrity
+  anchor              Anchor terminal digest on-chain (Base)
+  attest              Exchange A2A compliance attestation with counterparty
   sync [--full]       Fetch latest OFAC SDN list from U.S. Treasury
                         --full  One-time: download entire SDN XML, parse ALL
                                 sanctioned entities + digital currency addresses
@@ -112,6 +114,8 @@ Examples:
   npx @kontext-sdk/cli reason "Price within budget" --agent my-bot --step 1
   npx @kontext-sdk/cli cert --agent my-bot --output cert.json
   npx @kontext-sdk/cli audit --verify
+  npx @kontext-sdk/cli anchor --rpc https://sepolia.base.org --contract 0x... --key 0x...
+  npx @kontext-sdk/cli attest --endpoint https://agent-b.app --agent my-bot
   npx @kontext-sdk/cli sync
   npx @kontext-sdk/cli mcp
 
@@ -207,6 +211,32 @@ async function main(): Promise<void> {
     case 'audit': {
       const { runAudit } = await import('./commands/audit.js');
       await runAudit({ json });
+      break;
+    }
+
+    case 'anchor': {
+      const rpc = flag(flags, 'rpc');
+      const contract = flag(flags, 'contract');
+      const key = flag(flags, 'key');
+      if (!rpc || !contract || !key) {
+        process.stderr.write('Usage: kontext anchor --rpc <url> --contract <addr> --key <privkey> [--json]\n');
+        process.exit(2);
+      }
+      const { runAnchor } = await import('./commands/anchor.js');
+      await runAnchor({ rpc, contract, key, json });
+      break;
+    }
+
+    case 'attest': {
+      const endpoint = flag(flags, 'endpoint');
+      if (!endpoint) {
+        process.stderr.write('Usage: kontext attest --endpoint <url> [--agent <id>] [--counterparty-agent <id>] [--json]\n');
+        process.exit(2);
+      }
+      const agent = flag(flags, 'agent') ?? 'cli';
+      const counterpartyAgent = flag(flags, 'counterparty-agent');
+      const { runAttest } = await import('./commands/attest.js');
+      await runAttest({ endpoint, agent, counterpartyAgent, json });
       break;
     }
 

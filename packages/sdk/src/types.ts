@@ -687,6 +687,10 @@ export interface VerifyInput extends LogTransactionInput {
   confidence?: number;
   /** Additional reasoning context */
   context?: Record<string, unknown>;
+  /** When provided, anchors the terminal digest on-chain after compliance checks */
+  anchor?: OnChainAnchorConfig;
+  /** Counterparty agent for bilateral A2A attestation exchange */
+  counterparty?: CounterpartyConfig;
 }
 
 /** Result of the verify() convenience method */
@@ -713,6 +717,10 @@ export interface VerifyResult {
   };
   /** Reasoning entry ID (present when reasoning was provided in input) */
   reasoningId?: string;
+  /** On-chain anchor proof (present when anchor config provided in input) */
+  anchorProof?: AnchorResult;
+  /** Counterparty attestation (present when counterparty config provided in input) */
+  counterparty?: CounterpartyAttestation;
   /** True when the transaction amount exceeds the approvalThreshold */
   requiresApproval?: boolean;
   /** The pending approval task (present when requiresApproval is true) */
@@ -780,6 +788,118 @@ export interface ReasoningEntry {
   toolResult?: unknown;
   /** Context */
   context: Record<string, unknown>;
+}
+
+// ============================================================================
+// On-Chain Digest Anchoring
+// ============================================================================
+
+/** Configuration for on-chain digest anchoring */
+export interface OnChainAnchorConfig {
+  /** JSON-RPC URL for the target chain */
+  rpcUrl: string;
+  /** KontextAnchor contract address */
+  contractAddress: string;
+  /** Private key of the signer (hex with 0x prefix). Required for write operations. */
+  privateKey?: string;
+}
+
+/** Result of an on-chain anchor transaction */
+export interface AnchorResult {
+  /** The digest that was anchored */
+  digest: string;
+  /** The on-chain transaction hash */
+  txHash: string;
+  /** The block number containing the anchor */
+  blockNumber: number;
+  /** Block timestamp (unix seconds) */
+  timestamp: number;
+  /** Contract address used */
+  contractAddress: string;
+  /** Chain the anchor was submitted to */
+  chain: string;
+}
+
+/** Result of verifying an anchor on-chain */
+export interface AnchorVerification {
+  /** Whether the digest was found on-chain */
+  anchored: boolean;
+  /** The digest that was checked */
+  digest: string;
+  /** Anchorer address (if anchored) */
+  anchorer?: string;
+  /** Project hash (if anchored) */
+  projectHash?: string;
+  /** Block timestamp (if anchored) */
+  timestamp?: number;
+}
+
+// ============================================================================
+// A2A Attestation Exchange (Agent-to-Agent)
+// ============================================================================
+
+/** Agent card served at /.well-known/kontext.json */
+export interface AgentCard {
+  /** Agent identifier */
+  agentId: string;
+  /** Kontext SDK version */
+  kontextVersion: string;
+  /** Supported capabilities (e.g., ['verify', 'attest']) */
+  capabilities: string[];
+  /** Attestation endpoint path (relative to host) */
+  attestEndpoint: string;
+}
+
+/** Counterparty configuration for verify() */
+export interface CounterpartyConfig {
+  /** Base URL of the counterparty agent (e.g., https://agent.example.com) */
+  endpoint: string;
+  /** Expected agent ID (optional, verified against agent card) */
+  agentId?: string;
+  /** Timeout for attestation exchange in milliseconds (default: 10000) */
+  timeoutMs?: number;
+}
+
+/** Attestation request sent to counterparty */
+export interface AttestationRequest {
+  /** Sender's terminal digest */
+  senderDigest: string;
+  /** Sender's agent ID */
+  senderAgentId: string;
+  /** Transaction hash */
+  txHash?: string;
+  /** Chain */
+  chain?: string;
+  /** Transfer amount */
+  amount: string;
+  /** Token */
+  token?: string;
+  /** Timestamp of the request */
+  timestamp: string;
+}
+
+/** Attestation response from counterparty */
+export interface AttestationResponse {
+  /** Whether the counterparty attested */
+  attested: boolean;
+  /** Counterparty's terminal digest */
+  receiverDigest: string;
+  /** Counterparty's agent ID */
+  receiverAgentId: string;
+  /** Timestamp of attestation */
+  timestamp: string;
+}
+
+/** Counterparty attestation result included in VerifyResult */
+export interface CounterpartyAttestation {
+  /** Whether the counterparty successfully attested */
+  attested: boolean;
+  /** Counterparty's digest (proof they ran compliance) */
+  digest: string;
+  /** Counterparty's agent ID */
+  agentId: string;
+  /** Attestation timestamp */
+  timestamp: string;
 }
 
 // ============================================================================

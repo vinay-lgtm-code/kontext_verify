@@ -118,6 +118,24 @@ export { PaymentCompliance } from './integrations/payment-compliance.js';
 // Type guards
 export { isCryptoTransaction } from './types.js';
 
+// On-Chain Anchoring
+export { verifyAnchor, getAnchor, anchorDigest, OnChainExporter } from './onchain.js';
+
+// A2A Attestation
+export { fetchAgentCard, exchangeAttestation } from './attestation.js';
+
+// On-Chain + A2A types
+export type {
+  OnChainAnchorConfig,
+  AnchorResult,
+  AnchorVerification,
+  AgentCard,
+  CounterpartyConfig,
+  AttestationRequest,
+  AttestationResponse,
+  CounterpartyAttestation,
+} from './types.js';
+
 // Trust Scoring and Anomaly Detection (for direct use)
 export { TrustScorer } from './trust.js';
 export type { AgentData } from './trust.js';
