@@ -2,9 +2,8 @@
 // kontext cert — export compliance certificate
 // ============================================================================
 
-import { Kontext } from '../client.js';
-import { FileStorage } from '../storage.js';
-import type { ActionLog } from '../types.js';
+import { Kontext, FileStorage } from 'kontext-sdk';
+import type { ActionLog } from 'kontext-sdk';
 import * as fs from 'fs';
 
 const GENESIS_HASH = '0000000000000000000000000000000000000000000000000000000000000000';

@@ -41,5 +41,8 @@ jobs:
       - name: Build SDK
         run: pnpm --filter kontext-sdk build
 
+      - name: Build CLI
+        run: pnpm --filter @kontext-sdk/cli build
+
       - name: Build Server
         run: pnpm --filter @kontext/server build
