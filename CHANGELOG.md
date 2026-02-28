@@ -2,6 +2,12 @@
 
 All notable public changes to the Kontext SDK and platform are documented here.
 
+## [0.6.0] - 2026-02-28
+
+### Added
+- extract CLI into standalone @kontext-sdk/cli package
+
+
 ## [0.5.2] - 2026-02-26
 
 ### Added
