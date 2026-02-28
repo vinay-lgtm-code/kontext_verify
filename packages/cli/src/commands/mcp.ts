@@ -133,6 +133,59 @@ export async function runMcp(): Promise<void> {
     },
   );
 
+  // Tool: anchor_digest
+  server.tool(
+    'anchor_digest',
+    'Anchor the current terminal digest on-chain (Base) as immutable compliance proof',
+    {
+      rpcUrl: { type: 'string', description: 'Base RPC URL (e.g. https://mainnet.base.org)' },
+      contractAddress: { type: 'string', description: 'KontextAnchor contract address' },
+      privateKey: { type: 'string', description: 'Private key for signing (0x-prefixed)' },
+    },
+    async (params: Record<string, string>) => {
+      const { anchorDigest: anchor } = await import('kontext-sdk');
+      const terminalDigest = kontext.getTerminalDigest();
+      const result = await anchor(
+        {
+          rpcUrl: params['rpcUrl'] ?? '',
+          contractAddress: params['contractAddress'] ?? '',
+          privateKey: params['privateKey'] ?? '',
+        },
+        terminalDigest,
+        'mcp',
+      );
+      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+    },
+  );
+
+  // Tool: exchange_attestation
+  server.tool(
+    'exchange_attestation',
+    'Exchange A2A compliance attestation with a counterparty agent',
+    {
+      endpoint: { type: 'string', description: 'Counterparty agent endpoint URL' },
+      agentId: { type: 'string', description: 'Your agent identifier' },
+      counterpartyAgentId: { type: 'string', description: 'Expected counterparty agent ID (optional)' },
+    },
+    async (params: Record<string, string>) => {
+      const { exchangeAttestation } = await import('kontext-sdk');
+      const terminalDigest = kontext.getTerminalDigest();
+      const result = await exchangeAttestation(
+        {
+          endpoint: params['endpoint'] ?? '',
+          ...(params['counterpartyAgentId'] ? { agentId: params['counterpartyAgentId'] } : {}),
+        },
+        {
+          senderDigest: terminalDigest,
+          senderAgentId: params['agentId'] ?? 'mcp',
+          amount: '0',
+          timestamp: new Date().toISOString(),
+        },
+      );
+      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+    },
+  );
+
   // Tool: verify_audit_trail
   server.tool(
     'verify_audit_trail',
