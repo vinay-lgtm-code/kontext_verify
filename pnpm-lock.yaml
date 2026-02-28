@@ -24,6 +24,28 @@ importers:
         specifier: ^10.30.0
         version: 10.30.2
 
+  packages/cli:
+    dependencies:
+      '@modelcontextprotocol/sdk':
+        specifier: '>=1.0.0'
+        version: 1.27.0(zod@4.3.6)
+      kontext-sdk:
+        specifier: workspace:*
+        version: link:../sdk
+      zod:
+        specifier: '>=3.0.0'
+        version: 4.3.6
+    devDependencies:
+      '@types/node':
+        specifier: ^20.12.0
+        version: 20.19.32
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   packages/demo:
     dependencies:
       kontext-sdk:
@@ -38,10 +60,6 @@ importers:
         version: 5.9.3
 
   packages/sdk:
-    dependencies:
-      '@modelcontextprotocol/sdk':
-        specifier: ^1.27.0
-        version: 1.27.0(zod@4.3.6)
     devDependencies:
       '@types/node':
         specifier: ^20.12.0

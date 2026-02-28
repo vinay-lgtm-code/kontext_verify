@@ -109,9 +109,13 @@ jobs:
           pnpm --filter kontext-sdk test
           pnpm --filter @kontext/server test
 
-      - name: Build
+      - name: Build SDK
         if: steps.check.outputs.should_release == 'true'
         run: pnpm --filter kontext-sdk build
+
+      - name: Build CLI
+        if: steps.check.outputs.should_release == 'true'
+        run: pnpm --filter @kontext-sdk/cli build
 
       - name: Generate changelogs
         if: steps.check.outputs.should_release == 'true'
@@ -123,22 +127,35 @@ jobs:
           cd packages/sdk
           npm version ${{ steps.check.outputs.next_version }} --no-git-tag-version
 
+      - name: Bump CLI version
+        if: steps.check.outputs.should_release == 'true'
+        run: |
+          cd packages/cli
+          npm version ${{ steps.check.outputs.next_version }} --no-git-tag-version
+
       - name: Commit, tag, and push
         if: steps.check.outputs.should_release == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add CHANGELOG.md packages/sdk/package.json
+          git add CHANGELOG.md packages/sdk/package.json packages/cli/package.json
           git commit -m "release: v${{ steps.check.outputs.next_version }} (scheduled)"
           git tag "v${{ steps.check.outputs.next_version }}"
           git push origin release --tags
 
-      - name: Publish to npm (trusted publishing via OIDC)
+      - name: Publish SDK to npm
         if: steps.check.outputs.should_release == 'true'
         run: |
           npm install -g npm@latest
           npm config delete //registry.npmjs.org/:_authToken 2>/dev/null || true
           cd packages/sdk
+          npm publish --no-provenance --access public
+
+      - name: Publish CLI to npm
+        if: steps.check.outputs.should_release == 'true'
+        continue-on-error: true
+        run: |
+          cd packages/cli
           npm publish --no-provenance --access public
 
       - name: Create GitHub Release
@@ -189,8 +206,11 @@ jobs:
           pnpm --filter kontext-sdk test
           pnpm --filter @kontext/server test
 
-      - name: Build
+      - name: Build SDK
         run: pnpm --filter kontext-sdk build
+
+      - name: Build CLI
+        run: pnpm --filter @kontext-sdk/cli build
 
       - name: Generate changelogs
         run: ./scripts/generate-changelog.sh ${{ inputs.version }}
@@ -200,20 +220,31 @@ jobs:
           cd packages/sdk
           npm version ${{ inputs.version }} --no-git-tag-version
 
+      - name: Bump CLI version
+        run: |
+          cd packages/cli
+          npm version ${{ inputs.version }} --no-git-tag-version
+
       - name: Commit, tag, and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add CHANGELOG.md packages/sdk/package.json
+          git add CHANGELOG.md packages/sdk/package.json packages/cli/package.json
           git commit -m "release: v${{ inputs.version }}"
           git tag "v${{ inputs.version }}"
           git push origin release --tags
 
-      - name: Publish to npm (trusted publishing via OIDC)
+      - name: Publish SDK to npm
         run: |
           npm install -g npm@latest
           npm config delete //registry.npmjs.org/:_authToken 2>/dev/null || true
           cd packages/sdk
+          npm publish --no-provenance --access public
+
+      - name: Publish CLI to npm
+        continue-on-error: true
+        run: |
+          cd packages/cli
           npm publish --no-provenance --access public
 
       - name: Create GitHub Release

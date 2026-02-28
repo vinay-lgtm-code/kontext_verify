@@ -2,8 +2,7 @@
 // kontext reason — log agent reasoning into digest chain
 // ============================================================================
 
-import { Kontext } from '../client.js';
-import { FileStorage } from '../storage.js';
+import { Kontext, FileStorage } from 'kontext-sdk';
 
 interface ReasonArgs {
   text: string;

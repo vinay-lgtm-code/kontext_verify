@@ -2,9 +2,13 @@
 // kontext CLI — compliance audit trail for AI agent stablecoin payments
 // ============================================================================
 
-import type { Token } from './types.js';
+import type { Token } from 'kontext-sdk';
+import { createRequire } from 'module';
 
-const VERSION = '0.6.0';
+const require = createRequire(import.meta.url);
+const pkg = require('../package.json') as { version: string };
+const VERSION = pkg.version;
+
 const VALID_TOKENS = ['USDC', 'USDT', 'DAI', 'EURC', 'USDP', 'USDG'];
 
 // ---------------------------------------------------------------------------
@@ -102,14 +106,14 @@ Global flags:
   --version, -v       Show version
 
 Examples:
-  npx kontext-sdk check 0xAddress --amount 5000 --token USDC
-  npx kontext-sdk check 0xSender 0xReceiver --amount 5000 --token USDC
-  npx kontext-sdk verify --tx 0xabc --amount 500 --token USDC --from 0xA --to 0xB --agent my-bot
-  npx kontext-sdk reason "Price within budget" --agent my-bot --step 1
-  npx kontext-sdk cert --agent my-bot --output cert.json
-  npx kontext-sdk audit --verify
-  npx kontext-sdk sync
-  npx kontext-sdk mcp
+  npx @kontext-sdk/cli check 0xAddress --amount 5000 --token USDC
+  npx @kontext-sdk/cli check 0xSender 0xReceiver --amount 5000 --token USDC
+  npx @kontext-sdk/cli verify --tx 0xabc --amount 500 --token USDC --from 0xA --to 0xB --agent my-bot
+  npx @kontext-sdk/cli reason "Price within budget" --agent my-bot --step 1
+  npx @kontext-sdk/cli cert --agent my-bot --output cert.json
+  npx @kontext-sdk/cli audit --verify
+  npx @kontext-sdk/cli sync
+  npx @kontext-sdk/cli mcp
 
 Regulatory responsibility remains with the operator.
 `);

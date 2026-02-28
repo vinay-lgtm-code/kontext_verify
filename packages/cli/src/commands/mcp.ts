@@ -2,6 +2,11 @@
 // kontext mcp — start MCP server mode for Claude Code / Cursor / Windsurf
 // ============================================================================
 
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const pkg = require('../../package.json') as { version: string };
+
 export async function runMcp(): Promise<void> {
   // MCP SDK is an optional peer dependency — only loaded when `kontext mcp` is invoked
   let McpServer: any;
@@ -22,14 +27,7 @@ export async function runMcp(): Promise<void> {
     process.exit(2);
   }
 
-  const { Kontext } = await import('../client.js');
-  const { FileStorage } = await import('../storage.js');
-  const { UsdcCompliance } = await import('../integrations/usdc.js');
-  // @ts-ignore — zod is an optional dependency used by MCP SDK for tool schemas
-  const { z } = await import('zod').catch(() => {
-    // zod is used by MCP SDK for tool schemas — if not available, use inline schemas
-    return { z: null } as any;
-  });
+  const { Kontext, FileStorage, UsdcCompliance } = await import('kontext-sdk');
 
   const dataDir = process.env['KONTEXT_DATA_DIR'] || '.kontext';
   const storage = new FileStorage(dataDir);
@@ -43,7 +41,7 @@ export async function runMcp(): Promise<void> {
 
   const server = new McpServer({
     name: 'kontext',
-    version: '0.6.0',
+    version: pkg.version,
   });
 
   // Tool: verify_transaction

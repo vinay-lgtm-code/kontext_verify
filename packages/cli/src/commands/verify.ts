@@ -2,9 +2,8 @@
 // kontext verify — log + compliance check + digest proof
 // ============================================================================
 
-import { Kontext } from '../client.js';
-import { FileStorage } from '../storage.js';
-import type { Token, Chain } from '../types.js';
+import { Kontext, FileStorage } from 'kontext-sdk';
+import type { Token, Chain } from 'kontext-sdk';
 
 interface VerifyArgs {
   tx: string;
