@@ -2,6 +2,9 @@
 
 All notable public changes to the Kontext SDK and platform are documented here.
 
+## [0.8.0] - 2026-03-01
+
+
 ## [0.6.0] - 2026-02-28
 
 ### Added
