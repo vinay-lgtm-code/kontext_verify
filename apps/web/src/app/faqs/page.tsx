@@ -33,7 +33,7 @@ const faqCategories = [
       {
         question: "Is Kontext open source?",
         answer:
-          "Yes. The core SDK is fully open source under the MIT license with 20,000 events/month on the free tier. You can self-host the entire stack. Pro ($2/1K events above 20K free) adds all anomaly detection rules, unified screening, CSV export, multi-chain support (8 chains), webhooks, and cloud persistence.",
+          "Yes. The core SDK is fully open source under the MIT license with 20,000 events/month on the free tier. You can self-host the entire stack. Pro ($2/1K events above 20K free) adds all anomaly detection rules, unified screening, CSV export, multi-chain support (6 additional chains beyond Base and Arc), webhooks, and cloud persistence.",
       },
       {
         question: "What license does Kontext use?",
@@ -53,7 +53,7 @@ const faqCategories = [
       {
         question: "What blockchain chains are supported?",
         answer:
-          "The free tier supports Base. Pro unlocks all 8 chains: Ethereum, Base, Polygon, Arbitrum, Optimism, Arc, Avalanche, and Solana.",
+          "The free tier supports Base and Arc. Pro unlocks all 8 chains: Ethereum, Base, Polygon, Arbitrum, Optimism, Arc, Avalanche, and Solana.",
       },
       {
         question: "How does trust scoring work?",
@@ -109,6 +109,11 @@ const faqCategories = [
         question: "What is the Kontext CLI?",
         answer:
           "The Kontext CLI (@kontext-sdk/cli) provides 12 commands for compliance operations from the terminal: check (static compliance check), verify (full verification with digest chain), reason (log agent reasoning), cert (generate compliance certificates), audit (export audit trails), anchor (on-chain anchoring), attest (A2A attestation), sync (OFAC SDN list sync), session (manage agent sessions), checkpoint (create provenance checkpoints), and mcp (start MCP server for AI coding assistants). Install with npm install -g @kontext-sdk/cli or run via npx. Free tier.",
+      },
+      {
+        question: "Do micropayments need compliance?",
+        answer:
+          "Yes. OFAC screening applies to every transaction regardless of amount. The Travel Rule only requires data-sharing above $3,000, but OFAC sanctions screening, ongoing transaction monitoring, and audit trails are required on every transfer under the BSA. The GENIUS Act reinforces these requirements for stablecoin transactions. Autonomous agents running high-frequency micropayments via x402 create cumulative patterns that can trigger Suspicious Activity Reports regardless of individual amounts. Kontext's verify() + digest chain provides evidence for every payment in a single call.",
       },
     ],
   },
@@ -178,12 +183,12 @@ const faqCategories = [
       {
         question: "What is included in the free tier?",
         answer:
-          "The free tier includes the full SDK with 20,000 events/month, action logging, JSON export, basic anomaly detection (2 rules: unusual amount and frequency spike), trust scoring (local), digest chain verification, on-chain anchoring, A2A attestation, compliance certificates, and Base chain support. It is MIT-licensed and free forever.",
+          "The free tier includes the full SDK with 20,000 events/month, action logging, JSON export, basic anomaly detection (2 rules: unusual amount and frequency spike), trust scoring (local), digest chain verification, on-chain anchoring, A2A attestation, compliance certificates, and Base + Arc chain support. It is MIT-licensed and free forever.",
       },
       {
         question: "What does the Pro plan include?",
         answer:
-          "Pro is usage-based at $2 per 1,000 events above the 20K free tier. No monthly minimum, no commitment. It includes everything in Free plus: all six anomaly detection rules, unified screening (OFAC, Chainalysis, OpenSanctions), custom blocklist/allowlist, CSV export, multi-chain support (8 chains), webhook alerts, cloud persistence, and email support.",
+          "Pro is usage-based at $2 per 1,000 events above the 20K free tier. No monthly minimum, no commitment. It includes everything in Free plus: all six anomaly detection rules, unified screening (OFAC, Chainalysis, OpenSanctions), custom blocklist/allowlist, CSV export, multi-chain support (6 additional chains beyond Base and Arc), webhook alerts, cloud persistence, and email support.",
       },
       {
         question: "Can I self-host the entire stack?",

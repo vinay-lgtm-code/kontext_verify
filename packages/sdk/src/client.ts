@@ -368,7 +368,7 @@ export class Kontext {
    */
   async logTransaction(input: LogTransactionInput): Promise<TransactionRecord> {
     // Multi-chain support requires Pro plan
-    if (input.chain && input.chain !== 'base') {
+    if (input.chain && input.chain !== 'base' && input.chain !== 'arc') {
       requirePlan('multi-chain', this.planManager.getTier());
     }
 

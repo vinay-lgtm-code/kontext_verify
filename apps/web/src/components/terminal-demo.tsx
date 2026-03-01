@@ -40,13 +40,13 @@ const SCENARIOS: Scenario[] = [
     id: "verify",
     label: "Verify",
     icon: Shield,
-    comment: "# Verify OFAC compliance and log to tamper-evident digest chain",
+    comment: "# Verify x402 micropayment — OFAC screening required on every transfer",
     command: `kontext verify \\
   --tx 0xa1b2c3d4 \\
-  --amount 5000 --token USDC \\
+  --amount 0.50 --token USDC \\
   --from 0x8F3a...e21b \\
   --to 0x4C7d...f93a \\
-  --agent treasury-bot`,
+  --agent research-bot`,
     output: [
       { value: "", delay: 0 },
       { label: "Compliant:", value: "true", valueColor: "green" },

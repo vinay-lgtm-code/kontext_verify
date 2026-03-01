@@ -40,7 +40,7 @@ Add to your MCP configuration (Claude Code, Cursor, Windsurf):
 | `log_reasoning` | Log agent reasoning into digest chain | When making financial decisions |
 | `get_trust_score` | Get agent trust score (0-100) | To evaluate agent reliability |
 | `get_compliance_certificate` | Export compliance certificate | For audit reporting |
-| `anchor_digest` | Anchor terminal digest on-chain (Base) | For immutable proof of compliance |
+| `anchor_digest` | Anchor terminal digest on-chain (Base/Arc) | For immutable proof of compliance |
 | `exchange_attestation` | A2A compliance attestation with counterparty | When two agents transact |
 | `verify_audit_trail` | Verify digest chain integrity | To confirm no tampering |
 
@@ -63,11 +63,11 @@ const ctx = Kontext.init({
 const result = await ctx.verify({
   txHash: '0xabc...def',
   chain: 'base',
-  amount: '5000',
+  amount: '0.50',
   token: 'USDC',
-  from: '0xsender...',
-  to: '0xrecipient...',
-  agentId: 'payment-agent-v2',
+  from: '0xAgentWallet',
+  to: '0xAPIProvider',
+  agentId: 'research-agent',
 });
 
 if (!result.compliant) {
@@ -120,7 +120,7 @@ const chain = ctx.verifyDigestChain();
 
 ### On-Chain Anchoring
 
-- Pass `anchor` config to `ctx.verify()` to write digest to Base smart contract
+- Pass `anchor` config to `ctx.verify()` to write digest to Base or Arc smart contract
 - `verifyAnchor(rpcUrl, contract, digest)` — Zero-dependency verification
 
 ### A2A Attestation
@@ -158,7 +158,7 @@ npm install -g @kontext-sdk/cli
 
 ```bash
 # Verify a transaction
-kontext verify --chain base --amount 5000 --token USDC --from 0xSender --to 0xRecipient
+kontext verify --chain base --amount 0.50 --token USDC --from 0xSender --to 0xRecipient
 
 # Start MCP server for AI coding assistants
 kontext mcp
@@ -180,7 +180,7 @@ kontext mcp
 
 ## Supported Chains & Tokens
 
-**Chains:** Base (free), Ethereum, Polygon, Arbitrum, Optimism, Arc, Avalanche, Solana (Pro)
+**Chains:** Base + Arc (free), Ethereum, Polygon, Arbitrum, Optimism, Avalanche, Solana (Pro)
 **Tokens:** USDC, USDT, DAI, EURC
 
 ## Rules for AI Agents

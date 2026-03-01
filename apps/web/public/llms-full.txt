@@ -65,15 +65,15 @@ const ctx = Kontext.init({
   environment: 'development',
 });
 
-// Verify a USDC transfer in one call
+// Verify an x402 micropayment — OFAC screening on every transfer
 const result = await ctx.verify({
   txHash: '0xabc...def',
   chain: 'base',
-  amount: '5000',
+  amount: '0.50',
   token: 'USDC',
-  from: '0xsender...',
-  to: '0xrecipient...',
-  agentId: 'payment-agent-v2',
+  from: '0xAgentWallet',
+  to: '0xAPIProvider',
+  agentId: 'research-agent',
 });
 
 if (!result.compliant) {
@@ -99,12 +99,12 @@ if (!result.compliant) {
 const result = await ctx.verify({
   txHash: '0xabc...def',
   chain: 'base',
-  amount: '5000',
+  amount: '0.50',
   token: 'USDC',
   from: '0xAgentWallet',
-  to: '0xRecipient',
-  agentId: 'treasury-agent-v2',
-  reasoning: 'Within daily limit. Recipient in allowlist.',
+  to: '0xAPIProvider',
+  agentId: 'research-agent',
+  reasoning: 'Paying CoinGecko API via x402. Provider not sanctioned.',
   anchor: {
     rpcUrl: 'https://base-mainnet.g.alchemy.com/v2/YOUR_KEY',
     contractAddress: '0xYourAnchorContract',
@@ -136,11 +136,11 @@ await ctx.log({
 await ctx.logTransaction({
   txHash: '0x...',
   chain: 'base',
-  amount: '5000',
+  amount: '0.50',
   token: 'USDC',
-  from: '0xsender',
-  to: '0xrecipient',
-  agentId: 'payment-agent',
+  from: '0xAgentWallet',
+  to: '0xAPIProvider',
+  agentId: 'research-agent',
 });
 ```
 
@@ -284,13 +284,13 @@ const exported = ctx.exportDigestChain();
 
 ## On-Chain Anchoring
 
-Write the terminal digest to a Base smart contract. Anyone can independently verify that compliance checks ran at a specific block height.
+Write the terminal digest to a Base or Arc smart contract. Anyone can independently verify that compliance checks ran at a specific block height.
 
 ```typescript
 // Via verify() with anchor config
 const result = await ctx.verify({
-  txHash: '0x...', chain: 'base', amount: '5000', token: 'USDC',
-  from: '0xsender', to: '0xrecipient', agentId: 'agent-v2',
+  txHash: '0x...', chain: 'base', amount: '0.50', token: 'USDC',
+  from: '0xAgentWallet', to: '0xAPIProvider', agentId: 'research-agent',
   anchor: {
     rpcUrl: 'https://base-mainnet.g.alchemy.com/v2/YOUR_KEY',
     contractAddress: '0xYourContract',
@@ -314,8 +314,8 @@ When two agents transact, both sides exchange compliance digests as bilateral pr
 ```typescript
 // Via verify() with counterparty config
 const result = await ctx.verify({
-  txHash: '0x...', chain: 'base', amount: '5000', token: 'USDC',
-  from: '0xsender', to: '0xrecipient', agentId: 'sender-agent',
+  txHash: '0x...', chain: 'base', amount: '0.50', token: 'USDC',
+  from: '0xAgentWallet', to: '0xAPIProvider', agentId: 'sender-agent',
   counterparty: {
     endpoint: 'https://receiver.example.com',
     agentId: 'receiver-v1',
@@ -387,7 +387,7 @@ The Kontext CLI (`@kontext-sdk/cli`) provides 12 commands for compliance operati
 npm install -g @kontext-sdk/cli
 
 # Or run via npx
-npx @kontext-sdk/cli verify --chain base --amount 5000
+npx @kontext-sdk/cli verify --chain base --amount 0.50
 
 # Commands
 kontext check      # Static compliance check (no digest chain)
@@ -566,8 +566,8 @@ Kontext exposes an MCP (Model Context Protocol) server for AI coding assistants.
 
 | Tier | Price | Events | Features |
 |------|-------|--------|----------|
-| Free | $0 forever | 20,000/mo | Core SDK, Base chain, 2 anomaly rules, JSON export |
-| Pro | $2/1K events above 20K | Unlimited | All 6 anomaly rules, unified screening, multi-chain (8), CSV export, cloud persistence |
+| Free | $0 forever | 20,000/mo | Core SDK, Base + Arc chains, 2 anomaly rules, JSON export |
+| Pro | $2/1K events above 20K | Unlimited | All 6 anomaly rules, unified screening, multi-chain (6 additional), CSV export, cloud persistence |
 
 Free tier includes: verify(), log(), logTransaction(), logReasoning(), trust scoring, digest chain, compliance certificates, on-chain anchoring, A2A attestation, human-in-the-loop tasks.
 
@@ -587,7 +587,7 @@ Regulatory context: GENIUS Act (S. 1582), signed July 18, 2025. Implementing reg
 
 ## Supported Chains and Tokens
 
-**Chains:** Base (free), Ethereum, Polygon, Arbitrum, Optimism, Arc, Avalanche, Solana (Pro: all 8).
+**Chains:** Base + Arc (free), Ethereum, Polygon, Arbitrum, Optimism, Avalanche, Solana (Pro: all 8).
 
 **Tokens:** USDC, USDT, DAI, EURC.
 
@@ -602,7 +602,7 @@ import { UsdcCompliance } from 'kontext-sdk';
 
 const result = UsdcCompliance.checkTransaction({
   from: '0xsender', to: '0xrecipient',
-  amount: '5000', token: 'USDC', chain: 'base',
+  amount: '0.50', token: 'USDC', chain: 'base',
 });
 // result.compliant, result.checks, result.riskLevel, result.recommendations
 

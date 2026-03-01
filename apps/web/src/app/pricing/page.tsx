@@ -38,7 +38,7 @@ const plans = [
       "Trust scoring",
       "Basic anomaly detection (2 rules)",
       "JSON audit export",
-      "Base chain support",
+      "Base + Arc chain support",
       "Agent reasoning logs",
       "Compliance certificates",
       "On-chain anchoring",
@@ -63,7 +63,7 @@ const plans = [
       "Unified screening (OFAC, Chainalysis, OpenSanctions)",
       "Custom blocklist/allowlist",
       "CSV export",
-      "Multi-chain support (8 chains)",
+      "Multi-chain support (6 additional chains)",
       "Webhook alerts",
       "Agent forensics (identity, wallet clustering)",
       "Cloud persistence",
@@ -96,12 +96,12 @@ const faqs = [
   {
     question: "What does Pro add over Free?",
     answer:
-      "Pro unlocks all six anomaly detection rules (adding newDestination, offHoursActivity, rapidSuccession, and roundAmount), unified screening across OFAC SDN, Chainalysis, and OpenSanctions, custom blocklist/allowlist management, CSV export, multi-chain support across 8 networks, webhook alerts, cloud persistence, and email support.",
+      "Pro unlocks all six anomaly detection rules (adding newDestination, offHoursActivity, rapidSuccession, and roundAmount), unified screening across OFAC SDN, Chainalysis, and OpenSanctions, custom blocklist/allowlist management, CSV export, multi-chain support across 6 additional networks beyond Base and Arc, webhook alerts, cloud persistence, and email support.",
   },
   {
     question: "What chains does Kontext support?",
     answer:
-      "The Free tier supports Base. Pro unlocks all 8 chains: Ethereum, Base, Polygon, Arbitrum, Optimism, Arc, Avalanche, and Solana.",
+      "The Free tier supports Base and Arc. Pro unlocks all 8 chains: Ethereum, Base, Polygon, Arbitrum, Optimism, Arc, Avalanche, and Solana.",
   },
   {
     question: "How does Kontext handle my data?",
@@ -240,11 +240,11 @@ const ctx = Kontext.init({
 const result = await ctx.verify({
   txHash: '0xabc...',
   chain: 'base',
-  amount: '5000',
+  amount: '0.50',
   token: 'USDC',
-  from: '0xsender...',
-  to: '0xrecipient...',
-  agentId: 'payment-agent-v1',
+  from: '0xAgentWallet',
+  to: '0xAPIProvider',
+  agentId: 'research-agent',
 });
 
 // result.compliant = true/false

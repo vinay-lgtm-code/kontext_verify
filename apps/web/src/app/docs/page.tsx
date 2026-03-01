@@ -20,15 +20,15 @@ const ctx = Kontext.init({
   environment: 'development',
 });
 
-// Verify a USDC transfer in one call
+// Verify an x402 micropayment — OFAC screening on every transfer
 const result = await ctx.verify({
   txHash: '0xabc...def',
   chain: 'base',
-  amount: '5000',
+  amount: '0.50',
   token: 'USDC',
-  from: '0xsender...',
-  to: '0xrecipient...',
-  agentId: 'payment-agent-v2',
+  from: '0xAgentWallet',
+  to: '0xAPIProvider',
+  agentId: 'research-agent',
 });
 
 if (!result.compliant) {
@@ -527,17 +527,17 @@ const cliInstallCode = `# Install globally
 npm install -g @kontext-sdk/cli
 
 # Or run directly with npx (no install)
-npx @kontext-sdk/cli verify --chain base --amount 5000
+npx @kontext-sdk/cli verify --chain base --amount 0.50
 
 # Verify installation
 kontext --version  # 0.8.0`;
 
 const cliCommandsCode = `# Static compliance check (no digest chain)
-kontext check --chain base --amount 5000 --from 0xSender --to 0xRecipient
+kontext check --chain base --amount 0.50 --from 0xSender --to 0xRecipient
 
 # Full verification with digest chain and trust scoring
-kontext verify --chain base --amount 5000 --token USDC \\
-  --from 0xSender --to 0xRecipient --agent payment-agent-v2
+kontext verify --chain base --amount 0.50 --token USDC \\
+  --from 0xSender --to 0xRecipient --agent research-agent
 
 # Log agent reasoning
 kontext reason --agent payment-agent-v2 \\
@@ -899,7 +899,7 @@ export default function DocsPage() {
               <p>
                 The digest chain gives you tamper-evidence at the software level.
                 On-chain anchoring takes it further -- write the terminal digest
-                to a smart contract on Base. Now anyone can independently verify
+                to a smart contract on Base or Arc. Now anyone can independently verify
                 that your compliance checks ran at a specific block height. No
                 Kontext account needed.
               </p>
