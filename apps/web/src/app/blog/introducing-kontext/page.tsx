@@ -37,9 +37,36 @@ export const metadata: Metadata = {
   },
 };
 
+const blogPostJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  headline: "Introducing Kontext: Trust Layer for Agentic Stablecoin Transactions",
+  description:
+    "AI agents are moving real money. Here is why they need a compliance layer, and how Kontext provides it in five lines of code.",
+  datePublished: "2026-02-07T00:00:00Z",
+  author: {
+    "@type": "Organization",
+    name: "Kontext",
+    url: "https://getkontext.com",
+  },
+  publisher: {
+    "@type": "Organization",
+    name: "Kontext",
+    url: "https://getkontext.com",
+    logo: { "@type": "ImageObject", url: "https://getkontext.com/og-image.png" },
+  },
+  image: "https://getkontext.com/og-image.png",
+  url: "https://getkontext.com/blog/introducing-kontext",
+  mainEntityOfPage: "https://getkontext.com/blog/introducing-kontext",
+};
+
 export default function IntroducingKontextPost() {
   return (
     <article className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogPostJsonLd) }}
+      />
       {/* Back link */}
       <Link
         href="/blog"

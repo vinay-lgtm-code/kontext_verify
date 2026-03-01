@@ -37,9 +37,36 @@ export const metadata: Metadata = {
   },
 };
 
+const blogPostJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  headline: "Building Tamper-Evident Audit Trails for AI Agent Transactions",
+  description:
+    "AI agents are making autonomous financial decisions. Learn how digest chains provide cryptographic proof that your audit logs have not been altered.",
+  datePublished: "2026-02-05T00:00:00Z",
+  author: {
+    "@type": "Organization",
+    name: "Kontext",
+    url: "https://getkontext.com",
+  },
+  publisher: {
+    "@type": "Organization",
+    name: "Kontext",
+    url: "https://getkontext.com",
+    logo: { "@type": "ImageObject", url: "https://getkontext.com/og-image.png" },
+  },
+  image: "https://getkontext.com/og-image.png",
+  url: "https://getkontext.com/blog/tamper-evident-audit-trails",
+  mainEntityOfPage: "https://getkontext.com/blog/tamper-evident-audit-trails",
+};
+
 export default function TamperEvidentAuditTrailsPost() {
   return (
     <article className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogPostJsonLd) }}
+      />
       {/* Back link */}
       <Link
         href="/blog"
