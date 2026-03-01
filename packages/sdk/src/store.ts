@@ -10,6 +10,8 @@ import type {
   TransactionRecord,
   Task,
   AnomalyEvent,
+  AgentSession,
+  ProvenanceCheckpoint,
 } from './types.js';
 import type { StorageAdapter } from './storage.js';
 
@@ -25,6 +27,8 @@ const STORAGE_KEYS = {
   transactions: 'kontext:transactions',
   tasks: 'kontext:tasks',
   anomalies: 'kontext:anomalies',
+  sessions: 'kontext:sessions',
+  checkpoints: 'kontext:checkpoints',
 } as const;
 
 /**
@@ -39,6 +43,8 @@ export class KontextStore {
   private transactions: TransactionRecord[] = [];
   private tasks: Map<string, Task> = new Map();
   private anomalies: AnomalyEvent[] = [];
+  private sessions: Map<string, AgentSession> = new Map();
+  private checkpoints: Map<string, ProvenanceCheckpoint> = new Map();
   private storageAdapter: StorageAdapter | null = null;
   private readonly maxEntries: number;
 
@@ -79,12 +85,16 @@ export class KontextStore {
     const transactionsSnapshot = [...this.transactions];
     const tasksSnapshot = Array.from(this.tasks.entries());
     const anomaliesSnapshot = [...this.anomalies];
+    const sessionsSnapshot = Array.from(this.sessions.entries());
+    const checkpointsSnapshot = Array.from(this.checkpoints.entries());
 
     await Promise.all([
       this.storageAdapter.save(STORAGE_KEYS.actions, actionsSnapshot),
       this.storageAdapter.save(STORAGE_KEYS.transactions, transactionsSnapshot),
       this.storageAdapter.save(STORAGE_KEYS.tasks, tasksSnapshot),
       this.storageAdapter.save(STORAGE_KEYS.anomalies, anomaliesSnapshot),
+      this.storageAdapter.save(STORAGE_KEYS.sessions, sessionsSnapshot),
+      this.storageAdapter.save(STORAGE_KEYS.checkpoints, checkpointsSnapshot),
     ]);
   }
 
@@ -96,11 +106,13 @@ export class KontextStore {
   async restore(): Promise<void> {
     if (!this.storageAdapter) return;
 
-    const [actions, transactions, tasksEntries, anomalies] = await Promise.all([
+    const [actions, transactions, tasksEntries, anomalies, sessionsEntries, checkpointsEntries] = await Promise.all([
       this.storageAdapter.load(STORAGE_KEYS.actions),
       this.storageAdapter.load(STORAGE_KEYS.transactions),
       this.storageAdapter.load(STORAGE_KEYS.tasks),
       this.storageAdapter.load(STORAGE_KEYS.anomalies),
+      this.storageAdapter.load(STORAGE_KEYS.sessions),
+      this.storageAdapter.load(STORAGE_KEYS.checkpoints),
     ]);
 
     if (Array.isArray(actions)) {
@@ -114,6 +126,12 @@ export class KontextStore {
     }
     if (Array.isArray(anomalies)) {
       this.anomalies = anomalies;
+    }
+    if (Array.isArray(sessionsEntries)) {
+      this.sessions = new Map(sessionsEntries as [string, AgentSession][]);
+    }
+    if (Array.isArray(checkpointsEntries)) {
+      this.checkpoints = new Map(checkpointsEntries as [string, ProvenanceCheckpoint][]);
     }
   }
 
@@ -239,16 +257,84 @@ export class KontextStore {
   }
 
   // --------------------------------------------------------------------------
+  // Sessions (Provenance Layer 1)
+  // --------------------------------------------------------------------------
+
+  /** Store a session. */
+  addSession(session: AgentSession): void {
+    this.sessions.set(session.sessionId, session);
+  }
+
+  /** Retrieve a session by ID. */
+  getSession(sessionId: string): AgentSession | undefined {
+    return this.sessions.get(sessionId);
+  }
+
+  /** Update a session. */
+  updateSession(sessionId: string, updates: Partial<AgentSession>): AgentSession | undefined {
+    const existing = this.sessions.get(sessionId);
+    if (!existing) return undefined;
+    const updated: AgentSession = { ...existing, ...updates };
+    this.sessions.set(sessionId, updated);
+    return updated;
+  }
+
+  /** Retrieve all sessions. */
+  getSessions(): AgentSession[] {
+    return Array.from(this.sessions.values());
+  }
+
+  /** Retrieve sessions filtered by a predicate. */
+  querySessions(predicate: (session: AgentSession) => boolean): AgentSession[] {
+    return Array.from(this.sessions.values()).filter(predicate);
+  }
+
+  // --------------------------------------------------------------------------
+  // Checkpoints (Provenance Layer 3)
+  // --------------------------------------------------------------------------
+
+  /** Store a checkpoint. */
+  addCheckpoint(checkpoint: ProvenanceCheckpoint): void {
+    this.checkpoints.set(checkpoint.id, checkpoint);
+  }
+
+  /** Retrieve a checkpoint by ID. */
+  getCheckpoint(checkpointId: string): ProvenanceCheckpoint | undefined {
+    return this.checkpoints.get(checkpointId);
+  }
+
+  /** Update a checkpoint. */
+  updateCheckpoint(checkpointId: string, updates: Partial<ProvenanceCheckpoint>): ProvenanceCheckpoint | undefined {
+    const existing = this.checkpoints.get(checkpointId);
+    if (!existing) return undefined;
+    const updated: ProvenanceCheckpoint = { ...existing, ...updates };
+    this.checkpoints.set(checkpointId, updated);
+    return updated;
+  }
+
+  /** Retrieve all checkpoints. */
+  getCheckpoints(): ProvenanceCheckpoint[] {
+    return Array.from(this.checkpoints.values());
+  }
+
+  /** Retrieve checkpoints filtered by a predicate. */
+  queryCheckpoints(predicate: (cp: ProvenanceCheckpoint) => boolean): ProvenanceCheckpoint[] {
+    return Array.from(this.checkpoints.values()).filter(predicate);
+  }
+
+  // --------------------------------------------------------------------------
   // Utilities
   // --------------------------------------------------------------------------
 
   /** Get total record counts across all stores. */
-  getCounts(): { actions: number; transactions: number; tasks: number; anomalies: number } {
+  getCounts(): { actions: number; transactions: number; tasks: number; anomalies: number; sessions: number; checkpoints: number } {
     return {
       actions: this.actions.length,
       transactions: this.transactions.length,
       tasks: this.tasks.size,
       anomalies: this.anomalies.length,
+      sessions: this.sessions.size,
+      checkpoints: this.checkpoints.size,
     };
   }
 
@@ -258,5 +344,7 @@ export class KontextStore {
     this.transactions = [];
     this.tasks.clear();
     this.anomalies = [];
+    this.sessions.clear();
+    this.checkpoints.clear();
   }
 }

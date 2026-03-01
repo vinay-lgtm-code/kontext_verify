@@ -31,6 +31,12 @@ import type {
   ComplianceCertificate,
   AnchorResult,
   CounterpartyAttestation,
+  AgentSession,
+  CreateSessionInput,
+  ProvenanceCheckpoint,
+  CreateCheckpointInput,
+  HumanAttestation,
+  ProvenanceBundle,
 } from './types.js';
 import { TrustScorer } from './trust.js';
 import { AnomalyDetector } from './anomaly.js';
@@ -51,6 +57,7 @@ import type { EventExporter } from './exporters.js';
 import { NoopExporter } from './exporters.js';
 import { FeatureFlagManager } from './feature-flags.js';
 import { generateId, now, parseAmount } from './utils.js';
+import { ProvenanceManager } from './provenance.js';
 
 /** Storage key for plan metering data */
 const PLAN_STORAGE_KEY = 'kontext:plan';
@@ -98,6 +105,7 @@ export class Kontext {
   private readonly featureFlagManager: FeatureFlagManager | null;
   private readonly trustScorer: TrustScorer;
   private readonly anomalyDetector: AnomalyDetector;
+  private provenanceManager: ProvenanceManager | null = null;
 
   private constructor(config: KontextConfig) {
     this.config = config;
@@ -248,6 +256,14 @@ export class Kontext {
         `Metadata validation failed: ${err instanceof Error ? err.message : String(err)}`,
       );
     }
+  }
+
+  /** Lazy-init ProvenanceManager on first use. */
+  private getProvenanceManager(): ProvenanceManager {
+    if (!this.provenanceManager) {
+      this.provenanceManager = new ProvenanceManager(this.store, this.logger);
+    }
+    return this.provenanceManager;
   }
 
   // --------------------------------------------------------------------------
@@ -1007,6 +1023,92 @@ export class Kontext {
     const contentHash = hash.digest('hex');
 
     return { ...certificateContent, contentHash };
+  }
+
+  // --------------------------------------------------------------------------
+  // Agent Provenance
+  // --------------------------------------------------------------------------
+
+  /**
+   * Create a delegated agent session. Records the delegation in the
+   * tamper-evident digest chain as the session's genesis event.
+   */
+  async createAgentSession(input: CreateSessionInput): Promise<AgentSession> {
+    return this.getProvenanceManager().createSession(input);
+  }
+
+  /**
+   * Get an agent session by ID. Automatically marks expired sessions.
+   */
+  getAgentSession(sessionId: string): AgentSession | undefined {
+    return this.getProvenanceManager().getSession(sessionId);
+  }
+
+  /**
+   * Get all agent sessions.
+   */
+  getAgentSessions(): AgentSession[] {
+    return this.getProvenanceManager().getSessions();
+  }
+
+  /**
+   * End an active agent session. Records the termination in the digest chain.
+   */
+  async endAgentSession(sessionId: string): Promise<AgentSession> {
+    return this.getProvenanceManager().endSession(sessionId);
+  }
+
+  /**
+   * Check whether an action is within a session's delegated scope.
+   */
+  validateSessionScope(sessionId: string, action: string): boolean {
+    return this.getProvenanceManager().validateScope(sessionId, action);
+  }
+
+  /**
+   * Get all actions bound to a session (via sessionId on log/verify calls).
+   */
+  getSessionActions(sessionId: string): ActionLog[] {
+    return this.store.getActionsBySession(sessionId);
+  }
+
+  /**
+   * Create a provenance checkpoint -- a review point where a human
+   * can attest to a batch of agent actions.
+   */
+  async createCheckpoint(input: CreateCheckpointInput): Promise<ProvenanceCheckpoint> {
+    return this.getProvenanceManager().createCheckpoint(input);
+  }
+
+  /**
+   * Attach an externally-produced human attestation to a checkpoint.
+   * The attestation includes a cryptographic signature that the agent
+   * never touches -- key separation is the critical security property.
+   */
+  async attachAttestation(checkpointId: string, attestation: HumanAttestation): Promise<ProvenanceCheckpoint> {
+    return this.getProvenanceManager().attachAttestation(checkpointId, attestation);
+  }
+
+  /**
+   * Get a checkpoint by ID.
+   */
+  getCheckpoint(checkpointId: string): ProvenanceCheckpoint | undefined {
+    return this.getProvenanceManager().getCheckpoint(checkpointId);
+  }
+
+  /**
+   * Get all checkpoints, optionally filtered by session.
+   */
+  getCheckpoints(sessionId?: string): ProvenanceCheckpoint[] {
+    return this.getProvenanceManager().getCheckpoints(sessionId);
+  }
+
+  /**
+   * Export the full provenance bundle for a session: session record,
+   * all bound actions, all checkpoints, and verification stats.
+   */
+  getProvenanceBundle(sessionId: string): ProvenanceBundle {
+    return this.getProvenanceManager().getProvenanceBundle(sessionId);
   }
 
   // --------------------------------------------------------------------------

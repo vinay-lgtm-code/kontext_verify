@@ -177,6 +177,62 @@ const chain = ctx.verifyDigestChain();
 console.log(chain.valid); // true — no tampering
 ```
 
+## Agent Provenance
+
+Three layers of accountability for autonomous agents: session delegation, action binding, and human attestation.
+
+### CLI Commands
+
+```bash
+# Create a session — record who authorized the agent
+npx kontext-sdk session create --agent treasury-agent --delegated-by user:vinay --scope transfer,approve
+
+# List active sessions
+npx kontext-sdk session list --agent treasury-agent
+
+# End a session
+npx kontext-sdk session end <sessionId>
+
+# Create a checkpoint referencing specific actions
+npx kontext-sdk checkpoint create --session <sessionId> --actions act_1,act_2 --summary "Reviewed transfers"
+
+# Attest a checkpoint (human signs off)
+npx kontext-sdk checkpoint attest <checkpointId> --attested-by compliance@company.com
+
+# List checkpoints for a session
+npx kontext-sdk checkpoint list --session <sessionId>
+```
+
+### SDK Usage
+
+```typescript
+// Layer 1: Session delegation — who authorized the agent
+const session = await ctx.createAgentSession({
+  agentId: 'treasury-agent',
+  delegatedBy: 'user:vinay',
+  scope: ['transfer', 'approve'],
+});
+
+// Layer 2: Action binding — tie every call to the session
+const result = await ctx.verify({
+  ...txData,
+  sessionId: session.sessionId,
+});
+
+// Layer 3: Human attestation — reviewer signs off
+const checkpoint = await ctx.createCheckpoint({
+  sessionId: session.sessionId,
+  actionIds: [result.transaction.id],
+  summary: 'Reviewed $5K transfer',
+});
+
+await ctx.attestCheckpoint({
+  checkpointId: checkpoint.checkpointId,
+  attestedBy: 'compliance@company.com',
+  signature: reviewerSignature,
+});
+```
+
 ## Compliance Thresholds
 
 | Threshold | Amount | Trigger |
@@ -194,6 +250,7 @@ All thresholds are hardcoded for the GENIUS Act era. OFAC sanctions screening us
 - Compliance certificates with cryptographic proof
 - Agent reasoning logs — why the agent approved each transaction
 - Trust scoring and anomaly detection
+- Agent provenance — session delegation, action binding, human attestation
 - Zero runtime dependencies. Zero config. It just runs.
 
 ## What This Is Not

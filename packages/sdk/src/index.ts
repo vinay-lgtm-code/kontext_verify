@@ -136,6 +136,27 @@ export type {
   CounterpartyAttestation,
 } from './types.js';
 
+// Agent Provenance
+export { ProvenanceManager } from './provenance.js';
+export type {
+  AgentSession,
+  SessionStatus,
+  SessionConstraints,
+  CreateSessionInput,
+  ProvenanceCheckpoint,
+  CheckpointStatus,
+  CreateCheckpointInput,
+  HumanAttestation,
+  AttestationDecision,
+  AttestationPayload,
+  AttestationSignature,
+  VerificationKey,
+  ProvenanceAttestor,
+  ProvenanceBundle,
+  ProvenanceAction,
+  ProvenanceBundleVerification,
+} from './types.js';
+
 // Trust Scoring and Anomaly Detection (for direct use)
 export { TrustScorer } from './trust.js';
 export type { AgentData } from './trust.js';

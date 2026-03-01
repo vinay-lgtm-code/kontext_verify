@@ -21,6 +21,7 @@ import {
   Lock,
   Anchor,
   Handshake,
+  Fingerprint,
 } from "lucide-react";
 
 const VideoDemo = dynamic(
@@ -124,6 +125,25 @@ if (!result.compliant) {
   // Block transfer. result.checks shows what failed.
 }`;
 
+const provenanceCode = `const session = await ctx.createAgentSession({
+  agentId: 'treasury-agent',
+  delegatedBy: 'user:vinay',
+  scope: ['transfer', 'approve'],
+});
+
+// Actions bound to session via sessionId
+const result = await ctx.verify({
+  ...txData,
+  sessionId: session.sessionId,
+});
+
+// Human reviews and attests
+const cp = await ctx.createCheckpoint({
+  sessionId: session.sessionId,
+  actionIds: [result.transaction.id],
+  summary: 'Reviewed $5K transfer',
+});`;
+
 const features = [
   {
     icon: ClipboardCheck,
@@ -172,6 +192,12 @@ const features = [
     title: "Digest Chain",
     description:
       "Every action links to the previous via SHA-256. Proves no records were inserted, deleted, or reordered.",
+  },
+  {
+    icon: Fingerprint,
+    title: "Agent Provenance",
+    description:
+      "Session delegation records who authorized the agent. Action envelopes bind every call to a session. Human attestation proves a reviewer signed off.",
   },
 ];
 
@@ -497,6 +523,61 @@ export default function HomePage() {
                 <p className="mt-2 text-sm text-muted-foreground">{item.detail}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Agent Provenance */}
+      <section className="border-t-2 border-border bg-background">
+        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+          <div className="grid items-center gap-12 lg:grid-cols-2">
+            <div>
+              <Badge variant="secondary" className="mb-4">
+                Provenance
+              </Badge>
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                Three-Layer Agent Accountability
+              </h2>
+              <p className="mt-4 text-lg text-muted-foreground">
+                Session delegation records who authorized the agent. Action envelopes
+                bind every call to a session. Human attestation proves a reviewer
+                signed off with a key the agent never touches.
+              </p>
+              <ul className="mt-6 space-y-3">
+                {[
+                  "Session delegation — records who granted agent authority",
+                  "Action binding — ties every verify() call to a session",
+                  "Human attestation — proves a reviewer signed off",
+                  "Key separation — agent never touches the attestation key",
+                ].map((item) => (
+                  <li
+                    key={item}
+                    className="flex items-center gap-3 text-muted-foreground"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      className="text-primary shrink-0"
+                    >
+                      <path d="m9 12 2 2 4-4" />
+                      <circle cx="12" cy="12" r="10" />
+                    </svg>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-[5px] border-2 border-border shadow-shadow">
+              <CodeBlock
+                code={provenanceCode}
+                language="typescript"
+                filename="provenance.ts"
+              />
+            </div>
           </div>
         </div>
       </section>

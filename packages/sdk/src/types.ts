@@ -903,6 +903,219 @@ export interface CounterpartyAttestation {
 }
 
 // ============================================================================
+// Agent Provenance (3-Layer Model)
+// ============================================================================
+
+/** Session status */
+export type SessionStatus = 'active' | 'ended' | 'expired';
+
+/** Checkpoint status */
+export type CheckpointStatus = 'pending' | 'attested' | 'rejected' | 'expired';
+
+/** Attestation decision */
+export type AttestationDecision = 'approved' | 'rejected';
+
+// --- Layer 1: Session Delegation ---
+
+/** Constraints on what an agent session is authorized to do */
+export interface SessionConstraints {
+  /** Maximum single transaction amount */
+  maxAmount?: string;
+  /** Allowed blockchain networks */
+  allowedChains?: Chain[];
+  /** Allowed tokens */
+  allowedTokens?: Token[];
+  /** Allowed recipient addresses (normalized to lowercase) */
+  allowedRecipients?: string[];
+}
+
+/** Input for creating a delegated agent session */
+export interface CreateSessionInput {
+  /** Agent being delegated authority */
+  agentId: string;
+  /** Human principal who authorized this session */
+  delegatedBy: string;
+  /** Scoped capabilities (e.g., ['transfer', 'approve', 'query']) */
+  scope: string[];
+  /** Optional constraints on the session */
+  constraints?: SessionConstraints;
+  /** Session TTL in milliseconds (default: no expiry) */
+  expiresIn?: number;
+  /** Arbitrary metadata */
+  metadata?: Record<string, unknown>;
+}
+
+/** A delegated agent session with provenance data */
+export interface AgentSession {
+  /** Unique session identifier */
+  sessionId: string;
+  /** Agent ID */
+  agentId: string;
+  /** Human who delegated authority */
+  delegatedBy: string;
+  /** Authorized scope */
+  scope: string[];
+  /** Session constraints */
+  constraints?: SessionConstraints;
+  /** Session status */
+  status: SessionStatus;
+  /** Creation timestamp */
+  createdAt: string;
+  /** End timestamp (when explicitly ended) */
+  endedAt?: string;
+  /** Expiry timestamp */
+  expiresAt?: string;
+  /** Digest from the chain link that recorded session creation */
+  digest?: string;
+  /** Prior digest in the chain */
+  priorDigest?: string;
+  /** Arbitrary metadata */
+  metadata: Record<string, unknown>;
+}
+
+// --- Layer 3: Human Attestation Checkpoints ---
+
+/** Interface for external attestation providers (developer implements) */
+export interface ProvenanceAttestor {
+  /** Sign an attestation payload */
+  sign(payload: AttestationPayload): Promise<AttestationSignature>;
+  /** Get the verification key for signature checking */
+  getVerificationKey(): Promise<VerificationKey>;
+}
+
+/** Payload presented to an attestor for signing */
+export interface AttestationPayload {
+  /** Checkpoint ID */
+  checkpointId: string;
+  /** SHA-256 of concatenated action digests */
+  actionsDigest: string;
+  /** Session this checkpoint belongs to */
+  sessionId: string;
+  /** Timestamp of checkpoint creation */
+  timestamp: string;
+}
+
+/** Cryptographic signature from an attestor */
+export interface AttestationSignature {
+  /** The signature bytes (hex or base64) */
+  signature: string;
+  /** Algorithm used (e.g., 'ES256', 'Ed25519', 'RS256') */
+  algorithm: string;
+  /** Optional key identifier */
+  keyId?: string;
+}
+
+/** Public verification key for checking attestation signatures */
+export interface VerificationKey {
+  /** Public key (PEM, JWK string, or hex) */
+  publicKey: string;
+  /** Algorithm */
+  algorithm: string;
+  /** Optional key identifier */
+  keyId?: string;
+}
+
+/** A human attestation attached to a checkpoint */
+export interface HumanAttestation {
+  /** Unique attestation identifier */
+  attestationId: string;
+  /** Checkpoint this attestation covers */
+  checkpointId: string;
+  /** Human reviewer identifier */
+  reviewerId: string;
+  /** Decision */
+  decision: AttestationDecision;
+  /** Optional evidence or notes from the reviewer */
+  evidence?: string;
+  /** Cryptographic signature */
+  signature: AttestationSignature;
+  /** Verification key for the signature */
+  verificationKey: VerificationKey;
+  /** Attestation timestamp */
+  timestamp: string;
+}
+
+/** Input for creating a provenance checkpoint */
+export interface CreateCheckpointInput {
+  /** Session this checkpoint belongs to */
+  sessionId: string;
+  /** Action IDs to include in this checkpoint */
+  actionIds: string[];
+  /** Human-readable summary of what the agent did */
+  summary: string;
+  /** Checkpoint TTL in milliseconds (default: no expiry) */
+  expiresIn?: number;
+}
+
+/** A provenance checkpoint -- a review point in the action stream */
+export interface ProvenanceCheckpoint {
+  /** Unique checkpoint identifier */
+  id: string;
+  /** Session this checkpoint belongs to */
+  sessionId: string;
+  /** Action IDs covered by this checkpoint */
+  actionIds: string[];
+  /** Human-readable summary */
+  summary: string;
+  /** SHA-256 of concatenated action digests (proves which actions were reviewed) */
+  actionsDigest: string;
+  /** Checkpoint status */
+  status: CheckpointStatus;
+  /** Attached human attestation (present after attestation) */
+  attestation?: HumanAttestation;
+  /** Creation timestamp */
+  createdAt: string;
+  /** Expiry timestamp */
+  expiresAt?: string;
+}
+
+// --- Provenance Bundle (export) ---
+
+/** A provenance action with session binding */
+export interface ProvenanceAction {
+  /** Action ID */
+  actionId: string;
+  /** Action type */
+  type: string;
+  /** Digest from the chain */
+  digest: string;
+  /** Prior digest */
+  priorDigest: string;
+  /** Session this action is bound to */
+  sessionId: string;
+  /** Action timestamp */
+  timestamp: string;
+}
+
+/** Verification summary for a provenance bundle */
+export interface ProvenanceBundleVerification {
+  /** Whether the digest chain covering these actions is valid */
+  digestChainValid: boolean;
+  /** Total actions in the session */
+  totalActions: number;
+  /** Actions covered by an approved human attestation */
+  humanAttested: number;
+  /** Actions bound to the session */
+  sessionScoped: number;
+  /** Actions not yet covered by any checkpoint */
+  unattested: number;
+}
+
+/** Complete provenance export for a session */
+export interface ProvenanceBundle {
+  /** The session record */
+  session: AgentSession;
+  /** All actions bound to this session */
+  actions: ProvenanceAction[];
+  /** All checkpoints for this session */
+  checkpoints: ProvenanceCheckpoint[];
+  /** Verification summary */
+  verification: ProvenanceBundleVerification;
+  /** Export timestamp */
+  generatedAt: string;
+}
+
+// ============================================================================
 // Errors
 // ============================================================================
 
