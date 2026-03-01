@@ -42,7 +42,7 @@
     "access": "public"
   },
   "dependencies": {
-    "kontext-sdk": "^0.8.0"
+    "kontext-sdk": "workspace:*"
   },
   "peerDependencies": {
     "@modelcontextprotocol/sdk": ">=1.0.0",
