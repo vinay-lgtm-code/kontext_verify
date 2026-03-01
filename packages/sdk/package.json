@@ -51,8 +51,8 @@
     "a2a-attestation",
     "agent-to-agent",
     "provenance",
-    "agent-provenance"
-    "agent-to-agent"
+    "agent-provenance",
+    "agent-forensics"
   ],
   "author": "Legaci Labs Inc.",
   "license": "MIT",

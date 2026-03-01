@@ -96,6 +96,15 @@
   color: #d19a66;
 }
 
+/* Terminal cursor blink */
+@keyframes terminal-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.animate-terminal-blink {
+  animation: terminal-blink 1s steps(1) infinite;
+}
+
 /* Grid background pattern */
 .grid-pattern {
   background-image: linear-gradient(

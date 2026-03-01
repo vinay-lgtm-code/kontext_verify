@@ -26,17 +26,15 @@ import {
   Terminal,
 } from "lucide-react";
 
-const VideoDemo = dynamic(
-  () => import("@/components/video-demo").then((m) => ({ default: m.VideoDemo })),
+const TerminalDemo = dynamic(
+  () => import("@/components/terminal-demo").then((m) => ({ default: m.TerminalDemo })),
   {
     ssr: false,
     loading: () => (
-      <div className="w-full mx-auto rounded-[5px] border-2 border-border bg-card flex items-center justify-center" style={{ height: "700px" }}>
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground">Loading interactive demo...</p>
-        </div>
-      </div>
+      <div
+        className="w-full rounded-[5px] border-2 border-border bg-[#1a1a2e] shadow-shadow"
+        style={{ height: "380px" }}
+      />
     ),
   }
 );
@@ -299,22 +297,27 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Demo Video */}
+      {/* CLI Demo */}
       <section className="relative border-t-2 border-border bg-background">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <Badge variant="secondary" className="mb-4">
-              Interactive Demo
+        <div className="mx-auto max-w-4xl px-4 py-20 sm:px-6 lg:px-8">
+          <div className="text-center mb-10">
+            <Badge variant="secondary" className="mb-4 gap-1.5">
+              <Terminal size={12} />
+              CLI
             </Badge>
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              See it live — no API key required
+              Compliance from the terminal. Zero config.
             </h2>
             <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-              Chat with an AI agent that moves USDC. Watch the audit trail, digest chain,
-              trust score, and compliance checks update in real time.
+              Verify transactions, audit digest chains, export certificates, and anchor
+              proof on Base. All without leaving your terminal.
             </p>
+            <div className="mt-5 inline-flex items-center gap-2 rounded-[5px] border-2 border-border bg-card px-4 py-2 font-mono text-sm text-muted-foreground shadow-shadow-sm">
+              <span className="text-primary">$</span>
+              npm install -g @kontext-sdk/cli
+            </div>
           </div>
-          <VideoDemo />
+          <TerminalDemo />
         </div>
       </section>
 
