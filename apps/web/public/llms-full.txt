@@ -28,13 +28,15 @@
 10. [Digest Chain (Tamper-Evidence)](#digest-chain)
 11. [On-Chain Anchoring](#on-chain-anchoring)
 12. [A2A Attestation](#a2a-attestation)
-13. [Configuration](#configuration)
-14. [API Reference](#api-reference)
-15. [TypeScript Types](#typescript-types)
-16. [MCP Server](#mcp-server)
-17. [Pricing](#pricing)
-18. [Compliance Thresholds](#compliance-thresholds)
-19. [Supported Chains and Tokens](#supported-chains-and-tokens)
+13. [Agent Forensics](#agent-forensics)
+14. [CLI](#cli)
+15. [Configuration](#configuration)
+16. [API Reference](#api-reference)
+17. [TypeScript Types](#typescript-types)
+18. [MCP Server](#mcp-server)
+19. [Pricing](#pricing)
+20. [Compliance Thresholds](#compliance-thresholds)
+21. [Supported Chains and Tokens](#supported-chains-and-tokens)
 
 ---
 
@@ -331,6 +333,81 @@ The protocol uses `/.well-known/kontext.json` for agent discovery and `/kontext/
 
 ---
 
+## Agent Forensics
+
+Map wallets to agent identities, detect multi-wallet clustering, and compute identity confidence scores. Requires Pro plan (`kya-identity` gate).
+
+```typescript
+import { Kontext } from 'kontext-sdk';
+
+const ctx = Kontext.init({
+  apiKey: process.env.KONTEXT_KEY,
+  projectId: 'forensics',
+  plan: 'payg',
+});
+
+// Register an agent with wallet mappings
+ctx.registerAgentIdentity({
+  agentId: 'treasury-agent-v2',
+  displayName: 'Treasury Agent',
+  entityType: 'autonomous',
+  wallets: [
+    { address: '0xTreasury...abc', chain: 'base', label: 'primary' },
+    { address: '0xReserve...def', chain: 'base', label: 'reserve' },
+  ],
+});
+
+// Reverse lookup: wallet -> agent
+const agent = ctx.lookupAgentByWallet('0xTreasury...abc');
+
+// Detect wallet clusters (5 heuristics: shared-owner, temporal-correlation,
+// funding-chain, amount-pattern, network-overlap)
+const clusters = ctx.getWalletClusters();
+
+// Identity confidence score (0-100)
+const score = ctx.getKYAConfidenceScore('treasury-agent-v2');
+// { score: 82, level: 'high', components: [...] }
+
+// Export all forensics data
+const envelope = ctx.getKYAExport();
+```
+
+**Methods:** `registerAgentIdentity()`, `getAgentIdentity()`, `updateAgentIdentity()`, `removeAgentIdentity()`, `addAgentWallet()`, `lookupAgentByWallet()`, `getWalletClusters()`, `getKYAExport()`, `getKYAConfidenceScore()`.
+
+**Behavioral analysis (Enterprise):** `computeBehavioralEmbedding()`, `analyzeAgentLinks()`, `getLinkedAgents()`.
+
+---
+
+## CLI
+
+The Kontext CLI (`@kontext-sdk/cli`) provides 12 commands for compliance operations from the terminal.
+
+```bash
+# Install
+npm install -g @kontext-sdk/cli
+
+# Or run via npx
+npx @kontext-sdk/cli verify --chain base --amount 5000
+
+# Commands
+kontext check      # Static compliance check (no digest chain)
+kontext verify     # Full verification with digest chain + trust scoring
+kontext reason     # Log agent reasoning
+kontext cert       # Generate compliance certificate
+kontext audit      # Export audit trail
+kontext anchor     # Anchor digest on-chain
+kontext attest     # Exchange A2A attestation
+kontext sync       # Sync OFAC SDN list
+kontext session    # Manage agent sessions
+kontext checkpoint # Create provenance checkpoints
+kontext status     # Show current status
+kontext mcp        # Start MCP server for AI coding assistants
+```
+
+**MCP Server:** `kontext mcp` exposes 8 compliance tools to Claude Code, Cursor, and Windsurf via the Model Context Protocol.
+
+---
+
 ## Configuration
 
 ```typescript
@@ -403,6 +480,22 @@ ctx.getActions(): ActionLog[];
 // Persistence
 await ctx.flush(): Promise<void>;
 await ctx.restore(): Promise<void>;
+
+// Agent Forensics (Pro)
+ctx.registerAgentIdentity(input: RegisterIdentityInput): AgentIdentity;
+ctx.getAgentIdentity(agentId: string): AgentIdentity | undefined;
+ctx.updateAgentIdentity(agentId: string, input: UpdateIdentityInput): AgentIdentity;
+ctx.removeAgentIdentity(agentId: string): boolean;
+ctx.addAgentWallet(agentId: string, wallet: WalletMapping): AgentIdentity;
+ctx.lookupAgentByWallet(address: string): AgentIdentity | undefined;
+ctx.getWalletClusters(): WalletCluster[];
+ctx.getKYAExport(): KYAEnvelope;
+
+// Agent Forensics (Enterprise)
+ctx.computeBehavioralEmbedding(agentId: string): BehavioralEmbedding | null;
+ctx.analyzeAgentLinks(): AgentLink[];
+ctx.getLinkedAgents(agentId: string): string[];
+ctx.getKYAConfidenceScore(agentId: string): KYAConfidenceScore;
 
 // Plan management
 ctx.getUsage(): PlanUsage;

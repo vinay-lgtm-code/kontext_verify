@@ -138,6 +138,32 @@ const chain = ctx.verifyDigestChain();
 - `ctx.export({ format: 'json' })` — Export audit trail
 - `ctx.generateComplianceCertificate(input)` — Compliance certificate with digest proof
 
+### Agent Forensics (Pro)
+
+- `ctx.registerAgentIdentity(input)` — Register agent with wallet mappings
+- `ctx.getAgentIdentity(agentId)` — Retrieve agent identity
+- `ctx.addAgentWallet(agentId, wallet)` — Link additional wallet
+- `ctx.lookupAgentByWallet(address)` — Reverse lookup: wallet → agent
+- `ctx.getWalletClusters()` — Detect multi-wallet clusters (5 heuristics)
+- `ctx.getKYAConfidenceScore(agentId)` — Identity confidence (0-100)
+- `ctx.getKYAExport()` — Export all forensics data
+
+### CLI (`@kontext-sdk/cli`)
+
+```bash
+npm install -g @kontext-sdk/cli
+```
+
+12 commands: `check`, `verify`, `reason`, `cert`, `audit`, `anchor`, `attest`, `sync`, `session`, `checkpoint`, `status`, `mcp`.
+
+```bash
+# Verify a transaction
+kontext verify --chain base --amount 5000 --token USDC --from 0xSender --to 0xRecipient
+
+# Start MCP server for AI coding assistants
+kontext mcp
+```
+
 ## Error Handling
 
 - `verify()` returns `result.compliant: false` for failed checks — never throws for compliance failures

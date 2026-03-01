@@ -23,6 +23,8 @@ import {
   Zap,
   Anchor,
   Handshake,
+  Terminal,
+  Wrench,
 } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -339,6 +341,12 @@ export default function IntegrationsPage() {
             >
               Protocols
             </a>
+            <a
+              href="#cli-devops"
+              className="inline-flex shrink-0 rounded-[5px] border-2 border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground hover:bg-accent"
+            >
+              CLI &amp; DevOps
+            </a>
           </div>
         </div>
       </section>
@@ -527,6 +535,74 @@ export default function IntegrationsPage() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CLI & DevOps */}
+      <section
+        id="cli-devops"
+        className="scroll-mt-32 border-t-2 border-border bg-background"
+      >
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="mb-12">
+            <Badge variant="outline" className="mb-4">
+              CLI &amp; DevOps
+            </Badge>
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              Terminal-first compliance
+            </h2>
+            <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
+              Run compliance operations from the command line or integrate with
+              AI coding assistants via the MCP server.
+            </p>
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-2">
+            <Card className="group relative overflow-hidden transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none">
+              <CardHeader>
+                <div className="mb-3 flex items-center justify-between">
+                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-[5px] border-2 border-border bg-primary/20 text-primary">
+                    <Terminal size={20} />
+                  </div>
+                  <Badge variant="outline">Available</Badge>
+                </div>
+                <CardTitle className="text-lg">Kontext CLI</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-sm leading-relaxed">
+                  12 commands for compliance operations: check, verify, reason,
+                  cert, audit, anchor, attest, sync, session, checkpoint, status,
+                  and mcp. Install globally or run via npx.
+                </CardDescription>
+                <div className="mt-4 overflow-hidden rounded-[5px] border border-border bg-muted/50 p-3 font-mono text-xs">
+                  <span className="text-primary">$</span> npm install -g @kontext-sdk/cli<br/>
+                  <span className="text-primary">$</span> kontext verify --chain base --amount 5000
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="group relative overflow-hidden transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none">
+              <CardHeader>
+                <div className="mb-3 flex items-center justify-between">
+                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-[5px] border-2 border-border bg-primary/20 text-primary">
+                    <Wrench size={20} />
+                  </div>
+                  <Badge variant="outline">Available</Badge>
+                </div>
+                <CardTitle className="text-lg">MCP Server</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-sm leading-relaxed">
+                  8 compliance tools exposed via Model Context Protocol for Claude
+                  Code, Cursor, and Windsurf. AI coding assistants get compliance
+                  verification, audit export, and trust scoring as native tools.
+                </CardDescription>
+                <div className="mt-4 overflow-hidden rounded-[5px] border border-border bg-muted/50 p-3 font-mono text-xs">
+                  <span className="text-primary">$</span> kontext mcp
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>

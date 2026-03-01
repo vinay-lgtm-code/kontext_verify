@@ -42,6 +42,8 @@ const result = await ctx.verify({
 6. **Anomaly detection** — Rule-based detection (unusualAmount, frequencySpike + 4 Pro rules)
 7. **Compliance certificates** — Exportable certificates with digest proof + trust score + reasoning
 8. **Agent reasoning logs** — Log why agents made decisions, linked to digest chain
+9. **Agent forensics** — Wallet-to-agent mapping, multi-wallet clustering (5 heuristics), identity confidence scoring (Pro)
+10. **CLI** — 12 commands for compliance operations from the terminal (`@kontext-sdk/cli`)
 
 ## MCP Integration
 
@@ -59,6 +61,15 @@ Kontext exposes an MCP server for Claude Code, Cursor, and Windsurf:
 ```
 
 MCP tools: verify_transaction, check_sanctions, log_reasoning, get_trust_score, get_compliance_certificate, anchor_digest, exchange_attestation, verify_audit_trail.
+
+## CLI (@kontext-sdk/cli)
+
+```bash
+npm install -g @kontext-sdk/cli
+kontext verify --chain base --amount 5000 --token USDC --from 0xSender --to 0xRecipient
+```
+
+12 commands: check, verify, reason, cert, audit, anchor, attest, sync, session, checkpoint, status, mcp.
 
 ## Supported Chains
 

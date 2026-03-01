@@ -22,6 +22,8 @@ import {
   Anchor,
   Handshake,
   Fingerprint,
+  UserSearch,
+  Terminal,
 } from "lucide-react";
 
 const VideoDemo = dynamic(
@@ -198,6 +200,18 @@ const features = [
     title: "Agent Provenance",
     description:
       "Session delegation records who authorized the agent. Action envelopes bind every call to a session. Human attestation proves a reviewer signed off.",
+  },
+  {
+    icon: UserSearch,
+    title: "Agent Forensics",
+    description:
+      "Map wallets to agents, detect multi-wallet clustering with 5 heuristics, and compute identity confidence scores. Pro tier.",
+  },
+  {
+    icon: Terminal,
+    title: "Kontext CLI",
+    description:
+      "Verify transactions, audit digest chains, anchor on-chain, sync OFAC lists, and manage agent sessions — all from the terminal.",
   },
 ];
 

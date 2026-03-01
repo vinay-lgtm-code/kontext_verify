@@ -58,6 +58,24 @@ import { NoopExporter } from './exporters.js';
 import { FeatureFlagManager } from './feature-flags.js';
 import { generateId, now, parseAmount } from './utils.js';
 import { ProvenanceManager } from './provenance.js';
+import {
+  AgentIdentityRegistry,
+  WalletClusterer,
+  BehavioralFingerprinter,
+  CrossSessionLinker,
+  KYAConfidenceScorer,
+} from './kya/index.js';
+import type {
+  AgentIdentity,
+  RegisterIdentityInput,
+  UpdateIdentityInput,
+  WalletMapping,
+  WalletCluster,
+  BehavioralEmbedding,
+  AgentLink,
+  KYAConfidenceScore,
+  KYAEnvelope,
+} from './kya/index.js';
 
 /** Storage key for plan metering data */
 const PLAN_STORAGE_KEY = 'kontext:plan';
@@ -106,6 +124,11 @@ export class Kontext {
   private readonly trustScorer: TrustScorer;
   private readonly anomalyDetector: AnomalyDetector;
   private provenanceManager: ProvenanceManager | null = null;
+  private identityRegistry: AgentIdentityRegistry | null = null;
+  private walletClusterer: WalletClusterer | null = null;
+  private behavioralFingerprinter: BehavioralFingerprinter | null = null;
+  private crossSessionLinker: CrossSessionLinker | null = null;
+  private confidenceScorer: KYAConfidenceScorer | null = null;
 
   private constructor(config: KontextConfig) {
     this.config = config;
@@ -264,6 +287,46 @@ export class Kontext {
       this.provenanceManager = new ProvenanceManager(this.store, this.logger);
     }
     return this.provenanceManager;
+  }
+
+  /** Lazy-init AgentIdentityRegistry on first use. */
+  private getIdentityRegistry(): AgentIdentityRegistry {
+    if (!this.identityRegistry) {
+      this.identityRegistry = new AgentIdentityRegistry();
+    }
+    return this.identityRegistry;
+  }
+
+  /** Lazy-init WalletClusterer on first use. */
+  private getWalletClusterer(): WalletClusterer {
+    if (!this.walletClusterer) {
+      this.walletClusterer = new WalletClusterer();
+    }
+    return this.walletClusterer;
+  }
+
+  /** Lazy-init BehavioralFingerprinter on first use. */
+  private getBehavioralFingerprinter(): BehavioralFingerprinter {
+    if (!this.behavioralFingerprinter) {
+      this.behavioralFingerprinter = new BehavioralFingerprinter();
+    }
+    return this.behavioralFingerprinter;
+  }
+
+  /** Lazy-init CrossSessionLinker on first use. */
+  private getCrossSessionLinker(): CrossSessionLinker {
+    if (!this.crossSessionLinker) {
+      this.crossSessionLinker = new CrossSessionLinker();
+    }
+    return this.crossSessionLinker;
+  }
+
+  /** Lazy-init KYAConfidenceScorer on first use. */
+  private getConfidenceScorer(): KYAConfidenceScorer {
+    if (!this.confidenceScorer) {
+      this.confidenceScorer = new KYAConfidenceScorer();
+    }
+    return this.confidenceScorer;
   }
 
   // --------------------------------------------------------------------------
@@ -1109,6 +1172,146 @@ export class Kontext {
    */
   getProvenanceBundle(sessionId: string): ProvenanceBundle {
     return this.getProvenanceManager().getProvenanceBundle(sessionId);
+  }
+
+  // --------------------------------------------------------------------------
+  // Agent Forensics (KYA)
+  // --------------------------------------------------------------------------
+
+  /**
+   * Register a new agent identity with optional wallet mappings.
+   * Requires Pro plan.
+   */
+  registerAgentIdentity(input: RegisterIdentityInput): AgentIdentity {
+    requirePlan('kya-identity', this.planManager.getTier());
+    return this.getIdentityRegistry().register(input);
+  }
+
+  /**
+   * Get a registered agent identity by ID.
+   * Requires Pro plan.
+   */
+  getAgentIdentity(agentId: string): AgentIdentity | undefined {
+    requirePlan('kya-identity', this.planManager.getTier());
+    return this.getIdentityRegistry().get(agentId);
+  }
+
+  /**
+   * Update an existing agent identity.
+   * Requires Pro plan.
+   */
+  updateAgentIdentity(agentId: string, input: UpdateIdentityInput): AgentIdentity {
+    requirePlan('kya-identity', this.planManager.getTier());
+    return this.getIdentityRegistry().update(agentId, input);
+  }
+
+  /**
+   * Remove an agent identity.
+   * Requires Pro plan.
+   */
+  removeAgentIdentity(agentId: string): boolean {
+    requirePlan('kya-identity', this.planManager.getTier());
+    return this.getIdentityRegistry().remove(agentId);
+  }
+
+  /**
+   * Add a wallet to an existing agent identity.
+   * Requires Pro plan.
+   */
+  addAgentWallet(agentId: string, wallet: { address: string; chain: string; label?: string; isPrimary?: boolean }): AgentIdentity {
+    requirePlan('kya-identity', this.planManager.getTier());
+    return this.getIdentityRegistry().addWallet(agentId, wallet);
+  }
+
+  /**
+   * Look up which agent owns a wallet address.
+   * Requires Pro plan.
+   */
+  lookupAgentByWallet(address: string): AgentIdentity | undefined {
+    requirePlan('kya-identity', this.planManager.getTier());
+    return this.getIdentityRegistry().lookupByWallet(address);
+  }
+
+  /**
+   * Compute wallet clusters from transaction patterns and declared identities.
+   * Requires Pro plan.
+   */
+  getWalletClusters(): WalletCluster[] {
+    requirePlan('kya-identity', this.planManager.getTier());
+    const clusterer = this.getWalletClusterer();
+    clusterer.analyzeFromStore(this.store, this.getIdentityRegistry());
+    return clusterer.getClusters();
+  }
+
+  /**
+   * Export all KYA data as a single envelope.
+   * Requires Pro plan.
+   */
+  getKYAExport(): KYAEnvelope {
+    requirePlan('kya-identity', this.planManager.getTier());
+    const registry = this.getIdentityRegistry();
+    const clusterer = this.getWalletClusterer();
+    clusterer.analyzeFromStore(this.store, registry);
+    return {
+      identities: registry.getAll(),
+      clusters: clusterer.getClusters(),
+      embeddings: [],
+      links: [],
+      scores: [],
+      generatedAt: now(),
+    };
+  }
+
+  /**
+   * Compute a behavioral embedding for an agent from transaction history.
+   * Returns null if insufficient data. Requires Enterprise plan.
+   */
+  computeBehavioralEmbedding(agentId: string): BehavioralEmbedding | null {
+    requirePlan('kya-behavioral', this.planManager.getTier());
+    return this.getBehavioralFingerprinter().computeEmbedding(agentId, this.store);
+  }
+
+  /**
+   * Analyze all agents and create cross-session links.
+   * Requires Enterprise plan.
+   */
+  analyzeAgentLinks(): AgentLink[] {
+    requirePlan('kya-behavioral', this.planManager.getTier());
+    const clusterer = this.getWalletClusterer();
+    clusterer.analyzeFromStore(this.store, this.getIdentityRegistry());
+    return this.getCrossSessionLinker().analyzeAndLink(
+      this.store,
+      this.getIdentityRegistry(),
+      clusterer,
+      this.getBehavioralFingerprinter(),
+    );
+  }
+
+  /**
+   * Get agents linked to a specific agent.
+   * Requires Enterprise plan.
+   */
+  getLinkedAgents(agentId: string): string[] {
+    requirePlan('kya-behavioral', this.planManager.getTier());
+    return this.getCrossSessionLinker().getLinkedAgents(agentId);
+  }
+
+  /**
+   * Compute a composite identity confidence score for an agent.
+   * Requires Enterprise plan.
+   */
+  getKYAConfidenceScore(agentId: string): KYAConfidenceScore {
+    requirePlan('kya-behavioral', this.planManager.getTier());
+    const clusterer = this.getWalletClusterer();
+    clusterer.analyzeFromStore(this.store, this.getIdentityRegistry());
+    return this.getConfidenceScorer().computeScore(
+      agentId,
+      this.getIdentityRegistry(),
+      clusterer,
+      this.getBehavioralFingerprinter(),
+      this.getCrossSessionLinker(),
+      this.store,
+    );
   }
 
   // --------------------------------------------------------------------------

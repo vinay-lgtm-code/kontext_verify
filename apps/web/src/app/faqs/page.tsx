@@ -95,6 +95,21 @@ const faqCategories = [
         answer:
           "Yes, but it's minimal. Each anchor transaction costs roughly 45K gas on Base, which at current gas prices is well under $0.01. Read-only verification (checking if a digest was anchored) costs nothing — it's a standard eth_call with no gas. The SDK's verifyAnchor() function works with zero dependencies, just a raw RPC URL.",
       },
+      {
+        question: "What is agent forensics?",
+        answer:
+          "Agent forensics maps wallets to agent identities, detects multi-wallet clustering using 5 heuristics (shared-owner, temporal-correlation, funding-chain, amount-pattern, and network-overlap), and computes identity confidence scores from 0 to 100. It answers the question: which agent controls which wallets? Available on the Pro tier via registerAgentIdentity(), getWalletClusters(), and getKYAConfidenceScore().",
+      },
+      {
+        question: "How does wallet clustering work?",
+        answer:
+          "Wallet clustering uses a Union-Find algorithm with 5 heuristics to detect wallets controlled by the same agent. The heuristics are: shared-owner (explicitly registered), temporal-correlation (wallets active in the same time windows), funding-chain (one wallet funds another), amount-pattern (matching transaction amounts across wallets), and network-overlap (shared counterparties). Each cluster includes evidence trails documenting why wallets were grouped.",
+      },
+      {
+        question: "What is the Kontext CLI?",
+        answer:
+          "The Kontext CLI (@kontext-sdk/cli) provides 12 commands for compliance operations from the terminal: check (static compliance check), verify (full verification with digest chain), reason (log agent reasoning), cert (generate compliance certificates), audit (export audit trails), anchor (on-chain anchoring), attest (A2A attestation), sync (OFAC SDN list sync), session (manage agent sessions), checkpoint (create provenance checkpoints), and mcp (start MCP server for AI coding assistants). Install with npm install -g @kontext-sdk/cli or run via npx. Free tier.",
+      },
     ],
   },
   {
