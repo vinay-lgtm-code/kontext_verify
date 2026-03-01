@@ -52,6 +52,7 @@
     "agent-to-agent",
     "provenance",
     "agent-provenance"
+    "agent-to-agent"
   ],
   "author": "Legaci Labs Inc.",
   "license": "MIT",
