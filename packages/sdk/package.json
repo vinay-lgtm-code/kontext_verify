@@ -1,6 +1,6 @@
 {
   "name": "kontext-sdk",
-  "version": "0.5.0",
+  "version": "0.8.0",
   "description": "Compliance audit trail SDK for AI agents making stablecoin payments on Base. Tamper-evident digest chains, OFAC screening, compliance certificates. x402 + Circle Programmable Wallets.",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -49,6 +49,9 @@
     "circle",
     "onchain-anchoring",
     "a2a-attestation",
+    "agent-to-agent",
+    "provenance",
+    "agent-provenance"
     "agent-to-agent"
   ],
   "author": "Legaci Labs Inc.",

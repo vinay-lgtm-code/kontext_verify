@@ -97,6 +97,14 @@ Commands:
   audit               Verify digest chain integrity
   anchor              Anchor terminal digest on-chain (Base)
   attest              Exchange A2A compliance attestation with counterparty
+  session           Manage delegated agent sessions
+                      create  --agent --delegated-by --scope <caps>
+                      list
+                      end <sessionId>
+  checkpoint        Manage provenance checkpoints
+                      create  --session --actions --summary
+                      attest  <checkpointId> --reviewer --decision
+                      list    [--session <id>]
   sync [--full]       Fetch latest OFAC SDN list from U.S. Treasury
                         --full  One-time: download entire SDN XML, parse ALL
                                 sanctioned entities + digital currency addresses
@@ -250,6 +258,33 @@ async function main(): Promise<void> {
     case 'mcp': {
       const { runMcp } = await import('./commands/mcp.js');
       await runMcp();
+      break;
+    }
+
+    case 'session': {
+      const subcommand = positional[0] ?? '';
+      const agent = flag(flags, 'agent');
+      const delegatedBy = flag(flags, 'delegated-by');
+      const scope = flag(flags, 'scope');
+      const expiresIn = flag(flags, 'expires-in');
+      const maxAmount = flag(flags, 'max-amount');
+      const sessionId = positional[1] ?? flag(flags, 'session');
+      const { runSession } = await import('./commands/session.js');
+      await runSession({ subcommand, agent, delegatedBy, scope, expiresIn, maxAmount, sessionId, json });
+      break;
+    }
+
+    case 'checkpoint': {
+      const subcommand = positional[0] ?? '';
+      const sessionArg = flag(flags, 'session');
+      const actions = flag(flags, 'actions');
+      const summary = flag(flags, 'summary');
+      const reviewer = flag(flags, 'reviewer');
+      const decision = flag(flags, 'decision');
+      const evidence = flag(flags, 'evidence');
+      const checkpointId = positional[1] ?? flag(flags, 'checkpoint');
+      const { runCheckpoint } = await import('./commands/checkpoint.js');
+      await runCheckpoint({ subcommand, session: sessionArg, actions, summary, reviewer, decision, evidence, checkpointId, json });
       break;
     }
 

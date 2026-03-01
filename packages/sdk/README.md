@@ -161,6 +161,61 @@ const chain = ctx.verifyDigestChain();
 console.log(chain.valid); // true — no tampering
 ```
 
+### Agent Provenance
+
+Three layers of accountability: session delegation, action binding, and human attestation.
+
+```typescript
+// Layer 1: Session delegation — record who authorized the agent
+const session = await ctx.createAgentSession({
+  agentId: 'treasury-agent',
+  delegatedBy: 'user:vinay',
+  scope: ['transfer', 'approve'],
+  expiresAt: new Date(Date.now() + 3600_000).toISOString(),
+});
+
+// Layer 2: Action binding — tie every call to the session
+const result = await ctx.verify({
+  txHash: '0xabc...',
+  chain: 'base',
+  amount: '5000',
+  token: 'USDC',
+  from: '0xAgent...',
+  to: '0xMerchant...',
+  agentId: 'treasury-agent',
+  sessionId: session.sessionId,
+});
+
+// Layer 3: Human attestation — reviewer signs off
+const checkpoint = await ctx.createCheckpoint({
+  sessionId: session.sessionId,
+  actionIds: [result.transaction.id],
+  summary: 'Reviewed $5K transfer to known vendor',
+});
+
+await ctx.attestCheckpoint({
+  checkpointId: checkpoint.checkpointId,
+  attestedBy: 'compliance@company.com',
+  signature: reviewerSignature,
+});
+
+// End session, list sessions, list checkpoints
+await ctx.endAgentSession(session.sessionId);
+const sessions = ctx.getAgentSessions('treasury-agent');
+const checkpoints = ctx.getCheckpoints(session.sessionId);
+```
+
+#### CLI Commands
+
+```bash
+npx kontext-sdk session create --agent treasury-agent --delegated-by user:vinay --scope transfer,approve
+npx kontext-sdk session list --agent treasury-agent
+npx kontext-sdk session end <sessionId>
+npx kontext-sdk checkpoint create --session <sessionId> --actions act_1,act_2 --summary "Reviewed transfers"
+npx kontext-sdk checkpoint attest <checkpointId> --attested-by compliance@company.com
+npx kontext-sdk checkpoint list --session <sessionId>
+```
+
 ### Persist Across Restarts
 
 ```typescript
@@ -193,6 +248,7 @@ OFAC sanctions screening uses the built-in SDN list. No API key required.
 - Compliance certificates with SHA-256 proof
 - Agent reasoning logs
 - Trust scoring and anomaly detection
+- Agent provenance — session delegation, action binding, human attestation
 - MCP server mode for AI coding tools
 - Zero runtime dependencies
 

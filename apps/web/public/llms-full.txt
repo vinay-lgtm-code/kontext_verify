@@ -1,0 +1,529 @@
+# Kontext SDK — Complete Documentation
+
+> Trust infrastructure for AI agents that move money.
+
+**Version:** 0.7.0
+**License:** MIT
+**Runtime dependencies:** Zero
+**Node.js:** >= 18.0.0
+**TypeScript:** >= 5.0
+**Package:** `kontext-sdk` on npm
+**Source:** https://github.com/Legaci-Labs/kontext
+**Website:** https://getkontext.com
+**Last updated:** 2026-02-28
+
+---
+
+## Table of Contents
+
+1. [Installation](#installation)
+2. [Quick Start](#quick-start)
+3. [Core Concept: verify()](#core-concept-verify)
+4. [Action Logging](#action-logging)
+5. [Agent Reasoning](#agent-reasoning)
+6. [Task Confirmation (Human-in-the-Loop)](#task-confirmation)
+7. [Audit Export](#audit-export)
+8. [Trust Scoring](#trust-scoring)
+9. [Anomaly Detection](#anomaly-detection)
+10. [Digest Chain (Tamper-Evidence)](#digest-chain)
+11. [On-Chain Anchoring](#on-chain-anchoring)
+12. [A2A Attestation](#a2a-attestation)
+13. [Configuration](#configuration)
+14. [API Reference](#api-reference)
+15. [TypeScript Types](#typescript-types)
+16. [MCP Server](#mcp-server)
+17. [Pricing](#pricing)
+18. [Compliance Thresholds](#compliance-thresholds)
+19. [Supported Chains and Tokens](#supported-chains-and-tokens)
+
+---
+
+## Installation
+
+```bash
+npm install kontext-sdk
+# or
+yarn add kontext-sdk
+# or
+pnpm add kontext-sdk
+```
+
+Requirements: Node.js 18+ and TypeScript 5.0+. The SDK has zero runtime dependencies.
+
+---
+
+## Quick Start
+
+```typescript
+import { Kontext } from 'kontext-sdk';
+
+// Initialize -- no API key needed for local mode
+const ctx = Kontext.init({
+  projectId: 'my-project',
+  environment: 'development',
+});
+
+// Verify a USDC transfer in one call
+const result = await ctx.verify({
+  txHash: '0xabc...def',
+  chain: 'base',
+  amount: '5000',
+  token: 'USDC',
+  from: '0xsender...',
+  to: '0xrecipient...',
+  agentId: 'payment-agent-v2',
+});
+
+if (!result.compliant) {
+  console.warn('Blocked:', result.checks.filter(c => !c.passed));
+  console.warn('Risk level:', result.riskLevel);
+} else {
+  console.log('Trust score:', result.trustScore.score);
+  console.log('Digest proof valid:', result.digestProof.valid);
+}
+```
+
+---
+
+## Core Concept: verify()
+
+`verify()` is the primary function. It combines transaction logging, OFAC screening, threshold checks, trust scoring, and digest chain proof into a single call.
+
+**Input:** `VerifyInput` — txHash, chain, amount, token, from, to, agentId, plus optional reasoning, anchor config, and counterparty config.
+
+**Output:** `VerifyResult` — compliant (boolean), checks (array of pass/fail), riskLevel (low/medium/high/critical), trustScore, digestProof, transaction record, and optional anchorProof and counterparty attestation.
+
+```typescript
+const result = await ctx.verify({
+  txHash: '0xabc...def',
+  chain: 'base',
+  amount: '5000',
+  token: 'USDC',
+  from: '0xAgentWallet',
+  to: '0xRecipient',
+  agentId: 'treasury-agent-v2',
+  reasoning: 'Within daily limit. Recipient in allowlist.',
+  anchor: {
+    rpcUrl: 'https://base-mainnet.g.alchemy.com/v2/YOUR_KEY',
+    contractAddress: '0xYourAnchorContract',
+    privateKey: process.env.ANCHOR_PRIVATE_KEY,
+  },
+  counterparty: {
+    endpoint: 'https://receiver.example.com',
+    agentId: 'receiver-v1',
+  },
+});
+```
+
+---
+
+## Action Logging
+
+Log any agent action into the tamper-evident digest chain.
+
+```typescript
+// Log a generic action
+await ctx.log({
+  action: 'data_access',
+  agentId: 'research-agent',
+  details: 'Queried customer database',
+  metadata: { purpose: 'quarterly_report' },
+});
+
+// Log a transaction specifically
+await ctx.logTransaction({
+  txHash: '0x...',
+  chain: 'base',
+  amount: '5000',
+  token: 'USDC',
+  from: '0xsender',
+  to: '0xrecipient',
+  agentId: 'payment-agent',
+});
+```
+
+---
+
+## Agent Reasoning
+
+Log why agents made decisions. Reasoning entries are linked to the digest chain.
+
+```typescript
+await ctx.logReasoning({
+  agentId: 'payment-agent-v2',
+  action: 'approve-transfer',
+  reasoning: 'Transfer within daily limit. Recipient verified in allowlist.',
+  confidence: 0.95,
+  context: { dailyTotal: '32000', recipientVerified: true },
+});
+
+// Retrieve reasoning entries
+const entries = ctx.getReasoningEntries('payment-agent-v2');
+```
+
+---
+
+## Task Confirmation
+
+Human-in-the-loop approval for high-value or sensitive operations.
+
+```typescript
+// Create a task requiring human approval
+const task = await ctx.createTask({
+  description: 'Approve $25,000 USDC transfer to 0xrecipient',
+  agentId: 'treasury-agent-v2',
+  requiredEvidence: ['txHash', 'recipientVerified'],
+});
+
+// Human confirms with evidence
+const confirmed = await ctx.confirmTask({
+  taskId: task.id,
+  evidence: { txHash: '0xabc...def', recipientVerified: true },
+  confirmedBy: 'admin@company.com',
+});
+
+// Check status, list pending
+const status = await ctx.getTaskStatus(task.id);
+const pending = ctx.getTasks('pending');
+```
+
+---
+
+## Audit Export
+
+Export audit trails and generate compliance certificates.
+
+```typescript
+// Export as JSON (CSV on Pro tier)
+const audit = await ctx.export({ format: 'json' });
+
+// Verify digest chain integrity
+const chain = ctx.verifyDigestChain();
+console.log('Chain valid:', chain.valid);
+console.log('Chain length:', chain.chainLength);
+
+// Generate compliance certificate
+const cert = await ctx.generateComplianceCertificate({
+  agentId: 'treasury-agent-v2',
+  timeRange: { from: startOfMonth, to: endOfMonth },
+  includeReasoning: true,
+});
+// cert.complianceStatus, cert.digestChain.verified, cert.contentHash
+```
+
+---
+
+## Trust Scoring
+
+Every agent gets a trust score from 0 to 100, computed from five factors.
+
+```typescript
+const trust = await ctx.getTrustScore('payment-agent-v2');
+// trust.score = 87 (0-100)
+// trust.level = 'high'
+// trust.factors = {
+//   history: 0.95,
+//   amount: 0.88,
+//   frequency: 0.92,
+//   destination: 0.85,
+//   behavior: 0.90,
+// }
+
+// Evaluate a transaction before executing
+const evaluation = await ctx.evaluateTransaction({
+  txHash: '0x...', chain: 'base', amount: '15000',
+  token: 'USDC', from: '0xsender', to: '0xrecipient',
+  agentId: 'payment-agent-v2',
+});
+```
+
+---
+
+## Anomaly Detection
+
+Rule-based detection of suspicious agent behavior.
+
+**Free tier rules:** `unusualAmount`, `frequencySpike`
+**Pro tier rules (additional):** `newDestination`, `offHoursActivity`, `rapidSuccession`, `roundAmount`
+
+```typescript
+ctx.enableAnomalyDetection({
+  rules: ['unusualAmount', 'frequencySpike'],
+  thresholds: { maxAmount: '50000', maxFrequency: 20 },
+});
+
+ctx.onAnomaly((event) => {
+  console.log('Anomaly:', event.type, event.details);
+});
+
+ctx.disableAnomalyDetection();
+```
+
+---
+
+## Digest Chain
+
+Tamper-evident SHA-256 hash chain. Every logged action produces a digest link. The chain is verifiable: if any record is altered, the chain breaks.
+
+```typescript
+// Get terminal digest (fingerprint of entire audit trail)
+const terminal = ctx.getTerminalDigest();
+
+// Verify chain integrity
+const verification = ctx.verifyDigestChain();
+// verification.valid = true, verification.chainLength = 42
+
+// Export for external verification
+const exported = ctx.exportDigestChain();
+// { genesisHash, links, terminalDigest }
+```
+
+---
+
+## On-Chain Anchoring
+
+Write the terminal digest to a Base smart contract. Anyone can independently verify that compliance checks ran at a specific block height.
+
+```typescript
+// Via verify() with anchor config
+const result = await ctx.verify({
+  txHash: '0x...', chain: 'base', amount: '5000', token: 'USDC',
+  from: '0xsender', to: '0xrecipient', agentId: 'agent-v2',
+  anchor: {
+    rpcUrl: 'https://base-mainnet.g.alchemy.com/v2/YOUR_KEY',
+    contractAddress: '0xYourContract',
+    privateKey: process.env.ANCHOR_PRIVATE_KEY,
+  },
+});
+// result.anchorProof = { txHash, blockNumber, chain }
+
+// Standalone verification (zero dependencies, uses native fetch)
+import { verifyAnchor, getAnchor } from 'kontext-sdk';
+const verified = await verifyAnchor(rpcUrl, contractAddress, digest);
+const details = await getAnchor(rpcUrl, contractAddress, digest);
+```
+
+---
+
+## A2A Attestation
+
+When two agents transact, both sides exchange compliance digests as bilateral proof.
+
+```typescript
+// Via verify() with counterparty config
+const result = await ctx.verify({
+  txHash: '0x...', chain: 'base', amount: '5000', token: 'USDC',
+  from: '0xsender', to: '0xrecipient', agentId: 'sender-agent',
+  counterparty: {
+    endpoint: 'https://receiver.example.com',
+    agentId: 'receiver-v1',
+  },
+});
+// result.counterparty = { attested, digest, agentId, timestamp }
+
+// Discover a counterparty agent
+import { fetchAgentCard, exchangeAttestation } from 'kontext-sdk';
+const card = await fetchAgentCard('https://receiver.example.com');
+// card = { agentId, kontextVersion, capabilities, attestEndpoint }
+```
+
+The protocol uses `/.well-known/kontext.json` for agent discovery and `/kontext/attest` for attestation exchange. Zero dependencies — native `fetch()` only.
+
+---
+
+## Configuration
+
+```typescript
+import { Kontext, FileStorage } from 'kontext-sdk';
+
+const ctx = Kontext.init({
+  projectId: 'my-project',           // Required
+  environment: 'production',          // 'development' | 'staging' | 'production'
+  apiKey: 'sk_live_...',              // Only for cloud mode
+  plan: 'free',                       // 'free' | 'payg' | 'enterprise'
+  storage: new FileStorage('./data'), // Default: in-memory
+  exporters: [
+    // new ConsoleExporter(),         // Prints to stdout
+    // new JsonFileExporter(path),    // Writes JSONL to disk
+    // new KontextCloudExporter(),    // Ships to api.getkontext.com
+  ],
+});
+```
+
+**Storage adapters:** `MemoryStorage` (default, resets on restart), `FileStorage(baseDir)` (persists to disk).
+
+**Exporters:** `NoopExporter`, `ConsoleExporter`, `JsonFileExporter`, `HttpExporter`, `KontextCloudExporter` (Pro), `MultiExporter`.
+
+---
+
+## API Reference
+
+```typescript
+// Initialization
+Kontext.init(config: KontextConfig): Kontext;
+
+// Core verification
+await ctx.verify(input: VerifyInput): Promise<VerifyResult>;
+
+// Action logging
+await ctx.log(input: LogActionInput): Promise<ActionLog>;
+await ctx.logTransaction(input: LogTransactionInput): Promise<TransactionRecord>;
+await ctx.logReasoning(input: LogReasoningInput): Promise<ReasoningEntry>;
+ctx.getReasoningEntries(agentId: string): ReasoningEntry[];
+await ctx.flushLogs(): Promise<void>;
+
+// Task confirmation (human-in-the-loop)
+await ctx.createTask(input: CreateTaskInput): Promise<Task>;
+await ctx.confirmTask(input: ConfirmTaskInput): Promise<Task>;
+await ctx.getTaskStatus(taskId: string): Promise<Task | undefined>;
+await ctx.startTask(taskId: string): Promise<Task>;
+await ctx.failTask(taskId: string, reason: string): Promise<Task>;
+ctx.getTasks(status?: TaskStatus): Task[];
+
+// Trust scoring
+await ctx.getTrustScore(agentId: string): Promise<TrustScore>;
+await ctx.evaluateTransaction(tx: LogTransactionInput): Promise<TransactionEvaluation>;
+
+// Anomaly detection
+ctx.enableAnomalyDetection(config: AnomalyDetectionConfig): void;
+ctx.disableAnomalyDetection(): void;
+ctx.onAnomaly(callback: AnomalyCallback): () => void;
+
+// Audit export
+await ctx.export(options: ExportOptions): Promise<ExportResult>;
+await ctx.generateReport(options: ReportOptions): Promise<ComplianceReport>;
+await ctx.generateComplianceCertificate(input): Promise<ComplianceCertificate>;
+
+// Digest chain
+ctx.getTerminalDigest(): string;
+ctx.verifyDigestChain(): DigestVerification;
+ctx.exportDigestChain(): { genesisHash, links, terminalDigest };
+ctx.getActions(): ActionLog[];
+
+// Persistence
+await ctx.flush(): Promise<void>;
+await ctx.restore(): Promise<void>;
+
+// Plan management
+ctx.getUsage(): PlanUsage;
+ctx.setPlan(tier: PlanTier): void;
+ctx.onUsageWarning(callback): () => void;
+ctx.onLimitReached(callback): () => void;
+
+// Lifecycle
+await ctx.destroy(): Promise<void>;
+```
+
+---
+
+## TypeScript Types
+
+All types are exported from the main package:
+
+```typescript
+import type {
+  KontextConfig, KontextMode,
+  LogActionInput, LogTransactionInput, TransactionRecord, ActionLog,
+  VerifyInput, VerifyResult,
+  Task, CreateTaskInput, ConfirmTaskInput,
+  TrustScore, AnomalyEvent, AnomalyDetectionConfig,
+  ExportOptions, ExportResult, ComplianceReport, DigestVerification,
+  ReasoningEntry, ComplianceCertificate,
+  OnChainAnchorConfig, AnchorResult, AnchorVerification,
+  AgentCard, CounterpartyConfig, AttestationRequest,
+  AttestationResponse, CounterpartyAttestation,
+} from 'kontext-sdk';
+```
+
+---
+
+## MCP Server
+
+Kontext exposes an MCP (Model Context Protocol) server for AI coding assistants.
+
+**Setup for Claude Code / Cursor / Windsurf:**
+
+```json
+{
+  "mcpServers": {
+    "kontext": {
+      "command": "npx",
+      "args": ["-y", "kontext-sdk", "mcp"]
+    }
+  }
+}
+```
+
+**Available MCP tools:**
+
+| Tool | Description |
+|------|-------------|
+| `verify_transaction` | Run compliance check + log transaction + get digest proof |
+| `check_sanctions` | OFAC sanctions screening for an address |
+| `log_reasoning` | Log agent reasoning into digest chain |
+| `get_trust_score` | Get agent trust score (0-100) |
+| `get_compliance_certificate` | Export compliance certificate |
+| `anchor_digest` | Anchor terminal digest on-chain (Base) |
+| `exchange_attestation` | A2A compliance attestation with counterparty |
+| `verify_audit_trail` | Verify digest chain integrity |
+
+---
+
+## Pricing
+
+| Tier | Price | Events | Features |
+|------|-------|--------|----------|
+| Free | $0 forever | 20,000/mo | Core SDK, Base chain, 2 anomaly rules, JSON export |
+| Pro | $2/1K events above 20K | Unlimited | All 6 anomaly rules, unified screening, multi-chain (8), CSV export, cloud persistence |
+
+Free tier includes: verify(), log(), logTransaction(), logReasoning(), trust scoring, digest chain, compliance certificates, on-chain anchoring, A2A attestation, human-in-the-loop tasks.
+
+---
+
+## Compliance Thresholds
+
+| Threshold | Amount | Trigger |
+|-----------|--------|---------|
+| Travel Rule (EDD) | $3,000 | Enhanced due diligence required |
+| Currency Transaction Report | $10,000 | CTR filing triggered |
+| Large Transaction Alert | $50,000 | High-value monitoring |
+
+Regulatory context: GENIUS Act (S. 1582), signed July 18, 2025. Implementing regulations due July 2026, prohibitions effective November 2026.
+
+---
+
+## Supported Chains and Tokens
+
+**Chains:** Base (free), Ethereum, Polygon, Arbitrum, Optimism, Arc, Avalanche, Solana (Pro: all 8).
+
+**Tokens:** USDC, USDT, DAI, EURC.
+
+---
+
+## Static Compliance Checks
+
+`UsdcCompliance` provides static methods requiring no API key:
+
+```typescript
+import { UsdcCompliance } from 'kontext-sdk';
+
+const result = UsdcCompliance.checkTransaction({
+  from: '0xsender', to: '0xrecipient',
+  amount: '5000', token: 'USDC', chain: 'base',
+});
+// result.compliant, result.checks, result.riskLevel, result.recommendations
+
+const sanctioned = UsdcCompliance.isSanctioned('0xaddress');
+const chains = UsdcCompliance.getSupportedChains();
+```
+
+---
+
+## Company
+
+**Legaci Labs Inc.**
+Website: https://getkontext.com
+GitHub: https://github.com/Legaci-Labs/kontext
+npm: https://www.npmjs.com/package/kontext-sdk
+Email: hello@kontext.dev
+Twitter: https://x.com/kontextverify
