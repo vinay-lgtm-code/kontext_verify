@@ -1,5 +1,6 @@
-/// <reference path="../../node_modules/.pnpm/vitest@1.6.1_@types+node@20.19.32/node_modules/vitest/config.d.ts" />
-export default {
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
@@ -11,4 +12,4 @@ export default {
       exclude: ['src/index.ts'],
     },
   },
-};
+});

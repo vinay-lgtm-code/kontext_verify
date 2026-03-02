@@ -123,7 +123,7 @@ describe('getAnchor()', () => {
 describe('OnChainExporter', () => {
   it('should buffer events and not anchor until batchSize', async () => {
     // We can't easily test anchorDigest without viem, so just test the counting logic
-    let anchorCalled = false;
+    const _anchorCalled = false; // eslint-disable-line @typescript-eslint/no-unused-vars
     const config: OnChainAnchorConfig = {
       rpcUrl: 'https://mainnet.base.org',
       contractAddress: '0x' + 'ab'.repeat(20),

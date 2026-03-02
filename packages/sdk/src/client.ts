@@ -69,7 +69,6 @@ import type {
   AgentIdentity,
   RegisterIdentityInput,
   UpdateIdentityInput,
-  WalletMapping,
   WalletCluster,
   BehavioralEmbedding,
   AgentLink,

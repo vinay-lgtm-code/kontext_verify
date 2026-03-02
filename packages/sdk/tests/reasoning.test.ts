@@ -1,6 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { Kontext, KontextError } from '../src/index.js';
-import type { LogReasoningInput } from '../src/index.js';
 
 function createClient() {
   return Kontext.init({
