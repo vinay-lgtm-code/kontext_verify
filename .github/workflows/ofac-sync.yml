@@ -32,8 +32,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build SDK
-        run: pnpm --filter kontext-sdk build
+      - name: Build SDK and CLI
+        run: pnpm --filter kontext-sdk build && pnpm --filter @kontext-sdk/cli build
 
       - name: Authenticate to GCP
         if: env.GCP_PROJECT_ID != ''
@@ -42,7 +42,7 @@ jobs:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
       - name: Run OFAC sync (full — all entities + crypto addresses)
-        run: node packages/sdk/dist/cli.js sync --full --json > /tmp/sync-result.json
+        run: node packages/cli/dist/cli.js sync --full --json > /tmp/sync-result.json
         env:
           KONTEXT_DATA_DIR: packages/sdk/.kontext
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
