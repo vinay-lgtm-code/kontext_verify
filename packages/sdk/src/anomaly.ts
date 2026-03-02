@@ -15,7 +15,7 @@ import type {
 } from './types.js';
 import { KontextError, KontextErrorCode } from './types.js';
 import { KontextStore } from './store.js';
-import { generateId, now, parseAmount, getCurrentHourUtc } from './utils.js';
+import { generateId, now, parseAmount } from './utils.js';
 
 /** Default anomaly detection thresholds */
 const DEFAULT_THRESHOLDS: Required<AnomalyThresholds> = {

@@ -15,7 +15,7 @@ import type {
   AnomalyEvent,
 } from './types.js';
 import { KontextStore } from './store.js';
-import { generateId, now, parseAmount, clamp } from './utils.js';
+import { now, parseAmount, clamp } from './utils.js';
 
 // ============================================================================
 // Named constants — trust level thresholds

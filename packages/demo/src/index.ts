@@ -6,7 +6,7 @@
 //
 // Run with: pnpm demo
 
-import { Kontext, UsdcCompliance } from '@kontext/sdk';
+import { Kontext } from '@kontext/sdk';
 import type { AnomalyEvent } from '@kontext/sdk';
 
 // ============================================================================

@@ -15,7 +15,7 @@ import type {
 import { KontextError, KontextErrorCode } from './types.js';
 import { KontextStore } from './store.js';
 import { DigestChain } from './digest.js';
-import { generateId, now, isValidAddress, isValidTxHash, parseAmount } from './utils.js';
+import { generateId, now, parseAmount } from './utils.js';
 import * as fs from 'fs';
 import * as path from 'path';
 

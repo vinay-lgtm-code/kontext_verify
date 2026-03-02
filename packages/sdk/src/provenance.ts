@@ -16,7 +16,6 @@ import type {
   ProvenanceBundle,
   ProvenanceAction,
   ProvenanceBundleVerification,
-  ActionLog,
 } from './types.js';
 import { KontextError, KontextErrorCode } from './types.js';
 import type { KontextStore } from './store.js';

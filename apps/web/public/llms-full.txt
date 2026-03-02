@@ -28,13 +28,15 @@
 10. [Digest Chain (Tamper-Evidence)](#digest-chain)
 11. [On-Chain Anchoring](#on-chain-anchoring)
 12. [A2A Attestation](#a2a-attestation)
-13. [Configuration](#configuration)
-14. [API Reference](#api-reference)
-15. [TypeScript Types](#typescript-types)
-16. [MCP Server](#mcp-server)
-17. [Pricing](#pricing)
-18. [Compliance Thresholds](#compliance-thresholds)
-19. [Supported Chains and Tokens](#supported-chains-and-tokens)
+13. [Agent Forensics](#agent-forensics)
+14. [CLI](#cli)
+15. [Configuration](#configuration)
+16. [API Reference](#api-reference)
+17. [TypeScript Types](#typescript-types)
+18. [MCP Server](#mcp-server)
+19. [Pricing](#pricing)
+20. [Compliance Thresholds](#compliance-thresholds)
+21. [Supported Chains and Tokens](#supported-chains-and-tokens)
 
 ---
 
@@ -63,15 +65,15 @@ const ctx = Kontext.init({
   environment: 'development',
 });
 
-// Verify a USDC transfer in one call
+// Verify an x402 micropayment — OFAC screening on every transfer
 const result = await ctx.verify({
   txHash: '0xabc...def',
   chain: 'base',
-  amount: '5000',
+  amount: '0.50',
   token: 'USDC',
-  from: '0xsender...',
-  to: '0xrecipient...',
-  agentId: 'payment-agent-v2',
+  from: '0xAgentWallet',
+  to: '0xAPIProvider',
+  agentId: 'research-agent',
 });
 
 if (!result.compliant) {
@@ -97,12 +99,12 @@ if (!result.compliant) {
 const result = await ctx.verify({
   txHash: '0xabc...def',
   chain: 'base',
-  amount: '5000',
+  amount: '0.50',
   token: 'USDC',
   from: '0xAgentWallet',
-  to: '0xRecipient',
-  agentId: 'treasury-agent-v2',
-  reasoning: 'Within daily limit. Recipient in allowlist.',
+  to: '0xAPIProvider',
+  agentId: 'research-agent',
+  reasoning: 'Paying CoinGecko API via x402. Provider not sanctioned.',
   anchor: {
     rpcUrl: 'https://base-mainnet.g.alchemy.com/v2/YOUR_KEY',
     contractAddress: '0xYourAnchorContract',
@@ -134,11 +136,11 @@ await ctx.log({
 await ctx.logTransaction({
   txHash: '0x...',
   chain: 'base',
-  amount: '5000',
+  amount: '0.50',
   token: 'USDC',
-  from: '0xsender',
-  to: '0xrecipient',
-  agentId: 'payment-agent',
+  from: '0xAgentWallet',
+  to: '0xAPIProvider',
+  agentId: 'research-agent',
 });
 ```
 
@@ -282,13 +284,13 @@ const exported = ctx.exportDigestChain();
 
 ## On-Chain Anchoring
 
-Write the terminal digest to a Base smart contract. Anyone can independently verify that compliance checks ran at a specific block height.
+Write the terminal digest to a Base or Arc smart contract. Anyone can independently verify that compliance checks ran at a specific block height.
 
 ```typescript
 // Via verify() with anchor config
 const result = await ctx.verify({
-  txHash: '0x...', chain: 'base', amount: '5000', token: 'USDC',
-  from: '0xsender', to: '0xrecipient', agentId: 'agent-v2',
+  txHash: '0x...', chain: 'base', amount: '0.50', token: 'USDC',
+  from: '0xAgentWallet', to: '0xAPIProvider', agentId: 'research-agent',
   anchor: {
     rpcUrl: 'https://base-mainnet.g.alchemy.com/v2/YOUR_KEY',
     contractAddress: '0xYourContract',
@@ -312,8 +314,8 @@ When two agents transact, both sides exchange compliance digests as bilateral pr
 ```typescript
 // Via verify() with counterparty config
 const result = await ctx.verify({
-  txHash: '0x...', chain: 'base', amount: '5000', token: 'USDC',
-  from: '0xsender', to: '0xrecipient', agentId: 'sender-agent',
+  txHash: '0x...', chain: 'base', amount: '0.50', token: 'USDC',
+  from: '0xAgentWallet', to: '0xAPIProvider', agentId: 'sender-agent',
   counterparty: {
     endpoint: 'https://receiver.example.com',
     agentId: 'receiver-v1',
@@ -328,6 +330,81 @@ const card = await fetchAgentCard('https://receiver.example.com');
 ```
 
 The protocol uses `/.well-known/kontext.json` for agent discovery and `/kontext/attest` for attestation exchange. Zero dependencies — native `fetch()` only.
+
+---
+
+## Agent Forensics
+
+Map wallets to agent identities, detect multi-wallet clustering, and compute identity confidence scores. Requires Pro plan (`kya-identity` gate).
+
+```typescript
+import { Kontext } from 'kontext-sdk';
+
+const ctx = Kontext.init({
+  apiKey: process.env.KONTEXT_KEY,
+  projectId: 'forensics',
+  plan: 'payg',
+});
+
+// Register an agent with wallet mappings
+ctx.registerAgentIdentity({
+  agentId: 'treasury-agent-v2',
+  displayName: 'Treasury Agent',
+  entityType: 'autonomous',
+  wallets: [
+    { address: '0xTreasury...abc', chain: 'base', label: 'primary' },
+    { address: '0xReserve...def', chain: 'base', label: 'reserve' },
+  ],
+});
+
+// Reverse lookup: wallet -> agent
+const agent = ctx.lookupAgentByWallet('0xTreasury...abc');
+
+// Detect wallet clusters (5 heuristics: shared-owner, temporal-correlation,
+// funding-chain, amount-pattern, network-overlap)
+const clusters = ctx.getWalletClusters();
+
+// Identity confidence score (0-100)
+const score = ctx.getKYAConfidenceScore('treasury-agent-v2');
+// { score: 82, level: 'high', components: [...] }
+
+// Export all forensics data
+const envelope = ctx.getKYAExport();
+```
+
+**Methods:** `registerAgentIdentity()`, `getAgentIdentity()`, `updateAgentIdentity()`, `removeAgentIdentity()`, `addAgentWallet()`, `lookupAgentByWallet()`, `getWalletClusters()`, `getKYAExport()`, `getKYAConfidenceScore()`.
+
+**Behavioral analysis (Enterprise):** `computeBehavioralEmbedding()`, `analyzeAgentLinks()`, `getLinkedAgents()`.
+
+---
+
+## CLI
+
+The Kontext CLI (`@kontext-sdk/cli`) provides 12 commands for compliance operations from the terminal.
+
+```bash
+# Install
+npm install -g @kontext-sdk/cli
+
+# Or run via npx
+npx @kontext-sdk/cli verify --chain base --amount 0.50
+
+# Commands
+kontext check      # Static compliance check (no digest chain)
+kontext verify     # Full verification with digest chain + trust scoring
+kontext reason     # Log agent reasoning
+kontext cert       # Generate compliance certificate
+kontext audit      # Export audit trail
+kontext anchor     # Anchor digest on-chain
+kontext attest     # Exchange A2A attestation
+kontext sync       # Sync OFAC SDN list
+kontext session    # Manage agent sessions
+kontext checkpoint # Create provenance checkpoints
+kontext status     # Show current status
+kontext mcp        # Start MCP server for AI coding assistants
+```
+
+**MCP Server:** `kontext mcp` exposes 8 compliance tools to Claude Code, Cursor, and Windsurf via the Model Context Protocol.
 
 ---
 
@@ -404,6 +481,22 @@ ctx.getActions(): ActionLog[];
 await ctx.flush(): Promise<void>;
 await ctx.restore(): Promise<void>;
 
+// Agent Forensics (Pro)
+ctx.registerAgentIdentity(input: RegisterIdentityInput): AgentIdentity;
+ctx.getAgentIdentity(agentId: string): AgentIdentity | undefined;
+ctx.updateAgentIdentity(agentId: string, input: UpdateIdentityInput): AgentIdentity;
+ctx.removeAgentIdentity(agentId: string): boolean;
+ctx.addAgentWallet(agentId: string, wallet: WalletMapping): AgentIdentity;
+ctx.lookupAgentByWallet(address: string): AgentIdentity | undefined;
+ctx.getWalletClusters(): WalletCluster[];
+ctx.getKYAExport(): KYAEnvelope;
+
+// Agent Forensics (Enterprise)
+ctx.computeBehavioralEmbedding(agentId: string): BehavioralEmbedding | null;
+ctx.analyzeAgentLinks(): AgentLink[];
+ctx.getLinkedAgents(agentId: string): string[];
+ctx.getKYAConfidenceScore(agentId: string): KYAConfidenceScore;
+
 // Plan management
 ctx.getUsage(): PlanUsage;
 ctx.setPlan(tier: PlanTier): void;
@@ -473,8 +566,8 @@ Kontext exposes an MCP (Model Context Protocol) server for AI coding assistants.
 
 | Tier | Price | Events | Features |
 |------|-------|--------|----------|
-| Free | $0 forever | 20,000/mo | Core SDK, Base chain, 2 anomaly rules, JSON export |
-| Pro | $2/1K events above 20K | Unlimited | All 6 anomaly rules, unified screening, multi-chain (8), CSV export, cloud persistence |
+| Free | $0 forever | 20,000/mo | Core SDK, Base + Arc chains, 2 anomaly rules, JSON export |
+| Pro | $2/1K events above 20K | Unlimited | All 6 anomaly rules, unified screening, multi-chain (6 additional), CSV export, cloud persistence |
 
 Free tier includes: verify(), log(), logTransaction(), logReasoning(), trust scoring, digest chain, compliance certificates, on-chain anchoring, A2A attestation, human-in-the-loop tasks.
 
@@ -494,7 +587,7 @@ Regulatory context: GENIUS Act (S. 1582), signed July 18, 2025. Implementing reg
 
 ## Supported Chains and Tokens
 
-**Chains:** Base (free), Ethereum, Polygon, Arbitrum, Optimism, Arc, Avalanche, Solana (Pro: all 8).
+**Chains:** Base + Arc (free), Ethereum, Polygon, Arbitrum, Optimism, Avalanche, Solana (Pro: all 8).
 
 **Tokens:** USDC, USDT, DAI, EURC.
 
@@ -509,7 +602,7 @@ import { UsdcCompliance } from 'kontext-sdk';
 
 const result = UsdcCompliance.checkTransaction({
   from: '0xsender', to: '0xrecipient',
-  amount: '5000', token: 'USDC', chain: 'base',
+  amount: '0.50', token: 'USDC', chain: 'base',
 });
 // result.compliant, result.checks, result.riskLevel, result.recommendations
 

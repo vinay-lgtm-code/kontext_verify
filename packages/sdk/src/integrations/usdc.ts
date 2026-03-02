@@ -25,7 +25,7 @@ const USDC_CONTRACTS: Record<string, string> = {
 };
 
 /** USDC has 6 decimals */
-const USDC_DECIMALS = 6;
+const _USDC_DECIMALS = 6; // eslint-disable-line @typescript-eslint/no-unused-vars
 
 // ============================================================================
 // OFAC Sanctioned Addresses (from U.S. Treasury SDN List)
@@ -47,7 +47,7 @@ const USDC_DECIMALS = 6;
 // sanctioned addresses for maximum backward compatibility.
 
 /** OFAC-sanctioned Ethereum addresses (includes both active SDN and delisted for compat) */
-let SANCTIONED_ADDRESSES: string[] = [
+const SANCTIONED_ADDRESSES: string[] = [
   // --- ACTIVELY SANCTIONED (SDN) ---
 
   // Lazarus Group / DPRK (Ronin Bridge hack)
@@ -100,7 +100,7 @@ let SANCTIONED_ADDRESSES: string[] = [
  * Pre-computed set of lowercased sanctioned addresses for O(1) lookups.
  * Initialized from hardcoded list, then merged with OFAC SLS cache if available.
  */
-let SANCTIONED_SET: Set<string> = new Set(
+const SANCTIONED_SET: Set<string> = new Set(
   SANCTIONED_ADDRESSES.map((addr) => addr.toLowerCase()),
 );
 

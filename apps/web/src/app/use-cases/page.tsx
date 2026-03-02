@@ -12,6 +12,7 @@ import {
   Anchor,
   Handshake,
   Check,
+  UserSearch,
 } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -352,6 +353,50 @@ const useCases = [
       "Automatic agent card discovery via /.well-known/kontext.json (like robots.txt for compliance)",
       "Digest exchange links both audit trails cryptographically — tamper-evident on both sides",
       "Configurable timeout and agent ID verification for the attestation handshake",
+    ],
+  },
+  {
+    id: "agent-forensics",
+    icon: UserSearch,
+    badge: "Pro",
+    title: "Agent Forensics",
+    description:
+      "When multiple agents share wallets or one entity operates many wallets, you need to know. Agent forensics maps wallets to agent identities, detects multi-wallet clustering with 5 heuristics, and computes identity confidence scores. Answer the question regulators will ask: who controls what?",
+    code: `import { Kontext } from 'kontext-sdk';
+
+const ctx = Kontext.init({
+  apiKey: process.env.KONTEXT_KEY,
+  projectId: 'forensics-dashboard',
+  environment: 'production',
+  plan: 'payg',
+});
+
+// Register agent identities with wallet mappings
+ctx.registerAgentIdentity({
+  agentId: 'treasury-agent-v2',
+  displayName: 'Treasury Agent',
+  entityType: 'autonomous',
+  wallets: [
+    { address: '0xTreasury...abc', chain: 'base', label: 'primary' },
+    { address: '0xReserve...def', chain: 'base', label: 'reserve' },
+  ],
+});
+
+// Detect wallet clusters across all registered agents
+const clusters = ctx.getWalletClusters();
+// [{ wallets: ['0xTreasury...abc', '0xReserve...def'],
+//    heuristics: ['shared-owner', 'funding-chain'],
+//    evidence: [...] }]
+
+// Confidence score: how certain is the identity?
+const score = ctx.getKYAConfidenceScore('treasury-agent-v2');
+// { score: 82, level: 'high', components: [...] }`,
+    filename: "forensics.ts",
+    benefits: [
+      "Wallet-to-agent mapping — register identities and link wallets with evidence",
+      "5 clustering heuristics: shared-owner, temporal-correlation, funding-chain, amount-pattern, network-overlap",
+      "Identity confidence scoring (0-100) with component-level breakdown",
+      "Exportable forensics data via getKYAExport() for compliance reporting",
     ],
   },
 ];

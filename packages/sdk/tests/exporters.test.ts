@@ -7,7 +7,7 @@ import {
   ConsoleExporter,
   JsonFileExporter,
 } from '../src/index.js';
-import type { EventExporter, ExporterResult } from '../src/index.js';
+import type { EventExporter } from '../src/index.js';
 import type { ActionLog } from '../src/types.js';
 
 // ============================================================================

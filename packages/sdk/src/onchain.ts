@@ -15,7 +15,7 @@ import type { EventExporter, ExporterResult } from './exporters.js';
 // anchor(bytes32,bytes32)   → 0xa21f3c6a
 // verify(bytes32)           → 0x75e36616
 // getAnchor(bytes32)        → 0x7feb51d9
-const SEL_ANCHOR = '0xa21f3c6a';
+const _SEL_ANCHOR = '0xa21f3c6a'; // eslint-disable-line @typescript-eslint/no-unused-vars
 const SEL_VERIFY = '0x75e36616';
 const SEL_GET_ANCHOR = '0x7feb51d9';
 

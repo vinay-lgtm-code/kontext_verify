@@ -22,19 +22,19 @@ import {
   Anchor,
   Handshake,
   Fingerprint,
+  UserSearch,
+  Terminal,
 } from "lucide-react";
 
-const VideoDemo = dynamic(
-  () => import("@/components/video-demo").then((m) => ({ default: m.VideoDemo })),
+const TerminalDemo = dynamic(
+  () => import("@/components/terminal-demo").then((m) => ({ default: m.TerminalDemo })),
   {
     ssr: false,
     loading: () => (
-      <div className="w-full mx-auto rounded-[5px] border-2 border-border bg-card flex items-center justify-center" style={{ height: "700px" }}>
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground">Loading interactive demo...</p>
-        </div>
-      </div>
+      <div
+        className="w-full rounded-[5px] border-2 border-border bg-[#1a1a2e] shadow-shadow"
+        style={{ height: "380px" }}
+      />
     ),
   }
 );
@@ -42,19 +42,20 @@ const VideoDemo = dynamic(
 const heroCode = `import { Kontext } from 'kontext-sdk';
 
 const ctx = Kontext.init({
-  projectId: 'treasury-agent',
+  projectId: 'research-agent',
   environment: 'production',
 });
 
+// x402: verify every micropayment before USDC leaves the wallet
 const result = await ctx.verify({
   txHash: '0xabc...def',
   chain: 'base',
-  amount: '5000',
+  amount: '0.50',
   token: 'USDC',
   from: '0xAgentWallet',
-  to: '0xRecipient',
-  agentId: 'treasury-agent-v2',
-  reasoning: 'Within daily limit. Recipient in allowlist.',
+  to: '0xAPIProvider',
+  agentId: 'research-agent',
+  reasoning: 'Paying CoinGecko API via x402. Provider not sanctioned.',
   anchor: {
     rpcUrl: 'https://mainnet.base.org',
     contractAddress: '0xbc71...b46',
@@ -110,19 +111,20 @@ const result = await ctx.verify({
 result.counterparty?.attested  // true
 result.counterparty?.digest    // receiver's proof`;
 
-const circleCode = `// Circle Programmable Wallets
+const x402Code = `// x402: verify before every micropayment
 const result = await ctx.verify({
-  txHash: circleResponse.txHash,
+  txHash: x402Response.txHash,
   chain: 'base',
-  amount: '5000',
+  amount: '0.50',
   token: 'USDC',
   from: agentWallet,
-  to: recipientAddress,
-  agentId: 'treasury-agent-v2',
+  to: apiProvider,
+  agentId: 'research-agent',
+  reasoning: 'CoinGecko price feed. Not sanctioned.',
 });
 
 if (!result.compliant) {
-  // Block transfer. result.checks shows what failed.
+  return new Response('Payment blocked', { status: 451 });
 }`;
 
 const provenanceCode = `const session = await ctx.createAgentSession({
@@ -199,12 +201,24 @@ const features = [
     description:
       "Session delegation records who authorized the agent. Action envelopes bind every call to a session. Human attestation proves a reviewer signed off.",
   },
+  {
+    icon: UserSearch,
+    title: "Agent Forensics",
+    description:
+      "Map wallets to agents, detect multi-wallet clustering with 5 heuristics, and compute identity confidence scores. Pro tier.",
+  },
+  {
+    icon: Terminal,
+    title: "Kontext CLI",
+    description:
+      "Verify transactions, audit digest chains, anchor on-chain, sync OFAC lists, and manage agent sessions — all from the terminal.",
+  },
 ];
 
 const socialProof = [
-  { label: "On-Chain Proof", detail: "Anchored on Base" },
+  { label: "On-Chain Proof", detail: "Anchored on Base and Arc" },
   { label: "A2A Attestation", detail: "Agent-to-agent trust" },
-  { label: "8 Chains", detail: "Base, ETH, SOL + 5 more" },
+  { label: "Base + Arc Free", detail: "6 more on Pro" },
   { label: "Free Forever", detail: "20K events/mo" },
   { label: "MIT License", detail: "Open source" },
   { label: "GENIUS Act", detail: "Aligned" },
@@ -224,7 +238,7 @@ export default function HomePage() {
               variant="outline"
               className="mb-6 gap-2 px-4 py-1.5"
             >
-              Circle Wallets &middot; x402 &middot; Stripe &middot; Base &middot; USDC
+              x402 &middot; Circle Wallets &middot; Base &middot; Arc &middot; USDC
             </Badge>
 
             <h1 className="max-w-4xl text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
@@ -233,8 +247,8 @@ export default function HomePage() {
             </h1>
 
             <p className="mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-              Audit trails, OFAC screening, on-chain proof, and agent-to-agent
-              attestation. One SDK. One function call. Free forever.
+              OFAC screening, audit trails, and on-chain proof for every agent
+              payment — micropayments included. One SDK. Free forever on Base and Arc.
             </p>
 
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
@@ -285,22 +299,79 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Demo Video */}
+      {/* CLI Demo */}
       <section className="relative border-t-2 border-border bg-background">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <Badge variant="secondary" className="mb-4">
-              Interactive Demo
+        <div className="mx-auto max-w-4xl px-4 py-20 sm:px-6 lg:px-8">
+          <div className="text-center mb-10">
+            <Badge variant="secondary" className="mb-4 gap-1.5">
+              <Terminal size={12} />
+              CLI
             </Badge>
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              See it live — no API key required
+              Compliance from the terminal. Zero config.
             </h2>
             <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-              Chat with an AI agent that moves USDC. Watch the audit trail, digest chain,
-              trust score, and compliance checks update in real time.
+              Verify transactions, audit digest chains, export certificates, and anchor
+              proof on Base and Arc. All without leaving your terminal.
+            </p>
+            <div className="mt-5 inline-flex items-center gap-2 rounded-[5px] border-2 border-border bg-card px-4 py-2 font-mono text-sm text-muted-foreground shadow-shadow-sm">
+              <span className="text-primary">$</span>
+              npm install -g @kontext-sdk/cli
+            </div>
+          </div>
+          <TerminalDemo />
+        </div>
+      </section>
+
+      {/* Threshold Section */}
+      <section className="border-t-2 border-border bg-background">
+        <div className="mx-auto max-w-4xl px-4 py-20 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <Badge variant="secondary" className="mb-4 gap-1.5">
+              <Shield size={12} />
+              Compliance
+            </Badge>
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              Below the $3,000 threshold? Still need proof.
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+              Travel Rule data-sharing kicks in at $3,000. But OFAC screening applies to
+              every transaction regardless of amount. The GENIUS Act demands ongoing
+              monitoring and audit trails. Autonomous agents run at high frequency with
+              no human review — regulators want verifiable logs. Cumulative patterns can
+              trigger SARs regardless of individual amounts.
+            </p>
+            <p className="mt-3 text-lg text-muted-foreground max-w-2xl mx-auto">
+              <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">verify()</code> +
+              digest chain = evidence in one call.
             </p>
           </div>
-          <VideoDemo />
+
+          <div className="mt-12 overflow-x-auto">
+            <table className="w-full border-2 border-border text-sm">
+              <thead>
+                <tr className="border-b-2 border-border bg-card">
+                  <th className="px-4 py-3 text-left font-semibold" />
+                  <th className="px-4 py-3 text-left font-semibold">Travel Rule ($3K+)</th>
+                  <th className="px-4 py-3 text-left font-semibold">Every Agent Payment</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { label: "OFAC Screening", high: "Required", every: "Required" },
+                  { label: "Transaction Monitoring", high: "Required", every: "Required" },
+                  { label: "Audit Trail", high: "Required", every: "Required" },
+                  { label: "Data Sharing (EDD)", high: "Required", every: "Not required" },
+                ].map((row) => (
+                  <tr key={row.label} className="border-b border-border">
+                    <td className="px-4 py-3 font-medium">{row.label}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{row.high}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{row.every}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -323,7 +394,7 @@ export default function HomePage() {
               <ul className="mt-6 space-y-3">
                 {[
                   "Digest chain — tamper-evident local proof",
-                  "On-chain anchor — immutable proof on Base",
+                  "On-chain anchor — immutable proof on Base and Arc",
                   "A2A attestation — bilateral compliance proof",
                   "Zero runtime dependencies",
                 ].map((item) => (
@@ -370,7 +441,7 @@ export default function HomePage() {
               Drop into your wallet stack
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-              Circle Programmable Wallets, on-chain anchoring on Base,
+              x402 micropayments, on-chain anchoring on Base and Arc,
               and agent-to-agent attestation.
             </p>
           </div>
@@ -383,14 +454,14 @@ export default function HomePage() {
                 </Badge>
               </div>
               <CardHeader>
-                <CardTitle className="text-lg">Circle Programmable Wallets</CardTitle>
+                <CardTitle className="text-lg">x402 Micropayments</CardTitle>
                 <CardDescription>
-                  Wrap every Circle wallet transfer with compliance logging. OFAC screening,
-                  trust scoring, and digest-chain proof in a single call.
+                  Verify every agent-to-API payment before USDC leaves the wallet.
+                  Drop into any x402 middleware on Base or Arc.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <CodeBlock code={circleCode} language="typescript" filename="circle.ts" />
+                <CodeBlock code={x402Code} language="typescript" filename="x402.ts" />
               </CardContent>
             </Card>
 
@@ -597,8 +668,8 @@ export default function HomePage() {
               <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
                 The GENIUS Act (S. 1582) treats payment stablecoin issuers as financial
                 institutions under the BSA. Implementing regulations drop July 2026.
-                Prohibitions take effect November 2026. If your agents move USDC above $3K,
-                you need an audit trail.
+                Prohibitions take effect November 2026. If your agents move USDC — any
+                amount, any frequency — you need an audit trail.
               </p>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 {[

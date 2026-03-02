@@ -161,3 +161,51 @@ export type {
 export { TrustScorer } from './trust.js';
 export type { AgentData } from './trust.js';
 export { AnomalyDetector } from './anomaly.js';
+
+// Agent Forensics (KYA)
+export {
+  AgentIdentityRegistry,
+  WalletClusterer,
+  BehavioralFingerprinter,
+  CrossSessionLinker,
+  KYAConfidenceScorer,
+} from './kya/index.js';
+
+export type {
+  // Identity
+  EntityType,
+  KYCStatus,
+  WalletMapping,
+  KYCProviderReference,
+  AgentIdentity,
+  RegisterIdentityInput,
+  UpdateIdentityInput,
+
+  // Wallet Clustering
+  ClusteringHeuristic,
+  ClusteringEvidence,
+  WalletCluster,
+  WalletClusteringConfig,
+
+  // Behavioral Fingerprinting
+  TemporalFeatures,
+  FinancialFeatures,
+  NetworkFeatures,
+  OperationalFeatures,
+  BehavioralEmbedding,
+
+  // Cross-Session Linking
+  LinkSignal,
+  LinkStatus,
+  AgentLink,
+  CrossSessionLinkerConfig,
+
+  // Confidence Scoring
+  KYAScoreComponent,
+  KYAConfidenceLevel,
+  KYAConfidenceScore,
+  KYAConfidenceScorerConfig,
+
+  // Envelope
+  KYAEnvelope,
+} from './kya/index.js';

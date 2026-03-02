@@ -1,7 +1,7 @@
-import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { Kontext, PlanManager, PLAN_LIMITS } from '../src/index.js';
 import { MemoryStorage } from '../src/storage.js';
-import type { PlanTier, PlanUsage, LimitEvent } from '../src/plans.js';
+import type { PlanTier, LimitEvent } from '../src/plans.js';
 
 // ---------------------------------------------------------------------------
 // Helper: create a Kontext client with a given plan

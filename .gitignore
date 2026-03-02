@@ -56,7 +56,7 @@ internal/
 packages/sdk/src/storage-firestore.ts
 packages/sdk/src/approval.ts
 packages/sdk/src/webhooks.ts
-packages/sdk/src/kya/
+# packages/sdk/src/kya/ — un-ignored: needed for public SDK
 packages/sdk/src/integrations/cctp.ts
 packages/sdk/src/integrations/circle-wallets.ts
 packages/sdk/src/integrations/circle-compliance.ts
@@ -80,7 +80,7 @@ packages/sdk/tests/circle-wallets.test.ts
 packages/sdk/tests/e2e-vercel-ai.test.ts
 packages/sdk/tests/gas-station.test.ts
 packages/sdk/tests/integrations.test.ts
-packages/sdk/tests/kya-*.test.ts
+# packages/sdk/tests/kya-*.test.ts — un-ignored: needed for public SDK
 packages/sdk/tests/ofac-sanctions.test.ts
 packages/sdk/tests/provider-treasury-sdn.test.ts
 packages/sdk/tests/screening-providers.test.ts
