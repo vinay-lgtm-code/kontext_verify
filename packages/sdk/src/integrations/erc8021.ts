@@ -6,8 +6,8 @@
 // data, while off-chain indexers parse it backward to extract attribution.
 //
 // Spec: https://www.erc8021.com/
-// Suffix layout: [entity codes (ASCII, comma-delimited)][codesLength (1 byte)][schemaId (1 byte)][marker (16 bytes)]
-// Marker: 0x80210000000000000000000000008021
+// Suffix layout: [codesLength (1 byte)][entity codes (ASCII, comma-delimited)][schemaId (1 byte)][marker (16 bytes)]
+// Marker: 0x80218021802180218021802180218021
 
 import type { ERC8021Attribution } from '../types.js';
 
@@ -16,7 +16,7 @@ import type { ERC8021Attribution } from '../types.js';
 // ============================================================================
 
 /** 16-byte ERC-8021 marker (hex, no 0x prefix) */
-const ERC_8021_MARKER = '80210000000000000000000000008021';
+const ERC_8021_MARKER = '80218021802180218021802180218021';
 
 /** Default builder code for Kontext anchor transactions */
 export const KONTEXT_BUILDER_CODE = 'kontext';
@@ -29,7 +29,7 @@ export const KONTEXT_BUILDER_CODE = 'kontext';
  * Encode an ERC-8021 data suffix for the given builder codes.
  * Returns hex string (no 0x prefix) to append directly to calldata.
  *
- * Layout: [codes (ASCII, comma-delimited)][codesLength (1 byte)][schemaId (1 byte)][marker (16 bytes)]
+ * Layout: [codesLength (1 byte)][codes (ASCII, comma-delimited)][schemaId (1 byte)][marker (16 bytes)]
  */
 export function encodeERC8021Suffix(codes: string[]): string {
   if (codes.length === 0) {
@@ -51,7 +51,7 @@ export function encodeERC8021Suffix(codes: string[]): string {
   const codesLengthHex = codesLength.toString(16).padStart(2, '0');
   const schemaId = '00'; // Schema 0 = Canonical Code Registry
 
-  return codesHex + codesLengthHex + schemaId + ERC_8021_MARKER;
+  return codesLengthHex + codesHex + schemaId + ERC_8021_MARKER;
 }
 
 // ============================================================================
@@ -66,28 +66,39 @@ export function encodeERC8021Suffix(codes: string[]): string {
 export function parseERC8021Suffix(calldata: string): ERC8021Attribution | null {
   const clean = calldata.startsWith('0x') ? calldata.slice(2) : calldata;
 
-  // Marker is the last 16 bytes (32 hex chars)
-  if (clean.length < 36) return null; // minimum: 1 byte code + 1 byte length + 1 byte schema + 16 bytes marker
+  // Minimum: 1 byte codesLength + 1 byte code + 1 byte schema + 16 bytes marker = 19 bytes = 38 hex chars
+  if (clean.length < 38) return null;
 
+  // 1. Extract marker (last 16 bytes = 32 hex chars)
   const markerStart = clean.length - 32;
   const marker = clean.slice(markerStart);
   if (marker !== ERC_8021_MARKER) return null;
 
-  // Schema ID is the byte before the marker
-  const schemaId = parseInt(clean.slice(markerStart - 2, markerStart), 16);
+  // 2. Extract schemaId (1 byte before marker)
+  const schemaIdStart = markerStart - 2;
+  const schemaId = parseInt(clean.slice(schemaIdStart, markerStart), 16);
+  if (isNaN(schemaId)) return null;
 
-  // Codes length is the byte before the schema ID
-  const codesLength = parseInt(clean.slice(markerStart - 4, markerStart - 2), 16);
-  if (isNaN(codesLength) || codesLength === 0) return null;
+  // 3. Find codesLength via self-consistency check.
+  //    Layout: [codesLength (1 byte)][codes (L bytes)][schemaId][marker]
+  //    The byte at position (schemaIdStart - L*2 - 2) should have value L.
+  let codesLength = 0;
+  let codesLengthPos = 0;
+  for (let L = 1; L <= 255; L++) {
+    const candidatePos = schemaIdStart - L * 2 - 2;
+    if (candidatePos < 0) break;
+    const candidate = parseInt(clean.slice(candidatePos, candidatePos + 2), 16);
+    if (candidate === L) {
+      codesLength = L;
+      codesLengthPos = candidatePos;
+      break;
+    }
+  }
+  if (codesLength === 0) return null;
 
-  // Codes are the bytes before the codes length
-  const codesEnd = markerStart - 4;
-  const codesStart = codesEnd - codesLength * 2;
-  if (codesStart < 0) return null;
+  // 4. Extract and decode ASCII codes
+  const codesHex = clean.slice(codesLengthPos + 2, codesLengthPos + 2 + codesLength * 2);
 
-  const codesHex = clean.slice(codesStart, codesEnd);
-
-  // Decode ASCII codes
   let codesStr = '';
   for (let i = 0; i < codesHex.length; i += 2) {
     codesStr += String.fromCharCode(parseInt(codesHex.slice(i, i + 2), 16));
@@ -96,7 +107,7 @@ export function parseERC8021Suffix(calldata: string): ERC8021Attribution | null 
   const codes = codesStr.split(',').filter((c) => c.length > 0);
   if (codes.length === 0) return null;
 
-  const rawSuffix = '0x' + clean.slice(codesStart);
+  const rawSuffix = '0x' + clean.slice(codesLengthPos);
 
   return { codes, schemaId, rawSuffix };
 }
