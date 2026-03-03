@@ -121,6 +121,10 @@ export { isCryptoTransaction } from './types.js';
 // On-Chain Anchoring
 export { verifyAnchor, getAnchor, anchorDigest, OnChainExporter } from './onchain.js';
 
+// ERC-8021 Transaction Attribution
+export { encodeERC8021Suffix, parseERC8021Suffix, fetchTransactionAttribution, KONTEXT_BUILDER_CODE } from './integrations/erc8021.js';
+export type { ERC8021Attribution, ERC8021Config } from './types.js';
+
 // A2A Attestation
 export { fetchAgentCard, exchangeAttestation } from './attestation.js';
 

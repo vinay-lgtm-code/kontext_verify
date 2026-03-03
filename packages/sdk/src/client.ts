@@ -31,6 +31,7 @@ import type {
   ComplianceCertificate,
   AnchorResult,
   CounterpartyAttestation,
+  ERC8021Attribution,
   AgentSession,
   CreateSessionInput,
   ProvenanceCheckpoint,
@@ -822,6 +823,13 @@ export class Kontext {
       });
     }
 
+    // 6d. ERC-8021 builder attribution (optional)
+    let attribution: ERC8021Attribution | undefined;
+    if (input.erc8021 && input.txHash) {
+      const { fetchTransactionAttribution } = await import('./integrations/erc8021.js');
+      attribution = (await fetchTransactionAttribution(input.erc8021.rpcUrl, input.txHash)) ?? undefined;
+    }
+
     // 7. Auto-create approval task if amount exceeds threshold
     let requiresApproval: boolean | undefined;
     let task: Task | undefined;
@@ -870,6 +878,7 @@ export class Kontext {
       ...(requiresApproval ? { requiresApproval, task } : {}),
       ...(anchorProof ? { anchorProof } : {}),
       ...(counterpartyResult ? { counterparty: counterpartyResult } : {}),
+      ...(attribution ? { attribution } : {}),
     };
   }
 

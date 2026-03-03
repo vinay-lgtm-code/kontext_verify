@@ -176,11 +176,19 @@ export async function anchorDigest(
     },
   ] as const;
 
-  const txHash = await client.writeContract({
-    address: config.contractAddress as `0x${string}`,
+  // Encode calldata and append ERC-8021 attribution suffix
+  const { encodeERC8021Suffix, KONTEXT_BUILDER_CODE } = await import('./integrations/erc8021.js');
+  const calldata = viem.encodeFunctionData({
     abi,
     functionName: 'anchor',
     args: [digestBytes32, projectHash as `0x${string}`],
+  });
+  const builderCode = config.builderCode ?? KONTEXT_BUILDER_CODE;
+  const suffix = encodeERC8021Suffix([builderCode]);
+
+  const txHash = await client.sendTransaction({
+    to: config.contractAddress as `0x${string}`,
+    data: (calldata + suffix) as `0x${string}`,
   });
 
   // Wait for receipt

@@ -691,6 +691,8 @@ export interface VerifyInput extends LogTransactionInput {
   anchor?: OnChainAnchorConfig;
   /** Counterparty agent for bilateral A2A attestation exchange */
   counterparty?: CounterpartyConfig;
+  /** ERC-8021 config: fetch and parse builder attribution from transaction calldata */
+  erc8021?: ERC8021Config;
 }
 
 /** Result of the verify() convenience method */
@@ -725,6 +727,8 @@ export interface VerifyResult {
   requiresApproval?: boolean;
   /** The pending approval task (present when requiresApproval is true) */
   task?: Task;
+  /** ERC-8021 builder attribution (present when erc8021 config provided and tx has attribution) */
+  attribution?: ERC8021Attribution;
 }
 
 // ============================================================================
@@ -802,6 +806,8 @@ export interface OnChainAnchorConfig {
   contractAddress: string;
   /** Private key of the signer (hex with 0x prefix). Required for write operations. */
   privateKey?: string;
+  /** ERC-8021 builder code for transaction attribution (default: 'kontext') */
+  builderCode?: string;
 }
 
 /** Result of an on-chain anchor transaction */
@@ -832,6 +838,28 @@ export interface AnchorVerification {
   projectHash?: string;
   /** Block timestamp (if anchored) */
   timestamp?: number;
+}
+
+// ============================================================================
+// ERC-8021 Transaction Attribution
+// ============================================================================
+
+/** ERC-8021 transaction attribution data parsed from calldata suffix */
+export interface ERC8021Attribution {
+  /** Builder/entity codes extracted from the calldata suffix */
+  codes: string[];
+  /** Schema ID (0 = canonical code registry) */
+  schemaId: number;
+  /** Raw suffix hex (with 0x prefix) */
+  rawSuffix: string;
+}
+
+/** ERC-8021 configuration for verify() */
+export interface ERC8021Config {
+  /** JSON-RPC URL for fetching transaction calldata */
+  rpcUrl: string;
+  /** Registry contract address for resolving codes to payout addresses (future use) */
+  registryAddress?: string;
 }
 
 // ============================================================================
