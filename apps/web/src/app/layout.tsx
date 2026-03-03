@@ -153,6 +153,7 @@ export default function RootLayout({
       className={`${inter.variable} ${jetbrainsMono.variable}`}
     >
       <head>
+        <meta name="base:app_id" content="69a630f4a0fdf68983d307ed" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

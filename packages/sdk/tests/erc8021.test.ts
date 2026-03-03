@@ -1,22 +1,26 @@
 import { describe, it, expect } from 'vitest';
 import { encodeERC8021Suffix, parseERC8021Suffix, KONTEXT_BUILDER_CODE } from '../src/index.js';
 
-const ERC_8021_MARKER = '80210000000000000000000000008021';
+const ERC_8021_MARKER = '80218021802180218021802180218021';
 
 describe('ERC-8021 Transaction Attribution', () => {
   describe('encodeERC8021Suffix', () => {
     it('encodes a single builder code', () => {
       const suffix = encodeERC8021Suffix(['kontext']);
-      // 'kontext' = 6b6f6e74657874 (7 bytes)
-      // codesLength = 07, schemaId = 00, marker = 80210000...8021
-      expect(suffix).toBe('6b6f6e7465787407' + '00' + ERC_8021_MARKER);
+      // codesLength = 07, 'kontext' = 6b6f6e74657874 (7 bytes), schemaId = 00
+      expect(suffix).toBe('07' + '6b6f6e74657874' + '00' + ERC_8021_MARKER);
     });
 
     it('encodes multiple comma-delimited codes', () => {
       const suffix = encodeERC8021Suffix(['kontext', 'myapp']);
       // 'kontext,myapp' = 13 chars
       const codesHex = Buffer.from('kontext,myapp').toString('hex');
-      expect(suffix).toBe(codesHex + '0d' + '00' + ERC_8021_MARKER);
+      expect(suffix).toBe('0d' + codesHex + '00' + ERC_8021_MARKER);
+    });
+
+    it('produces the Base docs reference suffix for "baseapp"', () => {
+      const suffix = encodeERC8021Suffix(['baseapp']);
+      expect(suffix).toBe('07626173656170700080218021802180218021802180218021');
     });
 
     it('throws on empty codes array', () => {
@@ -57,6 +61,14 @@ describe('ERC-8021 Transaction Attribution', () => {
       expect(result!.schemaId).toBe(0);
     });
 
+    it('parses the Base docs reference suffix for "baseapp"', () => {
+      const referenceSuffix = '0x07626173656170700080218021802180218021802180218021';
+      const result = parseERC8021Suffix(referenceSuffix);
+      expect(result).not.toBeNull();
+      expect(result!.codes).toEqual(['baseapp']);
+      expect(result!.schemaId).toBe(0);
+    });
+
     it('returns null for calldata without ERC-8021 suffix', () => {
       const calldata = '0xdeadbeef1234567890abcdef';
       expect(parseERC8021Suffix(calldata)).toBeNull();
@@ -73,7 +85,7 @@ describe('ERC-8021 Transaction Attribution', () => {
     it('returns null for invalid marker', () => {
       // Valid structure but wrong marker
       const fakeMarker = 'ff'.repeat(16);
-      const suffix = '6b6f6e7465787407' + '00' + fakeMarker;
+      const suffix = '07' + '6b6f6e74657874' + '00' + fakeMarker;
       expect(parseERC8021Suffix('0xdeadbeef' + suffix)).toBeNull();
     });
 
