@@ -133,22 +133,14 @@ export default function DeFiProtocolsPage() {
   return (
     <>
       {/* Hero */}
-      <section className="relative overflow-hidden border-b border-border/40">
-        <div className="grid-pattern absolute inset-0 opacity-20" />
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-background/95 to-background" />
-        <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
+      <section className="border-b border-[var(--term-surface-2)]">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
           <div className="text-center">
-            <Badge
-              variant="outline"
-              className="mb-4 border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-            >
-              DeFi Protocols
-            </Badge>
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-              On-Chain Compliance for{" "}
-              <span className="gradient-text">Decentralized Finance</span>
+            <h1 className="text-sm font-medium">
+              <span className="text-[var(--term-green)]">$</span>{" "}
+              DEFI PROTOCOLS
             </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+            <p className="mx-auto mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
               DeFi protocols face increasing regulatory pressure. Kontext gives
               your protocol tamper-evident governance records, treasury anomaly
               detection, and audit trails that satisfy regulators without
@@ -184,16 +176,13 @@ export default function DeFiProtocolsPage() {
       </section>
 
       {/* Pain Points */}
-      <section className="border-b border-border/40 bg-background">
+      <section className="border-b border-[var(--term-surface-2)] bg-background">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <Badge variant="secondary" className="mb-4">
-              The Problem
-            </Badge>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            <h2 className="text-sm font-medium">
               Why DeFi protocols need compliance infrastructure
             </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+            <p className="mx-auto mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
               Decentralization does not mean deregulation. Protocols that invest
               in compliance infrastructure now will be better positioned as
               regulation matures.
@@ -203,7 +192,7 @@ export default function DeFiProtocolsPage() {
             {painPoints.map((point) => (
               <Card
                 key={point.title}
-                className="border-border/40 bg-card/50"
+                className="border-[var(--term-surface-2)] bg-[var(--term-surface)]"
               >
                 <CardHeader>
                   <CardTitle className="text-lg">{point.title}</CardTitle>
@@ -220,16 +209,13 @@ export default function DeFiProtocolsPage() {
       </section>
 
       {/* What Kontext Does */}
-      <section className="border-b border-border/40 bg-background">
+      <section className="border-b border-[var(--term-surface-2)] bg-background">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <Badge variant="secondary" className="mb-4">
-              What Kontext Does
-            </Badge>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            <h2 className="text-sm font-medium">
               Compliance tooling designed for decentralized protocols
             </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+            <p className="mx-auto mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
               Governance logging, treasury monitoring, and audit export -- built
               for the way DeFi protocols actually work.
             </p>
@@ -241,7 +227,7 @@ export default function DeFiProtocolsPage() {
                 className="group relative overflow-hidden transition-colors hover:border-primary/30"
               >
                 <CardHeader>
-                  <div className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <div className="mb-2 inline-flex h-10 w-10 items-center justify-center  bg-[var(--term-surface-2)] text-primary">
                     <feature.icon size={20} />
                   </div>
                   <CardTitle className="text-lg">{feature.title}</CardTitle>
@@ -258,19 +244,16 @@ export default function DeFiProtocolsPage() {
       </section>
 
       {/* Code Example */}
-      <section className="border-b border-border/40 bg-background">
+      <section className="border-b border-[var(--term-surface-2)] bg-background">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div>
-              <Badge variant="secondary" className="mb-4">
-                Code Example
-              </Badge>
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              <h2 className="text-sm font-medium">
                 Governance voting and treasury transfers
               </h2>
-              <p className="mt-4 text-lg text-muted-foreground">
+              <p className="mt-4 text-xs text-[var(--term-text-2)]">
                 Log governance votes and treasury transfers with{" "}
-                <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
+                <code className="bg-muted px-1.5 py-0.5 font-mono text-sm">
                   ctx.verify()
                 </code>
                 . Every action is recorded in a tamper-evident digest chain,
@@ -298,7 +281,7 @@ export default function DeFiProtocolsPage() {
                 ))}
               </ul>
             </div>
-            <div className="glow rounded-xl">
+            <div className="">
               <CodeBlock
                 code={defiCode}
                 language="typescript"
@@ -310,20 +293,14 @@ export default function DeFiProtocolsPage() {
       </section>
 
       {/* Pricing Callout */}
-      <section className="border-b border-border/40 bg-background">
+      <section className="border-b border-[var(--term-surface-2)] bg-background">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="relative overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 via-card to-card p-8 sm:p-12">
-            <div className="relative z-10 max-w-2xl">
-              <Badge
-                variant="outline"
-                className="mb-4 border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-              >
-                Pricing
-              </Badge>
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          <div className="border border-[var(--term-surface-2)] bg-[var(--term-surface)] p-8 sm:p-12">
+            <div className="max-w-2xl">
+              <h2 className="text-sm font-medium">
                 Start free, upgrade for advanced features
               </h2>
-              <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
+              <p className="mt-4 text-xs text-[var(--term-text-2)] leading-relaxed">
                 The Free tier includes 20,000 events per month -- enough to add
                 compliance to governance and treasury operations. Pro is
                 usage-based at $2 per 1,000 events above 20K free, with cloud
@@ -342,7 +319,7 @@ export default function DeFiProtocolsPage() {
                   >
                     <Check
                       size={16}
-                      className="mt-0.5 shrink-0 text-emerald-400"
+                      className="mt-0.5 shrink-0 text-primary"
                     />
                     {item}
                   </div>
@@ -360,24 +337,22 @@ export default function DeFiProtocolsPage() {
                 </Button>
               </div>
             </div>
-            <div className="absolute -right-20 -top-20 h-80 w-80 rounded-full bg-emerald-500/5 blur-3xl" />
-            <div className="absolute -bottom-20 -right-10 h-60 w-60 rounded-full bg-emerald-500/3 blur-3xl" />
           </div>
         </div>
       </section>
 
       {/* Bottom CTA */}
-      <section className="border-t border-border/40 bg-background">
+      <section className="border-t border-[var(--term-surface-2)] bg-background">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center text-center">
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            <h2 className="text-sm font-medium">
               Ready to add compliance to your protocol?
             </h2>
             <p className="mt-4 max-w-md text-muted-foreground">
               Install the SDK and start logging governance and treasury
               operations in minutes. Open source and free to start.
             </p>
-            <div className="mt-8 inline-flex items-center gap-2 rounded-full border border-border/50 bg-card/50 px-4 py-2 font-mono text-sm text-muted-foreground backdrop-blur-sm">
+            <div className="mt-8 inline-flex items-center gap-2 rounded-none border border-[var(--term-surface-2)] bg-[var(--term-surface)] px-4 py-2 font-mono text-sm text-muted-foreground ">
               <span className="text-primary">$</span>
               npm install kontext-sdk
             </div>

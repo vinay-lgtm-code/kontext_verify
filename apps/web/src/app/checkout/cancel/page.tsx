@@ -12,8 +12,11 @@ export const metadata: Metadata = {
 export default function CheckoutCancelPage() {
   return (
     <div className="mx-auto max-w-lg px-4 py-24 text-center">
-      <h1 className="text-3xl font-bold tracking-tight">No worries!</h1>
-      <p className="mt-3 text-lg text-muted-foreground">
+      <h1 className="text-sm font-medium">
+        <span className="text-[var(--term-green)]">$</span>{" "}
+        CHECKOUT CANCELLED
+      </h1>
+      <p className="mt-3 text-xs text-[var(--term-text-2)]">
         Your checkout was cancelled and you were not charged. The Free tier is
         always available with 20K events/month.
       </p>

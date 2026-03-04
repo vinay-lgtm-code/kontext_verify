@@ -65,7 +65,7 @@ export default function CheckoutSuccessPage() {
   if (error) {
     return (
       <div className="mx-auto max-w-lg px-4 py-24 text-center">
-        <h1 className="text-2xl font-bold">Something went wrong</h1>
+        <h1 className="text-sm font-medium">Something went wrong</h1>
         <p className="mt-2 text-muted-foreground">{error}</p>
         <Button className="mt-6" asChild>
           <Link href="/pricing">Back to Pricing</Link>
@@ -96,13 +96,14 @@ export default function CheckoutSuccessPage() {
     <div className="mx-auto max-w-2xl px-4 py-16 sm:py-24">
       {/* Confirmation header */}
       <div className="text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-none bg-[var(--term-surface-2)]">
           <Check size={32} className="text-primary" />
         </div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Welcome to Kontext Pro!
+        <h1 className="text-sm font-medium">
+          <span className="text-[var(--term-green)]">$</span>{" "}
+          SUBSCRIPTION CONFIRMED
         </h1>
-        <p className="mt-2 text-lg text-muted-foreground">
+        <p className="mt-2 text-xs text-[var(--term-text-2)]">
           Your subscription is confirmed. Usage-based pricing at $2/1K events
           above 20K free. Cloud persistence, all protocols, and advanced features unlocked.
         </p>
@@ -123,7 +124,7 @@ export default function CheckoutSuccessPage() {
           <Card key={i}>
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-none bg-[var(--term-surface-2)] text-xs font-bold text-primary">
                   {i + 1}
                 </span>
                 {step.title}

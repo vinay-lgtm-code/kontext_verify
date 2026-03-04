@@ -46,23 +46,21 @@ export default function ContactPage() {
   return (
     <>
       {/* Hero */}
-      <section className="border-b border-border/40">
+      <section className="border-b border-[var(--term-surface-2)]">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <Link
               href="/"
-              className="mb-8 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="mb-8 inline-flex items-center gap-1 text-xs text-[var(--term-text-3)] hover:text-[var(--term-text-2)] transition-colors"
             >
               <ArrowLeft size={14} />
               Back to home
             </Link>
-            <Badge variant="secondary" className="mb-4">
-              Get in Touch
-            </Badge>
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-              Talk to the Kontext team
+            <h1 className="text-sm font-medium">
+              <span className="text-[var(--term-green)]">$</span>{" "}
+              CONTACT
             </h1>
-            <p className="mt-4 text-lg text-muted-foreground">
+            <p className="mt-4 text-xs text-[var(--term-text-2)]">
               Interested in Pro? Have a compliance question? Drop us a
               line and we will get back to you within one business day.
             </p>
@@ -74,7 +72,7 @@ export default function ContactPage() {
       <section className="bg-background">
         <div className="mx-auto max-w-xl px-4 py-16 sm:px-6 lg:px-8">
           {status === "success" ? (
-            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-8 text-center">
+            <div className=" border border-emerald-500/30 bg-emerald-500/5 p-8 text-center">
               <CheckCircle
                 size={48}
                 className="mx-auto mb-4 text-emerald-500"
@@ -101,7 +99,7 @@ export default function ContactPage() {
               <div>
                 <label
                   htmlFor="name"
-                  className="block text-sm font-medium mb-2"
+                  className="block text-xs font-medium mb-2 uppercase tracking-widest text-[var(--term-text-3)]"
                 >
                   Name
                 </label>
@@ -110,7 +108,7 @@ export default function ContactPage() {
                   id="name"
                   name="name"
                   required
-                  className="w-full rounded-lg border border-border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full  border border-border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   placeholder="Your name"
                 />
               </div>
@@ -118,7 +116,7 @@ export default function ContactPage() {
               <div>
                 <label
                   htmlFor="email"
-                  className="block text-sm font-medium mb-2"
+                  className="block text-xs font-medium mb-2 uppercase tracking-widest text-[var(--term-text-3)]"
                 >
                   Email
                 </label>
@@ -127,7 +125,7 @@ export default function ContactPage() {
                   id="email"
                   name="email"
                   required
-                  className="w-full rounded-lg border border-border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full  border border-border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   placeholder="you@company.com"
                 />
               </div>
@@ -135,7 +133,7 @@ export default function ContactPage() {
               <div>
                 <label
                   htmlFor="company"
-                  className="block text-sm font-medium mb-2"
+                  className="block text-xs font-medium mb-2 uppercase tracking-widest text-[var(--term-text-3)]"
                 >
                   Company
                 </label>
@@ -143,7 +141,7 @@ export default function ContactPage() {
                   type="text"
                   id="company"
                   name="company"
-                  className="w-full rounded-lg border border-border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full  border border-border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   placeholder="Your company (optional)"
                 />
               </div>
@@ -151,7 +149,7 @@ export default function ContactPage() {
               <div>
                 <label
                   htmlFor="interest"
-                  className="block text-sm font-medium mb-2"
+                  className="block text-xs font-medium mb-2 uppercase tracking-widest text-[var(--term-text-3)]"
                 >
                   I am interested in
                 </label>
@@ -159,7 +157,7 @@ export default function ContactPage() {
                   id="interest"
                   name="interest"
                   required
-                  className="w-full rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full  border border-border bg-background px-4 py-3 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   <option value="">Select a plan</option>
                   <option value="pro">Pro (usage-based)</option>
@@ -170,7 +168,7 @@ export default function ContactPage() {
               <div>
                 <label
                   htmlFor="message"
-                  className="block text-sm font-medium mb-2"
+                  className="block text-xs font-medium mb-2 uppercase tracking-widest text-[var(--term-text-3)]"
                 >
                   Message
                 </label>
@@ -179,13 +177,13 @@ export default function ContactPage() {
                   name="message"
                   rows={5}
                   required
-                  className="w-full rounded-lg border border-border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                  className="w-full  border border-border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none"
                   placeholder="Tell us about your use case, expected volume, or any questions you have."
                 />
               </div>
 
               {status === "error" && (
-                <div className="flex items-start gap-3 rounded-lg border border-red-500/30 bg-red-500/5 p-4 text-sm text-red-400">
+                <div className="flex items-start gap-3  border border-red-500/30 bg-red-500/5 p-4 text-sm text-red-400">
                   <AlertCircle size={16} className="mt-0.5 shrink-0" />
                   {errorMsg}
                 </div>

@@ -10,11 +10,9 @@ export default function PrivacyPage() {
   return (
     <section className="bg-background">
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
-        <Badge variant="secondary" className="mb-4">
-          Legal
-        </Badge>
-        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-          Privacy Policy
+        <h1 className="text-sm font-medium">
+          <span className="text-[var(--term-green)]">$</span>{" "}
+          PRIVACY POLICY
         </h1>
         <p className="mt-4 text-sm text-muted-foreground">
           Last updated: February 28, 2026

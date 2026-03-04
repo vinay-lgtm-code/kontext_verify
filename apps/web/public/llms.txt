@@ -1,53 +1,70 @@
 # Kontext SDK
+> Compliance logging for AI agents that move USDC on Base & Arc
 
-> Trust infrastructure for AI agents that move money.
-
-Kontext is a TypeScript SDK (v0.7.0) that provides compliance audit trails, OFAC screening, trust scoring, on-chain anchoring, and agent-to-agent attestation for autonomous wallet transfers. Zero runtime dependencies. MIT license.
-
-## Quick Start
-
-```bash
+## Install
 npm install kontext-sdk
-```
 
+## Quick Start (x402 canonical flow)
 ```typescript
 import { Kontext } from 'kontext-sdk';
-const ctx = Kontext.init({ projectId: 'my-project' });
+const ctx = Kontext.init({ projectId: 'my-agent', environment: 'production' });
+// Agent receives HTTP 402 → reasons → verify USDC → anchor on Base
 const result = await ctx.verify({
-  txHash: '0xabc...', chain: 'base', amount: '0.50',
-  token: 'USDC', from: '0xAgentWallet', to: '0xAPIProvider',
-  agentId: 'research-agent',
+  txHash, chain: 'base', amount: '0.50', token: 'USDC',
+  from: agentWallet, to: apiProvider, agentId: 'research-agent',
+  reasoning: 'Paying API via x402. Provider not sanctioned.',
 });
-// result.compliant, result.trustScore, result.digestProof, result.anchorProof
 ```
 
-## Key Pages
+## verify() returns
+```typescript
+{
+  compliant: boolean,
+  checks: Array<{ name: string, passed: boolean, details?: string }>,
+  riskLevel: 'low' | 'medium' | 'high' | 'critical',
+  trustScore: { score: 0-100, level: string, factors: Factor[] },
+  digestProof: { valid: boolean, chainLength: number },
+  transaction: TransactionRecord,
+  counterparty?: { attested: boolean, digest: string },
+  anchorProof?: { txHash: string, blockNumber: number },
+}
+```
 
-- [Documentation](https://getkontext.com/docs): Full SDK docs with code examples
-- [Pricing](https://getkontext.com/pricing): Free (20K events/mo) and Pro ($2/1K above 20K)
-- [Use Cases](https://getkontext.com/use-cases): USDC payments, x402, Stripe, treasury, on-chain anchoring, A2A attestation
-- [Integrations](https://getkontext.com/integrations): Vercel AI SDK, LangChain, CrewAI, AutoGen
-- [FAQs](https://getkontext.com/faqs): Common questions about Kontext
-- [Blog](https://getkontext.com/blog): Engineering articles on compliance and audit trails
-- [GitHub](https://github.com/Legaci-Labs/kontext): Source code (MIT)
-- [npm](https://www.npmjs.com/package/kontext-sdk): Package registry
+## Ecosystem
+Primary: USDC on Base + Arc (free tier)
+Protocol: x402 (agentic HTTP 402 micropayments)
+Wallets: Circle Programmable Wallets
+Bridging: CCTP V2
+All chains: ethereum, base, polygon, arbitrum, optimism, arc, avalanche, solana
+
+## Free Tier
+20,000 events/month, Base + Arc chains, no API key needed
+
+## Batch Anchoring
+```typescript
+batchAnchor(digests, { batchSize: 50 }) // one tx anchors 50 compliance events (~$0.001)
+```
 
 ## Core Capabilities
 
 1. **verify()** — OFAC screening + transaction logging + trust scoring + digest proof in one call
 2. **Digest chain** — Tamper-evident SHA-256 hash chain for every logged action (patented)
-3. **On-chain anchoring** — Write terminal digest to a Base or Arc smart contract for immutable proof
-4. **A2A attestation** — Exchange compliance digests between agent counterparties
-5. **Trust scoring** — 0-100 score from 5 factors (history, amount, frequency, destination, behavior)
-6. **Anomaly detection** — Rule-based detection (unusualAmount, frequencySpike + 4 Pro rules)
-7. **Compliance certificates** — Exportable certificates with digest proof + trust score + reasoning
-8. **Agent reasoning logs** — Log why agents made decisions, linked to digest chain
-9. **Agent forensics** — Wallet-to-agent mapping, multi-wallet clustering (5 heuristics), identity confidence scoring (Pro)
-10. **CLI** — 12 commands for compliance operations from the terminal (`@kontext-sdk/cli`)
+3. **On-chain anchoring** — Write terminal digest to Base or Arc smart contract for immutable proof
+4. **Batch anchoring** — 50 digests per tx on Base (~$0.001)
+5. **A2A attestation** — Exchange compliance digests between agent counterparties via x402
+6. **Trust scoring** — 0-100 score from 5 factors (history, amount, frequency, destination, behavior)
+7. **Anomaly detection** — Rule-based detection (unusualAmount, frequencySpike + 4 advanced rules)
+8. **Compliance certificates** — Exportable certificates with digest proof + trust score + reasoning
+9. **Agent reasoning logs** — Log why agents made decisions, linked to digest chain
+10. **ERC-8021 attribution** — Transaction attribution via calldata suffix
+
+## Key Pages
+
+- Docs: https://getkontext.com/docs
+- Pricing: https://getkontext.com/pricing
+- Use Cases: https://getkontext.com/use-cases
 
 ## MCP Integration
-
-Kontext exposes an MCP server for Claude Code, Cursor, and Windsurf:
 
 ```json
 {
@@ -61,15 +78,6 @@ Kontext exposes an MCP server for Claude Code, Cursor, and Windsurf:
 ```
 
 MCP tools: verify_transaction, check_sanctions, log_reasoning, get_trust_score, get_compliance_certificate, anchor_digest, exchange_attestation, verify_audit_trail.
-
-## CLI (@kontext-sdk/cli)
-
-```bash
-npm install -g @kontext-sdk/cli
-kontext verify --chain base --amount 0.50 --token USDC --from 0xSender --to 0xRecipient
-```
-
-12 commands: check, verify, reason, cert, audit, anchor, attest, sync, session, checkpoint, status, mcp.
 
 ## Supported Chains
 
@@ -85,13 +93,15 @@ USDC, USDT, DAI, EURC.
 - $10,000: Currency Transaction Report (CTR)
 - $50,000: Large Transaction Alert
 
-## Full Documentation
-
-See [llms-full.txt](https://getkontext.com/llms-full.txt) for complete API reference and code examples.
+## Links
+- Docs: https://getkontext.com/docs
+- npm: https://npmjs.com/package/kontext-sdk
+- GitHub: https://github.com/Legaci-Labs/kontext
+- API: https://api.getkontext.com
+- Agent Card: https://getkontext.com/.well-known/kontext.json
+- Full API Reference: https://getkontext.com/llms-full.txt
 
 ## Contact
-
 - Website: https://getkontext.com
-- GitHub: https://github.com/Legaci-Labs/kontext
 - Email: hello@kontext.dev
 - Twitter: https://x.com/kontextverify

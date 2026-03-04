@@ -1,29 +1,23 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Martian_Mono } from "next/font/google";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import "./globals.css";
 
-const inter = Inter({
+const martianMono = Martian_Mono({
   subsets: ["latin"],
-  variable: "--font-geist-sans",
-  display: "swap",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-geist-mono",
+  variable: "--font-martian-mono",
   display: "swap",
 });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://getkontext.com"),
   title: {
-    default: "Kontext — Trust SDK for agents that move money",
+    default: "Kontext — Trust infrastructure for agents that move USDC on Base & Arc",
     template: "%s | Kontext",
   },
   description:
-    "Audit trails, OFAC screening, on-chain anchoring, and agent-to-agent attestation for every wallet transfer. Free forever. Zero dependencies.",
+    "Compliance logging SDK for AI agents. OFAC screening, audit trails, on-chain anchoring, and A2A attestation for every USDC transfer. Free on Base + Arc. Zero dependencies.",
   keywords: [
     "USDC compliance SDK",
     "AI agent audit trail",
@@ -32,6 +26,7 @@ export const metadata: Metadata = {
     "A2A attestation",
     "agent-to-agent attestation",
     "Base chain compliance",
+    "Arc chain compliance",
     "Circle Programmable Wallets compliance",
     "stablecoin compliance",
     "trust scoring",
@@ -39,7 +34,7 @@ export const metadata: Metadata = {
     "OFAC screening",
     "TypeScript SDK",
     "x402 protocol",
-    "Base Sepolia",
+    "batch anchoring",
   ],
   authors: [{ name: "Kontext" }],
   creator: "Kontext",
@@ -48,23 +43,23 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://getkontext.com",
     siteName: "Kontext",
-    title: "Kontext — Trust SDK for agents that move money",
+    title: "Kontext — Trust infrastructure for agents that move USDC on Base & Arc",
     description:
-      "Audit trails, OFAC screening, on-chain anchoring, and agent-to-agent attestation for every wallet transfer. Free forever.",
+      "Compliance logging SDK for AI agents. OFAC screening, audit trails, on-chain anchoring. Free on Base + Arc.",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Kontext — Trust SDK for agents that move money",
+        alt: "Kontext — Trust infrastructure for agents that move USDC",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Kontext — Trust SDK for agents that move money",
+    title: "Kontext — Trust infrastructure for agents that move USDC on Base & Arc",
     description:
-      "Audit trails, OFAC screening, on-chain anchoring, and agent-to-agent attestation for every wallet transfer.",
+      "Compliance logging SDK for AI agents. OFAC screening, audit trails, on-chain anchoring. Free forever.",
     images: ["/og-image.png"],
     creator: "@kontextverify",
   },
@@ -106,22 +101,22 @@ const softwareJsonLd = {
   downloadUrl: "https://www.npmjs.com/package/kontext-sdk",
   codeRepository: "https://github.com/Legaci-Labs/kontext",
   description:
-    "Trust infrastructure for AI agents that move money. Audit trails, OFAC screening, on-chain anchoring, and agent-to-agent attestation for every wallet transfer. Zero runtime dependencies.",
+    "Trust infrastructure for AI agents that move USDC on Base & Arc. Audit trails, OFAC screening, on-chain anchoring, and agent-to-agent attestation. Zero runtime dependencies.",
   offers: [
     {
       "@type": "Offer",
       name: "Free",
       price: "0",
       priceCurrency: "USD",
-      description: "20,000 events/month. Core SDK, digest chain, trust scoring, Base chain.",
+      description: "20,000 events/month on Base + Arc. Core SDK, digest chain, trust scoring.",
     },
     {
       "@type": "Offer",
-      name: "Pro",
+      name: "Pay as you go",
       price: "2.00",
       priceCurrency: "USD",
       unitText: "per 1,000 events above 20K free",
-      description: "Usage-based. All 6 anomaly rules, unified screening, 8 chains, CSV export, cloud persistence.",
+      description: "All 8 chains, advanced anomaly rules, unified screening, CSV export, cloud persistence.",
     },
   ],
   author: {
@@ -132,13 +127,15 @@ const softwareJsonLd = {
     "Transaction verification with OFAC screening",
     "Tamper-evident SHA-256 digest chain",
     "On-chain anchoring to Base smart contracts",
+    "Batch anchoring (50 digests per tx, ~$0.001)",
     "Agent-to-agent (A2A) attestation",
+    "x402 micropayment compliance",
     "Trust scoring (0-100) with 5-factor breakdown",
     "Rule-based anomaly detection",
     "Agent reasoning logs",
     "Compliance certificate generation",
     "Human-in-the-loop task confirmation",
-    "MCP server for AI coding assistants",
+    "ERC-8021 transaction attribution",
   ],
 };
 
@@ -147,27 +144,28 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const jsonLdScripts = [
+    JSON.stringify(organizationJsonLd),
+    JSON.stringify(softwareJsonLd),
+  ];
+
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${jetbrainsMono.variable}`}
+      className={martianMono.variable}
     >
       <head>
         <meta name="base:app_id" content="69a630f4a0fdf68983d307ed" />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(organizationJsonLd),
-          }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(softwareJsonLd),
-          }}
-        />
+        {jsonLdScripts.map((script, i) => (
+          <script
+            key={i}
+            type="application/ld+json"
+            suppressHydrationWarning
+            dangerouslySetInnerHTML={{ __html: script }}
+          />
+        ))}
       </head>
-      <body className="min-h-screen bg-background font-sans antialiased">
+      <body className="min-h-screen bg-background font-mono antialiased">
         <Navbar />
         <main>{children}</main>
         <Footer />

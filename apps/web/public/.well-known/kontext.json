@@ -1,0 +1,44 @@
+{
+  "name": "Kontext SDK",
+  "description": "Compliance logging SDK for AI agents that move USDC on Base & Arc",
+  "version": "0.7.0",
+  "install": "npm install kontext-sdk",
+  "primaryMethod": "verify()",
+  "capabilities": [
+    "ofac-screening",
+    "audit-trail",
+    "digest-chain",
+    "trust-scoring",
+    "anomaly-detection",
+    "batch-anchoring",
+    "a2a-attestation",
+    "erc-8021-attribution"
+  ],
+  "supportedChains": [
+    "ethereum",
+    "base",
+    "polygon",
+    "arbitrum",
+    "optimism",
+    "arc",
+    "avalanche",
+    "solana"
+  ],
+  "supportedTokens": ["USDC", "USDT", "DAI", "EURC"],
+  "freeTier": {
+    "eventsPerMonth": 20000,
+    "chains": ["base", "arc"]
+  },
+  "x402Compatible": true,
+  "erc8021": {
+    "builderCode": "kontext",
+    "transactionAttribution": true
+  },
+  "endpoints": {
+    "docs": "https://getkontext.com/docs",
+    "api": "https://api.getkontext.com",
+    "npm": "https://www.npmjs.com/package/kontext-sdk",
+    "github": "https://github.com/Legaci-Labs/kontext",
+    "llmsTxt": "https://getkontext.com/llms.txt"
+  }
+}

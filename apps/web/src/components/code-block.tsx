@@ -83,22 +83,27 @@ export function CodeBlock({
   };
 
   return (
-    <div className="code-block group relative">
-      {filename && (
-        <div className="flex items-center justify-between border-b border-white/5 px-4 py-2.5">
-          <span className="text-xs text-muted-foreground font-mono">
-            {filename}
-          </span>
-          <span className="text-xs text-muted-foreground/50">{language}</span>
+    <div className="code-block group relative border border-[var(--term-surface-2)] bg-[var(--term-surface)]">
+      <div className="flex items-center justify-between border-b border-[var(--term-surface-2)] px-4 py-2">
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-[var(--term-red)] opacity-60" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[var(--term-amber)] opacity-60" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[var(--term-green)] opacity-60" />
+          {filename && (
+            <span className="text-xs text-[var(--term-text-3)] font-mono ml-2">
+              {filename}
+            </span>
+          )}
         </div>
-      )}
+        <span className="text-xs text-[var(--term-text-3)]">{language}</span>
+      </div>
       <div className="relative">
         <pre className={showLineNumbers ? "pl-12" : ""}>
           <code>{tokenize(code.trim())}</code>
         </pre>
         <button
           onClick={handleCopy}
-          className="absolute right-3 top-3 rounded-md p-1.5 text-muted-foreground/50 opacity-0 transition-all hover:text-muted-foreground group-hover:opacity-100 bg-white/5 hover:bg-white/10"
+          className="absolute right-3 top-3 p-1.5 text-[var(--term-text-3)] opacity-0 transition-opacity hover:text-[var(--term-text-2)] group-hover:opacity-100 bg-[var(--term-surface-2)] hover:bg-[var(--term-surface-3)]"
           aria-label="Copy code"
         >
           {copied ? <Check size={14} /> : <Copy size={14} />}

@@ -15,22 +15,20 @@ export default function AboutPage() {
   return (
     <>
       {/* Hero */}
-      <section className="border-b-2 border-border">
+      <section className="border-b border-[var(--term-surface-2)]">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
           <div className="max-w-3xl">
-            <Badge variant="secondary" className="mb-4">
-              About Kontext
-            </Badge>
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-              Every agent transaction should be verifiable
+            <h1 className="text-sm font-medium">
+              <span className="text-[var(--term-green)]">$</span>{" "}
+              ABOUT KONTEXT
             </h1>
-            <p className="mt-6 text-lg text-muted-foreground leading-relaxed">
+            <p className="mt-6 text-sm text-[var(--term-text-2)] leading-relaxed">
               AI agents are moving money. They are paying vendors, settling
               invoices, and executing transactions at a pace no human team can
               manually audit. The infrastructure to verify, log, and trust these
               actions simply does not exist yet.
             </p>
-            <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
+            <p className="mt-4 text-sm text-[var(--term-text-2)] leading-relaxed">
               That is what Kontext is building.
             </p>
           </div>
@@ -41,7 +39,7 @@ export default function AboutPage() {
       <section className="bg-background">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="prose-kontext max-w-3xl">
-            <h2>The problem</h2>
+            <h2><span className="text-[var(--term-green)]">$</span> THE PROBLEM</h2>
             <p>
               The agent economy is exploding. AI agents are being deployed to
               handle procurement, treasury management, vendor payments, and
@@ -67,7 +65,7 @@ export default function AboutPage() {
 
             <Separator className="my-12" />
 
-            <h2>The GENIUS Act and what it means</h2>
+            <h2><span className="text-[var(--term-green)]">$</span> REGULATORY CONTEXT</h2>
             <p>
               The Guiding and Establishing National Innovation for U.S.
               Stablecoins (GENIUS) Act represents a significant shift in how the
@@ -93,7 +91,7 @@ export default function AboutPage() {
 
             <Separator className="my-12" />
 
-            <h2>The solution</h2>
+            <h2><span className="text-[var(--term-green)]">$</span> THE SOLUTION</h2>
             <p>
               Kontext is a TypeScript SDK that sits between your agents
               and the actions they take. Every action passes through Kontext,
@@ -129,7 +127,7 @@ export default function AboutPage() {
 
             <Separator className="my-12" />
 
-            <h2>Three layers of proof</h2>
+            <h2><span className="text-[var(--term-green)]">$</span> THREE LAYERS OF PROOF</h2>
             <p>
               Proving compliance ran is harder than running compliance. Kontext
               provides three independent layers of cryptographic proof, each
@@ -163,7 +161,7 @@ export default function AboutPage() {
 
             <Separator className="my-12" />
 
-            <h2>Why we are building this</h2>
+            <h2><span className="text-[var(--term-green)]">$</span> WHY WE BUILD THIS</h2>
             <p>
               There is a clear gap in the market that will only grow as agents
               become more autonomous and handle more money.
@@ -188,7 +186,7 @@ export default function AboutPage() {
 
             <Separator className="my-12" />
 
-            <h2>Vision</h2>
+            <h2><span className="text-[var(--term-green)]">$</span> VISION</h2>
             <p>
               The agent economy will be bigger than the app economy. Trillions
               of dollars will flow through AI agents in the next decade. Every
