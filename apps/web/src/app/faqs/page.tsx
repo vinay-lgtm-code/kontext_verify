@@ -128,7 +128,7 @@ const faqCategories = [
       {
         question: "Does Kontext work with the x402 protocol?",
         answer:
-          "Yes. Kontext can be used as middleware in x402 HTTP-native payment flows. Intercept the x-402-payment header, run ctx.verify() against the payment details, and either allow or reject the request based on the trust score and flag status.",
+          "Yes, in two ways. First, Kontext can be used as middleware in x402 HTTP-native payment flows — intercept the payment header, run ctx.verify() against the payment details, and allow or reject based on trust score and flag status. Second, the Kontext API itself accepts x402 USDC payments on Base for usage above the 20K free tier at $0.002/event — your agent pays per API call with no checkout flow needed.",
       },
       {
         question: "Can I use Kontext with Stripe?",

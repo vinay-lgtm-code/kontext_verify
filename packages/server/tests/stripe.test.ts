@@ -1,5 +1,5 @@
 // ============================================================================
-// Stripe Integration Tests
+// Stripe Integration Tests — Metered Billing ($2/1K events above 20K free)
 // ============================================================================
 // All Stripe API calls are mocked — no real API calls are made.
 
@@ -21,6 +21,8 @@ const mockCheckoutSessionsCreate = vi.fn();
 const mockBillingPortalSessionsCreate = vi.fn();
 const mockCheckoutSessionsRetrieve = vi.fn();
 const mockWebhooksConstructEvent = vi.fn();
+const mockSubscriptionItemsCreateUsageRecord = vi.fn();
+const mockSubscriptionsRetrieve = vi.fn();
 
 vi.mock('stripe', () => {
   // Must use a real function (not arrow) so `new Stripe(...)` works
@@ -40,6 +42,12 @@ vi.mock('stripe', () => {
       webhooks: {
         constructEvent: mockWebhooksConstructEvent,
       },
+      subscriptionItems: {
+        createUsageRecord: mockSubscriptionItemsCreateUsageRecord,
+      },
+      subscriptions: {
+        retrieve: mockSubscriptionsRetrieve,
+      },
     };
   }
   return { default: StripeMock, __esModule: true };
@@ -52,20 +60,24 @@ import {
   getCheckoutSession,
   handleWebhookEvent,
   constructWebhookEvent,
+  reportUsage,
+  getSubscriptionItemId,
   PRO_PLAN_CONFIG,
+  FREE_TIER_EVENTS,
+  PRICE_PER_1K_EVENTS_CENTS,
 } from '../src/stripe.js';
 
 // ---------------------------------------------------------------------------
 // Test suite
 // ---------------------------------------------------------------------------
 
-describe('Stripe Integration', () => {
+describe('Stripe Integration — Metered Billing', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   // =========================================================================
-  // PRO_PLAN_CONFIG
+  // PRO_PLAN_CONFIG — Metered billing
   // =========================================================================
 
   describe('PRO_PLAN_CONFIG', () => {
@@ -73,31 +85,40 @@ describe('Stripe Integration', () => {
       expect(PRO_PLAN_CONFIG.product.name).toBe('Kontext Pro');
     });
 
-    it('should set price to $449 (44900 cents)', () => {
-      expect(PRO_PLAN_CONFIG.price.amount).toBe(44900);
+    it('should set metered price to $2/1K events (200 cents)', () => {
+      expect(PRO_PLAN_CONFIG.price.unitAmount).toBe(200);
       expect(PRO_PLAN_CONFIG.price.currency).toBe('usd');
     });
 
-    it('should be a monthly recurring price', () => {
+    it('should be a monthly metered price', () => {
       expect(PRO_PLAN_CONFIG.price.interval).toBe('month');
+      expect(PRO_PLAN_CONFIG.price.usageType).toBe('metered');
     });
 
-    it('should be per-seat', () => {
-      expect(PRO_PLAN_CONFIG.price.perSeat).toBe(true);
-    });
-
-    it('should have pro tier metadata with 100K events limit', () => {
+    it('should have correct metadata', () => {
       expect(PRO_PLAN_CONFIG.metadata.tier).toBe('pro');
-      expect(PRO_PLAN_CONFIG.metadata.events_limit).toBe('100000');
+      expect(PRO_PLAN_CONFIG.metadata.billing_model).toBe('metered');
+      expect(PRO_PLAN_CONFIG.metadata.free_tier_events).toBe('20000');
+      expect(PRO_PLAN_CONFIG.metadata.price_per_1k).toBe('$2.00');
+    });
+  });
+
+  describe('Constants', () => {
+    it('should define free tier at 20K events', () => {
+      expect(FREE_TIER_EVENTS).toBe(20_000);
+    });
+
+    it('should define price at $2/1K (200 cents)', () => {
+      expect(PRICE_PER_1K_EVENTS_CENTS).toBe(200);
     });
   });
 
   // =========================================================================
-  // createCheckoutSession
+  // createCheckoutSession — Metered subscription (no quantity)
   // =========================================================================
 
   describe('createCheckoutSession', () => {
-    it('should create a checkout session with correct parameters', async () => {
+    it('should create a metered checkout session without quantity', async () => {
       mockCheckoutSessionsCreate.mockResolvedValue({
         id: 'cs_test_123',
         url: 'https://checkout.stripe.com/pay/cs_test_123',
@@ -105,9 +126,8 @@ describe('Stripe Integration', () => {
 
       const result = await createCheckoutSession({
         customerEmail: 'dev@company.com',
-        seats: 2,
-        successUrl: 'https://app.kontext.dev/checkout/success?session_id={CHECKOUT_SESSION_ID}',
-        cancelUrl: 'https://app.kontext.dev/checkout/cancel',
+        successUrl: 'https://getkontext.com/checkout/success?session_id={CHECKOUT_SESSION_ID}',
+        cancelUrl: 'https://getkontext.com/checkout/cancel',
       });
 
       expect(result.url).toBe('https://checkout.stripe.com/pay/cs_test_123');
@@ -117,30 +137,14 @@ describe('Stripe Integration', () => {
       const callArgs = mockCheckoutSessionsCreate.mock.calls[0]![0];
       expect(callArgs.mode).toBe('subscription');
       expect(callArgs.customer_email).toBe('dev@company.com');
+      // Metered pricing: no quantity in line_items
       expect(callArgs.line_items).toEqual([
-        { price: 'price_MOCK_REDACTED_000', quantity: 2 },
+        { price: 'price_MOCK_REDACTED_000' },
       ]);
       expect(callArgs.allow_promotion_codes).toBe(true);
       expect(callArgs.billing_address_collection).toBe('required');
       expect(callArgs.metadata.tier).toBe('pro');
-      expect(callArgs.metadata.events_limit).toBe('100000');
-      expect(callArgs.metadata.seats).toBe('2');
-    });
-
-    it('should default to 1 seat', async () => {
-      mockCheckoutSessionsCreate.mockResolvedValue({
-        id: 'cs_test_456',
-        url: 'https://checkout.stripe.com/pay/cs_test_456',
-      });
-
-      await createCheckoutSession({
-        customerEmail: 'solo@dev.com',
-        successUrl: 'https://app.kontext.dev/success',
-        cancelUrl: 'https://app.kontext.dev/cancel',
-      });
-
-      const callArgs = mockCheckoutSessionsCreate.mock.calls[0]![0];
-      expect(callArgs.line_items[0].quantity).toBe(1);
+      expect(callArgs.metadata.billing_model).toBe('metered');
     });
 
     it('should throw on invalid email', async () => {
@@ -186,14 +190,94 @@ describe('Stripe Integration', () => {
 
       await createCheckoutSession({
         customerEmail: 'test@example.com',
-        seats: 5,
         successUrl: 'https://example.com/success',
         cancelUrl: 'https://example.com/cancel',
       });
 
       const callArgs = mockCheckoutSessionsCreate.mock.calls[0]![0];
       expect(callArgs.subscription_data.metadata.tier).toBe('pro');
-      expect(callArgs.subscription_data.metadata.seats).toBe('5');
+      expect(callArgs.subscription_data.metadata.billing_model).toBe('metered');
+    });
+  });
+
+  // =========================================================================
+  // reportUsage — Metered billing
+  // =========================================================================
+
+  describe('reportUsage', () => {
+    it('should not report usage when under free tier', async () => {
+      const result = await reportUsage('si_test_123', 15_000);
+
+      expect(result.billableUnits).toBe(0);
+      expect(result.reported).toBe(false);
+      expect(mockSubscriptionItemsCreateUsageRecord).not.toHaveBeenCalled();
+    });
+
+    it('should not report usage at exactly 20K (free tier boundary)', async () => {
+      const result = await reportUsage('si_test_123', 20_000);
+
+      expect(result.billableUnits).toBe(0);
+      expect(result.reported).toBe(false);
+    });
+
+    it('should report usage above free tier', async () => {
+      mockSubscriptionItemsCreateUsageRecord.mockResolvedValue({});
+
+      const result = await reportUsage('si_test_123', 25_000);
+
+      expect(result.billableUnits).toBe(5); // 5K events above 20K = 5 units
+      expect(result.reported).toBe(true);
+      expect(mockSubscriptionItemsCreateUsageRecord).toHaveBeenCalledWith('si_test_123', {
+        quantity: 5,
+        timestamp: 'now',
+        action: 'set',
+      });
+    });
+
+    it('should round up partial thousands', async () => {
+      mockSubscriptionItemsCreateUsageRecord.mockResolvedValue({});
+
+      const result = await reportUsage('si_test_123', 20_500);
+
+      expect(result.billableUnits).toBe(1); // 500 events rounds up to 1 unit ($2)
+      expect(result.reported).toBe(true);
+    });
+
+    it('should handle large usage correctly', async () => {
+      mockSubscriptionItemsCreateUsageRecord.mockResolvedValue({});
+
+      const result = await reportUsage('si_test_123', 120_000);
+
+      expect(result.billableUnits).toBe(100); // 100K above 20K = 100 units ($200)
+      expect(result.reported).toBe(true);
+    });
+  });
+
+  // =========================================================================
+  // getSubscriptionItemId
+  // =========================================================================
+
+  describe('getSubscriptionItemId', () => {
+    it('should return the first subscription item ID', async () => {
+      mockSubscriptionsRetrieve.mockResolvedValue({
+        items: { data: [{ id: 'si_abc123' }] },
+      });
+
+      const result = await getSubscriptionItemId('sub_test_123');
+
+      expect(result).toBe('si_abc123');
+      expect(mockSubscriptionsRetrieve).toHaveBeenCalledWith('sub_test_123', {
+        expand: ['items'],
+      });
+    });
+
+    it('should return null when no items exist', async () => {
+      mockSubscriptionsRetrieve.mockResolvedValue({
+        items: { data: [] },
+      });
+
+      const result = await getSubscriptionItemId('sub_empty');
+      expect(result).toBeNull();
     });
   });
 
@@ -209,14 +293,14 @@ describe('Stripe Integration', () => {
 
       const result = await createPortalSession({
         customerId: 'cus_123',
-        returnUrl: 'https://app.kontext.dev/pricing',
+        returnUrl: 'https://getkontext.com/pricing',
       });
 
       expect(result.url).toBe('https://billing.stripe.com/session/test_portal');
       expect(mockBillingPortalSessionsCreate).toHaveBeenCalledOnce();
       expect(mockBillingPortalSessionsCreate).toHaveBeenCalledWith({
         customer: 'cus_123',
-        return_url: 'https://app.kontext.dev/pricing',
+        return_url: 'https://getkontext.com/pricing',
       });
     });
 
@@ -224,7 +308,7 @@ describe('Stripe Integration', () => {
       await expect(
         createPortalSession({
           customerId: '',
-          returnUrl: 'https://app.kontext.dev/pricing',
+          returnUrl: 'https://getkontext.com/pricing',
         }),
       ).rejects.toThrow('Customer ID is required');
     });
@@ -318,7 +402,7 @@ describe('Stripe Integration', () => {
             customer: 'cus_pro_1',
             customer_email: 'new-pro@example.com',
             subscription: 'sub_new_1',
-            metadata: { tier: 'pro', events_limit: '100000', seats: '1' },
+            metadata: { tier: 'pro', billing_model: 'metered' },
           },
         },
       });
@@ -380,7 +464,7 @@ describe('Stripe Integration', () => {
           object: {
             id: 'in_success_1',
             customer: 'cus_paid_1',
-            amount_paid: 44900,
+            amount_paid: 1000, // $10 = 5K events above free tier
           },
         },
       });
@@ -390,7 +474,7 @@ describe('Stripe Integration', () => {
       expect(result.type).toBe('invoice.payment_succeeded');
       expect(result.handled).toBe(true);
       expect(result.data?.['action']).toBe('payment_succeeded');
-      expect(result.data?.['amountPaid']).toBe(44900);
+      expect(result.data?.['amountPaid']).toBe(1000);
     });
 
     it('should handle invoice.payment_failed', async () => {
@@ -474,6 +558,16 @@ describe('Stripe Integration', () => {
 
       await expect(getCheckoutSession('cs_bad')).rejects.toThrow(
         'No such checkout session',
+      );
+    });
+
+    it('should propagate Stripe API errors from usage reporting', async () => {
+      mockSubscriptionItemsCreateUsageRecord.mockRejectedValue(
+        new Error('No such subscription item'),
+      );
+
+      await expect(reportUsage('si_bad', 25_000)).rejects.toThrow(
+        'No such subscription item',
       );
     });
   });

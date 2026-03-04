@@ -50,7 +50,20 @@ Steps:
 
 Docs: https://getkontext.com/docs
 Free: 20,000 events/month on Base and Arc. No API key needed.
-Open source. Zero dependencies.`;
+Open source. Zero dependencies.
+
+Alternative: If using Claude Code, Cursor, or Windsurf, add Kontext as an MCP server:
+{
+  "mcpServers": {
+    "kontext": {
+      "command": "npx",
+      "args": ["-y", "kontext-sdk", "mcp"]
+    }
+  }
+}
+This exposes 8 compliance tools (verify_transaction, check_sanctions, log_reasoning,
+get_trust_score, get_compliance_certificate, anchor_digest, exchange_attestation,
+verify_audit_trail) directly in your AI coding assistant.`;
 
 export function TabPrompt() {
   const [copied, setCopied] = useState(false);

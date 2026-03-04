@@ -1,8 +1,8 @@
 // ============================================================================
-// Kontext Server - Stripe Checkout + Billing Integration
+// Kontext Server - Stripe Checkout + Metered Billing Integration
 // ============================================================================
-// Handles Stripe Checkout sessions, Customer Portal, and webhook processing
-// for the Pro plan ($449/user/mo, 100K events).
+// Handles Stripe Checkout sessions, Customer Portal, webhook processing,
+// and metered usage reporting for the Pro plan ($2/1K events above 20K free).
 
 import Stripe from 'stripe';
 
@@ -35,33 +35,40 @@ function getStripeClient(): Stripe {
 }
 
 // ---------------------------------------------------------------------------
-// Pro Plan Configuration
+// Pro Plan Configuration — Metered Billing ($2/1K events above 20K free)
 // ---------------------------------------------------------------------------
+
+/** Free tier threshold — first 20K events per month are always free */
+export const FREE_TIER_EVENTS = 20_000;
+
+/** Price per 1K events above free tier, in cents */
+export const PRICE_PER_1K_EVENTS_CENTS = 200; // $2.00
 
 export const PRO_PLAN_CONFIG = {
   product: {
     name: 'Kontext Pro',
-    description: 'Cloud compliance dashboard, advanced anomaly detection, trust scoring, compliance templates, multi-chain support, webhooks, team controls. 100K events/user/mo.',
+    description: 'Usage-based compliance logging for AI agents. $2/1K events above 20K free. All chains, advanced anomaly rules, unified screening, CSV export, cloud persistence.',
   },
   price: {
-    amount: 44900, // $449.00 in cents
+    unitAmount: PRICE_PER_1K_EVENTS_CENTS, // $2.00 per 1K events
     currency: 'usd',
     interval: 'month' as const,
-    perSeat: true,
+    usageType: 'metered' as const,
   },
   metadata: {
     tier: 'pro',
-    events_limit: '100000',
+    billing_model: 'metered',
+    free_tier_events: String(FREE_TIER_EVENTS),
+    price_per_1k: '$2.00',
   },
 } as const;
 
 // ---------------------------------------------------------------------------
-// Checkout Session Creation
+// Checkout Session Creation — Metered Subscription
 // ---------------------------------------------------------------------------
 
 export interface CreateCheckoutSessionParams {
   customerEmail: string;
-  seats?: number;
   successUrl: string;
   cancelUrl: string;
 }
@@ -69,7 +76,7 @@ export interface CreateCheckoutSessionParams {
 export async function createCheckoutSession(
   params: CreateCheckoutSessionParams,
 ): Promise<{ url: string; sessionId: string }> {
-  const { customerEmail, seats = 1, successUrl, cancelUrl } = params;
+  const { customerEmail, successUrl, cancelUrl } = params;
 
   if (!customerEmail || !customerEmail.includes('@')) {
     throw new Error('A valid email address is required');
@@ -88,7 +95,7 @@ export async function createCheckoutSession(
     line_items: [
       {
         price: priceId,
-        quantity: seats,
+        // No quantity for metered pricing — usage is reported separately
       },
     ],
     allow_promotion_codes: true,
@@ -97,12 +104,10 @@ export async function createCheckoutSession(
     cancel_url: cancelUrl,
     metadata: {
       ...PRO_PLAN_CONFIG.metadata,
-      seats: String(seats),
     },
     subscription_data: {
       metadata: {
         ...PRO_PLAN_CONFIG.metadata,
-        seats: String(seats),
       },
     },
   });
@@ -115,6 +120,60 @@ export async function createCheckoutSession(
     url: session.url,
     sessionId: session.id,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Metered Usage Reporting
+// ---------------------------------------------------------------------------
+
+/**
+ * Report metered usage to Stripe for a subscription.
+ * Only reports usage above the free tier (20K events).
+ *
+ * @param subscriptionItemId - The Stripe subscription item ID (si_xxx)
+ * @param totalEventsThisPeriod - Total events used this billing period
+ * @returns The number of billable units reported (in 1K event blocks)
+ */
+export async function reportUsage(
+  subscriptionItemId: string,
+  totalEventsThisPeriod: number,
+): Promise<{ billableUnits: number; reported: boolean }> {
+  // Only bill for events above the free tier
+  const billableEvents = Math.max(0, totalEventsThisPeriod - FREE_TIER_EVENTS);
+
+  if (billableEvents === 0) {
+    return { billableUnits: 0, reported: false };
+  }
+
+  // Round up to nearest 1K block
+  const billableUnits = Math.ceil(billableEvents / 1000);
+
+  const stripe = getStripeClient();
+
+  await stripe.subscriptionItems.createUsageRecord(subscriptionItemId, {
+    quantity: billableUnits,
+    timestamp: 'now',
+    action: 'set', // 'set' replaces total for the period (idempotent)
+  });
+
+  return { billableUnits, reported: true };
+}
+
+/**
+ * Get the subscription item ID from a subscription.
+ * Needed for reporting metered usage.
+ */
+export async function getSubscriptionItemId(
+  subscriptionId: string,
+): Promise<string | null> {
+  const stripe = getStripeClient();
+
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+    expand: ['items'],
+  });
+
+  const item = subscription.items.data[0];
+  return item?.id ?? null;
 }
 
 // ---------------------------------------------------------------------------

@@ -10,6 +10,8 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { ServerStore } from './store.js';
 import { ServerFeatureFlags } from './feature-flags.js';
+import { createX402Middleware, logX402PaymentCompliance } from './x402.js';
+import type { X402PaymentInfo } from './x402.js';
 
 const app = new Hono();
 const store = new ServerStore();
@@ -43,9 +45,10 @@ const VALID_API_KEYS = new Set(
 /** Plan tier definitions and their limits */
 type PlanTier = 'free' | 'pro' | 'enterprise';
 
+/** Free tier: hard limit at 20K. Pro/Enterprise: unlimited (metered billing). */
 const PLAN_LIMITS: Record<PlanTier, number> = {
   free: 20_000,
-  pro: 100_000,
+  pro: Infinity,
   enterprise: Infinity,
 };
 
@@ -55,6 +58,12 @@ interface ApiKeyUsage {
   seats: number;
   eventCount: number;
   billingPeriodStart: string;
+  /** Stripe subscription item ID for metered usage reporting */
+  stripeSubscriptionItemId?: string;
+  /** x402 USDC payment tracking */
+  x402EventCount: number;
+  x402TotalUsdcReceived: string;
+  x402LastPaymentAt?: string;
 }
 
 /** In-memory map of API key -> usage */
@@ -90,6 +99,8 @@ function getApiKeyUsage(apiKey: string): ApiKeyUsage {
       seats: planInfo?.seats ?? 1,
       eventCount: 0,
       billingPeriodStart: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString(),
+      x402EventCount: 0,
+      x402TotalUsdcReceived: '0',
     };
     apiKeyUsage.set(apiKey, usage);
   }
@@ -100,6 +111,8 @@ function getApiKeyUsage(apiKey: string): ApiKeyUsage {
   if (new Date() >= nextPeriod) {
     const now = new Date();
     usage.eventCount = 0;
+    usage.x402EventCount = 0;
+    usage.x402TotalUsdcReceived = '0';
     usage.billingPeriodStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
   }
 
@@ -110,11 +123,7 @@ function getApiKeyUsage(apiKey: string): ApiKeyUsage {
  * Track events for an API key and return whether the limit is exceeded.
  */
 function getEffectiveLimit(usage: ApiKeyUsage): number {
-  const base = PLAN_LIMITS[usage.plan];
-  if (base === Infinity) return Infinity;
-  // Pro plan: 100K events per user/seat
-  if (usage.plan === 'pro') return base * usage.seats;
-  return base;
+  return PLAN_LIMITS[usage.plan];
 }
 
 function trackEvents(apiKey: string, count: number): { limitExceeded: boolean; usage: ApiKeyUsage } {
@@ -124,6 +133,32 @@ function trackEvents(apiKey: string, count: number): { limitExceeded: boolean; u
   const limitExceeded = limit !== Infinity && usage.eventCount > limit;
   return { limitExceeded, usage };
 }
+
+// ============================================================================
+// x402 Payment Middleware
+// ============================================================================
+
+/**
+ * Credit an x402-paid event to an API key's usage.
+ */
+function creditX402Event(apiKey: string, payment: X402PaymentInfo): void {
+  const usage = getApiKeyUsage(apiKey);
+  usage.x402EventCount += 1;
+  const currentTotal = parseFloat(usage.x402TotalUsdcReceived) || 0;
+  const paymentAmount = parseFloat(payment.amountUsdc ?? '0');
+  usage.x402TotalUsdcReceived = (currentTotal + paymentAmount).toFixed(6);
+  usage.x402LastPaymentAt = new Date().toISOString();
+
+  // Non-blocking: self-dogfood compliance check on incoming payment
+  logX402PaymentCompliance(payment).catch(() => {
+    // Already logged inside logX402PaymentCompliance
+  });
+}
+
+const x402Middleware = createX402Middleware(
+  (apiKey) => getApiKeyUsage(apiKey),
+  creditX402Event,
+);
 
 // ============================================================================
 // Middleware
@@ -137,7 +172,8 @@ app.use('*', cors({
     ...(process.env['NODE_ENV'] === 'development' ? ['http://localhost:3000', 'http://localhost:3001'] : []),
   ],
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization', 'X-Project-Id', 'X-Kontext-Signature'],
+  allowHeaders: ['Content-Type', 'Authorization', 'X-Project-Id', 'X-Kontext-Signature', 'Payment-Signature', 'X-Payment'],
+  exposeHeaders: ['X-Kontext-Usage', 'X-Kontext-Limit', 'Payment-Required', 'Payment-Response'],
   maxAge: 86400,
 }));
 app.use('*', logger());
@@ -236,7 +272,7 @@ app.get('/health', (c) => {
 // ============================================================================
 
 // POST /v1/actions - Receive logged actions
-app.post('/v1/actions', authMiddleware, async (c) => {
+app.post('/v1/actions', authMiddleware, x402Middleware, async (c) => {
   const projectId = c.get('projectId' as never) as string;
   const apiKey = c.req.header('Authorization')?.slice(7) ?? '';
 
@@ -290,23 +326,29 @@ app.post('/v1/actions', authMiddleware, async (c) => {
 
   // Soft limit: still process the event but return 429 with upgrade instructions
   if (limitExceeded) {
-    const effectiveLimit = getEffectiveLimit(usage);
-    const upgradeMessage = usage.plan === 'free'
-      ? "You've reached the 20,000 event limit on the Free plan. Upgrade to Pro for 100K events/user/mo → https://kontext.so/upgrade"
-      : `You've reached the ${effectiveLimit.toLocaleString()} event limit on Pro (${usage.seats} seat${usage.seats !== 1 ? 's' : ''}). Add seats or contact us for Enterprise pricing → https://cal.com/vinnaray`;
-
     return c.json({
       success: true,
       received: actions.length,
       timestamp: new Date().toISOString(),
       limitExceeded: true,
-      message: upgradeMessage,
+      message: "You've reached the 20,000 event limit on the Free plan. Upgrade to Pro ($2/1K events, usage-based) → https://getkontext.com/pricing",
       usage: {
         plan: usage.plan,
         eventCount: usage.eventCount,
         limit: limit === Infinity ? 'unlimited' : limit,
       },
     }, { status: 429, headers });
+  }
+
+  // Report metered usage to Stripe for Pro customers (non-blocking)
+  if (usage.plan === 'pro' && usage.stripeSubscriptionItemId && usage.eventCount > 20_000) {
+    import('./stripe.js').then(({ reportUsage }) => {
+      reportUsage(usage.stripeSubscriptionItemId!, usage.eventCount).catch((err) => {
+        console.warn('[Kontext] Stripe usage report failed:', err instanceof Error ? err.message : String(err));
+      });
+    }).catch(() => {
+      // Stripe module not available
+    });
   }
 
   return c.json({
@@ -317,7 +359,7 @@ app.post('/v1/actions', authMiddleware, async (c) => {
 });
 
 // POST /v1/tasks - Create a task
-app.post('/v1/tasks', authMiddleware, async (c) => {
+app.post('/v1/tasks', authMiddleware, x402Middleware, async (c) => {
   const projectId = c.get('projectId' as never) as string;
 
   let body: Record<string, unknown>;
@@ -533,6 +575,10 @@ app.get('/v1/usage', authMiddleware, (c) => {
   const remaining = limit === Infinity ? Infinity : Math.max(0, limit - usage.eventCount);
   const usagePercentage = limit === Infinity ? 0 : Math.min(100, (usage.eventCount / limit) * 100);
 
+  // Calculate billable events (above 20K free tier)
+  const billableEvents = Math.max(0, usage.eventCount - 20_000);
+  const estimatedCost = usage.plan === 'pro' ? (Math.ceil(billableEvents / 1000) * 2).toFixed(2) : '0.00';
+
   return c.json({
     plan: usage.plan,
     seats: usage.seats,
@@ -542,6 +588,18 @@ app.get('/v1/usage', authMiddleware, (c) => {
     usagePercentage: Math.round(usagePercentage * 100) / 100,
     limitExceeded: limit !== Infinity && usage.eventCount > limit,
     billingPeriodStart: usage.billingPeriodStart,
+    billing: {
+      model: usage.plan === 'pro' ? 'metered' : 'free',
+      freeEvents: 20_000,
+      billableEvents,
+      estimatedCostUsd: estimatedCost,
+      pricePerThousand: '$2.00',
+    },
+    x402: {
+      eventsPaid: usage.x402EventCount,
+      totalUsdcReceived: usage.x402TotalUsdcReceived,
+      lastPaymentAt: usage.x402LastPaymentAt ?? null,
+    },
     timestamp: new Date().toISOString(),
   }, {
     headers: {
@@ -552,7 +610,7 @@ app.get('/v1/usage', authMiddleware, (c) => {
 });
 
 // POST /v1/anomalies/evaluate - Evaluate transaction for anomalies
-app.post('/v1/anomalies/evaluate', authMiddleware, async (c) => {
+app.post('/v1/anomalies/evaluate', authMiddleware, x402Middleware, async (c) => {
   const projectId = c.get('projectId' as never) as string;
 
   let body: Record<string, unknown>;
@@ -813,9 +871,9 @@ app.get('/v1/sdn/status', authMiddleware, (c) => {
 
 const KONTEXT_APP_URL = process.env['KONTEXT_APP_URL'] ?? 'http://localhost:3000';
 
-// POST /v1/checkout — Create a Stripe Checkout Session for Pro plan
+// POST /v1/checkout — Create a Stripe Checkout Session for Pro plan (metered billing)
 app.post('/v1/checkout', async (c) => {
-  let body: { email?: string; seats?: number };
+  let body: { email?: string };
   try {
     body = await c.req.json();
   } catch {
@@ -827,16 +885,10 @@ app.post('/v1/checkout', async (c) => {
     return c.json({ error: 'A valid email address is required' }, 400);
   }
 
-  const seats = body.seats ?? 1;
-  if (seats < 1 || !Number.isInteger(seats)) {
-    return c.json({ error: 'Seats must be a positive integer' }, 400);
-  }
-
   try {
     const { createCheckoutSession } = await import('./stripe.js');
     const result = await createCheckoutSession({
       customerEmail: email,
-      seats,
       successUrl: `${KONTEXT_APP_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancelUrl: `${KONTEXT_APP_URL}/checkout/cancel`,
     });
