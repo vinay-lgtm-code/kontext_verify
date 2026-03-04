@@ -39,7 +39,7 @@ All chains: ethereum, base, polygon, arbitrum, optimism, arc, avalanche, solana
 
 ## Pricing
 Free: 20,000 events/month, Base + Arc chains, no API key needed
-Pro: $2/1K events above 20K free (Stripe or USDC on Base via x402, $0.002/event)
+Pro: $0.002/event above 20K free (Stripe or USDC on Base via x402)
 
 ## Batch Anchoring
 ```typescript
