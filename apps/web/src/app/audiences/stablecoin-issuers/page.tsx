@@ -132,22 +132,14 @@ export default function StablecoinIssuersPage() {
   return (
     <>
       {/* Hero */}
-      <section className="relative overflow-hidden border-b border-border/40">
-        <div className="grid-pattern absolute inset-0 opacity-20" />
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-background/95 to-background" />
-        <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
+      <section className="border-b border-[var(--term-surface-2)]">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
           <div className="text-center">
-            <Badge
-              variant="outline"
-              className="mb-4 border-blue-500/30 bg-blue-500/10 text-blue-400"
-            >
-              Stablecoin Issuers
-            </Badge>
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-              GENIUS Act-Aligned Infrastructure for{" "}
-              <span className="gradient-text">Stablecoin Operations</span>
+            <h1 className="text-sm font-medium">
+              <span className="text-[var(--term-green)]">$</span>{" "}
+              STABLECOIN ISSUERS
             </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+            <p className="mx-auto mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
               The GENIUS Act is redefining stablecoin compliance in the United
               States. Kontext gives issuers the audit trail, sanctions screening,
               and reporting infrastructure they need to operate confidently.
@@ -182,16 +174,13 @@ export default function StablecoinIssuersPage() {
       </section>
 
       {/* Pain Points */}
-      <section className="border-b border-border/40 bg-background">
+      <section className="border-b border-[var(--term-surface-2)] bg-background">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <Badge variant="secondary" className="mb-4">
-              The Challenge
-            </Badge>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            <h2 className="text-sm font-medium">
               Why stablecoin issuers need dedicated compliance tooling
             </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+            <p className="mx-auto mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
               Stablecoin operations are under increasing regulatory scrutiny.
               General-purpose tools are not enough.
             </p>
@@ -200,7 +189,7 @@ export default function StablecoinIssuersPage() {
             {painPoints.map((point) => (
               <Card
                 key={point.title}
-                className="border-border/40 bg-card/50"
+                className="border-[var(--term-surface-2)] bg-[var(--term-surface)]"
               >
                 <CardHeader>
                   <CardTitle className="text-lg">{point.title}</CardTitle>
@@ -217,16 +206,13 @@ export default function StablecoinIssuersPage() {
       </section>
 
       {/* What Kontext Does */}
-      <section className="border-b border-border/40 bg-background">
+      <section className="border-b border-[var(--term-surface-2)] bg-background">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <Badge variant="secondary" className="mb-4">
-              What Kontext Does
-            </Badge>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            <h2 className="text-sm font-medium">
               Compliance infrastructure for stablecoin operations
             </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+            <p className="mx-auto mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
               From unified compliance screening to audit export, everything you need to
               operate a compliant stablecoin.
             </p>
@@ -238,7 +224,7 @@ export default function StablecoinIssuersPage() {
                 className="group relative overflow-hidden transition-colors hover:border-primary/30"
               >
                 <CardHeader>
-                  <div className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <div className="mb-2 inline-flex h-10 w-10 items-center justify-center  bg-[var(--term-surface-2)] text-primary">
                     <feature.icon size={20} />
                   </div>
                   <CardTitle className="text-lg">{feature.title}</CardTitle>
@@ -255,17 +241,14 @@ export default function StablecoinIssuersPage() {
       </section>
 
       {/* Code Example */}
-      <section className="border-b border-border/40 bg-background">
+      <section className="border-b border-[var(--term-surface-2)] bg-background">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div>
-              <Badge variant="secondary" className="mb-4">
-                Code Example
-              </Badge>
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              <h2 className="text-sm font-medium">
                 Unified screening and transaction logging
               </h2>
-              <p className="mt-4 text-lg text-muted-foreground">
+              <p className="mt-4 text-xs text-[var(--term-text-2)]">
                 Screen addresses against multiple sanctions sources -- OFAC SDN,
                 Chainalysis, and OpenSanctions -- before processing transactions,
                 then log every operation with full compliance context and export
@@ -292,7 +275,7 @@ export default function StablecoinIssuersPage() {
                 ))}
               </ul>
             </div>
-            <div className="glow rounded-xl">
+            <div className="">
               <CodeBlock
                 code={stablecoinCode}
                 language="typescript"
@@ -304,20 +287,14 @@ export default function StablecoinIssuersPage() {
       </section>
 
       {/* Pricing Callout */}
-      <section className="border-b border-border/40 bg-background">
+      <section className="border-b border-[var(--term-surface-2)] bg-background">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="relative overflow-hidden rounded-2xl border border-blue-500/30 bg-gradient-to-br from-blue-500/5 via-card to-card p-8 sm:p-12">
-            <div className="relative z-10 max-w-2xl">
-              <Badge
-                variant="outline"
-                className="mb-4 border-blue-500/30 bg-blue-500/10 text-blue-400"
-              >
-                Pricing
-              </Badge>
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          <div className="border border-[var(--term-surface-2)] bg-[var(--term-surface)] p-8 sm:p-12">
+            <div className="max-w-2xl">
+              <h2 className="text-sm font-medium">
                 Start free, scale with usage-based Pro
               </h2>
-              <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
+              <p className="mt-4 text-xs text-[var(--term-text-2)] leading-relaxed">
                 The Free tier includes 20,000 events per month. Pro is
                 usage-based at $2 per 1,000 events above 20K free -- cloud
                 persistence, unified compliance screening, anomaly detection,
@@ -336,7 +313,7 @@ export default function StablecoinIssuersPage() {
                   >
                     <Check
                       size={16}
-                      className="mt-0.5 shrink-0 text-blue-400"
+                      className="mt-0.5 shrink-0 text-primary"
                     />
                     {item}
                   </div>
@@ -354,17 +331,15 @@ export default function StablecoinIssuersPage() {
                 </Button>
               </div>
             </div>
-            <div className="absolute -right-20 -top-20 h-80 w-80 rounded-full bg-blue-500/5 blur-3xl" />
-            <div className="absolute -bottom-20 -right-10 h-60 w-60 rounded-full bg-blue-500/3 blur-3xl" />
           </div>
         </div>
       </section>
 
       {/* Bottom CTA */}
-      <section className="border-t border-border/40 bg-background">
+      <section className="border-t border-[var(--term-surface-2)] bg-background">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center text-center">
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            <h2 className="text-sm font-medium">
               Ready to build GENIUS Act-aligned compliance?
             </h2>
             <p className="mt-4 max-w-md text-muted-foreground">

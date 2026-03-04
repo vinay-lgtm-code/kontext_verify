@@ -53,19 +53,14 @@ export default function AudiencesPage() {
   return (
     <>
       {/* Hero */}
-      <section className="relative overflow-hidden border-b-2 border-border">
-        <div className="grid-pattern absolute inset-0 opacity-20" />
-        <div className="absolute inset-0 bg-background" />
-        <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
+      <section className="border-b border-[var(--term-surface-2)]">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
           <div className="text-center">
-            <Badge variant="secondary" className="mb-4">
-              Audiences
-            </Badge>
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-              Built for{" "}
-              <span className="text-primary">your team</span>
+            <h1 className="text-sm font-medium">
+              <span className="text-[var(--term-green)]">$</span>{" "}
+              AUDIENCES
             </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+            <p className="mx-auto mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
               Different builders have different compliance needs. Whether you are
               shipping AI agents, issuing stablecoins, or building DeFi protocols —
               Kontext adapts to your regulatory reality.
@@ -109,10 +104,10 @@ export default function AudiencesPage() {
                 href={`/audiences/${audience.slug}`}
                 className="group"
               >
-                <Card className="h-full overflow-hidden transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none">
+                <Card className="h-full overflow-hidden transition-all ">
                   <CardHeader>
                     <div className="mb-3 flex items-center gap-3">
-                      <div className="inline-flex h-10 w-10 items-center justify-center rounded-[5px] border-2 border-border bg-primary/20 text-primary">
+                      <div className="inline-flex h-10 w-10 items-center justify-center border border-border bg-[var(--term-surface-2)] text-primary">
                         <audience.icon size={20} />
                       </div>
                       <Badge variant="outline">
@@ -131,7 +126,7 @@ export default function AudiencesPage() {
                       {audience.tags.map((tag) => (
                         <span
                           key={tag}
-                          className="inline-flex rounded-[5px] border-2 border-border px-2.5 py-0.5 text-xs text-muted-foreground"
+                          className="inline-flex border border-border px-2.5 py-0.5 text-xs text-muted-foreground"
                         >
                           {tag}
                         </span>
@@ -153,17 +148,17 @@ export default function AudiencesPage() {
       </section>
 
       {/* Bottom CTA */}
-      <section className="border-t-2 border-border bg-background">
+      <section className="border-t border-border bg-background">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center text-center">
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            <h2 className="text-sm font-medium">
               Not sure where to start?
             </h2>
             <p className="mt-4 max-w-md text-muted-foreground">
               Install the SDK and start logging agent transactions in under 5
               minutes. Open source and free to start.
             </p>
-            <div className="mt-8 inline-flex items-center gap-2 rounded-[5px] border-2 border-border bg-card px-4 py-2 font-mono text-sm text-muted-foreground shadow-shadow-sm">
+            <div className="mt-8 inline-flex items-center gap-2 border border-border bg-card px-4 py-2 font-mono text-sm text-muted-foreground">
               <span className="text-primary">$</span>
               npm install kontext-sdk
             </div>

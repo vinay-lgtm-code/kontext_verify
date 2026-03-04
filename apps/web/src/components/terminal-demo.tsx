@@ -262,7 +262,7 @@ export function TerminalDemo() {
   return (
     <div
       ref={containerRef}
-      className="w-full overflow-hidden rounded-[5px] border-2 border-border shadow-shadow"
+      className="w-full overflow-hidden border border-border"
     >
       {/* Title bar */}
       <div className="flex items-center gap-2 border-b border-neutral-700 bg-[#1a1a2e] px-4 py-2.5">
@@ -283,8 +283,8 @@ export function TerminalDemo() {
               onClick={() => handleTab(i)}
               className={`flex items-center gap-1.5 whitespace-nowrap px-4 py-2 font-mono text-xs transition-colors ${
                 isActive
-                  ? "border-b-2 border-emerald-400 text-white"
-                  : "border-b-2 border-transparent text-neutral-500 hover:text-neutral-300"
+                  ? "border-b border-emerald-400 text-white"
+                  : "border-b border-transparent text-neutral-500 hover:text-neutral-300"
               }`}
             >
               <Icon size={12} />

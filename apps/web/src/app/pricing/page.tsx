@@ -128,16 +128,14 @@ export default function PricingPage() {
   return (
     <>
       {/* Hero */}
-      <section className="border-b-2 border-border">
+      <section className="border-b border-[var(--term-surface-2)]">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
           <div className="text-center">
-            <Badge variant="secondary" className="mb-4">
-              Pricing
-            </Badge>
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-              Start free. Scale when you need to.
+            <h1 className="text-sm font-medium">
+              <span className="text-[var(--term-green)]">$</span>{" "}
+              PRICING
             </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+            <p className="mx-auto mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
               The core SDK is open-source and free for up to 20K events a month.
               Pay only for what you use beyond that.
             </p>
@@ -154,7 +152,7 @@ export default function PricingPage() {
                 key={plan.name}
                 className={`relative flex flex-col ${
                   plan.highlighted
-                    ? "border-primary shadow-shadow"
+                    ? "border-primary"
                     : ""
                 }`}
               >
@@ -168,7 +166,7 @@ export default function PricingPage() {
                 <CardHeader className="pb-4">
                   <CardTitle className="text-xl">{plan.name}</CardTitle>
                   <div className="mt-2 flex items-baseline gap-1">
-                    <span className="text-4xl font-bold tracking-tight">
+                    <span className="text-2xl font-bold tracking-tight">
                       {plan.price}
                     </span>
                     {plan.priceDetail && (
@@ -218,17 +216,17 @@ export default function PricingPage() {
       </section>
 
       {/* Code example */}
-      <section className="border-t-2 border-border bg-muted/30">
+      <section className="border-t border-border bg-[var(--term-surface)]">
         <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            <h2 className="text-sm font-medium">
               Up and running in 2 minutes
             </h2>
             <p className="mt-4 text-muted-foreground">
-              Install the SDK, initialize, and call <code className="rounded-[5px] bg-muted px-1.5 py-0.5 text-sm font-mono border border-border">verify()</code>. That&apos;s it.
+              Install the SDK, initialize, and call <code className="bg-muted px-1.5 py-0.5 text-sm font-mono border border-border">verify()</code>. That&apos;s it.
             </p>
           </div>
-          <div className="mt-8 overflow-hidden rounded-[5px] border-2 border-border bg-background shadow-shadow">
+          <div className="mt-8 overflow-hidden border border-border bg-background">
             <pre className="overflow-x-auto p-6 text-sm leading-relaxed">
               <code>{`import { Kontext } from 'kontext-sdk';
 
@@ -256,11 +254,12 @@ const result = await ctx.verify({
       </section>
 
       {/* FAQ */}
-      <section className="border-t-2 border-border bg-background">
+      <section className="border-t border-border bg-background">
         <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
           <div className="text-center">
-            <h2 className="text-3xl font-bold tracking-tight">
-              Frequently asked questions
+            <h2 className="text-sm font-medium">
+              <span className="text-[var(--term-green)]">$</span>{" "}
+              FAQ
             </h2>
             <p className="mt-4 text-muted-foreground">
               Can&apos;t find what you&apos;re looking for? Reach out on{" "}
@@ -292,10 +291,10 @@ const result = await ctx.verify({
       </section>
 
       {/* Bottom CTA */}
-      <section className="border-t-2 border-border bg-background">
+      <section className="border-t border-border bg-background">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center text-center">
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            <h2 className="text-sm font-medium">
               Ready to ship compliant agents?
             </h2>
             <p className="mt-4 max-w-md text-muted-foreground">

@@ -58,16 +58,14 @@ export default function ChangelogPage() {
   return (
     <>
       {/* Hero */}
-      <section className="border-b-2 border-border">
+      <section className="border-b border-[var(--term-surface-2)]">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
           <div className="max-w-3xl">
-            <Badge variant="secondary" className="mb-4">
-              Changelog
-            </Badge>
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-              What&apos;s new in Kontext
+            <h1 className="text-sm font-medium">
+              <span className="text-[var(--term-green)]">$</span>{" "}
+              CHANGELOG
             </h1>
-            <p className="mt-6 text-lg text-muted-foreground leading-relaxed">
+            <p className="mt-6 text-xs text-[var(--term-text-2)] leading-relaxed">
               Track every update to the SDK and platform. New features, bug
               fixes, and improvements -- all in one place. Auto-generated from{" "}
               <a
@@ -145,7 +143,7 @@ export default function ChangelogPage() {
                 </div>
 
                 {/* Divider */}
-                <div className="mt-12 border-b-2 border-border" />
+                <div className="mt-12 border-b border-border" />
               </article>
             ))}
           </div>

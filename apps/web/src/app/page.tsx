@@ -1,703 +1,274 @@
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { CodeBlock } from "@/components/code-block";
-import {
-  Shield,
-  FileCheck,
-  AlertTriangle,
-  ClipboardCheck,
-  BarChart3,
-  ArrowRight,
-  Brain,
-  Lock,
-  Anchor,
-  Handshake,
-  Fingerprint,
-  UserSearch,
-  Terminal,
-} from "lucide-react";
+import { AgentView } from "@/components/agent-view";
 
-const TerminalDemo = dynamic(
-  () => import("@/components/terminal-demo").then((m) => ({ default: m.TerminalDemo })),
-  {
-    ssr: false,
-    loading: () => (
-      <div
-        className="w-full rounded-[5px] border-2 border-border bg-[#1a1a2e] shadow-shadow"
-        style={{ height: "380px" }}
-      />
-    ),
-  }
-);
-
-const heroCode = `import { Kontext } from 'kontext-sdk';
-
-const ctx = Kontext.init({
-  projectId: 'research-agent',
-  environment: 'production',
-});
-
-// x402: verify every micropayment before USDC leaves the wallet
-const result = await ctx.verify({
-  txHash: '0xabc...def',
-  chain: 'base',
-  amount: '0.50',
-  token: 'USDC',
-  from: '0xAgentWallet',
-  to: '0xAPIProvider',
-  agentId: 'research-agent',
-  reasoning: 'Paying CoinGecko API via x402. Provider not sanctioned.',
-  anchor: {
-    rpcUrl: 'https://mainnet.base.org',
-    contractAddress: '0xbc71...b46',
-  },
-});
-
-result.compliant            // true
-result.trustScore.score     // 87
-result.digestProof.valid    // true — tamper-evident
-result.anchorProof?.txHash  // 0x... — on-chain proof`;
-
-const anchorCode = `import { verifyAnchor } from 'kontext-sdk';
-
-// Anyone can verify — read-only, zero deps
-const proof = await verifyAnchor(
-  'https://mainnet.base.org',
-  '0xbc71...b46',
-  digest,
-);
-console.log(proof.anchored); // true
-
-// Or anchor inside verify()
-const result = await ctx.verify({
-  txHash: '0x...',
-  chain: 'base',
-  amount: '10000',
-  token: 'USDC',
-  from: agentWallet,
-  to: recipientAddress,
-  agentId: 'treasury-agent',
-  anchor: {
-    rpcUrl: 'https://mainnet.base.org',
-    contractAddress: '0xbc71...b46',
-    privateKey: process.env.ANCHOR_KEY,
-  },
-});`;
-
-const attestCode = `// A2A: prove both sides ran compliance
-const result = await ctx.verify({
-  txHash: '0x...',
-  chain: 'base',
-  amount: '5000',
-  token: 'USDC',
-  from: '0xSender',
-  to: '0xReceiver',
-  agentId: 'sender-agent',
-  counterparty: {
-    endpoint: 'https://receiver.example.com',
-    agentId: 'receiver-agent-v1',
-  },
-});
-
-result.counterparty?.attested  // true
-result.counterparty?.digest    // receiver's proof`;
-
-const x402Code = `// x402: verify before every micropayment
-const result = await ctx.verify({
-  txHash: x402Response.txHash,
-  chain: 'base',
-  amount: '0.50',
-  token: 'USDC',
-  from: agentWallet,
-  to: apiProvider,
-  agentId: 'research-agent',
-  reasoning: 'CoinGecko price feed. Not sanctioned.',
-});
-
-if (!result.compliant) {
-  return new Response('Payment blocked', { status: 451 });
+const verifyClean = `{
+  compliant: true,
+  riskLevel: 'low',
+  checks: [
+    { name: 'OFAC Sanctions', passed: true },
+    { name: 'Amount Threshold', passed: true },
+  ],
+  trustScore: { score: 92, level: 'high' },
+  digestProof: { valid: true, chainLength: 42 },
 }`;
 
-const provenanceCode = `const session = await ctx.createAgentSession({
-  agentId: 'treasury-agent',
-  delegatedBy: 'user:vinay',
-  scope: ['transfer', 'approve'],
-});
+const verifyAlert = `{
+  compliant: true,
+  riskLevel: 'medium',
+  checks: [
+    { name: 'OFAC Sanctions', passed: true },
+    { name: 'Amount Threshold (CTR)', passed: true,
+      details: 'Above $10K CTR threshold' },
+  ],
+  recommendations: ['File CTR within 15 days'],
+  trustScore: { score: 71, level: 'medium' },
+}`;
 
-// Actions bound to session via sessionId
-const result = await ctx.verify({
-  ...txData,
-  sessionId: session.sessionId,
-});
-
-// Human reviews and attests
-const cp = await ctx.createCheckpoint({
-  sessionId: session.sessionId,
-  actionIds: [result.transaction.id],
-  summary: 'Reviewed $5K transfer',
-});`;
-
-const features = [
-  {
-    icon: ClipboardCheck,
-    title: "verify() in One Call",
-    description:
-      "Log the transaction, run OFAC screening, score trust, and return a structured result. One function.",
-  },
-  {
-    icon: Anchor,
-    title: "On-Chain Anchoring",
-    description:
-      "Anchor your digest chain to Base. Immutable proof that compliance ran. Anyone can verify with just an RPC URL.",
-  },
-  {
-    icon: Handshake,
-    title: "A2A Attestation",
-    description:
-      "Exchange compliance proofs with counterparty agents. Both sides prove they checked the same transaction.",
-  },
-  {
-    icon: Brain,
-    title: "Agent Reasoning Logs",
-    description:
-      "Record why your agent approved a transfer. When regulators ask, you have the answer.",
-  },
-  {
-    icon: BarChart3,
-    title: "Trust Scoring",
-    description:
-      "0-100 trust score per agent. Five-factor breakdown: history, amount, frequency, destination, behavior.",
-  },
-  {
-    icon: AlertTriangle,
-    title: "Anomaly Detection",
-    description:
-      "Flag unusual amounts, frequency spikes, new destinations, and off-hours activity.",
-  },
-  {
-    icon: FileCheck,
-    title: "Audit Export",
-    description:
-      "Export JSON audit trails with tamper-evident digest proofs. CSV and SAR/CTR reports on Pro.",
-  },
-  {
-    icon: Lock,
-    title: "Digest Chain",
-    description:
-      "Every action links to the previous via SHA-256. Proves no records were inserted, deleted, or reordered.",
-  },
-  {
-    icon: Fingerprint,
-    title: "Agent Provenance",
-    description:
-      "Session delegation records who authorized the agent. Action envelopes bind every call to a session. Human attestation proves a reviewer signed off.",
-  },
-  {
-    icon: UserSearch,
-    title: "Agent Forensics",
-    description:
-      "Map wallets to agents, detect multi-wallet clustering with 5 heuristics, and compute identity confidence scores. Pro tier.",
-  },
-  {
-    icon: Terminal,
-    title: "Kontext CLI",
-    description:
-      "Verify transactions, audit digest chains, anchor on-chain, sync OFAC lists, and manage agent sessions — all from the terminal.",
-  },
-];
-
-const socialProof = [
-  { label: "On-Chain Proof", detail: "Anchored on Base and Arc" },
-  { label: "A2A Attestation", detail: "Agent-to-agent trust" },
-  { label: "Base + Arc Free", detail: "6 more on Pro" },
-  { label: "Free Forever", detail: "20K events/mo" },
-  { label: "MIT License", detail: "Open source" },
-  { label: "GENIUS Act", detail: "Aligned" },
-];
+const verifyBlocked = `{
+  compliant: false,
+  riskLevel: 'critical',
+  checks: [
+    { name: 'OFAC Sanctions', passed: false,
+      details: 'Address on SDN list' },
+  ],
+  recommendations: ['Block transaction', 'File SAR'],
+  trustScore: { score: 12, level: 'untrusted' },
+}`;
 
 export default function HomePage() {
   return (
     <>
       {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="grid-pattern absolute inset-0 opacity-30" />
-        <div className="absolute inset-0 bg-background" />
-
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center pb-16 pt-20 text-center md:pb-24 md:pt-32">
-            <Badge
-              variant="outline"
-              className="mb-6 gap-2 px-4 py-1.5"
-            >
-              x402 &middot; Circle Wallets &middot; Base &middot; Arc &middot; USDC
-            </Badge>
-
-            <h1 className="max-w-4xl text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-              Trust infrastructure for{" "}
-              <span className="text-primary">agents that move money.</span>
+      <section className="relative">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="pt-16 pb-8 md:pt-24 md:pb-12">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
+              <span className="text-[var(--term-green)]">$</span>{" "}
+              kontext — trust infrastructure for agents that move{" "}
+              <span className="text-[var(--term-green)] glow">USDC</span> on{" "}
+              <span className="text-[var(--term-green)] glow">Base</span> &amp;{" "}
+              <span className="text-[var(--term-green)] glow">Arc</span>
             </h1>
-
-            <p className="mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-              OFAC screening, audit trails, and on-chain proof for every agent
-              payment — micropayments included. One SDK. Free forever on Base and Arc.
+            <p className="mt-4 text-sm sm:text-base text-[var(--term-text-2)] max-w-3xl">
+              One call — <code className="text-[var(--term-green)]">verify()</code> — runs
+              OFAC screening, logs into a tamper-evident digest chain, computes trust
+              score, and returns structured compliance. Zero dependencies. Free on Base + Arc.
             </p>
-
-            <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-              <Button size="lg" className="gap-2 px-6" asChild>
-                <Link href="/docs">
-                  Get Started
-                  <ArrowRight size={16} />
-                </Link>
-              </Button>
-              <Button variant="outline" size="lg" className="gap-2 px-6" asChild>
-                <a
-                  href="https://github.com/Legaci-Labs/kontext"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                  </svg>
-                  View on GitHub
-                </a>
-              </Button>
-            </div>
-
-            <div className="mt-8 inline-flex items-center gap-2 rounded-[5px] border-2 border-border bg-card px-4 py-2 font-mono text-sm text-muted-foreground shadow-shadow-sm">
-              <span className="text-primary">$</span>
-              npm install kontext-sdk
-            </div>
           </div>
+
+          {/* 5-Tab Hero */}
+          <AgentView />
         </div>
       </section>
 
-      {/* Social Proof Strip */}
-      <section className="border-t-2 border-border bg-card">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-            {socialProof.map((item) => (
-              <div key={item.label} className="text-center">
-                <p className="text-sm font-semibold text-foreground">{item.label}</p>
-                <p className="text-xs text-muted-foreground">{item.detail}</p>
+      {/* What verify() Returns */}
+      <section className="border-t border-[var(--term-surface-2)]">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+          <div className="mb-10">
+            <h2 className="text-xl sm:text-2xl font-bold">
+              <span className="text-[var(--term-green)]">$</span> What verify() returns
+            </h2>
+            <p className="mt-2 text-sm text-[var(--term-text-2)]">
+              Three scenarios. One function call each.
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="border border-[var(--term-green)] bg-[var(--term-surface)]">
+              <div className="border-b border-[var(--term-green)] px-4 py-2 flex items-center gap-2">
+                <span className="led-green" />
+                <span className="text-xs text-[var(--term-green)]">
+                  $500 USDC — Clean
+                </span>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
+              <div className="p-4">
+                <pre className="text-[11px] text-[var(--term-text-2)] leading-relaxed whitespace-pre-wrap font-mono">
+                  {verifyClean}
+                </pre>
+              </div>
+            </div>
 
-      {/* CLI Demo */}
-      <section className="relative border-t-2 border-border bg-background">
-        <div className="mx-auto max-w-4xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="text-center mb-10">
-            <Badge variant="secondary" className="mb-4 gap-1.5">
-              <Terminal size={12} />
-              CLI
-            </Badge>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Compliance from the terminal. Zero config.
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-              Verify transactions, audit digest chains, export certificates, and anchor
-              proof on Base and Arc. All without leaving your terminal.
-            </p>
-            <div className="mt-5 inline-flex items-center gap-2 rounded-[5px] border-2 border-border bg-card px-4 py-2 font-mono text-sm text-muted-foreground shadow-shadow-sm">
-              <span className="text-primary">$</span>
-              npm install -g @kontext-sdk/cli
+            <div className="border border-[var(--term-amber)] bg-[var(--term-surface)]">
+              <div className="border-b border-[var(--term-amber)] px-4 py-2 flex items-center gap-2">
+                <span className="led-amber" />
+                <span className="text-xs text-[var(--term-amber)]">
+                  $15K USDC — CTR Alert
+                </span>
+              </div>
+              <div className="p-4">
+                <pre className="text-[11px] text-[var(--term-text-2)] leading-relaxed whitespace-pre-wrap font-mono">
+                  {verifyAlert}
+                </pre>
+              </div>
+            </div>
+
+            <div className="border border-[var(--term-red)] bg-[var(--term-surface)]">
+              <div className="border-b border-[var(--term-red)] px-4 py-2 flex items-center gap-2">
+                <span className="led-red" />
+                <span className="text-xs text-[var(--term-red)]">
+                  Sanctioned — Blocked
+                </span>
+              </div>
+              <div className="p-4">
+                <pre className="text-[11px] text-[var(--term-text-2)] leading-relaxed whitespace-pre-wrap font-mono">
+                  {verifyBlocked}
+                </pre>
+              </div>
             </div>
           </div>
-          <TerminalDemo />
         </div>
       </section>
 
-      {/* Threshold Section */}
-      <section className="border-t-2 border-border bg-background">
-        <div className="mx-auto max-w-4xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <Badge variant="secondary" className="mb-4 gap-1.5">
-              <Shield size={12} />
-              Compliance
-            </Badge>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Below the $3,000 threshold? Still need proof.
+      {/* Three Layers of Proof */}
+      <section className="border-t border-[var(--term-surface-2)]">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+          <div className="mb-10">
+            <h2 className="text-xl sm:text-2xl font-bold">
+              <span className="text-[var(--term-green)]">$</span> Three layers of proof
             </h2>
-            <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-              Travel Rule data-sharing kicks in at $3,000. But OFAC screening applies to
-              every transaction regardless of amount. The GENIUS Act demands ongoing
-              monitoring and audit trails. Autonomous agents run at high frequency with
-              no human review — regulators want verifiable logs. Cumulative patterns can
-              trigger SARs regardless of individual amounts.
-            </p>
-            <p className="mt-3 text-lg text-muted-foreground max-w-2xl mx-auto">
-              <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">verify()</code> +
-              digest chain = evidence in one call.
-            </p>
           </div>
 
-          <div className="mt-12 overflow-x-auto">
-            <table className="w-full border-2 border-border text-sm">
-              <thead>
-                <tr className="border-b-2 border-border bg-card">
-                  <th className="px-4 py-3 text-left font-semibold" />
-                  <th className="px-4 py-3 text-left font-semibold">Travel Rule ($3K+)</th>
-                  <th className="px-4 py-3 text-left font-semibold">Every Agent Payment</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  { label: "OFAC Screening", high: "Required", every: "Required" },
-                  { label: "Transaction Monitoring", high: "Required", every: "Required" },
-                  { label: "Audit Trail", high: "Required", every: "Required" },
-                  { label: "Data Sharing (EDD)", high: "Required", every: "Not required" },
-                ].map((row) => (
-                  <tr key={row.label} className="border-b border-border">
-                    <td className="px-4 py-3 font-medium">{row.label}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{row.high}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{row.every}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      {/* Code Example */}
-      <section className="relative border-t-2 border-border bg-background">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="grid items-center gap-12 lg:grid-cols-2">
-            <div>
-              <Badge variant="secondary" className="mb-4">
-                Developer Experience
-              </Badge>
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                One function. Three layers of proof.
-              </h2>
-              <p className="mt-4 text-lg text-muted-foreground">
-                Call <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">verify()</code> on
-                every wallet transfer. Get OFAC screening, trust scoring, on-chain anchoring,
-                and counterparty attestation. All in one call.
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="border border-[var(--term-surface-2)] bg-[var(--term-surface)] p-6">
+              <h3 className="text-sm font-medium mb-3">
+                <span className="text-[var(--term-text-3)]">1.</span> DIGEST CHAIN
+              </h3>
+              <p className="text-xs text-[var(--term-text-2)] leading-relaxed mb-4">
+                SHA-256 hash chain linking every action. Tamper = chain breaks.
               </p>
-              <ul className="mt-6 space-y-3">
-                {[
-                  "Digest chain — tamper-evident local proof",
-                  "On-chain anchor — immutable proof on Base and Arc",
-                  "A2A attestation — bilateral compliance proof",
-                  "Zero runtime dependencies",
-                ].map((item) => (
-                  <li
-                    key={item}
-                    className="flex items-center gap-3 text-muted-foreground"
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      className="text-primary shrink-0"
-                    >
-                      <path d="m9 12 2 2 4-4" />
-                      <circle cx="12" cy="12" r="10" />
-                    </svg>
-                    {item}
-                  </li>
-                ))}
-              </ul>
+              <pre className="text-[11px] text-[var(--term-text-3)] font-mono">
+{`getTerminalDigest()
+verifyDigestChain()
+exportDigestChain()`}
+              </pre>
             </div>
-            <div className="rounded-[5px] border-2 border-border shadow-shadow">
-              <CodeBlock
-                code={heroCode}
-                language="typescript"
-                filename="agent.ts"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
 
-      {/* Integration Panels */}
-      <section className="border-t-2 border-border bg-background">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <Badge variant="secondary" className="mb-4">
-              Integrations
-            </Badge>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Drop into your wallet stack
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-              x402 micropayments, on-chain anchoring on Base and Arc,
-              and agent-to-agent attestation.
-            </p>
-          </div>
-
-          <div className="mt-12 grid gap-6 lg:grid-cols-3">
-            <Card className="group relative overflow-hidden transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none">
-              <div className="absolute -top-2.5 left-4">
-                <Badge className="bg-primary text-primary-foreground text-[10px] px-2 py-0.5">
-                  Primary
-                </Badge>
-              </div>
-              <CardHeader>
-                <CardTitle className="text-lg">x402 Micropayments</CardTitle>
-                <CardDescription>
-                  Verify every agent-to-API payment before USDC leaves the wallet.
-                  Drop into any x402 middleware on Base or Arc.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <CodeBlock code={x402Code} language="typescript" filename="x402.ts" />
-              </CardContent>
-            </Card>
-
-            <Card className="group relative overflow-hidden transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none">
-              <div className="absolute -top-2.5 left-4">
-                <Badge className="bg-secondary text-secondary-foreground text-[10px] px-2 py-0.5">
-                  New
-                </Badge>
-              </div>
-              <CardHeader>
-                <CardTitle className="text-lg">On-Chain Anchoring</CardTitle>
-                <CardDescription>
-                  Anchor your terminal digest to Base. Immutable, publicly verifiable proof
-                  that compliance checks ran. Anyone can audit — no Kontext account needed.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <CodeBlock code={anchorCode} language="typescript" filename="anchor.ts" />
-              </CardContent>
-            </Card>
-
-            <Card className="group relative overflow-hidden transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none">
-              <div className="absolute -top-2.5 left-4">
-                <Badge className="bg-secondary text-secondary-foreground text-[10px] px-2 py-0.5">
-                  New
-                </Badge>
-              </div>
-              <CardHeader>
-                <CardTitle className="text-lg">A2A Attestation</CardTitle>
-                <CardDescription>
-                  Exchange compliance proofs with counterparty agents. Both sides prove
-                  they ran checks on the same transaction. Zero dependencies.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <CodeBlock code={attestCode} language="typescript" filename="attestation.ts" />
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="border-t-2 border-border bg-background">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <Badge variant="secondary" className="mb-4">
-              Features
-            </Badge>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Everything your compliance officer will ask for
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-              verify() logs the transaction, screens for sanctions, scores trust,
-              anchors to the chain, and exchanges attestations with counterparties.
-            </p>
-          </div>
-
-          <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {features.map((feature) => (
-              <Card
-                key={feature.title}
-                className="group relative overflow-hidden transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none"
-              >
-                <CardHeader>
-                  <div className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-[5px] border-2 border-border bg-primary/20 text-primary">
-                    <feature.icon size={20} />
-                  </div>
-                  <CardTitle className="text-lg">{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-sm leading-relaxed">
-                    {feature.description}
-                  </CardDescription>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Three-Layer Proof */}
-      <section className="border-t-2 border-border bg-background">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <Badge variant="secondary" className="mb-4">
-              Architecture
-            </Badge>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Three layers of proof. One function call.
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-              Each layer makes it harder to claim compliance checks didn&apos;t happen.
-            </p>
-          </div>
-
-          <div className="mt-12 grid gap-6 sm:grid-cols-3">
-            {[
-              {
-                step: "1",
-                name: "Digest Chain",
-                role: "Local Proof",
-                detail: "SHA-256 hash chain links every action to the previous one. Tamper with one record and the chain breaks.",
-                bg: "bg-blue-100",
-              },
-              {
-                step: "2",
-                name: "On-Chain Anchor",
-                role: "Immutable Proof",
-                detail: "Terminal digest anchored to Base. Anyone with an RPC URL can verify it existed at a specific block.",
-                bg: "bg-emerald-100",
-              },
-              {
-                step: "3",
-                name: "A2A Attestation",
-                role: "Bilateral Proof",
-                detail: "Both agents exchange digests. Each side proves independently that they ran compliance on the same transaction.",
-                bg: "bg-purple-100",
-              },
-            ].map((item) => (
-              <div
-                key={item.name}
-                className={`flex flex-col items-center rounded-[5px] border-2 border-border ${item.bg} p-8 text-center shadow-shadow transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none`}
-              >
-                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-[5px] border-2 border-border bg-white text-2xl font-bold">
-                  {item.step}
-                </div>
-                <h3 className="text-lg font-semibold">{item.name}</h3>
-                <p className="mt-1 text-sm font-medium text-foreground">{item.role}</p>
-                <p className="mt-2 text-sm text-muted-foreground">{item.detail}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Agent Provenance */}
-      <section className="border-t-2 border-border bg-background">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="grid items-center gap-12 lg:grid-cols-2">
-            <div>
-              <Badge variant="secondary" className="mb-4">
-                Provenance
-              </Badge>
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                Three-Layer Agent Accountability
-              </h2>
-              <p className="mt-4 text-lg text-muted-foreground">
-                Session delegation records who authorized the agent. Action envelopes
-                bind every call to a session. Human attestation proves a reviewer
-                signed off with a key the agent never touches.
+            <div className="border border-[var(--term-green)] bg-[var(--term-surface)] p-6">
+              <h3 className="text-sm font-medium mb-3">
+                <span className="text-[var(--term-text-3)]">2.</span> ON-CHAIN ANCHOR
+              </h3>
+              <p className="text-[10px] text-[var(--term-green)] uppercase tracking-wider mb-2">
+                Batch Optimized
               </p>
-              <ul className="mt-6 space-y-3">
-                {[
-                  "Session delegation — records who granted agent authority",
-                  "Action binding — ties every verify() call to a session",
-                  "Human attestation — proves a reviewer signed off",
-                  "Key separation — agent never touches the attestation key",
-                ].map((item) => (
-                  <li
-                    key={item}
-                    className="flex items-center gap-3 text-muted-foreground"
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      className="text-primary shrink-0"
-                    >
-                      <path d="m9 12 2 2 4-4" />
-                      <circle cx="12" cy="12" r="10" />
-                    </svg>
-                    {item}
-                  </li>
-                ))}
-              </ul>
+              <pre className="text-[11px] text-[var(--term-text-2)] font-mono leading-relaxed">
+{`batchAnchor(digests, {
+  batchSize: 50
+})
+
+One tx anchors 50 events
+~$0.001 total on Base`}
+              </pre>
             </div>
-            <div className="rounded-[5px] border-2 border-border shadow-shadow">
-              <CodeBlock
-                code={provenanceCode}
-                language="typescript"
-                filename="provenance.ts"
-              />
+
+            <div className="border border-[var(--term-surface-2)] bg-[var(--term-surface)] p-6">
+              <h3 className="text-sm font-medium mb-3">
+                <span className="text-[var(--term-text-3)]">3.</span> A2A ATTESTATION
+              </h3>
+              <p className="text-xs text-[var(--term-text-2)] leading-relaxed mb-4">
+                Bilateral compliance proof between agent pairs via x402. Cryptographic.
+              </p>
+              <pre className="text-[11px] text-[var(--term-text-3)] font-mono">
+{`exchangeAttestation()
+fetchAgentCard()
+/.well-known/kontext`}
+              </pre>
             </div>
           </div>
         </div>
       </section>
 
       {/* Regulatory Context */}
-      <section className="border-t-2 border-border bg-background">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="rounded-[5px] border-2 border-border bg-amber-50 p-8 shadow-shadow sm:p-12 md:p-16">
-            <div className="max-w-2xl">
-              <Badge variant="outline" className="mb-4">
-                <Shield size={12} className="mr-1.5" />
-                Regulatory Context
-              </Badge>
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                GENIUS Act signed. Regulations due July 2026.
-              </h2>
-              <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
-                The GENIUS Act (S. 1582) treats payment stablecoin issuers as financial
-                institutions under the BSA. Implementing regulations drop July 2026.
-                Prohibitions take effect November 2026. If your agents move USDC — any
-                amount, any frequency — you need an audit trail.
-              </p>
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                {[
-                  "$3,000 — Travel Rule threshold (EDD required)",
-                  "$10,000 — Currency Transaction Report threshold",
-                  "OFAC screening — required for every transfer",
-                  "Audit trails — required for BSA compliance",
-                ].map((item) => (
-                  <div key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      className="mt-0.5 shrink-0 text-primary"
-                    >
-                      <path d="m9 12 2 2 4-4" />
-                      <circle cx="12" cy="12" r="10" />
-                    </svg>
-                    {item}
-                  </div>
-                ))}
+      <section className="border-t border-[var(--term-surface-2)]">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+          <div className="border border-[var(--term-surface-2)] bg-[var(--term-surface)] p-6 sm:p-8">
+            <h2 className="text-sm font-medium mb-4">
+              <span className="text-[var(--term-green)]">$</span> GENIUS ACT (S. 1582) — signed July 18, 2025
+            </h2>
+            <div className="grid gap-4 sm:grid-cols-2 text-xs text-[var(--term-text-2)]">
+              <div className="space-y-2">
+                <p>
+                  <span className="text-[var(--term-text-3)]">Implementing regulations:</span>{" "}
+                  <span className="text-[var(--term-amber)]">July 2026</span>
+                </p>
+                <p>
+                  <span className="text-[var(--term-text-3)]">Prohibitions effective:</span>{" "}
+                  <span className="text-[var(--term-red)]">November 2026</span>
+                </p>
+                <p className="mt-4 leading-relaxed">
+                  Payment stablecoin issuers are financial institutions under the BSA.
+                  Agents handling $3K+ transfers need:
+                </p>
               </div>
-              <div className="mt-8">
-                <Button size="lg" asChild>
-                  <Link href="/docs">Start building today</Link>
+              <div className="space-y-1.5">
+                <p>
+                  <span className="text-[var(--term-green)]">✓</span> OFAC screening{" "}
+                  <span className="text-[var(--term-text-3)]">← verify() does this</span>
+                </p>
+                <p>
+                  <span className="text-[var(--term-green)]">✓</span> Audit trails{" "}
+                  <span className="text-[var(--term-text-3)]">← digest chain does this</span>
+                </p>
+                <p>
+                  <span className="text-[var(--term-green)]">✓</span> Transaction records{" "}
+                  <span className="text-[var(--term-text-3)]">← logTransaction() does this</span>
+                </p>
+                <p>
+                  <span className="text-[var(--term-green)]">✓</span> Suspicious activity reports{" "}
+                  <span className="text-[var(--term-text-3)]">← generateSARReport() does this</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section className="border-t border-[var(--term-surface-2)]">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+          <div className="mb-10">
+            <h2 className="text-xl sm:text-2xl font-bold">
+              <span className="text-[var(--term-green)]">$</span> Pricing
+            </h2>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="border border-[var(--term-surface-2)] bg-[var(--term-surface)] p-6">
+              <h3 className="text-sm font-medium mb-1">FREE</h3>
+              <p className="text-2xl font-bold text-[var(--term-green)] mb-4">$0 forever</p>
+              <ul className="space-y-1.5 text-xs text-[var(--term-text-2)]">
+                <li>20K events/month on Base + Arc</li>
+                <li>No credit card required</li>
+                <li>OFAC screening</li>
+                <li>Digest chain</li>
+                <li>Trust scoring</li>
+                <li>JSON audit export</li>
+                <li>Human-in-the-loop tasks</li>
+              </ul>
+              <div className="mt-6">
+                <Button size="sm" className="w-full" asChild>
+                  <Link href="/docs">$ npm install kontext-sdk</Link>
+                </Button>
+              </div>
+            </div>
+
+            <div className="border border-[var(--term-border-bright)] bg-[var(--term-surface)] p-6">
+              <h3 className="text-sm font-medium mb-1">PAY AS YOU GO</h3>
+              <p className="text-2xl font-bold mb-4">
+                $2.00 <span className="text-sm font-normal text-[var(--term-text-3)]">/ 1K events above 20K</span>
+              </p>
+              <ul className="space-y-1.5 text-xs text-[var(--term-text-2)]">
+                <li>No monthly minimum</li>
+                <li>All 8 chains</li>
+                <li>CSV export</li>
+                <li>SAR/CTR reports</li>
+                <li>Advanced anomaly rules</li>
+                <li>Webhook alerts</li>
+                <li>Unified screening</li>
+              </ul>
+              <div className="mt-6">
+                <Button variant="outline" size="sm" className="w-full" asChild>
+                  <Link href="/pricing">$ Get API Key</Link>
                 </Button>
               </div>
             </div>
@@ -705,42 +276,54 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Social Proof */}
+      <section className="border-t border-[var(--term-surface-2)]">
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-[var(--term-text-3)]">
+            {[
+              "MIT Licensed",
+              "Patented Digest Chain",
+              "GENIUS Act Aligned",
+              "USDC Native",
+              "Base + Arc Free",
+              "Open Source",
+              "x402 Compatible",
+              "Zero Dependencies",
+            ].map((item, i) => (
+              <span key={item} className="flex items-center gap-2">
+                {item}
+                {i < 7 && (
+                  <span className="text-[var(--term-surface-3)]">·</span>
+                )}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Final CTA */}
-      <section className="border-t-2 border-border bg-background">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center text-center">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Ship compliance before the deadline.
-            </h2>
-            <p className="mt-4 max-w-xl text-lg text-muted-foreground">
-              npm install. Kontext.init(). verify(). Three layers of proof in one call.
-              Open source, TypeScript-first, free forever.
-            </p>
-            <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-              <Button size="lg" className="gap-2 px-6" asChild>
-                <Link href="/docs">
-                  Get Started
-                  <ArrowRight size={16} />
-                </Link>
-              </Button>
-              <Button variant="outline" size="lg" className="gap-2 px-6" asChild>
-                <a
-                  href="https://github.com/Legaci-Labs/kontext"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                  </svg>
-                  View on GitHub
-                </a>
-              </Button>
-            </div>
+      <section className="border-t border-[var(--term-surface-2)]">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 text-center">
+          <h2 className="text-xl sm:text-2xl font-bold">
+            Ship compliance before the deadline.
+          </h2>
+          <p className="mt-3 text-sm text-[var(--term-text-2)] max-w-xl mx-auto">
+            npm install. Kontext.init(). verify(). Three layers of proof in one call.
+            Open source, TypeScript-first, free forever on Base + Arc.
+          </p>
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Button size="lg" asChild>
+              <Link href="/docs">Get Started</Link>
+            </Button>
+            <Button variant="outline" size="lg" asChild>
+              <a
+                href="https://github.com/Legaci-Labs/kontext"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                View on GitHub
+              </a>
+            </Button>
           </div>
         </div>
       </section>

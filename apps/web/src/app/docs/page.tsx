@@ -642,14 +642,14 @@ export default function DocsPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       {/* Mobile section nav */}
-      <div className="sticky top-16 z-40 -mx-4 overflow-x-auto border-b-2 border-border bg-background px-4 py-3 lg:hidden sm:-mx-6 sm:px-6">
+      <div className="sticky top-16 z-40 -mx-4 overflow-x-auto border-b border-border bg-background px-4 py-3 lg:hidden sm:-mx-6 sm:px-6">
         <div className="flex gap-2 min-w-max">
           {sidebarSections.flatMap((section) =>
             section.items.map((item) => (
               <a
                 key={item.id}
                 href={`#${item.id}`}
-                className="inline-flex shrink-0 rounded-[5px] border-2 border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground hover:bg-accent"
+                className="inline-flex shrink-0 border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground hover:bg-[var(--term-surface-2)]"
               >
                 {item.label}
               </a>
@@ -664,15 +664,15 @@ export default function DocsPage() {
           <nav className="sticky top-24 space-y-6">
             {sidebarSections.map((section) => (
               <div key={section.title}>
-                <h4 className="text-sm font-semibold text-foreground">
+                <h4 className="text-[10px] font-semibold uppercase tracking-widest text-[var(--term-text-3)]">
                   {section.title}
                 </h4>
-                <ul className="mt-2 space-y-1">
+                <ul className="mt-2 space-y-0.5">
                   {section.items.map((item) => (
                     <li key={item.id}>
                       <a
                         href={`#${item.id}`}
-                        className="block rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground hover:bg-accent"
+                        className="block border-l-2 border-transparent px-3 py-1.5 text-xs text-[var(--term-text-2)] transition-colors hover:text-[var(--term-text)] hover:border-[var(--term-green)] hover:bg-[var(--term-surface-2)]"
                       >
                         {item.label}
                       </a>
@@ -689,10 +689,10 @@ export default function DocsPage() {
           <div className="prose-kontext max-w-3xl">
             {/* Header */}
             <div className="mb-12">
-              <Badge variant="secondary" className="mb-4">
-                Documentation
-              </Badge>
-              <h1>Kontext SDK Documentation</h1>
+              <h1 className="text-sm font-medium">
+                <span className="text-[var(--term-green)]">$</span>{" "}
+                DOCUMENTATION
+              </h1>
               <p>
                 Kontext is a TypeScript SDK that provides compliance
                 infrastructure for agents that move money. Audit trails, OFAC
@@ -732,9 +732,9 @@ export default function DocsPage() {
                 <a
                   key={link.title}
                   href={link.href}
-                  className="group flex items-start gap-3 rounded-[5px] border-2 border-border p-4 no-underline transition-colors hover:bg-card"
+                  className="group flex items-start gap-3 border border-border p-4 no-underline transition-colors hover:bg-card"
                 >
-                  <div className="mt-0.5 rounded-md bg-primary/10 p-2 text-primary">
+                  <div className="mt-0.5  bg-[var(--term-surface-2)] p-2 text-primary">
                     <link.icon size={16} />
                   </div>
                   <div>
@@ -1165,7 +1165,7 @@ KONTEXT_ENVIRONMENT=production  # Environment`}
             </section>
 
             {/* Next steps */}
-            <div className="mt-16 rounded-[5px] border-2 border-border bg-primary/5 p-8">
+            <div className="mt-16 border border-border bg-[var(--term-surface)] p-8">
               <h3 className="text-lg font-semibold">Need help?</h3>
               <p className="mt-2 text-muted-foreground">
                 If you run into issues or have questions, reach out through any

@@ -34,40 +34,48 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Terminal Noir semantic colors
+        term: {
+          green: "var(--term-green)",
+          blue: "var(--term-blue)",
+          amber: "var(--term-amber)",
+          red: "var(--term-red)",
+          cyan: "var(--term-cyan)",
+          surface: "var(--term-surface)",
+          "surface-2": "var(--term-surface-2)",
+          "surface-3": "var(--term-surface-3)",
+          "text-2": "var(--term-text-2)",
+          "text-3": "var(--term-text-3)",
+          "border-bright": "var(--term-border-bright)",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        md: "var(--radius)",
+        sm: "var(--radius)",
       },
       fontFamily: {
-        sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],
-        mono: ["var(--font-geist-mono)", "monospace"],
-      },
-      boxShadow: {
-        shadow: "4px 4px 0px 0px #000",
-        "shadow-sm": "2px 2px 0px 0px #000",
-      },
-      translate: {
-        boxShadowX: "4px",
-        boxShadowY: "4px",
-      },
-      borderWidth: {
-        base: "2px",
+        mono: ["var(--font-martian-mono)", "monospace"],
+        sans: ["var(--font-martian-mono)", "monospace"],
       },
       keyframes: {
         "fade-in": {
-          "0%": { opacity: "0", transform: "translateY(10px)" },
+          "0%": { opacity: "0", transform: "translateY(8px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
         "slide-up": {
-          "0%": { opacity: "0", transform: "translateY(20px)" },
+          "0%": { opacity: "0", transform: "translateY(16px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        blink: {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0" },
         },
       },
       animation: {
-        "fade-in": "fade-in 0.5s ease-out forwards",
-        "slide-up": "slide-up 0.6s ease-out forwards",
+        "fade-in": "fade-in 0.4s ease-out forwards",
+        "slide-up": "slide-up 0.5s ease-out forwards",
+        blink: "blink 1s steps(1) infinite",
       },
     },
   },

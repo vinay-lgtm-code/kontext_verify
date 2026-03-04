@@ -244,23 +244,21 @@ export default function FAQsPage() {
         }}
       />
       {/* Hero */}
-      <section className="border-b-2 border-border">
+      <section className="border-b border-[var(--term-surface-2)]">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
           <div className="text-center">
-            <Badge variant="secondary" className="mb-4">
-              FAQs
-            </Badge>
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-              Frequently Asked Questions
+            <h1 className="text-sm font-medium">
+              <span className="text-[var(--term-green)]">$</span>{" "}
+              FREQUENTLY ASKED QUESTIONS
             </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+            <p className="mx-auto mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
               Technical answers for developers building with Kontext. Can&apos;t
               find what you need? Reach out on{" "}
               <a
                 href="https://github.com/Legaci-Labs/kontext"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary hover:underline"
+                className="text-[var(--term-blue)] hover:underline"
               >
                 GitHub Discussions
               </a>
@@ -271,14 +269,14 @@ export default function FAQsPage() {
       </section>
 
       {/* Category Navigation */}
-      <section className="sticky top-16 z-40 border-b-2 border-border bg-background">
+      <section className="sticky top-16 z-40 border-b border-border bg-background">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <div className="flex gap-2 overflow-x-auto py-3 scrollbar-none">
             {faqCategories.map((category) => (
               <a
                 key={category.name}
                 href={`#${category.name.toLowerCase().replace(/\s+&\s+/g, "-").replace(/\s+/g, "-")}`}
-                className="inline-flex shrink-0 rounded-[5px] border-2 border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground hover:bg-accent"
+                className="inline-flex shrink-0 border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground hover:bg-[var(--term-surface-2)]"
               >
                 {category.name}
               </a>
@@ -320,10 +318,10 @@ export default function FAQsPage() {
       </section>
 
       {/* Bottom CTA */}
-      <section className="border-t-2 border-border bg-background">
+      <section className="border-t border-border bg-background">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center text-center">
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            <h2 className="text-sm font-medium">
               Still have questions?
             </h2>
             <p className="mt-4 max-w-md text-muted-foreground">

@@ -279,19 +279,14 @@ export default function IntegrationsPage() {
   return (
     <>
       {/* Hero */}
-      <section className="relative overflow-hidden border-b-2 border-border">
-        <div className="grid-pattern absolute inset-0 opacity-20" />
-        <div className="absolute inset-0 bg-background" />
-        <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
+      <section className="border-b border-[var(--term-surface-2)]">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
           <div className="text-center">
-            <Badge variant="secondary" className="mb-4">
-              Integrations
-            </Badge>
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-              Works with your{" "}
-              <span className="text-primary">entire stack</span>
+            <h1 className="text-sm font-medium">
+              <span className="text-[var(--term-green)]">$</span>{" "}
+              INTEGRATIONS
             </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+            <p className="mx-auto mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
               First-class Vercel AI SDK wrapper plus verify() compatibility with
               any agent framework. Add compliance to any workflow in minutes.
             </p>
@@ -314,36 +309,36 @@ export default function IntegrationsPage() {
       </section>
 
       {/* Quick Navigation */}
-      <section className="sticky top-16 z-40 border-b-2 border-border bg-background">
+      <section className="sticky top-16 z-40 border-b border-border bg-background">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex gap-2 overflow-x-auto py-3 scrollbar-none">
             <a
               href="#vercel-ai-sdk"
-              className="inline-flex shrink-0 rounded-[5px] border-2 border-border bg-primary/10 px-3 py-1.5 text-xs text-foreground transition-colors hover:bg-primary/20"
+              className="inline-flex shrink-0 border border-border bg-[var(--term-surface-2)] px-3 py-1.5 text-xs text-foreground transition-colors hover:bg-[var(--term-surface-2)]"
             >
               Vercel AI SDK
             </a>
             <a
               href="#agent-frameworks"
-              className="inline-flex shrink-0 rounded-[5px] border-2 border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground hover:bg-accent"
+              className="inline-flex shrink-0 border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground hover:bg-[var(--term-surface-2)]"
             >
               Agent Frameworks
             </a>
             <a
               href="#payment-commerce"
-              className="inline-flex shrink-0 rounded-[5px] border-2 border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground hover:bg-accent"
+              className="inline-flex shrink-0 border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground hover:bg-[var(--term-surface-2)]"
             >
               Payment &amp; Commerce
             </a>
             <a
               href="#protocols"
-              className="inline-flex shrink-0 rounded-[5px] border-2 border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground hover:bg-accent"
+              className="inline-flex shrink-0 border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground hover:bg-[var(--term-surface-2)]"
             >
               Protocols
             </a>
             <a
               href="#cli-devops"
-              className="inline-flex shrink-0 rounded-[5px] border-2 border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground hover:bg-accent"
+              className="inline-flex shrink-0 border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground hover:bg-[var(--term-surface-2)]"
             >
               CLI &amp; DevOps
             </a>
@@ -358,10 +353,10 @@ export default function IntegrationsPage() {
             <Badge variant="outline" className="mb-4">
               Agent Frameworks
             </Badge>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            <h2 className="text-sm font-medium">
               Drop-in agent framework support
             </h2>
-            <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
+            <p className="mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
               First-class Vercel AI SDK wrapper with automatic action logging.
               LangChain, CrewAI, and AutoGen work directly with verify() and log() —
               no dedicated wrapper needed.
@@ -381,7 +376,7 @@ export default function IntegrationsPage() {
                   {/* Info */}
                   <div className={index % 2 !== 0 ? "lg:[direction:ltr]" : ""}>
                     <div className="mb-4 flex items-center gap-3">
-                      <div className="inline-flex h-10 w-10 items-center justify-center rounded-[5px] border-2 border-border bg-primary/20 text-primary">
+                      <div className="inline-flex h-10 w-10 items-center justify-center border border-border bg-[var(--term-surface-2)] text-primary">
                         <framework.icon size={20} />
                       </div>
                       <Badge variant="outline">
@@ -405,7 +400,7 @@ export default function IntegrationsPage() {
                   </div>
 
                   {/* Code */}
-                  <div className={`rounded-[5px] border-2 border-border shadow-shadow ${index % 2 !== 0 ? "lg:[direction:ltr]" : ""}`}>
+                  <div className={`border border-border ${index % 2 !== 0 ? "lg:[direction:ltr]" : ""}`}>
                     <CodeBlock
                       code={framework.code}
                       language="typescript"
@@ -426,17 +421,17 @@ export default function IntegrationsPage() {
       {/* Payment & Commerce */}
       <section
         id="payment-commerce"
-        className="scroll-mt-32 border-t-2 border-border bg-background"
+        className="scroll-mt-32 border-t border-border bg-background"
       >
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="mb-12">
             <Badge variant="outline" className="mb-4">
               Payment &amp; Commerce
             </Badge>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            <h2 className="text-sm font-medium">
               Payment and commerce integrations
             </h2>
-            <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
+            <p className="mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
               Verify and audit agent transactions across stablecoin transfers,
               traditional payment processors, and micropayment protocols.
             </p>
@@ -446,11 +441,11 @@ export default function IntegrationsPage() {
             {paymentIntegrations.map((integration) => (
               <Card
                 key={integration.title}
-                className="group relative overflow-hidden transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none"
+                className="group relative overflow-hidden transition-all "
               >
                 <CardHeader>
                   <div className="mb-3 flex items-center justify-between">
-                    <div className="inline-flex h-10 w-10 items-center justify-center rounded-[5px] border-2 border-border bg-primary/20 text-primary">
+                    <div className="inline-flex h-10 w-10 items-center justify-center border border-border bg-[var(--term-surface-2)] text-primary">
                       <integration.icon size={20} />
                     </div>
                     <Badge variant="outline">
@@ -484,17 +479,17 @@ export default function IntegrationsPage() {
       {/* Protocols */}
       <section
         id="protocols"
-        className="scroll-mt-32 border-t-2 border-border bg-background"
+        className="scroll-mt-32 border-t border-border bg-background"
       >
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="mb-12">
             <Badge variant="outline" className="mb-4">
               Protocols
             </Badge>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            <h2 className="text-sm font-medium">
               Protocol integrations
             </h2>
-            <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
+            <p className="mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
               On-chain anchoring and agent-to-agent attestation — cryptographic proof
               layers built into verify().
             </p>
@@ -504,11 +499,11 @@ export default function IntegrationsPage() {
             {protocolIntegrations.map((integration) => (
               <Card
                 key={integration.title}
-                className="group relative overflow-hidden transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none"
+                className="group relative overflow-hidden transition-all "
               >
                 <CardHeader>
                   <div className="mb-3 flex items-center justify-between">
-                    <div className="inline-flex h-10 w-10 items-center justify-center rounded-[5px] border-2 border-border bg-primary/20 text-primary">
+                    <div className="inline-flex h-10 w-10 items-center justify-center border border-border bg-[var(--term-surface-2)] text-primary">
                       <integration.icon size={20} />
                     </div>
                     <Badge variant="outline">
@@ -542,27 +537,27 @@ export default function IntegrationsPage() {
       {/* CLI & DevOps */}
       <section
         id="cli-devops"
-        className="scroll-mt-32 border-t-2 border-border bg-background"
+        className="scroll-mt-32 border-t border-border bg-background"
       >
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="mb-12">
             <Badge variant="outline" className="mb-4">
               CLI &amp; DevOps
             </Badge>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            <h2 className="text-sm font-medium">
               Terminal-first compliance
             </h2>
-            <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
+            <p className="mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
               Run compliance operations from the command line or integrate with
               AI coding assistants via the MCP server.
             </p>
           </div>
 
           <div className="grid gap-6 sm:grid-cols-2">
-            <Card className="group relative overflow-hidden transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none">
+            <Card className="group relative overflow-hidden transition-all ">
               <CardHeader>
                 <div className="mb-3 flex items-center justify-between">
-                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-[5px] border-2 border-border bg-primary/20 text-primary">
+                  <div className="inline-flex h-10 w-10 items-center justify-center border border-border bg-[var(--term-surface-2)] text-primary">
                     <Terminal size={20} />
                   </div>
                   <Badge variant="outline">Available</Badge>
@@ -575,17 +570,17 @@ export default function IntegrationsPage() {
                   cert, audit, anchor, attest, sync, session, checkpoint, status,
                   and mcp. Install globally or run via npx.
                 </CardDescription>
-                <div className="mt-4 overflow-hidden rounded-[5px] border border-border bg-muted/50 p-3 font-mono text-xs">
+                <div className="mt-4 overflow-hidden border border-border bg-muted/50 p-3 font-mono text-xs">
                   <span className="text-primary">$</span> npm install -g @kontext-sdk/cli<br/>
                   <span className="text-primary">$</span> kontext verify --chain base --amount 5000
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="group relative overflow-hidden transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none">
+            <Card className="group relative overflow-hidden transition-all ">
               <CardHeader>
                 <div className="mb-3 flex items-center justify-between">
-                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-[5px] border-2 border-border bg-primary/20 text-primary">
+                  <div className="inline-flex h-10 w-10 items-center justify-center border border-border bg-[var(--term-surface-2)] text-primary">
                     <Wrench size={20} />
                   </div>
                   <Badge variant="outline">Available</Badge>
@@ -598,7 +593,7 @@ export default function IntegrationsPage() {
                   Code, Cursor, and Windsurf. AI coding assistants get compliance
                   verification, audit export, and trust scoring as native tools.
                 </CardDescription>
-                <div className="mt-4 overflow-hidden rounded-[5px] border border-border bg-muted/50 p-3 font-mono text-xs">
+                <div className="mt-4 overflow-hidden border border-border bg-muted/50 p-3 font-mono text-xs">
                   <span className="text-primary">$</span> kontext mcp
                 </div>
               </CardContent>
@@ -608,9 +603,9 @@ export default function IntegrationsPage() {
       </section>
 
       {/* Framework Agnostic Note */}
-      <section className="border-t-2 border-border bg-background">
+      <section className="border-t border-border bg-background">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="rounded-[5px] border-2 border-border bg-primary/5 p-8 shadow-shadow sm:p-12">
+          <div className="border border-border bg-[var(--term-surface)] p-8 sm:p-12">
             <div className="max-w-2xl">
               <div className="mb-4 flex items-center gap-2">
                 <Cpu size={20} className="text-primary" />
@@ -621,8 +616,8 @@ export default function IntegrationsPage() {
               <p className="text-muted-foreground leading-relaxed">
                 Kontext is a standalone TypeScript SDK with zero framework
                 dependencies. The integrations above are convenience wrappers —
-                you can use <code className="rounded-[5px] bg-muted px-1.5 py-0.5 font-mono text-sm border border-border">ctx.verify()</code> and{" "}
-                <code className="rounded-[5px] bg-muted px-1.5 py-0.5 font-mono text-sm border border-border">ctx.log()</code> directly in any
+                you can use <code className="bg-muted px-1.5 py-0.5 font-mono text-sm border border-border">ctx.verify()</code> and{" "}
+                <code className="bg-muted px-1.5 py-0.5 font-mono text-sm border border-border">ctx.log()</code> directly in any
                 agent framework, custom pipeline, or serverless function.
               </p>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -649,10 +644,10 @@ export default function IntegrationsPage() {
       </section>
 
       {/* Bottom CTA */}
-      <section className="border-t-2 border-border bg-background">
+      <section className="border-t border-border bg-background">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center text-center">
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            <h2 className="text-sm font-medium">
               Start building with trust
             </h2>
             <p className="mt-4 max-w-md text-muted-foreground">
