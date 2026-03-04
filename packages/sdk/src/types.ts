@@ -181,6 +181,21 @@ export interface KontextConfig {
    * ```
    */
   approvalThreshold?: string;
+  /**
+   * x402 payment configuration for automatic HTTP 402 payment handling.
+   * When configured, the SDK automatically handles 402 responses from the
+   * Kontext API by signing USDC payments on Base.
+   *
+   * Requires optional peer dependencies: `@x402/fetch` and `@x402/evm`.
+   */
+  x402?: {
+    /** viem WalletClient on Base for signing payments */
+    walletClient?: unknown;
+    /** Custom fetch handler that wraps x402 payment logic */
+    fetchHandler?: (req: Request) => Promise<Response>;
+    /** Safety cap per event in USDC (default: '0.01') */
+    maxPricePerEvent?: string;
+  };
 }
 
 /**
@@ -1162,6 +1177,7 @@ export enum KontextErrorCode {
   PLAN_REQUIRED = 'PLAN_REQUIRED',
   APPROVAL_NOT_FOUND = 'APPROVAL_NOT_FOUND',
   APPROVAL_EXPIRED = 'APPROVAL_EXPIRED',
+  PAYMENT_REQUIRED = 'PAYMENT_REQUIRED',
 }
 
 /** Kontext SDK error */

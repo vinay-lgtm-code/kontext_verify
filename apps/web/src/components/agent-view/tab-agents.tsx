@@ -159,6 +159,42 @@ const result = await ctx.verify({
         </p>
       </Section>
 
+      <Section title="MCP SERVER (8 TOOLS)">
+        <p className="mb-2">
+          Expose compliance tools to Claude Code, Cursor, and Windsurf via Model Context Protocol.
+        </p>
+        <TerminalChrome title="claude_desktop_config.json" className="mt-2">
+          <pre className="text-xs leading-relaxed overflow-x-auto">
+            <code>{`{
+  "mcpServers": {
+    "kontext": {
+      "command": "npx",
+      "args": ["-y", "kontext-sdk", "mcp"]
+    }
+  }
+}`}</code>
+          </pre>
+        </TerminalChrome>
+        <div className="mt-3 space-y-1 font-mono text-xs">
+          <p className="text-[var(--term-text-3)] mb-1">Available tools:</p>
+          {[
+            "verify_transaction",
+            "check_sanctions",
+            "log_reasoning",
+            "get_trust_score",
+            "get_compliance_certificate",
+            "anchor_digest",
+            "exchange_attestation",
+            "verify_audit_trail",
+          ].map((tool) => (
+            <p key={tool}>
+              <span className="text-[var(--term-green)]">●</span>{" "}
+              <span className="text-[var(--term-text-2)]">{tool}</span>
+            </p>
+          ))}
+        </div>
+      </Section>
+
       <Section title="MACHINE-READABLE ENDPOINTS">
         <div className="space-y-1 font-mono text-xs">
           <p>

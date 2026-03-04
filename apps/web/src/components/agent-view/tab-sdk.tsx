@@ -34,6 +34,7 @@ const badges = [
   { label: "Arc", href: "/docs#arc" },
   { label: "CCTP", href: "/docs#cctp" },
   { label: "ERC-8021", href: "/docs#erc-8021" },
+  { label: "MCP", href: "/docs#mcp" },
 ];
 
 export function TabSdk() {

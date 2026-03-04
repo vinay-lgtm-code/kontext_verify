@@ -30,6 +30,13 @@
     "chains": ["base", "arc"]
   },
   "x402Compatible": true,
+  "x402Payment": {
+    "acceptsPayment": true,
+    "pricePerEvent": "$0.002",
+    "token": "USDC",
+    "chain": "base",
+    "payeeAddress": "0x18F596CCE5d414C1C0c71e68257f22c24d965434"
+  },
   "erc8021": {
     "builderCode": "kontext",
     "transactionAttribution": true

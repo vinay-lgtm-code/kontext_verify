@@ -125,6 +125,10 @@ export { verifyAnchor, getAnchor, anchorDigest, OnChainExporter } from './onchai
 export { encodeERC8021Suffix, parseERC8021Suffix, fetchTransactionAttribution, KONTEXT_BUILDER_CODE } from './integrations/erc8021.js';
 export type { ERC8021Attribution, ERC8021Config } from './types.js';
 
+// x402 Client (optional peer deps: @x402/fetch, @x402/evm)
+export { createX402Fetch } from './integrations/x402-client.js';
+export type { X402ClientConfig, X402FetchHandler } from './integrations/x402-client.js';
+
 // A2A Attestation
 export { fetchAgentCard, exchangeAttestation } from './attestation.js';
 

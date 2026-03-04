@@ -288,11 +288,12 @@ fetchAgentCard()
               "Base + Arc Free",
               "Open Source",
               "x402 Compatible",
+              "8 MCP Tools",
               "Zero Dependencies",
             ].map((item, i) => (
               <span key={item} className="flex items-center gap-2">
                 {item}
-                {i < 7 && (
+                {i < 8 && (
                   <span className="text-[var(--term-surface-3)]">·</span>
                 )}
               </span>

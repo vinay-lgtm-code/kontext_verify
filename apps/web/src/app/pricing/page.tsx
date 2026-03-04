@@ -44,6 +44,7 @@ const plans = [
       "On-chain anchoring",
       "A2A attestation",
       "Kontext CLI (12 commands)",
+      "MCP server (8 compliance tools)",
       "Community support via GitHub",
     ],
   },
@@ -52,7 +53,7 @@ const plans = [
     price: "$2",
     priceDetail: "per 1,000 events above 20K free",
     description:
-      "For agents in production. Usage-based pricing with no monthly minimum. First 20K events always free.",
+      "For agents in production. Usage-based pricing with no monthly minimum. First 20K events always free. Pay with Stripe or USDC on Base via x402.",
     cta: "Get Started",
     ctaHref: "/docs",
     highlighted: true,
@@ -67,6 +68,7 @@ const plans = [
       "Webhook alerts",
       "Agent forensics (identity, wallet clustering)",
       "Cloud persistence",
+      "Pay with USDC via x402 (agent-native)",
       "Email support",
     ],
   },
@@ -112,6 +114,11 @@ const faqs = [
     question: "Does Kontext help with GENIUS Act compliance?",
     answer:
       "Kontext provides the developer tooling to build a compliance audit trail aligned with the GENIUS Act (signed July 2025, regulations due July 2026). It logs what your agents did, why they did it, and proves compliance checks ran with cryptographic proof. That said, Kontext is a developer SDK, not a law firm — consult qualified legal counsel for your specific regulatory obligations.",
+  },
+  {
+    question: "Can I pay with USDC instead of a credit card?",
+    answer:
+      "Yes. Pro supports two payment methods: Stripe (credit card) and USDC on Base via the x402 protocol. With x402, your agent pays $0.002 per event in USDC directly — no checkout flow, no human intervention. Both methods charge the same rate ($2 per 1,000 events above 20K free). USDC payments settle to our Circle Programmable Wallet on Base in real-time.",
   },
   {
     question: "What kind of support do I get?",
