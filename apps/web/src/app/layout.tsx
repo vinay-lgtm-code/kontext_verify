@@ -113,9 +113,9 @@ const softwareJsonLd = {
     {
       "@type": "Offer",
       name: "Pay as you go",
-      price: "2.00",
+      price: "0.002",
       priceCurrency: "USD",
-      unitText: "per 1,000 events above 20K free",
+      unitText: "per event above 20K free",
       description: "All 8 chains, advanced anomaly rules, unified screening, CSV export, cloud persistence.",
     },
   ],
