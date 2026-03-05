@@ -42,7 +42,10 @@
     "access": "public"
   },
   "dependencies": {
-    "kontext-sdk": "^0.8.0"
+    "kontext-sdk": "^0.8.0",
+    "open": "^10.1.0",
+    "ora": "^8.1.1",
+    "picocolors": "^1.1.1"
   },
   "peerDependencies": {
     "@modelcontextprotocol/sdk": ">=1.0.0",

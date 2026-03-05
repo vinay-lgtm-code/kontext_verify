@@ -110,6 +110,11 @@ Commands:
                                 sanctioned entities + digital currency addresses
   mcp                 Start MCP server for Claude Code / Cursor / Windsurf
 
+Auth:
+  login               Authenticate with getkontext.com
+  logout              Remove stored credentials
+  whoami              Show current auth status and usage
+
 Global flags:
   --json              Output structured JSON
   --help, -h          Show help
@@ -126,6 +131,8 @@ Examples:
   npx @kontext-sdk/cli attest --endpoint https://agent-b.app --agent my-bot
   npx @kontext-sdk/cli sync
   npx @kontext-sdk/cli mcp
+  npx @kontext-sdk/cli login
+  npx @kontext-sdk/cli whoami
 
 Regulatory responsibility remains with the operator.
 `);
@@ -285,6 +292,25 @@ async function main(): Promise<void> {
       const checkpointId = positional[1] ?? flag(flags, 'checkpoint');
       const { runCheckpoint } = await import('./commands/checkpoint.js');
       await runCheckpoint({ subcommand, session: sessionArg, actions, summary, reviewer, decision, evidence, checkpointId, json });
+      break;
+    }
+
+    case 'login': {
+      const apiKeyArg = flag(flags, 'api-key');
+      const { runLogin } = await import('./commands/login.js');
+      await runLogin({ json, apiKey: apiKeyArg });
+      break;
+    }
+
+    case 'logout': {
+      const { runLogout } = await import('./commands/logout.js');
+      await runLogout({ json });
+      break;
+    }
+
+    case 'whoami': {
+      const { runWhoami } = await import('./commands/whoami.js');
+      await runWhoami({ json });
       break;
     }
 
