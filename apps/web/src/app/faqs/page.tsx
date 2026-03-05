@@ -33,7 +33,7 @@ const faqCategories = [
       {
         question: "Is Kontext open source?",
         answer:
-          "Yes. The core SDK is fully open source under the MIT license with 20,000 events/month on the free tier. You can self-host the entire stack. Pro ($2/1K events above 20K free) adds all anomaly detection rules, unified screening, CSV export, multi-chain support (6 additional chains beyond Base and Arc), webhooks, and cloud persistence.",
+          "Yes. The core SDK is fully open source under the MIT license with 20,000 events/month on the free tier. You can self-host the entire stack. Pro ($0.002/event above 20K free) adds all anomaly detection rules, unified screening, CSV export, multi-chain support (6 additional chains beyond Base and Arc), webhooks, and cloud persistence.",
       },
       {
         question: "What license does Kontext use?",
@@ -188,7 +188,7 @@ const faqCategories = [
       {
         question: "What does the Pro plan include?",
         answer:
-          "Pro is usage-based at $2 per 1,000 events above the 20K free tier. No monthly minimum, no commitment. It includes everything in Free plus: all six anomaly detection rules, unified screening (OFAC, Chainalysis, OpenSanctions), custom blocklist/allowlist, CSV export, multi-chain support (6 additional chains beyond Base and Arc), webhook alerts, cloud persistence, and email support.",
+          "Pro is usage-based at $0.002 per event above the 20K free tier. No monthly minimum, no commitment. It includes everything in Free plus: all six anomaly detection rules, unified screening (OFAC, Chainalysis, OpenSanctions), custom blocklist/allowlist, CSV export, multi-chain support (6 additional chains beyond Base and Arc), webhook alerts, cloud persistence, and email support.",
       },
       {
         question: "Can I self-host the entire stack?",

@@ -50,8 +50,8 @@ const plans = [
   },
   {
     name: "Pro",
-    price: "$2",
-    priceDetail: "per 1,000 events above 20K free",
+    price: "$0.002",
+    priceDetail: "per event above 20K free*",
     description:
       "For agents in production. Usage-based pricing with no monthly minimum. First 20K events always free. Pay with Stripe or USDC on Base via x402.",
     cta: "Get Started",
@@ -93,7 +93,7 @@ const faqs = [
   {
     question: "How does Pro pricing work?",
     answer:
-      "Pro is usage-based at $2 per 1,000 events above the 20K free tier. No monthly minimum, no commitment. Your first 20,000 events are always free every month. Formula: max(0, events - 20,000) / 1,000 × $2.00.",
+      "Pro is usage-based at $0.002 per event above the 20K free tier. No monthly minimum, no commitment. Your first 20,000 events are always free every month.",
   },
   {
     question: "What does Pro add over Free?",
@@ -118,7 +118,7 @@ const faqs = [
   {
     question: "Can I pay with USDC instead of a credit card?",
     answer:
-      "Yes. Pro supports two payment methods: Stripe (credit card) and USDC on Base via the x402 protocol. With x402, your agent pays $0.002 per event in USDC directly — no checkout flow, no human intervention. Both methods charge the same rate ($2 per 1,000 events above 20K free). USDC payments settle to our Circle Programmable Wallet on Base in real-time.",
+      "Yes. Pro supports two payment methods: Stripe (credit card) and USDC on Base via the x402 protocol. With x402, your agent pays $0.002 per event in USDC directly — no checkout flow, no human intervention. Both methods charge the same rate. USDC payments settle to our Circle Programmable Wallet on Base in real-time.",
   },
   {
     question: "What kind of support do I get?",
@@ -219,6 +219,9 @@ export default function PricingPage() {
               </Card>
             ))}
           </div>
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            *An event is any call to the Kontext SDK or APIs — e.g. verify(), log(), logTransaction(), or logReasoning(). Reads like getTrustScore() are free.
+          </p>
         </div>
       </section>
 

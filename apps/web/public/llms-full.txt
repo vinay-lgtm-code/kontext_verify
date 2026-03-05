@@ -567,7 +567,7 @@ Kontext exposes an MCP (Model Context Protocol) server for AI coding assistants.
 | Tier | Price | Events | Features |
 |------|-------|--------|----------|
 | Free | $0 forever | 20,000/mo | Core SDK, Base + Arc chains, 2 anomaly rules, JSON export |
-| Pro | $2/1K events above 20K | Unlimited | All 6 anomaly rules, unified screening, multi-chain (6 additional), CSV export, cloud persistence |
+| Pro | $0.002/event above 20K | Unlimited | All 6 anomaly rules, unified screening, multi-chain (6 additional), CSV export, cloud persistence |
 
 Free tier includes: verify(), log(), logTransaction(), logReasoning(), trust scoring, digest chain, compliance certificates, on-chain anchoring, A2A attestation, human-in-the-loop tasks.
 
