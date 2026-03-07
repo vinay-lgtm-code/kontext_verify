@@ -98,3 +98,6 @@ firestore.rules
 
 # Local shell scripts
 *.local.sh
+
+# Archived modules (kontext-verify v0.8 — stripped for product pivot)
+future_milestones/

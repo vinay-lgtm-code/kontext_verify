@@ -1,7 +1,7 @@
 {
   "name": "kontext-sdk",
-  "version": "0.8.0",
-  "description": "Compliance audit trail SDK for AI agents making stablecoin payments on Base. Tamper-evident digest chains, OFAC screening, compliance certificates. x402 + Circle Programmable Wallets.",
+  "version": "1.0.0",
+  "description": "Payment control plane SDK for stablecoin payments across Base, Ethereum, and Solana.",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -74,6 +74,9 @@
     "viem": {
       "optional": true
     }
+  },
+  "dependencies": {
+    "@kontext/core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.12.0",
