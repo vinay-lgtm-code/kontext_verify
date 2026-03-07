@@ -136,7 +136,7 @@ async function main(): Promise<void> {
   await sleep(100);
 
   // Authorize
-  const { attempt: authAttempt, receipt } = await kontext.authorize(attempt.attemptId, {
+  const { receipt } = await kontext.authorize(attempt.attemptId, {
     chain: 'base',
     token: 'USDC',
     amount: '5000',

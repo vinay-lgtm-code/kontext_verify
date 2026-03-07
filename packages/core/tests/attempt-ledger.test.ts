@@ -90,8 +90,7 @@ describe('AttemptLedger', () => {
     });
 
     it('defaults providerRefs to empty object', async () => {
-      const { providerRefs, ...inputWithout } = TEST_INPUT;
-      const attempt = await ledger.startAttempt(inputWithout as StartAttemptInput);
+      const attempt = await ledger.startAttempt(TEST_INPUT);
       expect(attempt.providerRefs).toEqual({});
     });
   });

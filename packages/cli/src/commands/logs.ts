@@ -1,5 +1,4 @@
-import { MemoryStorage, ReceiptLedger, AttemptLedger, FileStorage } from '@kontext/core';
-import type { PaymentAttempt, AttemptFilter, StageName, FinalState, Archetype, Chain } from '@kontext/core';
+import type { PaymentAttempt } from '@kontext/core';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -15,11 +14,6 @@ export interface LogsOptions {
   chain?: string;
   from?: string;
   to?: string;
-}
-
-function shortAddr(addr: string): string {
-  if (addr.length <= 12) return addr;
-  return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 }
 
 function currentStage(attempt: PaymentAttempt): string {

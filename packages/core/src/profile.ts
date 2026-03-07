@@ -32,8 +32,6 @@ export interface WorkspaceProfile {
 
 const VALID_ARCHETYPES: readonly Archetype[] = ['payroll', 'remittance', 'invoicing', 'treasury', 'micropayments'];
 const VALID_CHAINS: readonly Chain[] = ['base', 'ethereum', 'solana'];
-const VALID_ASSETS: readonly SettlementAsset[] = ['USDC', 'EURC', 'USDT'];
-
 export function validateWorkspaceProfile(input: unknown): WorkspaceProfile {
   if (!input || typeof input !== 'object') {
     throw new Error('WorkspaceProfile must be an object');

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { Kontext, MemoryStorage } from '../src/index.js';
+import { Kontext } from '../src/index.js';
 import type { StartAttemptInput, KontextConfig } from '../src/index.js';
 
 const TEST_SDK_CONFIG: KontextConfig = {
