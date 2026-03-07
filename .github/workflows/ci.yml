@@ -30,7 +30,12 @@ jobs:
 
       - name: Lint
         run: pnpm lint
-        continue-on-error: true
+
+      - name: Build Core
+        run: pnpm --filter @kontext/core build
+
+      - name: Test Core
+        run: pnpm --filter @kontext/core test
 
       - name: Test SDK
         run: pnpm --filter kontext-sdk test

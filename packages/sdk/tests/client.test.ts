@@ -1,467 +1,200 @@
-import { describe, it, expect, afterEach } from 'vitest';
-import { Kontext, KontextError, KontextErrorCode } from '../src/index.js';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { Kontext } from '../src/index.js';
+import type { StartAttemptInput, KontextConfig } from '../src/index.js';
 
-function createClient(plan: 'free' | 'pro' | 'enterprise' = 'enterprise') {
-  return Kontext.init({
-    projectId: 'test-project',
-    environment: 'development',
-    plan,
-  });
-}
+const TEST_SDK_CONFIG: KontextConfig = {
+  projectId: 'test-project',
+  environment: 'development',
+  policy: {
+    maxTransactionAmount: '50000',
+    dailyAggregateLimit: '200000',
+    reviewThreshold: '25000',
+    sanctionsEnabled: false,
+    blockedRecipients: [],
+    blockedSenders: [],
+    allowedRecipients: [],
+    requiredMetadataByPaymentType: {},
+  },
+};
 
-describe('Kontext.init', () => {
-  it('should initialize in local mode without an API key', () => {
-    const kontext = createClient();
-    expect(kontext.getMode()).toBe('local');
-  });
+const TEST_ATTEMPT: StartAttemptInput = {
+  workspaceRef: 'ws_test',
+  appRef: 'app_test',
+  archetype: 'treasury',
+  intentCurrency: 'USD',
+  settlementAsset: 'USDC',
+  chain: 'base',
+  senderRefs: { address: '0x1111111111111111111111111111111111111111' },
+  recipientRefs: { address: '0x2222222222222222222222222222222222222222' },
+  executionSurface: 'sdk',
+};
 
-  it('should initialize in cloud mode with an API key', () => {
-    const kontext = Kontext.init({
-      apiKey: 'sk_test_REDACTED_000',
-      projectId: 'test-project',
-      environment: 'production',
-    });
-    expect(kontext.getMode()).toBe('cloud');
-  });
-
-  it('should throw on missing projectId', () => {
-    expect(() =>
-      Kontext.init({ projectId: '', environment: 'development' }),
-    ).toThrow(KontextError);
-  });
-
-  it('should throw on invalid environment', () => {
-    expect(() =>
-      Kontext.init({
-        projectId: 'test',
-        environment: 'invalid' as 'development',
-      }),
-    ).toThrow(KontextError);
-  });
-
-  it('should mask API key in getConfig', () => {
-    const kontext = Kontext.init({
-      apiKey: 'sk_test_REDACTED_000_extra',
-      projectId: 'test-project',
-      environment: 'development',
-    });
-    const config = kontext.getConfig();
-    expect(config.apiKey).toBe('sk_test_...');
-  });
-});
-
-describe('Action Logging', () => {
+describe('Kontext SDK Client', () => {
   let kontext: Kontext;
+
+  beforeEach(() => {
+    kontext = Kontext.inMemory(TEST_SDK_CONFIG);
+  });
 
   afterEach(async () => {
     await kontext.destroy();
   });
 
-  it('should log a generic action', async () => {
-    kontext = createClient();
-    const action = await kontext.log({
-      type: 'approval',
-      description: 'Agent approved USDC spending',
-      agentId: 'agent-1',
+  describe('start', () => {
+    it('creates attempt with intent stage', async () => {
+      const attempt = await kontext.start(TEST_ATTEMPT);
+      expect(attempt.attemptId).toMatch(/^att_/);
+      expect(attempt.finalState).toBe('pending');
+      expect(attempt.stageEvents).toHaveLength(1);
+      expect(attempt.stageEvents[0]!.stage).toBe('intent');
     });
-
-    expect(action.id).toBeDefined();
-    expect(action.type).toBe('approval');
-    expect(action.agentId).toBe('agent-1');
-    expect(action.projectId).toBe('test-project');
-    expect(action.timestamp).toBeDefined();
-    expect(action.correlationId).toBeDefined();
   });
 
-  it('should log a transaction', async () => {
-    kontext = createClient();
-    const tx = await kontext.logTransaction({
-      txHash: '0x' + 'a'.repeat(64),
-      chain: 'base',
-      amount: '100.50',
-      token: 'USDC',
-      from: '0x' + '1'.repeat(40),
-      to: '0x' + '2'.repeat(40),
-      agentId: 'agent-1',
-    });
+  describe('broadcast', () => {
+    it('adds transmit stage event', async () => {
+      const attempt = await kontext.start(TEST_ATTEMPT);
+      const updated = await kontext.broadcast(attempt.attemptId, '0xabc123');
 
-    expect(tx.type).toBe('transaction');
-    expect(tx.txHash).toBe('0x' + 'a'.repeat(64));
-    expect(tx.chain).toBe('base');
-    expect(tx.amount).toBe('100.50');
-    expect(tx.token).toBe('USDC');
+      expect(updated.stageEvents).toHaveLength(2);
+      expect(updated.stageEvents[1]!.stage).toBe('transmit');
+      expect(updated.stageEvents[1]!.payload!['txHash']).toBe('0xabc123');
+    });
   });
 
-  it('should log a transaction on Arc chain', async () => {
-    kontext = createClient();
-    const tx = await kontext.logTransaction({
-      txHash: '0x' + 'a'.repeat(64),
-      chain: 'arc',
-      amount: '250.00',
-      token: 'USDC',
-      from: '0x' + '1'.repeat(40),
-      to: '0x' + '2'.repeat(40),
-      agentId: 'agent-1',
-    });
-
-    expect(tx.type).toBe('transaction');
-    expect(tx.chain).toBe('arc');
-    expect(tx.amount).toBe('250.00');
-    expect(tx.token).toBe('USDC');
-  });
-
-  it('should reject invalid transaction amount', async () => {
-    kontext = createClient();
-    await expect(
-      kontext.logTransaction({
-        txHash: '0x' + 'a'.repeat(64),
-        chain: 'base',
-        amount: '-50',
-        token: 'USDC',
-        from: '0x' + '1'.repeat(40),
-        to: '0x' + '2'.repeat(40),
-        agentId: 'agent-1',
-      }),
-    ).rejects.toThrow(KontextError);
-  });
-
-  it('should reject missing txHash', async () => {
-    kontext = createClient();
-    await expect(
-      kontext.logTransaction({
-        txHash: '',
-        chain: 'base',
-        amount: '100',
-        token: 'USDC',
-        from: '0x' + '1'.repeat(40),
-        to: '0x' + '2'.repeat(40),
-        agentId: 'agent-1',
-      }),
-    ).rejects.toThrow(KontextError);
-  });
-});
-
-describe('Task Confirmation', () => {
-  let kontext: Kontext;
-
-  afterEach(async () => {
-    await kontext.destroy();
-  });
-
-  it('should create and confirm a task', async () => {
-    kontext = createClient();
-
-    const task = await kontext.createTask({
-      description: 'Transfer 100 USDC to vendor',
-      agentId: 'agent-1',
-      requiredEvidence: ['txHash', 'receipt'],
-    });
-
-    expect(task.status).toBe('pending');
-    expect(task.requiredEvidence).toEqual(['txHash', 'receipt']);
-
-    const confirmed = await kontext.confirmTask({
-      taskId: task.id,
-      evidence: {
-        txHash: '0x' + 'a'.repeat(64),
-        receipt: { status: 'confirmed', blockNumber: 12345 },
-      },
-    });
-
-    expect(confirmed.status).toBe('confirmed');
-    expect(confirmed.confirmedAt).toBeDefined();
-    expect(confirmed.providedEvidence).toBeDefined();
-  });
-
-  it('should reject confirmation with missing evidence', async () => {
-    kontext = createClient();
-
-    const task = await kontext.createTask({
-      description: 'Transfer USDC',
-      agentId: 'agent-1',
-      requiredEvidence: ['txHash', 'receipt'],
-    });
-
-    await expect(
-      kontext.confirmTask({
-        taskId: task.id,
-        evidence: { txHash: '0x123' },
-      }),
-    ).rejects.toThrow('Missing required evidence');
-  });
-
-  it('should reject double confirmation', async () => {
-    kontext = createClient();
-
-    const task = await kontext.createTask({
-      description: 'Test task',
-      agentId: 'agent-1',
-      requiredEvidence: ['txHash'],
-    });
-
-    await kontext.confirmTask({
-      taskId: task.id,
-      evidence: { txHash: '0x123' },
-    });
-
-    await expect(
-      kontext.confirmTask({
-        taskId: task.id,
-        evidence: { txHash: '0x456' },
-      }),
-    ).rejects.toThrow('already confirmed');
-  });
-
-  it('should get task status', async () => {
-    kontext = createClient();
-
-    const task = await kontext.createTask({
-      description: 'Test',
-      agentId: 'agent-1',
-      requiredEvidence: ['proof'],
-    });
-
-    const status = await kontext.getTaskStatus(task.id);
-    expect(status?.status).toBe('pending');
-  });
-
-  it('should throw on non-existent task', async () => {
-    kontext = createClient();
-
-    await expect(
-      kontext.confirmTask({
-        taskId: 'nonexistent',
-        evidence: { txHash: '0x123' },
-      }),
-    ).rejects.toThrow(KontextError);
-  });
-});
-
-describe('Audit Export', () => {
-  let kontext: Kontext;
-
-  afterEach(async () => {
-    await kontext.destroy();
-  });
-
-  it('should export data as JSON', async () => {
-    kontext = createClient();
-
-    await kontext.log({
-      type: 'test',
-      description: 'Test action',
-      agentId: 'agent-1',
-    });
-
-    const result = await kontext.export({ format: 'json' });
-    expect(result.format).toBe('json');
-    expect(result.recordCount).toBeGreaterThan(0);
-    const parsed = JSON.parse(result.data);
-    expect(parsed.actions.length).toBeGreaterThan(0);
-  });
-
-  it('should export data as CSV', async () => {
-    kontext = createClient();
-
-    await kontext.logTransaction({
-      txHash: '0x' + 'b'.repeat(64),
-      chain: 'ethereum',
-      amount: '500',
-      token: 'USDC',
-      from: '0x' + '1'.repeat(40),
-      to: '0x' + '2'.repeat(40),
-      agentId: 'agent-1',
-    });
-
-    const result = await kontext.export({ format: 'csv' });
-    expect(result.format).toBe('csv');
-    expect(result.data).toContain('section');
-    expect(result.data).toContain('transaction');
-  });
-
-  it('should generate a compliance report', async () => {
-    kontext = createClient();
-
-    await kontext.log({
-      type: 'test',
-      description: 'Test action',
-      agentId: 'agent-1',
-    });
-
-    const report = await kontext.generateReport({
-      type: 'compliance',
-      period: {
-        start: new Date(Date.now() - 86400000),
-        end: new Date(Date.now() + 86400000),
-      },
-    });
-
-    expect(report.type).toBe('compliance');
-    expect(report.summary.totalActions).toBeGreaterThan(0);
-  });
-});
-
-describe('Metadata Validation', () => {
-  it('should accept valid metadata when schema is configured', async () => {
-    const kontext = Kontext.init({
-      projectId: 'test-project',
-      environment: 'development',
-      metadataSchema: {
-        parse(data: unknown) {
-          return data as Record<string, unknown>;
-        },
-      },
-    });
-
-    const action = await kontext.log({
-      type: 'test',
-      description: 'Valid metadata',
-      agentId: 'agent-1',
-      metadata: { key: 'value' },
-    });
-
-    expect(action.metadata).toEqual({ key: 'value' });
-    await kontext.destroy();
-  });
-
-  it('should reject invalid metadata when schema throws', async () => {
-    const kontext = Kontext.init({
-      projectId: 'test-project',
-      environment: 'development',
-      metadataSchema: {
-        parse(_data: unknown) {
-          throw new Error('Invalid metadata: expected string values');
-        },
-      },
-    });
-
-    await expect(
-      kontext.log({
-        type: 'test',
-        description: 'Bad metadata',
-        agentId: 'agent-1',
-        metadata: { nested: { deep: true } },
-      }),
-    ).rejects.toThrow('Metadata validation failed');
-
-    await kontext.destroy();
-  });
-
-  it('should reject invalid metadata in logTransaction', async () => {
-    const kontext = Kontext.init({
-      projectId: 'test-project',
-      environment: 'development',
-      metadataSchema: {
-        parse(_data: unknown) {
-          throw new Error('schema violation');
-        },
-      },
-    });
-
-    await expect(
-      kontext.logTransaction({
-        txHash: '0x' + 'a'.repeat(64),
-        chain: 'base',
-        amount: '100',
-        token: 'USDC',
-        from: '0x' + '1'.repeat(40),
-        to: '0x' + '2'.repeat(40),
-        agentId: 'agent-1',
-        metadata: { bad: true },
-      }),
-    ).rejects.toThrow('Metadata validation failed');
-
-    await kontext.destroy();
-  });
-
-  it('should reject invalid metadata in createTask', async () => {
-    const kontext = Kontext.init({
-      projectId: 'test-project',
-      environment: 'development',
-      metadataSchema: {
-        parse(_data: unknown) {
-          throw new Error('task metadata invalid');
-        },
-      },
-    });
-
-    await expect(
-      kontext.createTask({
-        description: 'Test task',
-        agentId: 'agent-1',
-        requiredEvidence: ['txHash'],
-        metadata: { invalid: 123 },
-      }),
-    ).rejects.toThrow('Metadata validation failed');
-
-    await kontext.destroy();
-  });
-
-  it('should skip validation when no metadata is provided', async () => {
-    let parseCalled = false;
-    const kontext = Kontext.init({
-      projectId: 'test-project',
-      environment: 'development',
-      metadataSchema: {
-        parse(_data: unknown) {
-          parseCalled = true;
-          return _data as Record<string, unknown>;
-        },
-      },
-    });
-
-    await kontext.log({
-      type: 'test',
-      description: 'No metadata',
-      agentId: 'agent-1',
-    });
-
-    expect(parseCalled).toBe(false);
-    await kontext.destroy();
-  });
-
-  it('should skip validation when no schema is configured', async () => {
-    const kontext = Kontext.init({
-      projectId: 'test-project',
-      environment: 'development',
-    });
-
-    // Should not throw even with arbitrary metadata
-    const action = await kontext.log({
-      type: 'test',
-      description: 'Any metadata',
-      agentId: 'agent-1',
-      metadata: { anything: { goes: true } },
-    });
-
-    expect(action.metadata).toEqual({ anything: { goes: true } });
-    await kontext.destroy();
-  });
-
-  it('should throw VALIDATION_ERROR code on schema failure', async () => {
-    const kontext = Kontext.init({
-      projectId: 'test-project',
-      environment: 'development',
-      metadataSchema: {
-        parse(_data: unknown) {
-          throw new Error('bad');
-        },
-      },
-    });
-
-    try {
-      await kontext.log({
-        type: 'test',
-        description: 'Fail',
-        agentId: 'agent-1',
-        metadata: { x: 1 },
+  describe('confirm', () => {
+    it('adds confirm stage event', async () => {
+      const attempt = await kontext.start(TEST_ATTEMPT);
+      await kontext.broadcast(attempt.attemptId, '0xabc123');
+      const updated = await kontext.confirm(attempt.attemptId, {
+        txHash: '0xabc123',
+        blockNumber: 12345,
+        confirmations: 12,
       });
-      expect.unreachable('should have thrown');
-    } catch (err) {
-      expect(err).toBeInstanceOf(KontextError);
-      expect((err as KontextError).code).toBe(KontextErrorCode.VALIDATION_ERROR);
-    }
 
-    await kontext.destroy();
+      expect(updated.stageEvents).toHaveLength(3);
+      expect(updated.stageEvents[2]!.stage).toBe('confirm');
+    });
+  });
+
+  describe('credit', () => {
+    it('produces succeeded finalState', async () => {
+      const attempt = await kontext.start(TEST_ATTEMPT);
+      await kontext.broadcast(attempt.attemptId, '0xabc123');
+      await kontext.confirm(attempt.attemptId, {
+        txHash: '0xabc123',
+        confirmations: 12,
+      });
+      const updated = await kontext.credit(attempt.attemptId, {
+        confirmedAt: new Date().toISOString(),
+      });
+
+      expect(updated.finalState).toBe('succeeded');
+    });
+  });
+
+  describe('fail', () => {
+    it('produces failed finalState', async () => {
+      const attempt = await kontext.start(TEST_ATTEMPT);
+      const updated = await kontext.fail(attempt.attemptId, 'Out of gas');
+
+      expect(updated.finalState).toBe('failed');
+    });
+  });
+
+  describe('refund', () => {
+    it('produces refunded finalState', async () => {
+      const attempt = await kontext.start(TEST_ATTEMPT);
+      const updated = await kontext.refund(attempt.attemptId, {
+        reason: 'Customer requested refund',
+        refundTxHash: '0xrefund123',
+      });
+
+      expect(updated.finalState).toBe('refunded');
+    });
+  });
+
+  describe('authorize', () => {
+    it('integrates receipt into attempt', async () => {
+      const attempt = await kontext.start(TEST_ATTEMPT);
+      const { attempt: updated, receipt } = await kontext.authorize(attempt.attemptId, {
+        chain: 'base',
+        token: 'USDC',
+        amount: '5000',
+        from: '0x1111111111111111111111111111111111111111',
+        to: '0x2222222222222222222222222222222222222222',
+        actorId: 'agent-1',
+        metadata: { paymentType: 'treasury', purpose: 'test', counterpartyType: 'vendor' },
+      });
+
+      expect(receipt.decision).toBe('allow');
+      expect(updated.stageEvents).toHaveLength(2);
+      expect(updated.stageEvents[1]!.stage).toBe('authorize');
+      expect(updated.linkedReceiptIds).toContain(receipt.receiptId);
+    });
+  });
+
+  describe('get', () => {
+    it('retrieves attempt by ID', async () => {
+      const created = await kontext.start(TEST_ATTEMPT);
+      const found = await kontext.get(created.attemptId);
+      expect(found).toBeDefined();
+      expect(found!.attemptId).toBe(created.attemptId);
+    });
+  });
+
+  describe('list', () => {
+    it('lists all attempts', async () => {
+      await kontext.start(TEST_ATTEMPT);
+      await kontext.start({ ...TEST_ATTEMPT, archetype: 'payroll' });
+      const all = kontext.list();
+      expect(all).toHaveLength(2);
+    });
+  });
+
+  describe('full lifecycle', () => {
+    it('intent -> authorize -> prepare -> transmit -> confirm -> credit = succeeded', async () => {
+      const attempt = await kontext.start(TEST_ATTEMPT);
+
+      // Authorize
+      await kontext.authorize(attempt.attemptId, {
+        chain: 'base',
+        token: 'USDC',
+        amount: '5000',
+        from: '0x1111111111111111111111111111111111111111',
+        to: '0x2222222222222222222222222222222222222222',
+        actorId: 'agent-1',
+        metadata: { paymentType: 'treasury', purpose: 'test', counterpartyType: 'vendor' },
+      });
+
+      // Prepare
+      await kontext.record(attempt.attemptId, 'prepare', {
+        status: 'succeeded',
+        actorSide: 'sender',
+        code: 'TX_PREPARED',
+        message: 'Gas estimated at 0.001 ETH',
+        timestamp: new Date().toISOString(),
+      });
+
+      // Transmit
+      await kontext.broadcast(attempt.attemptId, '0xdeadbeef');
+
+      // Confirm
+      await kontext.confirm(attempt.attemptId, {
+        txHash: '0xdeadbeef',
+        blockNumber: 99999,
+        confirmations: 12,
+      });
+
+      // Recipient credited
+      const final = await kontext.credit(attempt.attemptId, {
+        confirmedAt: new Date().toISOString(),
+      });
+
+      expect(final.finalState).toBe('succeeded');
+      expect(final.stageEvents).toHaveLength(6);
+      expect(final.stageEvents.map(e => e.stage)).toEqual([
+        'intent', 'authorize', 'prepare', 'transmit', 'confirm', 'recipient_credit',
+      ]);
+    });
   });
 });
