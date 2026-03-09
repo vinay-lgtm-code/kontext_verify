@@ -7,6 +7,7 @@ import { workspaceRoutes } from './routes/workspaces.js';
 import { attemptRoutes } from './routes/attempts.js';
 import { webhookRoutes } from './routes/webhooks.js';
 import { billingRoutes } from './routes/billing.js';
+import { exportRoutes } from './routes/export.js';
 
 const app = new Hono();
 
@@ -26,6 +27,7 @@ app.route('/v1/workspaces', workspaceRoutes);
 app.route('/v1/attempts', attemptRoutes);
 app.route('/v1/webhooks', webhookRoutes);
 app.route('/v1/billing', billingRoutes);
+app.route('/v1/export', exportRoutes);
 
 const port = Number(process.env['PORT'] ?? 8080);
 

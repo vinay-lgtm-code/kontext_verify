@@ -8,7 +8,8 @@
     "build": "tsup src/index.ts --format cjs --dts",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@kontext/core": "workspace:*",
@@ -19,6 +20,7 @@
     "@types/node": "^20.12.0",
     "tsup": "^8.0.0",
     "tsx": "^4.0.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^1.6.0"
   }
 }
