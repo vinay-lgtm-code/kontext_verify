@@ -275,6 +275,39 @@ const ctx = Kontext.init({
 
 ---
 
+## Screening Architecture
+
+Built-in: Local SDN address list, no API key. Covers known sanctioned Ethereum addresses.
+Production: Layer Chainalysis KYT, TRM Labs, or Elliptic alongside authorize() results.
+Planned: externalScreeners injection in authorize() for a future release.
+
+---
+
+## Violation Codes
+
+Blocking (decision: block):
+- UNSUPPORTED_CHAIN (critical) — chain not supported
+- UNSUPPORTED_TOKEN (critical) — token not supported
+- INVALID_AMOUNT (high) — not a positive number
+- INVALID_SENDER (high) — not a valid EVM address
+- INVALID_RECIPIENT (high) — not a valid EVM address
+- MAX_TRANSACTION_EXCEEDED (high) — exceeds archetype max
+- SANCTIONED_RECIPIENT (critical) — on OFAC sanctions list
+- SANCTIONED_SENDER (critical) — on OFAC sanctions list
+- BLOCKED_RECIPIENT (high) — on explicit blocklist
+- BLOCKED_SENDER (high) — on explicit blocklist
+- RECIPIENT_NOT_ALLOWED (high) — not on allowlist
+
+Review (decision: review):
+- REQUIRES_HUMAN_APPROVAL (medium) — exceeds review threshold
+- DAILY_LIMIT_EXCEEDED (high) — projected daily total exceeds limit
+
+Collect Info (decision: collect_info):
+- MISSING_PAYMENT_TYPE (medium) — metadata.paymentType not provided
+- MISSING_REQUIRED_METADATA (medium) — required fields missing
+
+---
+
 ## Workspace Profiles
 
 Workspace profiles define default policies, chains, assets, and operational settings for a workspace.
@@ -468,6 +501,29 @@ The digest chain is computed as: `SHA-256(priorDigest + receiptId + decision + a
 ### Verifying Chain Integrity
 
 The digest proof is included in every `PaymentReceipt`. External auditors can independently verify the chain by recomputing digests from the stored receipts.
+
+---
+
+## On-Chain Anchoring
+
+KontextAnchor contract on Base anchors terminal digests from the digest chain.
+
+Contract API:
+- anchor(digest, projectHash) — record digest on-chain (one-time, immutable)
+- verify(digest) — check if anchored (read-only, gas-free)
+- getAnchor(digest) — get metadata (anchorer, projectHash, timestamp)
+
+Usage with viem:
+```typescript
+const isAnchored = await client.readContract({
+  address: KONTEXT_ANCHOR_ADDRESS,
+  abi: kontextAnchorAbi,
+  functionName: 'verify',
+  args: [digestBytes32],
+});
+```
+
+Cost: ~$0.001 per anchor on Base.
 
 ---
 

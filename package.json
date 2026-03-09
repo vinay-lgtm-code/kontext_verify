@@ -1,8 +1,8 @@
 {
   "name": "kontext-monorepo",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
-  "description": "Kontext - Payment lifecycle management for modern fintech",
+  "description": "Kontext - Compliance & lifecycle control plane for AI agents moving stablecoins",
   "scripts": {
     "build": "pnpm -r build",
     "test": "pnpm -r test",

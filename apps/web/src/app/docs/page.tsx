@@ -817,6 +817,8 @@ const sidebarSections = [
       { id: "amount-limits", label: "Amount Limits" },
       { id: "blocklists", label: "Blocklist / Allowlist" },
       { id: "metadata-requirements", label: "Required Metadata" },
+      { id: "violation-codes", label: "Violation Codes" },
+      { id: "screening-architecture", label: "Screening Architecture" },
     ],
   },
   {
@@ -850,6 +852,7 @@ const sidebarSections = [
   {
     title: "Reference",
     items: [
+      { id: "on-chain-anchoring", label: "On-Chain Anchoring" },
       { id: "api", label: "API Reference" },
       { id: "types", label: "TypeScript Types" },
       { id: "configuration", label: "Configuration" },
@@ -1296,6 +1299,89 @@ export default function DocsPage() {
 
             <Separator className="my-12" />
 
+            {/* Violation Codes */}
+            <section id="violation-codes">
+              <h2>Violation Codes</h2>
+              <p>
+                The policy engine returns specific violation codes when a check fails.
+                Each code maps to a decision: <code>block</code>, <code>review</code>, or <code>collect_info</code>.
+              </p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left">
+                  <thead>
+                    <tr className="border-b border-[var(--term-surface-2)]">
+                      <th className="py-2 pr-4 text-[var(--term-text-3)] font-medium">Code</th>
+                      <th className="py-2 pr-4 text-[var(--term-text-3)] font-medium">Severity</th>
+                      <th className="py-2 pr-4 text-[var(--term-text-3)] font-medium">Decision</th>
+                      <th className="py-2 text-[var(--term-text-3)] font-medium">Description</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-[var(--term-text-2)]">
+                    {[
+                      { code: "UNSUPPORTED_CHAIN", severity: "critical", decision: "block", desc: "Chain not supported (MVP: Base only)" },
+                      { code: "UNSUPPORTED_TOKEN", severity: "critical", decision: "block", desc: "Token not supported (MVP: USDC only)" },
+                      { code: "INVALID_AMOUNT", severity: "high", decision: "block", desc: "Amount is not a positive number" },
+                      { code: "INVALID_SENDER", severity: "high", decision: "block", desc: "Sender is not a valid EVM address" },
+                      { code: "INVALID_RECIPIENT", severity: "high", decision: "block", desc: "Recipient is not a valid EVM address" },
+                      { code: "MAX_TRANSACTION_EXCEEDED", severity: "high", decision: "block", desc: "Amount exceeds archetype max transaction limit" },
+                      { code: "SANCTIONED_RECIPIENT", severity: "critical", decision: "block", desc: "Recipient on OFAC sanctions list" },
+                      { code: "SANCTIONED_SENDER", severity: "critical", decision: "block", desc: "Sender on OFAC sanctions list" },
+                      { code: "BLOCKED_RECIPIENT", severity: "high", decision: "block", desc: "Recipient on explicit blocklist" },
+                      { code: "BLOCKED_SENDER", severity: "high", decision: "block", desc: "Sender on explicit blocklist" },
+                      { code: "RECIPIENT_NOT_ALLOWED", severity: "high", decision: "block", desc: "Recipient not on allowlist" },
+                      { code: "REQUIRES_HUMAN_APPROVAL", severity: "medium", decision: "review", desc: "Amount exceeds review threshold" },
+                      { code: "DAILY_LIMIT_EXCEEDED", severity: "high", decision: "review", desc: "Projected daily total exceeds limit" },
+                      { code: "MISSING_PAYMENT_TYPE", severity: "medium", decision: "collect_info", desc: "metadata.paymentType not provided" },
+                      { code: "MISSING_REQUIRED_METADATA", severity: "medium", decision: "collect_info", desc: "Required metadata fields missing for payment type" },
+                    ].map((v) => (
+                      <tr key={v.code} className="border-b border-[var(--term-surface-2)]/50">
+                        <td className="py-2 pr-4 font-mono text-[var(--term-green)]">{v.code}</td>
+                        <td className="py-2 pr-4">{v.severity}</td>
+                        <td className={`py-2 pr-4 ${v.decision === "block" ? "text-[var(--term-red)]" : v.decision === "review" ? "text-[var(--term-amber)]" : "text-[var(--term-blue)]"}`}>{v.decision}</td>
+                        <td className="py-2">{v.desc}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* Screening Architecture */}
+            <section id="screening-architecture">
+              <h2>Screening Architecture</h2>
+              <p>
+                Built-in OFAC screening uses a local SDN address list — no API key required.
+                This covers known sanctioned Ethereum addresses and is sufficient for development and MVP use.
+              </p>
+              <div className="space-y-3 text-sm text-[var(--term-text-2)]">
+                <p>
+                  <span className="text-[var(--term-green)]">+</span>{" "}
+                  <strong>What{"'"}s included:</strong> Local SDN list checked at the{" "}
+                  <code>authorize</code> stage for both sender and recipient addresses.
+                </p>
+                <p>
+                  <span className="text-[var(--term-amber)]">!</span>{" "}
+                  <strong>Production recommendation:</strong> Layer external screening providers
+                  alongside Kontext for enterprise-grade compliance:
+                </p>
+                <ul className="list-none space-y-1 pl-4">
+                  <li><span className="text-[var(--term-text-3)]">-</span> Chainalysis KYT — real-time transaction monitoring</li>
+                  <li><span className="text-[var(--term-text-3)]">-</span> TRM Labs — wallet risk scoring</li>
+                  <li><span className="text-[var(--term-text-3)]">-</span> Elliptic — cross-chain analytics</li>
+                </ul>
+                <p className="text-[var(--term-text-3)] text-xs mt-4">
+                  External provider injection (<code>externalScreeners</code> in{" "}
+                  <code>authorize()</code>) is planned for a future release.
+                  Currently, run your external screening alongside{" "}
+                  <code>authorize()</code> results.
+                </p>
+              </div>
+            </section>
+
+            <Separator className="my-12" />
+
             {/* Workspace Profiles */}
             <section id="profiles">
               <h2>Profile Configuration</h2>
@@ -1512,6 +1598,52 @@ export default function DocsPage() {
                 language="typescript"
                 filename="alerts.ts"
               />
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* On-Chain Anchoring */}
+            <section id="on-chain-anchoring">
+              <h2>On-Chain Anchoring</h2>
+              <p>
+                Anchor terminal digests from the digest chain to Base via the{" "}
+                <code>KontextAnchor</code> contract. Each anchor is immutable — once recorded,
+                it proves that a specific set of compliance checks ran at a specific time.
+              </p>
+              <div className="space-y-3 text-sm text-[var(--term-text-2)] mb-4">
+                <p><span className="text-[var(--term-green)]">+</span> <code>anchor(digest, projectHash)</code> — record a digest on-chain (one-time, tamper-evident)</p>
+                <p><span className="text-[var(--term-green)]">+</span> <code>verify(digest)</code> — check if a digest has been anchored (read-only, gas-free)</p>
+                <p><span className="text-[var(--term-green)]">+</span> <code>getAnchor(digest)</code> — get full metadata (anchorer, projectHash, timestamp)</p>
+              </div>
+              <CodeBlock
+                code={`import { createPublicClient, http } from 'viem';
+import { base } from 'viem/chains';
+
+const client = createPublicClient({ chain: base, transport: http() });
+
+// Verify a digest has been anchored
+const isAnchored = await client.readContract({
+  address: KONTEXT_ANCHOR_ADDRESS,
+  abi: kontextAnchorAbi,
+  functionName: 'verify',
+  args: [digestBytes32],
+});
+
+// Get full anchor metadata
+const [anchorer, projectHash, timestamp] = await client.readContract({
+  address: KONTEXT_ANCHOR_ADDRESS,
+  abi: kontextAnchorAbi,
+  functionName: 'getAnchor',
+  args: [digestBytes32],
+});`}
+                language="typescript"
+                filename="anchor-verify.ts"
+              />
+              <p className="text-xs text-[var(--term-text-3)] mt-4">
+                Cost: ~$0.001 per anchor on Base. Contract source:{" "}
+                <code>contracts/KontextAnchor.sol</code>.
+                SDK integration (<code>OnChainExporter</code>) coming in a future release.
+              </p>
             </section>
 
             <Separator className="my-12" />

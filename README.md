@@ -1,24 +1,20 @@
 # kontext
 
-Payment lifecycle management for modern fintech.
+Compliance & lifecycle control plane for AI agents moving stablecoins.
 
-**8-Stage Lifecycle** . **Policy Engine** . **6 Provider Adapters** . **Zero Dependencies** . **MIT Licensed**
+**8-Stage Lifecycle** · **Policy Engine** · **OFAC Screening** · **Patented Digest Chain** · **On-Chain Anchoring** · **GENIUS Act Aligned** · **MIT Licensed**
 
 ---
 
-## 30-Second Demo
+## Why Kontext
 
-```bash
-npx tsx packages/cli/src/cli.ts init
-```
+AI agents are moving real money — treasury payments, payroll, micropayments, cross-border transfers. Every autonomous payment needs:
 
-```
-Workspace initialized: ws_default
-Archetype: treasury
-Chain: base
-Asset: USDC
-Policy: maxTx $25,000 | daily $100,000 | review > $10,000
-```
+- **Built-in OFAC screening** — local SDN list, no API key, no external dependency. Layer Chainalysis/TRM/Elliptic for production.
+- **Tamper-evident digest chain** (patented) — SHA-256 hash chain proves every authorization actually ran. Auditors can verify independently.
+- **On-chain anchoring** — anchor terminal digests to Base via the `KontextAnchor` contract. Immutable proof on-chain for ~$0.001.
+
+Regulations are coming. The GENIUS Act (signed July 2025) requires BSA-equivalent compliance for stablecoin transactions — $3K Travel Rule reporting, $10K CTR thresholds, sanctions screening. Kontext handles this at the SDK level so your agents ship compliant from day one.
 
 ## Install
 
@@ -36,27 +32,65 @@ const ctx = Kontext.init({
   environment: 'production',
 });
 
-// 1. Start a payment attempt
+// agent flow: start → authorize → broadcast → confirm → credit
 const attempt = await ctx.start({
   workspaceRef: 'ws_acme',
-  appRef: 'invoicing',
-  archetype: 'invoicing',
+  appRef: 'treasury-agent',
+  archetype: 'treasury',
   intentCurrency: 'USD',
   settlementAsset: 'USDC',
   chain: 'base',
-  senderRefs: { companyId: 'acme' },
-  recipientRefs: { vendorId: 'v-123' },
+  senderRefs: { wallet: '0xTreasury...C3' },
+  recipientRefs: { wallet: '0xVendor...D4' },
   executionSurface: 'sdk',
 });
 
-// 2. Authorize — runs OFAC, amount limits, blocklists
+// authorize() runs OFAC, amount limits, blocklists, metadata checks
 const { receipt } = await ctx.authorize(attempt.attemptId, {
   chain: 'base',
   token: 'USDC',
   amount: '5000',
-  from: '0xSender',
-  to: '0xRecipient',
+  from: '0xTreasury...C3',
+  to: '0xVendor...D4',
   actorId: 'treasury-agent',
+});
+
+if (!receipt.allowed) {
+  console.log('Blocked:', receipt.violations);
+  // receipt.violations[0].code === 'SANCTIONED_RECIPIENT' | 'MAX_TRANSACTION_EXCEEDED' | ...
+  return;
+}
+
+// Track the lifecycle
+await ctx.broadcast(attempt.attemptId, '0xTxHash...');
+await ctx.confirm(attempt.attemptId, { txHash: '0xTxHash...', blockNumber: 12345 });
+await ctx.credit(attempt.attemptId, { confirmedAt: new Date().toISOString() });
+```
+
+## Full Agent Payroll Flow
+
+```typescript
+// Complete payroll agent: intent → authorize → broadcast → confirm → credit
+const attempt = await ctx.start({
+  workspaceRef: 'acme-payroll',
+  appRef: 'payroll-agent',
+  archetype: 'payroll',
+  intentCurrency: 'USD',
+  settlementAsset: 'USDC',
+  chain: 'base',
+  senderRefs: { wallet: '0xPayroll...A1' },
+  recipientRefs: { wallet: '0xEmployee...B2' },
+  executionSurface: 'sdk',
+});
+
+const { receipt } = await ctx.authorize(attempt.attemptId, {
+  chain: 'base',
+  token: 'USDC',
+  amount: '3500',
+  from: '0xPayroll...A1',
+  to: '0xEmployee...B2',
+  actorId: 'payroll-agent',
+  metadata: { paymentType: 'payroll', employeeId: 'emp_042', payPeriod: '2026-03' },
 });
 
 if (!receipt.allowed) {
@@ -64,10 +98,11 @@ if (!receipt.allowed) {
   return;
 }
 
-// 3. Track the lifecycle
 await ctx.broadcast(attempt.attemptId, '0xTxHash...');
-await ctx.confirm(attempt.attemptId, { txHash: '0xTxHash...', blockNumber: 12345 });
+await ctx.confirm(attempt.attemptId, { txHash: '0xTxHash...', blockNumber: 28491037 });
 await ctx.credit(attempt.attemptId, { confirmedAt: new Date().toISOString() });
+// attempt.finalState === 'succeeded'
+// Digest chain: 5 links, verified
 ```
 
 ## 8-Stage Payment Lifecycle
@@ -84,10 +119,83 @@ The `authorize()` method runs these checks automatically:
 
 - **OFAC Sanctions** — built-in SDN list, no API key
 - **Amount Limits** — per-transaction max and daily aggregate
+- **Review Thresholds** — flags amounts above threshold for human approval
 - **Blocklists** — sender and recipient address blocking
+- **Allowlists** — restrict recipients to approved addresses
 - **Metadata Requirements** — archetype-specific required fields
 
-Returns `{ allowed: boolean, violations: Violation[] }`.
+Returns `{ decision, allowed, checksRun, violations, requiredActions, digestProof }`.
+
+Decisions: `allow` | `block` | `review` | `collect_info`.
+
+### Screening Depth
+
+Built-in OFAC screening uses a local SDN address list (no API key required). This covers known sanctioned Ethereum addresses and is sufficient for development and MVP use.
+
+For production compliance, layer external screening providers alongside Kontext:
+- **Chainalysis KYT** — real-time transaction monitoring
+- **TRM Labs** — wallet risk scoring
+- **Elliptic** — cross-chain analytics
+
+External provider injection (`externalScreeners` in `authorize()`) is planned for a future release. Currently, use `authorize()` results alongside your existing screening provider.
+
+### Violation Codes
+
+| Code | Severity | Decision |
+|------|----------|----------|
+| `UNSUPPORTED_CHAIN` | critical | block |
+| `UNSUPPORTED_TOKEN` | critical | block |
+| `INVALID_AMOUNT` | high | block |
+| `INVALID_SENDER` | high | block |
+| `INVALID_RECIPIENT` | high | block |
+| `MAX_TRANSACTION_EXCEEDED` | high | block |
+| `SANCTIONED_RECIPIENT` | critical | block |
+| `SANCTIONED_SENDER` | critical | block |
+| `BLOCKED_RECIPIENT` | high | block |
+| `BLOCKED_SENDER` | high | block |
+| `RECIPIENT_NOT_ALLOWED` | high | block |
+| `REQUIRES_HUMAN_APPROVAL` | medium | review |
+| `DAILY_LIMIT_EXCEEDED` | high | review |
+| `MISSING_PAYMENT_TYPE` | medium | collect_info |
+| `MISSING_REQUIRED_METADATA` | medium | collect_info |
+
+## On-Chain Anchoring
+
+Anchor terminal digests from the digest chain to Base via the `KontextAnchor` contract. Each anchor is immutable — once recorded, it proves that a specific set of compliance checks ran at a specific time.
+
+**Contract API:**
+- `anchor(digest, projectHash)` — record a digest on-chain (one-time, tamper-evident)
+- `verify(digest)` — check if a digest has been anchored (read-only, gas-free)
+- `getAnchor(digest)` — get full anchor metadata (anchorer, projectHash, timestamp)
+
+**Usage with viem:**
+
+```typescript
+import { createPublicClient, http } from 'viem';
+import { base } from 'viem/chains';
+
+const client = createPublicClient({ chain: base, transport: http() });
+
+// Verify a digest has been anchored
+const isAnchored = await client.readContract({
+  address: KONTEXT_ANCHOR_ADDRESS,
+  abi: kontextAnchorAbi,
+  functionName: 'verify',
+  args: [digestBytes32],
+});
+
+// Get full anchor metadata
+const [anchorer, projectHash, timestamp] = await client.readContract({
+  address: KONTEXT_ANCHOR_ADDRESS,
+  abi: kontextAnchorAbi,
+  functionName: 'getAnchor',
+  args: [digestBytes32],
+});
+```
+
+Cost: ~$0.001 per anchor on Base. Batch multiple digests for efficiency.
+
+Contract source: [`contracts/KontextAnchor.sol`](./contracts/KontextAnchor.sol)
 
 ## Provider Adapters
 
@@ -113,6 +221,19 @@ Preset configurations per payment archetype:
 | `invoicing` | $20,000 | $50,000 | $5,000 |
 | `payroll` | $15,000 | $200,000 | $10,000 |
 | `cross_border` | $10,000 | $25,000 | $3,000 |
+
+## Free Tier
+
+Free forever on Base:
+- 20,000 payment stage events/month
+- Full 8-stage lifecycle
+- Policy engine (OFAC, amount limits, blocklists)
+- Tamper-evident digest chain
+- 5 workspace profiles
+- JSON export
+- No credit card required
+
+**Pay-as-you-go:** $2/1K events above 20K free — unlocks all chains, CSV export, Slack/email notifications, ops dashboard.
 
 ## CLI
 
@@ -156,6 +277,6 @@ MIT
 
 ---
 
-Kontext provides payment lifecycle management tools. Regulatory responsibility remains with the operator. This software does not constitute legal advice. Consult qualified legal counsel for compliance obligations.
+Kontext provides payment lifecycle management tools with built-in compliance checks. Regulatory responsibility remains with the operator. This software does not constitute legal advice. Consult qualified legal counsel for compliance obligations.
 
 Built by [Legaci Labs](https://www.getkontext.com)

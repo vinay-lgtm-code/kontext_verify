@@ -28,9 +28,13 @@ start(), authorize(), record(), broadcast(), confirm(), credit(), fail(), refund
 
 ## Policy Engine
 OFAC sanctions screening, amount limits, blocklists/allowlists, required metadata, human approval thresholds
+Built-in OFAC screening uses local SDN list (no API key). Layer Chainalysis/TRM/Elliptic for production.
 
 ## 6 Provider Adapters
 EVMAdapter, SolanaAdapter, CircleAdapter, X402Adapter, BridgeAdapter, ModernTreasuryAdapter
+
+## On-Chain Anchoring
+KontextAnchor contract on Base. anchor(digest, projectHash), verify(digest), getAnchor(digest). ~$0.001 per anchor.
 
 ## 5 Workspace Profiles
 micropayments ($100 max), treasury ($25K), invoicing ($20K), payroll ($15K), cross_border ($10K)

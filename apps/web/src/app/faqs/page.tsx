@@ -85,6 +85,17 @@ const faqCategories = [
         answer:
           "The built-in Treasury SDN provider screens sender and recipient addresses against OFAC sanctioned addresses with zero external dependencies and no API key required. This runs on every authorize call when sanctions screening is enabled in the policy (enabled by default). For production deployments that need broader coverage, the pluggable ScreeningProvider architecture supports Chainalysis and OpenSanctions — bring your own API key and the screening aggregator combines results from all configured providers.",
       },
+      {
+        question: "What OFAC screening does Kontext provide?",
+        answer:
+          "Built-in OFAC screening uses a local SDN address list checked at the authorize stage — no API key or external service required. Both sender and recipient addresses are screened. This covers known sanctioned Ethereum addresses and is sufficient for development and MVP use. For production compliance, layer external screening providers (Chainalysis KYT, TRM Labs, Elliptic) alongside Kontext authorize() results.",
+      },
+      {
+        question:
+          "How do I use external screening providers like Chainalysis for production?",
+        answer:
+          "Currently, run your external screening provider alongside Kontext authorize(). Use authorize() for policy engine checks (amount limits, blocklists, metadata requirements, built-in OFAC) and your external provider for real-time transaction monitoring and wallet risk scoring. External provider injection (externalScreeners parameter in authorize()) is planned for a future release.",
+      },
     ],
   },
   {
