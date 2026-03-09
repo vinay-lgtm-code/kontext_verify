@@ -1,1449 +1,224 @@
-// ============================================================================
-// Kontext SDK - Core Client
-// ============================================================================
-
-import type {
-  KontextConfig,
-  KontextMode,
-  LogActionInput,
-  LogTransactionInput,
-  ActionLog,
-  TransactionRecord,
-  CreateTaskInput,
-  ConfirmTaskInput,
-  Task,
-  TaskStatus,
-  ExportOptions,
-  ExportResult,
-  ReportOptions,
-  ComplianceReport,
-  UsdcComplianceCheck,
-  Environment,
-  VerifyInput,
-  VerifyResult,
-  LogReasoningInput,
-  ReasoningEntry,
-  TrustScore,
-  TransactionEvaluation,
-  AnomalyDetectionConfig,
-  AnomalyCallback,
-  GenerateComplianceCertificateInput,
-  ComplianceCertificate,
-  AnchorResult,
-  CounterpartyAttestation,
-  ERC8021Attribution,
-  AgentSession,
-  CreateSessionInput,
-  ProvenanceCheckpoint,
-  CreateCheckpointInput,
-  HumanAttestation,
-  ProvenanceBundle,
-} from './types.js';
-import { TrustScorer } from './trust.js';
-import { AnomalyDetector } from './anomaly.js';
-import { createHash } from 'crypto';
-import type { DigestVerification, DigestLink } from './digest.js';
-import type { PlanTier, PlanUsage, LimitEvent } from './plans.js';
-import { KontextError, KontextErrorCode } from './types.js';
-import { KontextStore } from './store.js';
-import { ActionLogger } from './logger.js';
-import { TaskManager } from './tasks.js';
-import { AuditExporter } from './audit.js';
-import { UsdcCompliance } from './integrations/usdc.js';
-import { PaymentCompliance } from './integrations/payment-compliance.js';
-import { isCryptoTransaction } from './types.js';
-import { PlanManager } from './plans.js';
-import { requirePlan } from './plan-gate.js';
-import type { EventExporter } from './exporters.js';
-import { NoopExporter } from './exporters.js';
-import { FeatureFlagManager } from './feature-flags.js';
-import { generateId, now, parseAmount } from './utils.js';
-import { ProvenanceManager } from './provenance.js';
 import {
-  AgentIdentityRegistry,
-  WalletClusterer,
-  BehavioralFingerprinter,
-  CrossSessionLinker,
-  KYAConfidenceScorer,
-} from './kya/index.js';
+  AttemptLedger,
+  ReceiptLedger,
+  MemoryStorage,
+  FileStorage,
+} from '@kontext/core';
 import type {
-  AgentIdentity,
-  RegisterIdentityInput,
-  UpdateIdentityInput,
-  WalletCluster,
-  BehavioralEmbedding,
-  AgentLink,
-  KYAConfidenceScore,
-  KYAEnvelope,
-} from './kya/index.js';
+  KontextBaseConfig,
+  AuthorizePaymentInput,
+  PaymentReceipt,
+  PaymentAttempt,
+  StageEvent,
+  StageName,
+  StartAttemptInput,
+  AttemptFilter,
+  Chain,
+  StorageAdapter,
+  WorkspaceProfile,
+} from '@kontext/core';
+import { defaultWorkspaceProfile } from '@kontext/core';
 
-/** Storage key for plan metering data */
-const PLAN_STORAGE_KEY = 'kontext:plan';
+export interface KontextConfig {
+  projectId: string;
+  environment: 'development' | 'staging' | 'production';
+  apiUrl?: string;
+  apiKey?: string;
+  storageDir?: string;
+  storage?: StorageAdapter;
+  policy?: KontextBaseConfig['policy'];
+}
 
-/**
- * Main Kontext SDK client. Provides a unified interface to all SDK features:
- * action logging, task confirmation, audit export, trust scoring, and
- * anomaly detection.
- *
- * Supports two operating modes:
- * - **Local mode** (no API key): All data stored locally, suitable for
- *   open-source usage and development.
- * - **Cloud mode** (with API key): Data synced to Kontext API for
- *   persistent storage and advanced features.
- *
- * @example
- * ```typescript
- * import { Kontext } from '@kontext/sdk';
- *
- * const kontext = Kontext.init({
- *   projectId: 'my-project',
- *   environment: 'development',
- * });
- *
- * await kontext.logTransaction({
- *   txHash: '0x...',
- *   chain: 'base',
- *   amount: '100',
- *   token: 'USDC',
- *   from: '0xSender',
- *   to: '0xReceiver',
- *   agentId: 'agent-1',
- * });
- * ```
- */
+export interface ConfirmationData {
+  txHash: string;
+  blockNumber?: number;
+  confirmations?: number;
+  chain?: Chain;
+}
+
+export interface CreditEvidence {
+  confirmedAt: string;
+  providerRef?: string;
+}
+
+export interface RefundData {
+  refundTxHash?: string;
+  reason: string;
+  refundedAt?: string;
+}
+
+const DEFAULT_POLICY: KontextBaseConfig['policy'] = {
+  maxTransactionAmount: '25000',
+  dailyAggregateLimit: '100000',
+  reviewThreshold: '10000',
+  sanctionsEnabled: true,
+  blockedRecipients: [],
+  blockedSenders: [],
+  allowedRecipients: [],
+  requiredMetadataByPaymentType: {},
+};
+
 export class Kontext {
   private readonly config: KontextConfig;
-  private readonly store: KontextStore;
-  private readonly logger: ActionLogger;
-  private readonly taskManager: TaskManager;
-  private readonly auditExporter: AuditExporter;
-  private readonly mode: KontextMode;
-  private readonly planManager: PlanManager;
-  private readonly exporter: EventExporter;
-  private readonly featureFlagManager: FeatureFlagManager | null;
-  private readonly trustScorer: TrustScorer;
-  private readonly anomalyDetector: AnomalyDetector;
-  private provenanceManager: ProvenanceManager | null = null;
-  private identityRegistry: AgentIdentityRegistry | null = null;
-  private walletClusterer: WalletClusterer | null = null;
-  private behavioralFingerprinter: BehavioralFingerprinter | null = null;
-  private crossSessionLinker: CrossSessionLinker | null = null;
-  private confidenceScorer: KYAConfidenceScorer | null = null;
+  private readonly attemptLedger: AttemptLedger;
+  private readonly receiptLedger: ReceiptLedger;
+  private workspaceProfile: WorkspaceProfile | null = null;
 
-  private constructor(config: KontextConfig) {
+  private constructor(config: KontextConfig, storage: StorageAdapter) {
     this.config = config;
-    this.mode = config.apiKey ? 'cloud' : 'local';
-    this.store = new KontextStore();
 
-    // Validate metadataSchema eagerly — if provided, it must have a parse() method
-    if (config.metadataSchema && typeof config.metadataSchema.parse !== 'function') {
-      throw new KontextError(
-        KontextErrorCode.INITIALIZATION_ERROR,
-        'metadataSchema must have a parse() method',
-      );
-    }
+    const coreConfig: KontextBaseConfig = {
+      projectId: config.projectId,
+      environment: config.environment,
+      storageDir: config.storageDir,
+      policy: config.policy ?? DEFAULT_POLICY,
+    };
 
-    // Attach storage adapter if provided
-    if (config.storage) {
-      this.store.setStorageAdapter(config.storage);
-    }
-
-    // Initialize plan manager
-    const planTier: PlanTier = config.plan ?? 'free';
-    this.planManager = new PlanManager(planTier, undefined, config.seats ?? 1);
-
-    // Configure upgrade URLs
-    if (config.upgradeUrl) {
-      this.planManager.upgradeUrl = config.upgradeUrl;
-    }
-
-    // Initialize event exporter (default: NoopExporter)
-    this.exporter = config.exporter ?? new NoopExporter();
-
-    this.logger = new ActionLogger(config, this.store);
-    this.taskManager = new TaskManager(config, this.store);
-    this.auditExporter = new AuditExporter(config, this.store);
-    this.trustScorer = new TrustScorer(config, this.store);
-    this.anomalyDetector = new AnomalyDetector(config, this.store);
-
-    // Initialize feature flag manager if configured
-    this.featureFlagManager = config.featureFlags
-      ? new FeatureFlagManager(config.featureFlags)
-      : null;
-
-    // Auto-enable anomaly detection if rules provided in config
-    if (config.anomalyRules && config.anomalyRules.length > 0) {
-      const advancedRules = ['newDestination', 'offHoursActivity', 'rapidSuccession', 'roundAmount'];
-      const hasAdvanced = config.anomalyRules.some((r) => advancedRules.includes(r));
-      if (hasAdvanced) {
-        requirePlan('advanced-anomaly-rules', planTier);
-      }
-      this.anomalyDetector.enableAnomalyDetection({
-        rules: config.anomalyRules,
-        thresholds: config.anomalyThresholds,
-      });
-    }
+    this.receiptLedger = ReceiptLedger.init(coreConfig, storage);
+    this.attemptLedger = new AttemptLedger(this.receiptLedger, storage);
   }
 
-  /**
-   * Initialize the Kontext SDK.
-   *
-   * @param config - Configuration options
-   * @returns Initialized Kontext client instance
-   *
-   * @example
-   * ```typescript
-   * // Local/OSS mode (no API key)
-   * const kontext = Kontext.init({
-   *   projectId: 'my-project',
-   *   environment: 'development',
-   * });
-   *
-   * // Cloud mode (with API key)
-   * const kontext = Kontext.init({
-   *   apiKey: 'sk_live_...',
-   *   projectId: 'my-project',
-   *   environment: 'production',
-   * });
-   *
-   * // With persistent file storage
-   * const kontext = Kontext.init({
-   *   projectId: 'my-project',
-   *   environment: 'development',
-   *   storage: new FileStorage('./kontext-data'),
-   * });
-   * ```
-   */
   static init(config: KontextConfig): Kontext {
-    if (!config.projectId || config.projectId.trim() === '') {
-      throw new KontextError(
-        KontextErrorCode.INITIALIZATION_ERROR,
-        'projectId is required',
+    const storage = config.storage
+      ?? new FileStorage(config.storageDir ?? '.kontext');
+    return new Kontext(config, storage);
+  }
+
+  static inMemory(config: KontextConfig): Kontext {
+    return new Kontext(config, new MemoryStorage());
+  }
+
+  // === Payment Attempt Lifecycle ===
+
+  async start(input: StartAttemptInput): Promise<PaymentAttempt> {
+    return this.attemptLedger.startAttempt(input);
+  }
+
+  async record(
+    attemptId: string,
+    stage: StageName,
+    event: Omit<StageEvent, 'stage'>,
+  ): Promise<PaymentAttempt> {
+    return this.attemptLedger.appendStageEvent(attemptId, { ...event, stage });
+  }
+
+  async broadcast(
+    attemptId: string,
+    txHash: string,
+    chain?: Chain,
+  ): Promise<PaymentAttempt> {
+    return this.attemptLedger.appendStageEvent(attemptId, {
+      stage: 'transmit',
+      status: 'succeeded',
+      actorSide: 'network',
+      code: 'TX_BROADCAST',
+      message: `Transaction broadcast: ${txHash}`,
+      timestamp: new Date().toISOString(),
+      payload: { txHash, chain },
+    });
+  }
+
+  async confirm(
+    attemptId: string,
+    confirmation: ConfirmationData,
+  ): Promise<PaymentAttempt> {
+    return this.attemptLedger.appendStageEvent(attemptId, {
+      stage: 'confirm',
+      status: 'succeeded',
+      actorSide: 'network',
+      code: 'TX_CONFIRMED',
+      message: `Transaction confirmed: ${confirmation.txHash}`,
+      timestamp: new Date().toISOString(),
+      payload: confirmation as unknown as Record<string, unknown>,
+    });
+  }
+
+  async credit(
+    attemptId: string,
+    evidence: CreditEvidence,
+  ): Promise<PaymentAttempt> {
+    return this.attemptLedger.appendStageEvent(attemptId, {
+      stage: 'recipient_credit',
+      status: 'succeeded',
+      actorSide: 'recipient',
+      code: 'CREDITED',
+      message: 'Recipient received funds',
+      timestamp: new Date().toISOString(),
+      payload: evidence as unknown as Record<string, unknown>,
+    });
+  }
+
+  async fail(
+    attemptId: string,
+    reason: string,
+    stage: StageName = 'transmit',
+  ): Promise<PaymentAttempt> {
+    return this.attemptLedger.appendStageEvent(attemptId, {
+      stage,
+      status: 'failed',
+      actorSide: 'internal',
+      code: 'PAYMENT_FAILED',
+      message: reason,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  async refund(
+    attemptId: string,
+    data: RefundData,
+  ): Promise<PaymentAttempt> {
+    return this.attemptLedger.appendStageEvent(attemptId, {
+      stage: 'retry_or_refund',
+      status: 'succeeded',
+      actorSide: 'provider',
+      code: 'REFUNDED',
+      message: data.reason,
+      timestamp: new Date().toISOString(),
+      payload: data as unknown as Record<string, unknown>,
+    });
+  }
+
+  async get(attemptId: string): Promise<PaymentAttempt | undefined> {
+    return this.attemptLedger.getAttempt(attemptId);
+  }
+
+  list(filter?: AttemptFilter): PaymentAttempt[] {
+    return this.attemptLedger.listAttempts(filter);
+  }
+
+  // === Authorization ===
+
+  async authorize(
+    attemptId: string,
+    input: AuthorizePaymentInput,
+  ): Promise<{ attempt: PaymentAttempt; receipt: PaymentReceipt }> {
+    return this.attemptLedger.authorizeAttempt(attemptId, input);
+  }
+
+  // === Workspace Profile ===
+
+  profile(): WorkspaceProfile {
+    if (!this.workspaceProfile) {
+      this.workspaceProfile = defaultWorkspaceProfile(
+        this.config.projectId,
+        this.config.projectId,
+        ['treasury'],
       );
     }
-
-    const validEnvironments = ['development', 'staging', 'production'];
-    if (!validEnvironments.includes(config.environment)) {
-      throw new KontextError(
-        KontextErrorCode.INITIALIZATION_ERROR,
-        `Invalid environment: ${config.environment}. Must be one of: ${validEnvironments.join(', ')}`,
-      );
-    }
-
-    if (config.debug) {
-      const mode = config.apiKey ? 'cloud' : 'local';
-      console.debug(
-        `[Kontext] Initializing in ${mode} mode for project ${config.projectId} (${config.environment})`,
-      );
-    }
-
-    return new Kontext(config);
+    return { ...this.workspaceProfile };
   }
 
-  // --------------------------------------------------------------------------
-  // Mode & Config
-  // --------------------------------------------------------------------------
-
-  /**
-   * Get the current operating mode.
-   */
-  getMode(): KontextMode {
-    return this.mode;
+  configure(p: WorkspaceProfile): void {
+    this.workspaceProfile = { ...p };
   }
 
-  /**
-   * Get the current configuration (API key is masked).
-   */
-  getConfig(): Omit<KontextConfig, 'apiKey'> & { apiKey?: string } {
-    return {
-      ...this.config,
-      apiKey: this.config.apiKey ? `${this.config.apiKey.slice(0, 8)}...` : undefined,
-    };
-  }
+  // === Lifecycle ===
 
-  // --------------------------------------------------------------------------
-  // Internal Helpers
-  // --------------------------------------------------------------------------
-
-  /**
-   * Validate metadata against the configured schema, if any.
-   * No-op when metadataSchema is not configured.
-   */
-  private validateMetadata(metadata: Record<string, unknown> | undefined): void {
-    if (!metadata || !this.config.metadataSchema) return;
-    try {
-      this.config.metadataSchema.parse(metadata);
-    } catch (err) {
-      throw new KontextError(
-        KontextErrorCode.VALIDATION_ERROR,
-        `Metadata validation failed: ${err instanceof Error ? err.message : String(err)}`,
-      );
-    }
-  }
-
-  /** Lazy-init ProvenanceManager on first use. */
-  private getProvenanceManager(): ProvenanceManager {
-    if (!this.provenanceManager) {
-      this.provenanceManager = new ProvenanceManager(this.store, this.logger);
-    }
-    return this.provenanceManager;
-  }
-
-  /** Lazy-init AgentIdentityRegistry on first use. */
-  private getIdentityRegistry(): AgentIdentityRegistry {
-    if (!this.identityRegistry) {
-      this.identityRegistry = new AgentIdentityRegistry();
-    }
-    return this.identityRegistry;
-  }
-
-  /** Lazy-init WalletClusterer on first use. */
-  private getWalletClusterer(): WalletClusterer {
-    if (!this.walletClusterer) {
-      this.walletClusterer = new WalletClusterer();
-    }
-    return this.walletClusterer;
-  }
-
-  /** Lazy-init BehavioralFingerprinter on first use. */
-  private getBehavioralFingerprinter(): BehavioralFingerprinter {
-    if (!this.behavioralFingerprinter) {
-      this.behavioralFingerprinter = new BehavioralFingerprinter();
-    }
-    return this.behavioralFingerprinter;
-  }
-
-  /** Lazy-init CrossSessionLinker on first use. */
-  private getCrossSessionLinker(): CrossSessionLinker {
-    if (!this.crossSessionLinker) {
-      this.crossSessionLinker = new CrossSessionLinker();
-    }
-    return this.crossSessionLinker;
-  }
-
-  /** Lazy-init KYAConfidenceScorer on first use. */
-  private getConfidenceScorer(): KYAConfidenceScorer {
-    if (!this.confidenceScorer) {
-      this.confidenceScorer = new KYAConfidenceScorer();
-    }
-    return this.confidenceScorer;
-  }
-
-  // --------------------------------------------------------------------------
-  // Action Logging
-  // --------------------------------------------------------------------------
-
-  /**
-   * Log a generic agent action.
-   *
-   * @param input - Action details
-   * @returns The created action log entry
-   */
-  async log(input: LogActionInput): Promise<ActionLog> {
-    this.validateMetadata(input.metadata);
-    const action = await this.logger.log(input);
-
-    // Track event for plan metering
-    const limitExceeded = this.planManager.recordEvent();
-    if (limitExceeded) {
-      action.metadata = { ...action.metadata, limitExceeded: true };
-    }
-
-    // Run anomaly detection if enabled
-    if (this.anomalyDetector.isEnabled()) {
-      this.anomalyDetector.evaluateAction(action);
-    }
-
-    // Ship to exporter (fire-and-forget to avoid blocking the caller)
-    this.exporter.export([action]).catch(() => {});
-
-    return action;
-  }
-
-  /**
-   * Log a cryptocurrency transaction with full chain details.
-   *
-   * @param input - Transaction details
-   * @returns The created transaction record
-   */
-  async logTransaction(input: LogTransactionInput): Promise<TransactionRecord> {
-    // Multi-chain support requires Pro plan
-    if (input.chain && input.chain !== 'base' && input.chain !== 'arc') {
-      requirePlan('multi-chain', this.planManager.getTier());
-    }
-
-    this.validateMetadata(input.metadata);
-    const record = await this.logger.logTransaction(input);
-
-    // Track event for plan metering
-    const limitExceeded = this.planManager.recordEvent();
-    if (limitExceeded) {
-      record.metadata = { ...record.metadata, limitExceeded: true };
-    }
-
-    // Run anomaly detection if enabled
-    if (this.anomalyDetector.isEnabled()) {
-      this.anomalyDetector.evaluateTransaction(record);
-    }
-
-    // Ship to exporter (fire-and-forget to avoid blocking the caller)
-    this.exporter.export([record]).catch(() => {});
-
-    return record;
-  }
-
-  /**
-   * Flush any pending log batches.
-   */
-  async flushLogs(): Promise<void> {
-    await this.logger.flush();
-  }
-
-  // --------------------------------------------------------------------------
-  // Persistence
-  // --------------------------------------------------------------------------
-
-  /**
-   * Persist all current in-memory state to the attached storage adapter.
-   * No-op if no storage adapter is configured.
-   */
   async flush(): Promise<void> {
-    await this.logger.flush();
-    await this.store.flush();
-    await this.exporter.flush();
+    await this.attemptLedger.flush();
   }
 
-  /**
-   * Restore state from the attached storage adapter.
-   * Loads previously persisted actions, transactions, tasks, and anomalies.
-   * Also restores the digest chain's terminal digest so that new actions
-   * chain correctly across process boundaries.
-   * No-op if no storage adapter is configured.
-   */
-  async restore(): Promise<void> {
-    await this.store.restore();
-
-    // Restore digest chain continuity: set terminal digest from last stored action
-    const actions = this.store.getActions();
-    if (actions.length > 0) {
-      const sorted = [...actions].sort(
-        (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
-      );
-      const lastAction = sorted[sorted.length - 1]!;
-      if (lastAction.digest) {
-        this.logger.restoreChainState(lastAction.digest);
-      }
-    }
-  }
-
-  // --------------------------------------------------------------------------
-  // Task Confirmation
-  // --------------------------------------------------------------------------
-
-  /**
-   * Create a new tracked task that requires evidence for confirmation.
-   *
-   * @param input - Task details including required evidence types
-   * @returns The created task
-   */
-  async createTask(input: CreateTaskInput): Promise<Task> {
-    this.validateMetadata(input.metadata);
-    return this.taskManager.createTask(input);
-  }
-
-  /**
-   * Confirm a task by providing evidence.
-   *
-   * @param input - Task ID and evidence data
-   * @returns The confirmed task
-   */
-  async confirmTask(input: ConfirmTaskInput): Promise<Task> {
-    return this.taskManager.confirmTask(input);
-  }
-
-  /**
-   * Get the current status of a task.
-   *
-   * @param taskId - Task identifier
-   * @returns The task or undefined if not found
-   */
-  async getTaskStatus(taskId: string): Promise<Task | undefined> {
-    return this.taskManager.getTaskStatus(taskId);
-  }
-
-  /**
-   * Mark a task as in-progress.
-   *
-   * @param taskId - Task identifier
-   * @returns The updated task
-   */
-  async startTask(taskId: string): Promise<Task> {
-    return this.taskManager.startTask(taskId);
-  }
-
-  /**
-   * Mark a task as failed.
-   *
-   * @param taskId - Task identifier
-   * @param reason - Reason for failure
-   * @returns The updated task
-   */
-  async failTask(taskId: string, reason: string): Promise<Task> {
-    return this.taskManager.failTask(taskId, reason);
-  }
-
-  /**
-   * Get all tasks, optionally filtered by status.
-   *
-   * @param status - Optional status filter
-   * @returns Array of tasks
-   */
-  getTasks(status?: TaskStatus): Task[] {
-    return this.taskManager.getTasks(status);
-  }
-
-  // --------------------------------------------------------------------------
-  // Audit Export
-  // --------------------------------------------------------------------------
-
-  /**
-   * Export audit data in JSON or CSV format.
-   *
-   * @param options - Export configuration
-   * @returns Export result with formatted data
-   */
-  async export(options: ExportOptions): Promise<ExportResult> {
-    // CSV export requires Pro plan
-    if (options.format === 'csv') {
-      requirePlan('csv-export', this.planManager.getTier());
-    }
-
-    return this.auditExporter.export(options);
-  }
-
-  /**
-   * Generate a compliance report for a given period.
-   *
-   * @param options - Report configuration
-   * @returns Compliance report with summary and detailed records
-   */
-  async generateReport(options: ReportOptions): Promise<ComplianceReport> {
-    return this.auditExporter.generateReport(options);
-  }
-
-  // --------------------------------------------------------------------------
-  // Digest Chain
-  // --------------------------------------------------------------------------
-
-  /**
-   * Get the terminal digest — the latest SHA-256 hash in the rolling digest chain.
-   * Embed this in outgoing messages as tamper-evident proof of the entire action history.
-   *
-   * @returns The terminal SHA-256 digest hex string
-   */
-  getTerminalDigest(): string {
-    return this.logger.getTerminalDigest();
-  }
-
-  /**
-   * Verify the integrity of the digest chain.
-   * Recomputes every digest from genesis and compares against stored values.
-   * Any tampering will cause verification to fail.
-   *
-   * @returns Verification result with timing and validity data
-   */
-  verifyDigestChain(): DigestVerification {
-    const actions = this.store.getActions();
-    return this.logger.verifyChain(actions);
-  }
-
-  /**
-   * Export the digest chain for independent third-party verification.
-   *
-   * @returns Chain data including genesis hash, all links, and terminal digest
-   */
-  exportDigestChain(): { genesisHash: string; links: DigestLink[]; terminalDigest: string } {
-    return this.logger.getDigestChain().exportChain();
-  }
-
-  /**
-   * Get all action log entries. Required for independent third-party
-   * verification via `verifyExportedChain(chain, actions)`.
-   *
-   * @returns A copy of the action log array
-   */
-  getActions(): ActionLog[] {
-    return this.store.getActions();
-  }
-
-  // --------------------------------------------------------------------------
-  // Agent Reasoning & Session Tracing
-  // --------------------------------------------------------------------------
-
-  /**
-   * Generate a unique session ID for a single agent run.
-   * Pass this as `sessionId` to logReasoning(), log(), logTransaction(),
-   * and verify() calls within the same run to group them in the audit trail.
-   *
-   * Compatible with framework run IDs: pass LangGraph thread_id,
-   * Vercel AI id, or OpenAI run_id directly instead if you prefer.
-   *
-   * @returns A short unique session identifier
-   */
-  static generateSessionId(): string {
-    return generateId();
-  }
-
-  /**
-   * Log an agent's reasoning step into the tamper-evident digest chain.
-   *
-   * Each entry records why the agent took an action, optionally linked
-   * to a tool call. All entries for a sessionId can be replayed in
-   * order via step numbering to reconstruct the full decision trace.
-   *
-   * @param input - Reasoning details including agentId, action, reasoning text
-   * @returns The created reasoning entry
-   *
-   * @example
-   * ```typescript
-   * const sessionId = Kontext.generateSessionId();
-   *
-   * await ctx.logReasoning({
-   *   agentId: 'payment-agent-v1',
-   *   sessionId,
-   *   step: 1,
-   *   action: 'evaluate-transfer',
-   *   reasoning: 'User requested $5K USDC to 0xabc. Running compliance check first.',
-   *   confidence: 0.95,
-   *   toolCall: 'verify',
-   * });
-   *
-   * const result = await ctx.verify({ ..., sessionId });
-   *
-   * await ctx.logReasoning({
-   *   agentId: 'payment-agent-v1',
-   *   sessionId,
-   *   step: 2,
-   *   parentStep: 1,
-   *   action: 'compliance-passed',
-   *   reasoning: 'verify() returned compliant=true, riskLevel=low. Proceeding.',
-   *   confidence: 0.99,
-   *   context: { riskLevel: result.riskLevel },
-   * });
-   * ```
-   */
-  async logReasoning(input: LogReasoningInput): Promise<ReasoningEntry> {
-    if (!input.agentId || input.agentId.trim() === '') {
-      throw new KontextError(
-        KontextErrorCode.VALIDATION_ERROR,
-        'agentId is required for reasoning entries',
-      );
-    }
-    if (!input.action || input.action.trim() === '') {
-      throw new KontextError(
-        KontextErrorCode.VALIDATION_ERROR,
-        'action is required for reasoning entries',
-      );
-    }
-    if (!input.reasoning || input.reasoning.trim() === '') {
-      throw new KontextError(
-        KontextErrorCode.VALIDATION_ERROR,
-        'reasoning is required for reasoning entries',
-      );
-    }
-    if (input.confidence !== undefined && (input.confidence < 0 || input.confidence > 1)) {
-      throw new KontextError(
-        KontextErrorCode.VALIDATION_ERROR,
-        'confidence must be between 0 and 1',
-      );
-    }
-
-    const entry: ReasoningEntry = {
-      id: generateId(),
-      timestamp: now(),
-      agentId: input.agentId,
-      ...(input.sessionId ? { sessionId: input.sessionId } : {}),
-      ...(input.step !== undefined ? { step: input.step } : {}),
-      ...(input.parentStep !== undefined ? { parentStep: input.parentStep } : {}),
-      action: input.action,
-      reasoning: input.reasoning,
-      confidence: input.confidence ?? 1.0,
-      ...(input.toolCall ? { toolCall: input.toolCall } : {}),
-      ...(input.toolResult !== undefined ? { toolResult: input.toolResult } : {}),
-      context: input.context ?? {},
-    };
-
-    // Log into the digest chain as a 'reasoning' action
-    await this.log({
-      type: 'reasoning',
-      description: `[${input.agentId}${input.sessionId ? `/${input.sessionId}` : ''}] step ${input.step ?? '?'}: ${input.action}`,
-      agentId: input.agentId,
-      sessionId: input.sessionId,
-      metadata: {
-        reasoningId: entry.id,
-        action: entry.action,
-        reasoning: entry.reasoning,
-        confidence: entry.confidence,
-        ...(entry.step !== undefined ? { step: entry.step } : {}),
-        ...(entry.parentStep !== undefined ? { parentStep: entry.parentStep } : {}),
-        ...(entry.toolCall ? { toolCall: entry.toolCall } : {}),
-        ...(entry.toolResult !== undefined ? { toolResult: entry.toolResult } : {}),
-        context: entry.context,
-      },
-    });
-
-    return entry;
-  }
-
-  /**
-   * Get all reasoning entries for a specific agent, optionally filtered
-   * by session ID to retrieve a single run's decision trace.
-   *
-   * @param agentId - Agent identifier
-   * @param sessionId - Optional: filter to a single run
-   * @returns Array of reasoning entries in chronological order
-   */
-  getReasoningEntries(agentId: string, sessionId?: string): ReasoningEntry[] {
-    const reasoningActions = this.store.queryActions((a) => {
-      if (a.agentId !== agentId || a.type !== 'reasoning') return false;
-      if (sessionId && a.sessionId !== sessionId) return false;
-      return true;
-    });
-
-    return reasoningActions.map((action) => ({
-      id: action.metadata['reasoningId'] as string,
-      timestamp: action.timestamp,
-      agentId: action.agentId,
-      ...(action.sessionId ? { sessionId: action.sessionId } : {}),
-      ...(action.metadata['step'] !== undefined ? { step: action.metadata['step'] as number } : {}),
-      ...(action.metadata['parentStep'] !== undefined ? { parentStep: action.metadata['parentStep'] as number } : {}),
-      action: action.metadata['action'] as string,
-      reasoning: action.metadata['reasoning'] as string,
-      confidence: action.metadata['confidence'] as number,
-      ...(action.metadata['toolCall'] ? { toolCall: action.metadata['toolCall'] as string } : {}),
-      ...(action.metadata['toolResult'] !== undefined ? { toolResult: action.metadata['toolResult'] } : {}),
-      context: (action.metadata['context'] as Record<string, unknown>) ?? {},
-    }));
-  }
-
-  // --------------------------------------------------------------------------
-  // USDC Integration
-  // --------------------------------------------------------------------------
-
-  /**
-   * Run USDC-specific compliance checks on a transaction.
-   *
-   * @param tx - Transaction to check
-   * @returns Compliance check result
-   */
-  checkUsdcCompliance(tx: LogTransactionInput): UsdcComplianceCheck {
-    return UsdcCompliance.checkTransaction(tx);
-  }
-
-  /**
-   * Verify a transaction: compliance check, transaction log, trust score,
-   * anomaly detection, reasoning, and digest proof — all in one call.
-   *
-   * @param input - Transaction details with optional reasoning
-   * @returns Full verification result including compliance, trust, anomalies, and digest proof
-   *
-   * @example
-   * ```typescript
-   * const result = await ctx.verify({
-   *   txHash: '0xabc...', chain: 'base', amount: '5000', token: 'USDC',
-   *   from: '0xsender', to: '0xrecipient', agentId: 'agent-v1',
-   *   reasoning: 'Transfer within daily limit. Recipient in allowlist.',
-   *   confidence: 0.95,
-   * });
-   *
-   * // result.compliant        — boolean
-   * // result.trustScore       — { score: 87, level: 'high', factors: [...] }
-   * // result.anomalies        — any flags triggered
-   * // result.digestProof      — { terminalDigest, chainLength, valid }
-   * // result.reasoningId      — ID of the reasoning entry (if reasoning provided)
-   * ```
-   */
-  async verify(input: VerifyInput): Promise<VerifyResult> {
-    // 1. Log the transaction (includes anomaly eval via logTransaction)
-    const transaction = await this.logTransaction(input);
-
-    // 2. Run compliance checks (crypto vs general payment)
-    const compliance = isCryptoTransaction(input)
-      ? UsdcCompliance.checkTransaction(input)
-      : PaymentCompliance.checkPayment(input);
-
-    // 3. Log reasoning if provided
-    let reasoningId: string | undefined;
-    if (input.reasoning) {
-      const entry = await this.logReasoning({
-        agentId: input.agentId,
-        sessionId: input.sessionId,
-        action: 'verify',
-        reasoning: input.reasoning,
-        confidence: input.confidence,
-        toolCall: 'verify',
-        toolResult: { compliant: compliance.compliant, riskLevel: compliance.riskLevel },
-        context: input.context,
-      });
-      reasoningId = entry.id;
-    }
-
-    // 4. Auto-compute trust score
-    const trustScore = await this.trustScorer.getTrustScore(input.agentId);
-
-    // 5. Collect anomalies for this transaction
-    const anomalies = this.store.queryAnomalies(
-      (a) => a.actionId === transaction.id,
-    );
-
-    // 6. Digest proof
-    const verification = this.verifyDigestChain();
-    const chainLength = this.logger.getDigestChain().getChainLength();
-    const terminalDigest = this.getTerminalDigest();
-
-    // 6b. On-chain anchor (optional)
-    let anchorProof: AnchorResult | undefined;
-    if (input.anchor) {
-      const { anchorDigest } = await import('./onchain.js');
-      anchorProof = await anchorDigest(input.anchor, terminalDigest, this.config.projectId);
-    }
-
-    // 6c. A2A attestation exchange (optional)
-    let counterpartyResult: CounterpartyAttestation | undefined;
-    if (input.counterparty) {
-      const { exchangeAttestation } = await import('./attestation.js');
-      counterpartyResult = await exchangeAttestation(input.counterparty, {
-        senderDigest: terminalDigest,
-        senderAgentId: input.agentId,
-        txHash: input.txHash,
-        chain: input.chain,
-        amount: input.amount,
-        token: input.token,
-        timestamp: new Date().toISOString(),
-      });
-    }
-
-    // 6d. ERC-8021 builder attribution (optional)
-    let attribution: ERC8021Attribution | undefined;
-    if (input.erc8021 && input.txHash) {
-      const { fetchTransactionAttribution } = await import('./integrations/erc8021.js');
-      attribution = (await fetchTransactionAttribution(input.erc8021.rpcUrl, input.txHash)) ?? undefined;
-    }
-
-    // 7. Auto-create approval task if amount exceeds threshold
-    let requiresApproval: boolean | undefined;
-    let task: Task | undefined;
-    if (this.config.approvalThreshold) {
-      const amount = parseAmount(input.amount);
-      const threshold = parseAmount(this.config.approvalThreshold);
-      if (amount > threshold) {
-        requiresApproval = true;
-        const label = input.token
-          ? `${input.token} ${input.amount} transfer`
-          : `${input.currency ?? 'USD'} ${input.amount} payment`;
-        task = await this.createTask({
-          description: `Approve ${label} from ${input.from} to ${input.to}`,
-          agentId: input.agentId,
-          requiredEvidence: input.txHash ? ['txHash'] : ['paymentReference'],
-          metadata: {
-            amount: input.amount,
-            from: input.from,
-            to: input.to,
-            approvalThreshold: this.config.approvalThreshold,
-            ...(input.txHash ? { txHash: input.txHash } : {}),
-            ...(input.chain ? { chain: input.chain } : {}),
-            ...(input.token ? { token: input.token } : {}),
-            ...(input.currency ? { currency: input.currency } : {}),
-            ...(input.paymentMethod ? { paymentMethod: input.paymentMethod } : {}),
-            ...(input.paymentReference ? { paymentReference: input.paymentReference } : {}),
-          },
-        });
-      }
-    }
-
-    return {
-      compliant: compliance.compliant,
-      checks: compliance.checks,
-      riskLevel: compliance.riskLevel,
-      recommendations: compliance.recommendations,
-      transaction,
-      trustScore,
-      anomalies,
-      digestProof: {
-        terminalDigest,
-        chainLength,
-        valid: verification.valid,
-      },
-      ...(reasoningId ? { reasoningId } : {}),
-      ...(requiresApproval ? { requiresApproval, task } : {}),
-      ...(anchorProof ? { anchorProof } : {}),
-      ...(counterpartyResult ? { counterparty: counterpartyResult } : {}),
-      ...(attribution ? { attribution } : {}),
-    };
-  }
-
-  // --------------------------------------------------------------------------
-  // Trust Scoring
-  // --------------------------------------------------------------------------
-
-  /**
-   * Get the trust score for an agent based on historical behavioral signals.
-   *
-   * Computes a 0–100 score across 5 factors: history depth, task completion
-   * rate, anomaly frequency, transaction consistency, and compliance adherence.
-   *
-   * @param agentId - Agent identifier
-   * @returns Trust score with factor breakdown and level ('untrusted'|'low'|'medium'|'high'|'verified')
-   */
-  async getTrustScore(agentId: string): Promise<TrustScore> {
-    return this.trustScorer.getTrustScore(agentId);
-  }
-
-  /**
-   * Evaluate the risk of a specific transaction before or after executing it.
-   *
-   * @param tx - Transaction to evaluate
-   * @returns Risk evaluation with score, factors, and recommendation (approve/review/block)
-   */
-  async evaluateTransaction(tx: LogTransactionInput): Promise<TransactionEvaluation> {
-    return this.trustScorer.evaluateTransaction(tx);
-  }
-
-  // --------------------------------------------------------------------------
-  // Anomaly Detection
-  // --------------------------------------------------------------------------
-
-  /**
-   * Enable anomaly detection with the specified rules and thresholds.
-   *
-   * Free-tier rules: `unusualAmount`, `frequencySpike`
-   * Pay as you go rules: `newDestination`, `offHoursActivity`, `rapidSuccession`, `roundAmount`
-   *
-   * @param config - Detection configuration with rules and optional thresholds
-   *
-   * @example
-   * ```typescript
-   * ctx.enableAnomalyDetection({
-   *   rules: ['unusualAmount', 'frequencySpike'],
-   *   thresholds: { maxAmount: '10000', maxFrequency: 30 },
-   * });
-   * ctx.onAnomaly((event) => {
-   *   console.log(`Anomaly: ${event.type} [${event.severity}]`);
-   * });
-   * ```
-   */
-  enableAnomalyDetection(config: AnomalyDetectionConfig): void {
-    // Advanced anomaly rules require Pro plan (Pay as you go)
-    const advancedRules = ['newDestination', 'offHoursActivity', 'rapidSuccession', 'roundAmount'];
-    const hasAdvanced = config.rules.some((r) => advancedRules.includes(r));
-    if (hasAdvanced) {
-      requirePlan('advanced-anomaly-rules', this.planManager.getTier());
-    }
-    this.anomalyDetector.enableAnomalyDetection(config);
-  }
-
-  /**
-   * Disable anomaly detection.
-   */
-  disableAnomalyDetection(): void {
-    this.anomalyDetector.disableAnomalyDetection();
-  }
-
-  /**
-   * Register a callback for anomaly events.
-   *
-   * @param callback - Function to call when an anomaly is detected
-   * @returns Unsubscribe function
-   */
-  onAnomaly(callback: AnomalyCallback): () => void {
-    return this.anomalyDetector.onAnomaly(callback);
-  }
-
-  // --------------------------------------------------------------------------
-  // Compliance Certificates
-  // --------------------------------------------------------------------------
-
-  /**
-   * Generate a compliance certificate that summarizes an agent's actions
-   * and cryptographically verifies the digest chain integrity.
-   *
-   * The certificate includes: action/transaction/reasoning counts, digest chain
-   * verification status (patented), the agent's current trust
-   * score, and an overall compliance status. A SHA-256 content hash of the
-   * certificate itself is included for tamper-evidence.
-   *
-   * @param input - Certificate generation options (agentId, optional timeRange, includeReasoning)
-   * @returns Compliance certificate with digest chain proof and trust score
-   *
-   * @example
-   * ```typescript
-   * const cert = await ctx.generateComplianceCertificate({
-   *   agentId: 'payment-agent-v1',
-   *   includeReasoning: true,
-   * });
-   * console.log(cert.complianceStatus);       // 'compliant'
-   * console.log(cert.digestChain.verified);   // true
-   * console.log(cert.trustScore);             // 87
-   * console.log(cert.contentHash);            // sha256 of certificate
-   * ```
-   */
-  async generateComplianceCertificate(
-    input: GenerateComplianceCertificateInput,
-  ): Promise<ComplianceCertificate> {
-    const { agentId, timeRange, includeReasoning } = input;
-
-    // Get all actions for the agent, optionally filtered by time range
-    let agentActions = this.store.getActionsByAgent(agentId);
-    if (timeRange) {
-      const from = timeRange.from.getTime();
-      const to = timeRange.to.getTime();
-      agentActions = agentActions.filter((a) => {
-        const ts = new Date(a.timestamp).getTime();
-        return ts >= from && ts <= to;
-      });
-    }
-
-    const transactions = agentActions.filter((a) => a.type === 'transaction');
-    const toolCalls = agentActions.filter((a) => a.type === 'tool_call');
-    const reasoningActions = agentActions.filter((a) => a.type === 'reasoning');
-
-    // Build action type summary
-    const typeCounts = new Map<string, number>();
-    for (const action of agentActions) {
-      typeCounts.set(action.type, (typeCounts.get(action.type) ?? 0) + 1);
-    }
-    const actionSummary = Array.from(typeCounts.entries()).map(([type, count]) => ({ type, count }));
-
-    // Verify digest chain
-    const verification = this.verifyDigestChain();
-    const chainLength = this.logger.getDigestChain().getChainLength();
-    const terminalDigest = this.getTerminalDigest();
-
-    // Get trust score
-    const trustScore = await this.trustScorer.getTrustScore(agentId);
-
-    // Determine compliance status
-    let agentAnomalies = this.store.queryAnomalies((a) => a.agentId === agentId);
-    if (timeRange) {
-      const from = timeRange.from.getTime();
-      const to = timeRange.to.getTime();
-      agentAnomalies = agentAnomalies.filter((a) => {
-        const ts = new Date(a.detectedAt).getTime();
-        return ts >= from && ts <= to;
-      });
-    }
-
-    const criticalAnomalies = agentAnomalies.filter((a) => a.severity === 'critical');
-    const highAnomalies = agentAnomalies.filter((a) => a.severity === 'high');
-
-    let complianceStatus: ComplianceCertificate['complianceStatus'];
-    if (!verification.valid || criticalAnomalies.length > 0) {
-      complianceStatus = 'non-compliant';
-    } else if (highAnomalies.length > 0 || trustScore.score < 50) {
-      complianceStatus = 'review-required';
-    } else {
-      complianceStatus = 'compliant';
-    }
-
-    // Build reasoning entries if requested
-    let reasoningEntries: ReasoningEntry[] = [];
-    if (includeReasoning) {
-      reasoningEntries = reasoningActions.map((action) => ({
-        id: action.metadata['reasoningId'] as string,
-        timestamp: action.timestamp,
-        agentId: action.agentId,
-        ...(action.sessionId ? { sessionId: action.sessionId } : {}),
-        ...(action.metadata['step'] !== undefined ? { step: action.metadata['step'] as number } : {}),
-        ...(action.metadata['parentStep'] !== undefined ? { parentStep: action.metadata['parentStep'] as number } : {}),
-        action: action.metadata['action'] as string,
-        reasoning: action.metadata['reasoning'] as string,
-        confidence: action.metadata['confidence'] as number,
-        ...(action.metadata['toolCall'] ? { toolCall: action.metadata['toolCall'] as string } : {}),
-        ...(action.metadata['toolResult'] !== undefined ? { toolResult: action.metadata['toolResult'] } : {}),
-        context: (action.metadata['context'] as Record<string, unknown>) ?? {},
-      }));
-    }
-
-    const certificateId = generateId();
-    const issuedAt = now();
-
-    const certificateContent = {
-      certificateId,
-      agentId,
-      issuedAt,
-      summary: {
-        actions: agentActions.length,
-        transactions: transactions.length,
-        toolCalls: toolCalls.length,
-        reasoningEntries: reasoningActions.length,
-      },
-      digestChain: {
-        terminalDigest,
-        chainLength,
-        verified: verification.valid,
-      },
-      trustScore: trustScore.score,
-      complianceStatus,
-      actions: actionSummary,
-      reasoning: reasoningEntries,
-    };
-
-    // Compute SHA-256 hash of the certificate content for integrity verification
-    const hash = createHash('sha256');
-    hash.update(JSON.stringify(certificateContent));
-    const contentHash = hash.digest('hex');
-
-    return { ...certificateContent, contentHash };
-  }
-
-  // --------------------------------------------------------------------------
-  // Agent Provenance
-  // --------------------------------------------------------------------------
-
-  /**
-   * Create a delegated agent session. Records the delegation in the
-   * tamper-evident digest chain as the session's genesis event.
-   */
-  async createAgentSession(input: CreateSessionInput): Promise<AgentSession> {
-    return this.getProvenanceManager().createSession(input);
-  }
-
-  /**
-   * Get an agent session by ID. Automatically marks expired sessions.
-   */
-  getAgentSession(sessionId: string): AgentSession | undefined {
-    return this.getProvenanceManager().getSession(sessionId);
-  }
-
-  /**
-   * Get all agent sessions.
-   */
-  getAgentSessions(): AgentSession[] {
-    return this.getProvenanceManager().getSessions();
-  }
-
-  /**
-   * End an active agent session. Records the termination in the digest chain.
-   */
-  async endAgentSession(sessionId: string): Promise<AgentSession> {
-    return this.getProvenanceManager().endSession(sessionId);
-  }
-
-  /**
-   * Check whether an action is within a session's delegated scope.
-   */
-  validateSessionScope(sessionId: string, action: string): boolean {
-    return this.getProvenanceManager().validateScope(sessionId, action);
-  }
-
-  /**
-   * Get all actions bound to a session (via sessionId on log/verify calls).
-   */
-  getSessionActions(sessionId: string): ActionLog[] {
-    return this.store.getActionsBySession(sessionId);
-  }
-
-  /**
-   * Create a provenance checkpoint -- a review point where a human
-   * can attest to a batch of agent actions.
-   */
-  async createCheckpoint(input: CreateCheckpointInput): Promise<ProvenanceCheckpoint> {
-    return this.getProvenanceManager().createCheckpoint(input);
-  }
-
-  /**
-   * Attach an externally-produced human attestation to a checkpoint.
-   * The attestation includes a cryptographic signature that the agent
-   * never touches -- key separation is the critical security property.
-   */
-  async attachAttestation(checkpointId: string, attestation: HumanAttestation): Promise<ProvenanceCheckpoint> {
-    return this.getProvenanceManager().attachAttestation(checkpointId, attestation);
-  }
-
-  /**
-   * Get a checkpoint by ID.
-   */
-  getCheckpoint(checkpointId: string): ProvenanceCheckpoint | undefined {
-    return this.getProvenanceManager().getCheckpoint(checkpointId);
-  }
-
-  /**
-   * Get all checkpoints, optionally filtered by session.
-   */
-  getCheckpoints(sessionId?: string): ProvenanceCheckpoint[] {
-    return this.getProvenanceManager().getCheckpoints(sessionId);
-  }
-
-  /**
-   * Export the full provenance bundle for a session: session record,
-   * all bound actions, all checkpoints, and verification stats.
-   */
-  getProvenanceBundle(sessionId: string): ProvenanceBundle {
-    return this.getProvenanceManager().getProvenanceBundle(sessionId);
-  }
-
-  // --------------------------------------------------------------------------
-  // Agent Forensics (KYA)
-  // --------------------------------------------------------------------------
-
-  /**
-   * Register a new agent identity with optional wallet mappings.
-   * Requires Pro plan.
-   */
-  registerAgentIdentity(input: RegisterIdentityInput): AgentIdentity {
-    requirePlan('kya-identity', this.planManager.getTier());
-    return this.getIdentityRegistry().register(input);
-  }
-
-  /**
-   * Get a registered agent identity by ID.
-   * Requires Pro plan.
-   */
-  getAgentIdentity(agentId: string): AgentIdentity | undefined {
-    requirePlan('kya-identity', this.planManager.getTier());
-    return this.getIdentityRegistry().get(agentId);
-  }
-
-  /**
-   * Update an existing agent identity.
-   * Requires Pro plan.
-   */
-  updateAgentIdentity(agentId: string, input: UpdateIdentityInput): AgentIdentity {
-    requirePlan('kya-identity', this.planManager.getTier());
-    return this.getIdentityRegistry().update(agentId, input);
-  }
-
-  /**
-   * Remove an agent identity.
-   * Requires Pro plan.
-   */
-  removeAgentIdentity(agentId: string): boolean {
-    requirePlan('kya-identity', this.planManager.getTier());
-    return this.getIdentityRegistry().remove(agentId);
-  }
-
-  /**
-   * Add a wallet to an existing agent identity.
-   * Requires Pro plan.
-   */
-  addAgentWallet(agentId: string, wallet: { address: string; chain: string; label?: string; isPrimary?: boolean }): AgentIdentity {
-    requirePlan('kya-identity', this.planManager.getTier());
-    return this.getIdentityRegistry().addWallet(agentId, wallet);
-  }
-
-  /**
-   * Look up which agent owns a wallet address.
-   * Requires Pro plan.
-   */
-  lookupAgentByWallet(address: string): AgentIdentity | undefined {
-    requirePlan('kya-identity', this.planManager.getTier());
-    return this.getIdentityRegistry().lookupByWallet(address);
-  }
-
-  /**
-   * Compute wallet clusters from transaction patterns and declared identities.
-   * Requires Pro plan.
-   */
-  getWalletClusters(): WalletCluster[] {
-    requirePlan('kya-identity', this.planManager.getTier());
-    const clusterer = this.getWalletClusterer();
-    clusterer.analyzeFromStore(this.store, this.getIdentityRegistry());
-    return clusterer.getClusters();
-  }
-
-  /**
-   * Export all KYA data as a single envelope.
-   * Requires Pro plan.
-   */
-  getKYAExport(): KYAEnvelope {
-    requirePlan('kya-identity', this.planManager.getTier());
-    const registry = this.getIdentityRegistry();
-    const clusterer = this.getWalletClusterer();
-    clusterer.analyzeFromStore(this.store, registry);
-    return {
-      identities: registry.getAll(),
-      clusters: clusterer.getClusters(),
-      embeddings: [],
-      links: [],
-      scores: [],
-      generatedAt: now(),
-    };
-  }
-
-  /**
-   * Compute a behavioral embedding for an agent from transaction history.
-   * Returns null if insufficient data. Requires Enterprise plan.
-   */
-  computeBehavioralEmbedding(agentId: string): BehavioralEmbedding | null {
-    requirePlan('kya-behavioral', this.planManager.getTier());
-    return this.getBehavioralFingerprinter().computeEmbedding(agentId, this.store);
-  }
-
-  /**
-   * Analyze all agents and create cross-session links.
-   * Requires Enterprise plan.
-   */
-  analyzeAgentLinks(): AgentLink[] {
-    requirePlan('kya-behavioral', this.planManager.getTier());
-    const clusterer = this.getWalletClusterer();
-    clusterer.analyzeFromStore(this.store, this.getIdentityRegistry());
-    return this.getCrossSessionLinker().analyzeAndLink(
-      this.store,
-      this.getIdentityRegistry(),
-      clusterer,
-      this.getBehavioralFingerprinter(),
-    );
-  }
-
-  /**
-   * Get agents linked to a specific agent.
-   * Requires Enterprise plan.
-   */
-  getLinkedAgents(agentId: string): string[] {
-    requirePlan('kya-behavioral', this.planManager.getTier());
-    return this.getCrossSessionLinker().getLinkedAgents(agentId);
-  }
-
-  /**
-   * Compute a composite identity confidence score for an agent.
-   * Requires Enterprise plan.
-   */
-  getKYAConfidenceScore(agentId: string): KYAConfidenceScore {
-    requirePlan('kya-behavioral', this.planManager.getTier());
-    const clusterer = this.getWalletClusterer();
-    clusterer.analyzeFromStore(this.store, this.getIdentityRegistry());
-    return this.getConfidenceScorer().computeScore(
-      agentId,
-      this.getIdentityRegistry(),
-      clusterer,
-      this.getBehavioralFingerprinter(),
-      this.getCrossSessionLinker(),
-      this.store,
-    );
-  }
-
-  // --------------------------------------------------------------------------
-  // Plan & Usage Metering
-  // --------------------------------------------------------------------------
-
-  /**
-   * Get current usage statistics for the plan.
-   *
-   * @returns Usage data including plan, event count, limits, and whether the limit is exceeded
-   */
-  getUsage(): PlanUsage {
-    return this.planManager.getUsage();
-  }
-
-  /**
-   * Change the plan tier at runtime (e.g., after Stripe checkout succeeds).
-   *
-   * @param tier - The new plan tier
-   */
-  setPlan(tier: PlanTier): void {
-    this.planManager.setPlan(tier);
-  }
-
-  /**
-   * Register a callback for when usage reaches 80% of the plan limit.
-   *
-   * @param callback - Function to call with the limit event
-   * @returns Unsubscribe function
-   */
-  onUsageWarning(callback: (event: LimitEvent) => void): () => void {
-    return this.planManager.onUsageWarning(callback);
-  }
-
-  /**
-   * Register a callback for when the plan event limit is reached.
-   *
-   * @param callback - Function to call with the limit event
-   * @returns Unsubscribe function
-   */
-  onLimitReached(callback: (event: LimitEvent) => void): () => void {
-    return this.planManager.onLimitReached(callback);
-  }
-
-  /**
-   * Get the URL for upgrading to the Pro plan.
-   *
-   * @returns The upgrade URL (configurable via init)
-   */
-  getUpgradeUrl(): string {
-    return this.planManager.upgradeUrl;
-  }
-
-  /**
-   * Get the URL for contacting the team about Enterprise pricing.
-   *
-   * @returns The enterprise contact URL
-   */
-  getEnterpriseContactUrl(): string {
-    return this.planManager.enterpriseContactUrl;
-  }
-
-  /**
-   * Persist plan metering state to the storage adapter.
-   * Call this alongside flush() to persist event counts across restarts.
-   */
-  async flushPlanState(): Promise<void> {
-    const adapter = this.store.getStorageAdapter();
-    if (!adapter) return;
-    await adapter.save(PLAN_STORAGE_KEY, this.planManager.toJSON());
-  }
-
-  /**
-   * Restore plan metering state from the storage adapter.
-   * Call this after restore() to reload event counts.
-   */
-  async restorePlanState(): Promise<void> {
-    const adapter = this.store.getStorageAdapter();
-    if (!adapter) return;
-    const data = await adapter.load(PLAN_STORAGE_KEY);
-    if (data && typeof data === 'object' && data.tier && typeof data.eventCount === 'number') {
-      this.planManager.setPlan(data.tier);
-      this.planManager.setEventCount(data.eventCount);
-      if (data.billingPeriodStart) {
-        this.planManager.resetBillingPeriod(new Date(data.billingPeriodStart));
-        this.planManager.setEventCount(data.eventCount);
-      }
-    }
-  }
-
-  // --------------------------------------------------------------------------
-  // Feature Flags
-  // --------------------------------------------------------------------------
-
-  /**
-   * Check if a feature flag is enabled for the current environment and plan.
-   * Returns `false` if feature flags are not configured.
-   * Always synchronous — reads from in-memory cache.
-   */
-  isFeatureEnabled(
-    flagName: string,
-    environment?: Environment,
-    plan?: 'free' | 'pro' | 'enterprise',
-  ): boolean {
-    if (!this.featureFlagManager) return false;
-    return this.featureFlagManager.isEnabled(flagName, environment, plan);
-  }
-
-  /**
-   * Get the underlying FeatureFlagManager (or null if not configured).
-   */
-  getFeatureFlagManager(): FeatureFlagManager | null {
-    return this.featureFlagManager;
-  }
-
-  // --------------------------------------------------------------------------
-  // Lifecycle
-  // --------------------------------------------------------------------------
-
-  /**
-   * Gracefully shut down the SDK, flushing any pending data.
-   */
   async destroy(): Promise<void> {
-    await this.logger.destroy();
-    await this.exporter.shutdown();
+    await this.attemptLedger.destroy();
   }
 }

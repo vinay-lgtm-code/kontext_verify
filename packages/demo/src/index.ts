@@ -1,13 +1,27 @@
 // ============================================================================
-// Kontext SDK Demo - USDC Compliance Workflow
+// Kontext Demo — Payment Control Plane (Phase A)
 // ============================================================================
-// This demo simulates an AI agent executing USDC transfers with full
-// compliance monitoring through the Kontext SDK.
+// Demonstrates the full payment attempt lifecycle:
+//   1. Workspace profile creation
+//   2. Payment attempt start -> 8-stage lifecycle -> completion
+//   3. Policy authorization via ReceiptLedger
+//   4. Provider adapter event normalization
+//   5. Attempt filtering and listing
+//   6. Digest chain verification
 //
-// Run with: pnpm demo
+// Run with: pnpm start (from packages/demo/)
 
-import { Kontext } from '@kontext/sdk';
-import type { AnomalyEvent } from '@kontext/sdk';
+import {
+  Kontext,
+  defaultWorkspaceProfile,
+  STAGE_ORDER,
+  EVMAdapter,
+  DigestChain,
+  verifyExportedChain,
+} from 'kontext-sdk';
+import type {
+  StartAttemptInput,
+} from 'kontext-sdk';
 
 // ============================================================================
 // Utilities
@@ -20,21 +34,30 @@ function divider(title: string): void {
   console.log(`${line}\n`);
 }
 
-function formatScore(score: number, max = 100): string {
-  const filled = Math.round((score / max) * 20);
-  const bar = '\u2588'.repeat(filled) + '\u2591'.repeat(20 - filled);
-  return `[${bar}] ${score}/${max}`;
-}
-
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function shortAddr(addr: string): string {
+  if (addr.length <= 12) return addr;
+  return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+}
+
+function stageIcon(status: string): string {
+  switch (status) {
+    case 'succeeded': return '\x1b[32m[OK]\x1b[0m';
+    case 'failed': return '\x1b[31m[FAIL]\x1b[0m';
+    case 'review': return '\x1b[33m[REVIEW]\x1b[0m';
+    case 'pending': return '\x1b[90m[...]\x1b[0m';
+    default: return `[${status}]`;
+  }
+}
+
 // Simulated addresses
-const AGENT_WALLET = '0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18';
-const VENDOR_WALLET = '0x8Ba1f109551bD432803012645Ac136ddd64DBA72';
-const PAYROLL_WALLET = '0xdD2FD4581271e230360230F9337D5c0430Bf44C0';
-const SUSPICIOUS_WALLET = '0x1234567890AbcdEF1234567890aBCDef12345678';
+const TREASURY_WALLET = '0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18';
+const VENDOR_A = '0x8Ba1f109551bD432803012645Ac136ddd64DBA72';
+const VENDOR_B = '0xdD2FD4581271e230360230F9337D5c0430Bf44C0';
+const PAYROLL_ADDR = '0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B';
 
 // ============================================================================
 // Main Demo
@@ -44,454 +67,338 @@ async function main(): Promise<void> {
   console.log(`
   ╔══════════════════════════════════════════════════════════════════╗
   ║                                                                  ║
-  ║              Kontext SDK Demo -- USDC Compliance                 ║
+  ║        Kontext — Cross-Surface Payment Control Plane             ║
   ║                                                                  ║
-  ║   Trust and compliance layer for agentic crypto workflows        ║
-  ║   Demonstrating: Logging, Tasks, Trust, Anomalies, Audit        ║
+  ║   8-stage payment lifecycle for stablecoin transfers              ║
+  ║   Base | Ethereum | Solana — USDC, EURC, USDT                    ║
   ║                                                                  ║
   ╚══════════════════════════════════════════════════════════════════╝
   `);
 
   // --------------------------------------------------------------------------
-  // Step 1: Initialize the SDK
+  // Step 1: Create Workspace Profile
   // --------------------------------------------------------------------------
-  divider('STEP 1: Initialize Kontext SDK');
+  divider('STEP 1: Workspace Profile');
 
-  const kontext = Kontext.init({
-    projectId: 'demo-usdc-agent',
+  const profile = defaultWorkspaceProfile(
+    'demo-workspace',
+    'Acme Treasury',
+    ['invoicing', 'treasury'],
+  );
+
+  console.log(`  Workspace:  ${profile.name} (${profile.workspaceId})`);
+  console.log(`  Archetypes: ${profile.archetypes.join(', ')}`);
+  console.log(`  Chains:     ${profile.chains.join(', ')}`);
+  console.log(`  Assets:     ${profile.assets.join(', ')}`);
+  console.log(`  Posture:    ${profile.policyPosture}`);
+  console.log(`  Policies:`);
+  for (const [arch, policy] of Object.entries(profile.policies)) {
+    if (policy) {
+      console.log(`    ${arch}: max tx $${policy.maxTransactionAmount}, daily limit $${policy.dailyAggregateLimit}`);
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Step 2: Initialize SDK
+  // --------------------------------------------------------------------------
+  divider('STEP 2: Initialize SDK');
+
+  const kontext = Kontext.inMemory({
+    projectId: 'demo-workspace',
     environment: 'development',
-    debug: false,
-    localOutputDir: '.kontext-demo',
   });
 
-  console.log('  Mode:', kontext.getMode());
-  console.log('  Project:', kontext.getConfig().projectId);
-  console.log('  Environment:', kontext.getConfig().environment);
-  console.log('\n  SDK initialized successfully in local mode.');
+  console.log('  SDK initialized (in-memory mode)');
+  console.log('  Stage taxonomy: ' + STAGE_ORDER.join(' -> '));
 
   // --------------------------------------------------------------------------
-  // Step 2: Configure Anomaly Detection
+  // Step 3: Happy Path — Full Payment Lifecycle
   // --------------------------------------------------------------------------
-  divider('STEP 2: Enable Anomaly Detection');
+  divider('STEP 3: Full Payment Lifecycle (Invoicing)');
 
-  const detectedAnomalies: AnomalyEvent[] = [];
+  console.log('  Scenario: $5,000 USDC invoice payment from treasury to vendor\n');
 
-  kontext.enableAnomalyDetection({
-    rules: [
-      'unusualAmount',
-      'frequencySpike',
-      'newDestination',
-      'offHoursActivity',
-      'rapidSuccession',
-      'roundAmount',
-    ],
-    thresholds: {
-      maxAmount: '5000',
-      maxFrequency: 10,
-      minIntervalSeconds: 5,
-    },
-  });
-
-  kontext.onAnomaly((anomaly) => {
-    detectedAnomalies.push(anomaly);
-    const severityColors: Record<string, string> = {
-      low: '\x1b[33m',
-      medium: '\x1b[35m',
-      high: '\x1b[31m',
-      critical: '\x1b[41m\x1b[37m',
-    };
-    const color = severityColors[anomaly.severity] ?? '';
-    const reset = '\x1b[0m';
-    console.log(`  ${color}[ANOMALY ${anomaly.severity.toUpperCase()}]${reset} ${anomaly.description}`);
-  });
-
-  console.log('  Anomaly detection enabled with rules:');
-  console.log('    - unusualAmount (threshold: $5,000)');
-  console.log('    - frequencySpike (max: 10/hour)');
-  console.log('    - newDestination');
-  console.log('    - offHoursActivity');
-  console.log('    - rapidSuccession (min interval: 5s)');
-  console.log('    - roundAmount');
-
-  // --------------------------------------------------------------------------
-  // Step 3: USDC Compliance Check
-  // --------------------------------------------------------------------------
-  divider('STEP 3: Pre-Transaction USDC Compliance Check');
-
-  const complianceCheck = kontext.checkUsdcCompliance({
-    txHash: '0x' + '0'.repeat(64),
+  // Start attempt
+  const attempt = await kontext.start({
+    workspaceRef: 'demo-workspace',
+    appRef: 'treasury-bot',
+    archetype: 'invoicing',
+    intentCurrency: 'USD',
+    settlementAsset: 'USDC',
     chain: 'base',
-    amount: '2500.00',
-    token: 'USDC',
-    from: AGENT_WALLET,
-    to: VENDOR_WALLET,
-    agentId: 'payment-agent-alpha',
+    senderRefs: { address: TREASURY_WALLET, name: 'Treasury' },
+    recipientRefs: { address: VENDOR_A, name: 'Vendor A', invoiceId: 'INV-2026-042' },
+    executionSurface: 'sdk',
   });
 
-  console.log('  Compliance Check Result:');
-  console.log(`    Compliant: ${complianceCheck.compliant ? '\x1b[32mYES\x1b[0m' : '\x1b[31mNO\x1b[0m'}`);
-  console.log(`    Risk Level: ${complianceCheck.riskLevel}`);
-  console.log('    Checks:');
-  for (const check of complianceCheck.checks) {
-    const icon = check.passed ? '\x1b[32m\u2713\x1b[0m' : '\x1b[31m\u2717\x1b[0m';
-    console.log(`      ${icon} ${check.name}: ${check.description}`);
-  }
-  console.log('    Recommendations:');
-  for (const rec of complianceCheck.recommendations) {
-    console.log(`      -> ${rec}`);
+  console.log(`  [intent]     Attempt started: ${attempt.attemptId}`);
+  console.log(`               State: ${attempt.finalState}`);
+  await sleep(100);
+
+  // Authorize
+  const { receipt } = await kontext.authorize(attempt.attemptId, {
+    chain: 'base',
+    token: 'USDC',
+    amount: '5000',
+    from: TREASURY_WALLET.toLowerCase(),
+    to: VENDOR_A.toLowerCase(),
+    actorId: 'treasury-bot',
+  });
+  console.log(`  [authorize]  Decision: ${receipt.decision.toUpperCase()} (receipt: ${receipt.receiptId})`);
+  await sleep(100);
+
+  // Prepare
+  await kontext.record(attempt.attemptId, 'prepare', {
+    status: 'succeeded',
+    actorSide: 'provider',
+    code: 'CIRCLE_WALLET_READY',
+    message: 'Circle wallet funded and ready for transfer',
+    timestamp: new Date().toISOString(),
+  });
+  console.log(`  [prepare]    Circle wallet ready`);
+  await sleep(100);
+
+  // Transmit (broadcast)
+  const txHash = '0x' + 'a'.repeat(62) + '42';
+  await kontext.broadcast(attempt.attemptId, txHash, 'base');
+  console.log(`  [transmit]   Broadcast: ${shortAddr(txHash)}`);
+  await sleep(200);
+
+  // Confirm
+  await kontext.confirm(attempt.attemptId, {
+    txHash,
+    blockNumber: 18234567,
+    confirmations: 12,
+    chain: 'base',
+  });
+  console.log(`  [confirm]    Confirmed at block 18234567`);
+  await sleep(100);
+
+  // Recipient credit
+  await kontext.credit(attempt.attemptId, {
+    confirmedAt: new Date().toISOString(),
+    providerRef: 'circle-transfer-001',
+  });
+  console.log(`  [credit]     Recipient credited`);
+  await sleep(100);
+
+  // Reconcile
+  await kontext.record(attempt.attemptId, 'reconcile', {
+    status: 'succeeded',
+    actorSide: 'internal',
+    code: 'RECONCILED',
+    message: 'Payment reconciled with invoice INV-2026-042',
+    timestamp: new Date().toISOString(),
+    payload: { invoiceId: 'INV-2026-042', matchScore: 1.0 },
+  });
+  console.log(`  [reconcile]  Matched to INV-2026-042`);
+
+  // Final state
+  const completed = await kontext.get(attempt.attemptId);
+  console.log(`\n  Final State: \x1b[32m${completed!.finalState.toUpperCase()}\x1b[0m`);
+  console.log(`  Stage Events: ${completed!.stageEvents.length}`);
+
+  // Print stage timeline
+  console.log(`\n  Timeline:`);
+  for (const e of completed!.stageEvents) {
+    console.log(`    ${e.stage.padEnd(18)} ${stageIcon(e.status)} ${e.code}: ${e.message}`);
   }
 
   // --------------------------------------------------------------------------
-  // Step 4: Log Normal Transactions
+  // Step 4: Failed Payment (Policy Block)
   // --------------------------------------------------------------------------
-  divider('STEP 4: Agent Executes USDC Transfers (Normal Activity)');
+  divider('STEP 4: Blocked Payment (Policy Violation)');
 
-  const normalTransactions = [
-    { amount: '150.00', to: VENDOR_WALLET, desc: 'Software license payment' },
-    { amount: '275.50', to: VENDOR_WALLET, desc: 'Cloud hosting invoice' },
-    { amount: '89.99', to: PAYROLL_WALLET, desc: 'Contractor payment' },
-    { amount: '450.00', to: VENDOR_WALLET, desc: 'API service subscription' },
-    { amount: '1200.00', to: PAYROLL_WALLET, desc: 'Monthly payroll batch' },
+  console.log('  Scenario: $60,000 USDC — exceeds max transaction limit\n');
+
+  const blocked = await kontext.start({
+    workspaceRef: 'demo-workspace',
+    appRef: 'treasury-bot',
+    archetype: 'treasury',
+    intentCurrency: 'USD',
+    settlementAsset: 'USDC',
+    chain: 'base',
+    senderRefs: { address: TREASURY_WALLET },
+    recipientRefs: { address: VENDOR_B },
+    executionSurface: 'sdk',
+  });
+
+  console.log(`  [intent]     Attempt started: ${blocked.attemptId}`);
+
+  const { attempt: blockedAttempt, receipt: blockReceipt } = await kontext.authorize(blocked.attemptId, {
+    chain: 'base',
+    token: 'USDC',
+    amount: '60000',
+    from: TREASURY_WALLET.toLowerCase(),
+    to: VENDOR_B.toLowerCase(),
+    actorId: 'treasury-bot',
+  });
+
+  console.log(`  [authorize]  Decision: \x1b[31m${blockReceipt.decision.toUpperCase()}\x1b[0m`);
+
+  const authEvent = blockedAttempt.stageEvents.find(e => e.stage === 'authorize');
+  if (authEvent) {
+    console.log(`               Code: ${authEvent.code}`);
+    console.log(`               Message: ${authEvent.message}`);
+  }
+
+  if (blockReceipt.violations.length > 0) {
+    console.log(`  Violations:`);
+    for (const v of blockReceipt.violations) {
+      console.log(`    - [${v.severity}] ${v.code}: ${v.message}`);
+    }
+  }
+
+  console.log(`\n  Final State: \x1b[31m${blockedAttempt.finalState.toUpperCase()}\x1b[0m`);
+
+  // --------------------------------------------------------------------------
+  // Step 5: Multiple Attempts + Listing
+  // --------------------------------------------------------------------------
+  divider('STEP 5: Batch Operations + Listing');
+
+  const payrollInputs: StartAttemptInput[] = [
+    {
+      workspaceRef: 'demo-workspace',
+      appRef: 'payroll-bot',
+      archetype: 'invoicing',
+      intentCurrency: 'USD',
+      settlementAsset: 'USDC',
+      chain: 'base',
+      senderRefs: { address: TREASURY_WALLET },
+      recipientRefs: { address: PAYROLL_ADDR, name: 'Employee 1' },
+      executionSurface: 'sdk',
+    },
+    {
+      workspaceRef: 'demo-workspace',
+      appRef: 'payroll-bot',
+      archetype: 'invoicing',
+      intentCurrency: 'EUR',
+      settlementAsset: 'EURC',
+      chain: 'ethereum',
+      senderRefs: { address: TREASURY_WALLET },
+      recipientRefs: { address: VENDOR_B, name: 'EU Vendor' },
+      executionSurface: 'sdk',
+    },
   ];
 
-  for (let i = 0; i < normalTransactions.length; i++) {
-    const tx = normalTransactions[i]!;
-    const txHash = '0x' + (i + 1).toString().padStart(64, 'a');
-
-    console.log(`\n  Transaction ${i + 1}/${normalTransactions.length}: ${tx.desc}`);
-    console.log(`    Amount: ${tx.amount} USDC | To: ${tx.to.slice(0, 10)}...`);
-
-    const record = await kontext.logTransaction({
-      txHash,
-      chain: 'base',
-      amount: tx.amount,
-      token: 'USDC',
-      from: AGENT_WALLET,
-      to: tx.to,
-      agentId: 'payment-agent-alpha',
-      metadata: { description: tx.desc },
-    });
-
-    console.log(`    Logged: ${record.id} at ${record.timestamp}`);
-    await sleep(100);
+  for (const input of payrollInputs) {
+    const a = await kontext.start(input);
+    console.log(`  Started: ${a.attemptId} (${a.archetype} on ${a.chain})`);
   }
 
-  // --------------------------------------------------------------------------
-  // Step 5: Task Creation and Confirmation
-  // --------------------------------------------------------------------------
-  divider('STEP 5: Create and Confirm Compliance Task');
+  // List all attempts
+  const all = kontext.list();
+  console.log(`\n  Total attempts: ${all.length}`);
+  console.log(`  ─────────────────────────────────────────────────────────`);
 
-  console.log('  Creating task: "Execute vendor payment of 2,500 USDC"');
-  const task = await kontext.createTask({
-    description: 'Execute vendor payment of 2,500 USDC on Base',
-    agentId: 'payment-agent-alpha',
-    requiredEvidence: ['txHash', 'receipt'],
-    metadata: {
-      vendor: 'Acme Corp',
-      invoiceId: 'INV-2026-0042',
-      amount: '2500.00',
-      token: 'USDC',
-      chain: 'base',
-    },
-  });
-
-  console.log(`  Task created: ${task.id}`);
-  console.log(`    Status: ${task.status}`);
-  console.log(`    Required evidence: ${task.requiredEvidence.join(', ')}`);
-
-  // Simulate the agent executing the transaction
-  console.log('\n  Agent executing transaction...');
-  await sleep(500);
-
-  const paymentTxHash = '0x' + 'f'.repeat(62) + '42';
-
-  await kontext.logTransaction({
-    txHash: paymentTxHash,
-    chain: 'base',
-    amount: '2500.00',
-    token: 'USDC',
-    from: AGENT_WALLET,
-    to: VENDOR_WALLET,
-    agentId: 'payment-agent-alpha',
-    correlationId: task.correlationId,
-    metadata: { taskId: task.id, vendor: 'Acme Corp' },
-  });
-
-  // Confirm the task with evidence
-  console.log('  Confirming task with on-chain evidence...');
-  const confirmed = await kontext.confirmTask({
-    taskId: task.id,
-    evidence: {
-      txHash: paymentTxHash,
-      receipt: {
-        status: 'confirmed',
-        blockNumber: 18234567,
-        gasUsed: '21000',
-        effectiveGasPrice: '1000000000',
-        chain: 'base',
-      },
-    },
-  });
-
-  console.log(`  Task confirmed: ${confirmed.id}`);
-  console.log(`    Status: \x1b[32m${confirmed.status}\x1b[0m`);
-  console.log(`    Confirmed at: ${confirmed.confirmedAt}`);
-
-  // --------------------------------------------------------------------------
-  // Step 6: Trust Score
-  // --------------------------------------------------------------------------
-  divider('STEP 6: Agent Trust Score');
-
-  const trustScore = await kontext.getTrustScore('payment-agent-alpha');
-
-  console.log(`  Agent: payment-agent-alpha`);
-  console.log(`  Overall Score: ${formatScore(trustScore.score)}`);
-  console.log(`  Trust Level: ${trustScore.level.toUpperCase()}`);
-  console.log(`  Factors:`);
-  for (const factor of trustScore.factors) {
-    console.log(`    ${factor.name}: ${formatScore(factor.score)} (weight: ${factor.weight})`);
-    console.log(`      ${factor.description}`);
+  for (const a of all) {
+    const stages = a.stageEvents.length;
+    const state = a.finalState.padEnd(10);
+    console.log(`  ${a.attemptId.slice(0, 20).padEnd(20)} ${state} ${a.archetype.padEnd(12)} ${a.chain.padEnd(8)} stages:${stages}`);
   }
 
+  // Filter by archetype
+  const invoicing = kontext.list({ archetype: 'invoicing' });
+  console.log(`\n  Invoicing attempts: ${invoicing.length}`);
+
+  // Filter by chain
+  const ethOnly = kontext.list({ chain: 'ethereum' });
+  console.log(`  Ethereum attempts: ${ethOnly.length}`);
+
+  // Filter by final state
+  const failed = kontext.list({ finalState: 'blocked' });
+  console.log(`  Blocked attempts: ${failed.length}`);
+
   // --------------------------------------------------------------------------
-  // Step 7: Trigger Anomalies
+  // Step 6: Provider Adapter (EVM)
   // --------------------------------------------------------------------------
-  divider('STEP 7: Suspicious Activity (Anomaly Detection)');
+  divider('STEP 6: Provider Adapter — EVM Event Normalization');
 
-  console.log('  Simulating suspicious transaction patterns...\n');
+  const evmAdapter = new EVMAdapter();
+  const evmEvents = [
+    evmAdapter.normalizeEvent({
+      type: 'prepare',
+      gasEstimate: '21000',
+      timestamp: new Date().toISOString(),
+    }),
+    evmAdapter.normalizeEvent({
+      type: 'transmit',
+      txHash: '0xfeed1234' + '0'.repeat(56),
+      timestamp: new Date().toISOString(),
+    }),
+    evmAdapter.normalizeEvent({
+      type: 'confirm',
+      txHash: '0xfeed1234' + '0'.repeat(56),
+      blockNumber: 18234999,
+      confirmations: 12,
+      timestamp: new Date().toISOString(),
+    }),
+  ];
 
-  // Unusual amount
-  console.log('  [1] Large unusual amount ($25,000):');
-  await kontext.logTransaction({
-    txHash: '0x' + 'b'.repeat(64),
-    chain: 'ethereum',
-    amount: '25000.00',
-    token: 'USDC',
-    from: AGENT_WALLET,
-    to: SUSPICIOUS_WALLET,
-    agentId: 'payment-agent-alpha',
-    metadata: { note: 'Suspicious large transfer' },
-  });
+  for (const event of evmEvents) {
+    console.log(`  ${event.stage.padEnd(12)} ${stageIcon(event.status)} ${event.code}: ${event.message}`);
+  }
+  console.log(`  Provider: ${evmAdapter.name}`);
 
-  await sleep(200);
+  // --------------------------------------------------------------------------
+  // Step 7: Digest Chain
+  // --------------------------------------------------------------------------
+  divider('STEP 7: Tamper-Evident Digest Chain');
 
-  // Round amount near threshold
-  console.log('\n  [2] Round amount near reporting threshold ($9,900):');
-  await kontext.logTransaction({
-    txHash: '0x' + 'c'.repeat(64),
-    chain: 'base',
-    amount: '9900.00',
-    token: 'USDC',
-    from: AGENT_WALLET,
-    to: SUSPICIOUS_WALLET,
-    agentId: 'payment-agent-alpha',
-    metadata: { note: 'Just under $10k -- structuring indicator' },
-  });
+  console.log('  Kontext digest chain: SHA-256 rolling hash over all events');
+  console.log('  Formula: H_n = SHA-256(H_{n-1} || Serialize(Event) || Salt)\n');
 
-  await sleep(200);
+  // Use the lower-level DigestChain directly for demo
+  const digestChain = new DigestChain();
+  const now = new Date().toISOString();
+  const baseAction = { timestamp: now, projectId: 'demo', agentId: 'bot', correlationId: 'c1', metadata: {} };
 
-  // Rapid succession (multiple fast transactions)
-  console.log('\n  [3] Rapid succession transactions:');
-  for (let i = 0; i < 3; i++) {
-    await kontext.logTransaction({
-      txHash: '0x' + 'd'.repeat(62) + i.toString().padStart(2, '0'),
-      chain: 'base',
-      amount: '500.00',
-      token: 'USDC',
-      from: AGENT_WALLET,
-      to: VENDOR_WALLET,
-      agentId: 'payment-agent-alpha',
-      metadata: { batch: 'rapid-test', index: i },
-    });
+  const actions = [
+    { ...baseAction, id: 'act_1', type: 'intent', description: 'Start $5,000 USDC payment' },
+    { ...baseAction, id: 'act_2', type: 'authorize', description: 'Policy check: ALLOW' },
+    { ...baseAction, id: 'act_3', type: 'transmit', description: 'Broadcast tx 0xabc...' },
+    { ...baseAction, id: 'act_4', type: 'confirm', description: 'Confirmed at block 18234567' },
+  ];
+
+  for (const action of actions) {
+    digestChain.append(action);
   }
 
-  // --------------------------------------------------------------------------
-  // Step 8: Transaction Risk Evaluation
-  // --------------------------------------------------------------------------
-  divider('STEP 8: Transaction Risk Evaluation');
+  const genesisHash = '0'.repeat(64);
+  const links = digestChain.getLinks();
+  const terminalDigest = digestChain.getTerminalDigest();
 
-  const evaluation = await kontext.evaluateTransaction({
-    txHash: '0x' + 'e'.repeat(64),
-    chain: 'ethereum',
-    amount: '75000',
-    token: 'USDC',
-    from: AGENT_WALLET,
-    to: SUSPICIOUS_WALLET,
-    agentId: 'payment-agent-alpha',
-  });
+  console.log(`  Genesis Hash: ${genesisHash.slice(0, 24)}...`);
+  console.log(`  Links: ${links.length}`);
+  console.log(`  Terminal Digest: ${terminalDigest.slice(0, 24)}...`);
 
-  console.log(`  Transaction: $75,000 USDC to new address`);
-  console.log(`  Risk Score: ${formatScore(evaluation.riskScore)}`);
-  console.log(`  Risk Level: ${evaluation.riskLevel.toUpperCase()}`);
-  console.log(`  Flagged: ${evaluation.flagged ? '\x1b[31mYES\x1b[0m' : '\x1b[32mNO\x1b[0m'}`);
-  console.log(`  Recommendation: ${evaluation.recommendation.toUpperCase()}`);
-  console.log(`  Risk Factors:`);
-  for (const factor of evaluation.factors) {
-    console.log(`    ${factor.name}: ${factor.score}/100 -- ${factor.description}`);
+  for (const link of links) {
+    console.log(`    [${link.sequence}] ${link.digest.slice(0, 32)}... (${link.actionId})`);
   }
 
-  // --------------------------------------------------------------------------
-  // Step 9: Anomaly Summary
-  // --------------------------------------------------------------------------
-  divider('STEP 9: Anomaly Detection Summary');
-
-  console.log(`  Total anomalies detected: ${detectedAnomalies.length}\n`);
-
-  const bySeverity: Record<string, number> = {};
-  const byType: Record<string, number> = {};
-
-  for (const a of detectedAnomalies) {
-    bySeverity[a.severity] = (bySeverity[a.severity] ?? 0) + 1;
-    byType[a.type] = (byType[a.type] ?? 0) + 1;
-  }
-
-  console.log('  By Severity:');
-  for (const [severity, count] of Object.entries(bySeverity)) {
-    console.log(`    ${severity}: ${count}`);
-  }
-
-  console.log('\n  By Type:');
-  for (const [type, count] of Object.entries(byType)) {
-    console.log(`    ${type}: ${count}`);
-  }
-
-  // --------------------------------------------------------------------------
-  // Step 10: Post-Anomaly Trust Score
-  // --------------------------------------------------------------------------
-  divider('STEP 10: Updated Trust Score (Post-Anomalies)');
-
-  const updatedScore = await kontext.getTrustScore('payment-agent-alpha');
-
-  console.log(`  Agent: payment-agent-alpha`);
-  console.log(`  Overall Score: ${formatScore(updatedScore.score)}`);
-  console.log(`  Trust Level: ${updatedScore.level.toUpperCase()}`);
-  console.log(`  Factors:`);
-  for (const factor of updatedScore.factors) {
-    console.log(`    ${factor.name}: ${formatScore(factor.score)} (weight: ${factor.weight})`);
-    console.log(`      ${factor.description}`);
-  }
-
-  // --------------------------------------------------------------------------
-  // Step 11: Audit Export
-  // --------------------------------------------------------------------------
-  divider('STEP 11: Compliance Audit Export');
-
-  const exportResult = await kontext.export({
-    format: 'json',
-    includeTasks: true,
-    includeAnomalies: true,
-  });
-
-  console.log(`  Export format: ${exportResult.format}`);
-  console.log(`  Total records: ${exportResult.recordCount}`);
-  console.log(`  Exported at: ${exportResult.exportedAt}`);
-
-  // Parse and summarize
-  const exportData = JSON.parse(exportResult.data) as {
-    actions: unknown[];
-    transactions: unknown[];
-    tasks: unknown[];
-    anomalies: unknown[];
-  };
-  console.log(`  Actions: ${exportData.actions.length}`);
-  console.log(`  Transactions: ${exportData.transactions.length}`);
-  console.log(`  Tasks: ${exportData.tasks.length}`);
-  console.log(`  Anomalies: ${exportData.anomalies.length}`);
-
-  // CSV export
-  const csvExport = await kontext.export({
-    format: 'csv',
-    includeTasks: true,
-    includeAnomalies: true,
-  });
-
-  console.log(`\n  CSV Export: ${csvExport.data.split('\n').length} lines`);
-
-  // --------------------------------------------------------------------------
-  // Step 12: Compliance Report
-  // --------------------------------------------------------------------------
-  divider('STEP 12: Compliance Report Generation');
-
-  const report = await kontext.generateReport({
-    type: 'compliance',
-    period: {
-      start: new Date(Date.now() - 86400000),
-      end: new Date(Date.now() + 86400000),
-    },
-  });
-
-  console.log(`  Report ID: ${report.id}`);
-  console.log(`  Type: ${report.type}`);
-  console.log(`  Generated: ${report.generatedAt}`);
-  console.log(`  Summary:`);
-  console.log(`    Total Actions: ${report.summary.totalActions}`);
-  console.log(`    Total Transactions: ${report.summary.totalTransactions}`);
-  console.log(`    Total Tasks: ${report.summary.totalTasks}`);
-  console.log(`    Confirmed Tasks: ${report.summary.confirmedTasks}`);
-  console.log(`    Failed Tasks: ${report.summary.failedTasks}`);
-  console.log(`    Total Anomalies: ${report.summary.totalAnomalies}`);
-  console.log(`    Average Trust Score: ${report.summary.averageTrustScore}`);
-
-  // --------------------------------------------------------------------------
-  // Step 13: Digest Chain Verification
-  // --------------------------------------------------------------------------
-  divider('STEP 13: Cryptographic Digest Chain Verification');
-
-  console.log('  Rolling SHA-256 digest chain — tamper-evident audit trail');
-  console.log('  Formula: HD = SHA-256(HD-1 || Serialize(ED) || SD)\n');
-
-  // Get the terminal digest
-  const terminalDigest = kontext.getTerminalDigest();
-  console.log(`  Terminal Digest: ${terminalDigest.slice(0, 16)}...${terminalDigest.slice(-16)}`);
-
-  // Verify the entire chain
-  const verification = kontext.verifyDigestChain();
-  const validIcon = verification.valid ? '\x1b[32m\u2713 VALID\x1b[0m' : '\x1b[31m\u2717 INVALID\x1b[0m';
-  console.log(`  Chain Integrity: ${validIcon}`);
+  const exportedChain = { genesisHash, links: [...links], terminalDigest };
+  const verification = verifyExportedChain(exportedChain, actions);
+  const validIcon = verification.valid ? '\x1b[32mVALID\x1b[0m' : '\x1b[31mINVALID\x1b[0m';
+  console.log(`\n  Chain Integrity: ${validIcon}`);
   console.log(`  Links Verified: ${verification.linksVerified}`);
-  console.log(`  Verification Time: ${verification.verificationTimeMs.toFixed(2)}ms`);
-
-  // Export chain for third-party verification
-  const chainExport = kontext.exportDigestChain();
-  console.log(`\n  Exported Digest Chain:`);
-  console.log(`    Genesis Hash: ${chainExport.genesisHash.slice(0, 16)}...(zeros)`);
-  console.log(`    Total Links: ${chainExport.links.length}`);
-  console.log(`    Terminal Digest: ${chainExport.terminalDigest.slice(0, 16)}...`);
-
-  // Show a few sample links
-  console.log(`\n  Sample Digest Links:`);
-  for (let i = 0; i < Math.min(3, chainExport.links.length); i++) {
-    const link = chainExport.links[i]!;
-    console.log(`    [${link.sequence}] ${link.digest.slice(0, 24)}... (action: ${link.actionId.slice(0, 8)}...)`);
-  }
-  if (chainExport.links.length > 3) {
-    console.log(`    ... ${chainExport.links.length - 3} more links`);
-  }
-
-  console.log(`\n  Energy: <0.00001 kWh per event (99.97% less than blockchain)`);
-  console.log(`  Verification: <10ms at p95`);
 
   // --------------------------------------------------------------------------
-  // Cleanup
+  // Summary
   // --------------------------------------------------------------------------
   divider('DEMO COMPLETE');
 
-  await kontext.destroy();
-
-  console.log('  The Kontext SDK demo has completed successfully.');
-  console.log('  All features demonstrated:');
-  console.log('    [x] SDK initialization (local mode)');
-  console.log('    [x] Action logging');
-  console.log('    [x] Transaction logging with chain data');
-  console.log('    [x] USDC compliance checking');
-  console.log('    [x] Task creation with required evidence');
-  console.log('    [x] Task confirmation with on-chain proof');
-  console.log('    [x] Trust scoring (rule-based)');
-  console.log('    [x] Anomaly detection (6 rule types)');
-  console.log('    [x] Transaction risk evaluation');
-  console.log('    [x] Audit export (JSON + CSV)');
-  console.log('    [x] Compliance report generation');
-  console.log('    [x] Cryptographic digest chain verification');
+  console.log('  Phase A Payment Control Plane — all components functional:\n');
+  console.log('    [x] Workspace profiles with archetype-specific policies');
+  console.log('    [x] PaymentAttempt lifecycle (8 stages)');
+  console.log('    [x] Policy authorization (ReceiptLedger integration)');
+  console.log('    [x] Stage event recording and ordering validation');
+  console.log('    [x] Provider adapter event normalization (EVM)');
+  console.log('    [x] Attempt listing with filters');
+  console.log('    [x] Tamper-evident digest chain');
+  console.log('    [x] Happy path: intent -> reconcile (succeeded)');
+  console.log('    [x] Blocked path: policy violation (blocked)');
+  console.log('');
+  console.log('  Next: Phase B — notifications, CSV export, ops dashboard');
   console.log('');
 }
 

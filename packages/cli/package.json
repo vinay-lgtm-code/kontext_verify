@@ -1,7 +1,7 @@
 {
-  "name": "@kontext-sdk/cli",
-  "version": "0.8.0",
-  "description": "Compliance audit trail CLI for AI agents making stablecoin payments. OFAC screening, digest chains, compliance certificates.",
+  "name": "@kontext/cli",
+  "version": "1.0.0",
+  "description": "CLI for the Kontext payment control plane.",
   "bin": {
     "kontext": "dist/cli.js"
   },
@@ -42,19 +42,8 @@
     "access": "public"
   },
   "dependencies": {
-    "kontext-sdk": "^0.8.0"
-  },
-  "peerDependencies": {
-    "@modelcontextprotocol/sdk": ">=1.0.0",
-    "zod": ">=3.0.0"
-  },
-  "peerDependenciesMeta": {
-    "@modelcontextprotocol/sdk": {
-      "optional": true
-    },
-    "zod": {
-      "optional": true
-    }
+    "@kontext/core": "workspace:*",
+    "kontext-sdk": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.12.0",
