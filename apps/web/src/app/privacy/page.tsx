@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
-  description: "Privacy policy for Kontext SDK and getkontext.com.",
+  description: "Privacy policy for the Kontext payment lifecycle SDK and getkontext.com.",
 };
 
 export default function PrivacyPage() {
@@ -15,32 +15,34 @@ export default function PrivacyPage() {
           PRIVACY POLICY
         </h1>
         <p className="mt-4 text-sm text-muted-foreground">
-          Last updated: February 28, 2026
+          Last updated: March 9, 2026
         </p>
 
         <div className="prose-kontext mt-12">
           <h2>Overview</h2>
           <p>
             Legaci Labs Inc. (&quot;Kontext&quot;, &quot;we&quot;, &quot;us&quot;)
-            operates the Kontext SDK and the getkontext.com website. This policy
-            describes what data we collect, how we use it, and your rights.
+            operates the Kontext payment lifecycle SDK and the getkontext.com
+            website. This policy describes what data we collect, how we use it,
+            and your rights.
           </p>
 
           <h2>SDK (Local Mode)</h2>
           <p>
             The Kontext SDK in local mode (no API key) processes all data on your
-            machine. No data is sent to our servers. Audit trails, digest chains,
-            and trust scores are computed locally and stored wherever you configure
-            (in-memory by default, or file system with FileStorage).
+            machine. No data is sent to our servers. Payment attempts, receipts,
+            digest chains, and policy decisions are computed locally and stored
+            wherever you configure (file system by default, or in-memory with
+            MemoryStorage).
           </p>
 
           <h2>SDK (Cloud Mode)</h2>
           <p>
-            When you provide an API key and use KontextCloudExporter, event data
-            is sent to api.getkontext.com for persistence and analytics. This
-            includes action logs, transaction metadata, trust scores, and anomaly
-            events. We do not store private keys, wallet seeds, or raw transaction
-            payloads beyond what you explicitly log.
+            When you provide an API key and use cloud mode, payment stage event
+            data is sent to api.getkontext.com for persistence and analytics.
+            This includes payment attempts, authorization receipts, stage events,
+            and policy decisions. We do not store private keys, wallet seeds, or
+            raw transaction payloads beyond what you explicitly log.
           </p>
 
           <h2>Website</h2>
@@ -62,9 +64,9 @@ export default function PrivacyPage() {
               rates (for metering and billing)
             </li>
             <li>
-              <strong>Event data (cloud mode only):</strong> action logs,
-              transaction metadata, trust scores, anomaly events as sent by your
-              SDK configuration
+              <strong>Event data (cloud mode only):</strong> payment
+              attempts, authorization receipts, stage events, and policy
+              decisions as sent by your SDK configuration
             </li>
             <li>
               <strong>Web analytics:</strong> page views, referrers, browser type

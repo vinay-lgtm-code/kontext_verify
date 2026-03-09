@@ -24,6 +24,16 @@ const nextConfig = {
   env: {
     CHANGELOG_CONTENT: readChangelogSync(),
   },
+  async redirects() {
+    return [
+      { source: '/audiences/ai-agent-startups', destination: '/audiences/fintech-startups', permanent: true },
+      { source: '/audiences/defi-protocols', destination: '/audiences/payment-platforms', permanent: true },
+      { source: '/audiences/stablecoin-issuers', destination: '/audiences/treasury-ops', permanent: true },
+      { source: '/blog/introducing-kontext', destination: '/blog/payment-control-plane', permanent: true },
+      { source: '/blog/tamper-evident-audit-trails', destination: '/blog/8-stage-payment-lifecycle', permanent: true },
+      { source: '/faqs', destination: '/docs', permanent: false },
+    ];
+  },
 };
 
 module.exports = nextConfig;

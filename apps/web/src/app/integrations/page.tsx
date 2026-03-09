@@ -14,264 +14,264 @@ import { Separator } from "@/components/ui/separator";
 import {
   ArrowRight,
   ExternalLink,
-  Link2,
-  Bot,
   Cpu,
-  MessageSquare,
   DollarSign,
-  CreditCard,
   Zap,
-  Anchor,
-  Handshake,
   Terminal,
   Wrench,
+  LayoutDashboard,
+  Bell,
+  Globe,
+  Wallet,
+  CircleDollarSign,
+  Landmark,
+  Banknote,
+  Send,
 } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Integrations",
   description:
-    "Integrate Kontext with Vercel AI SDK, LangChain, CrewAI, AutoGen, USDC, Stripe, x402, on-chain anchoring, and A2A attestation. Add compliance to any agent framework or payment protocol.",
+    "Integrate Kontext with EVM chains, Solana, Circle, x402, Bridge.xyz, and Modern Treasury. 6 provider adapters normalize payment events into the 8-stage lifecycle.",
 };
 
-const vercelAICode = `import { openai } from '@ai-sdk/openai';
-import { generateText } from 'ai';
-import { Kontext, kontextWrapModel } from 'kontext-sdk';
+const evmAdapterCode = `import { EVMAdapter } from 'kontext-sdk/adapters';
 
-const ctx = Kontext.init({
-  projectId: 'payment-agent',
-  environment: 'production',
-});
-
-// Wrap your model — every tool call gets logged
-const model = kontextWrapModel(openai('gpt-4o'), ctx, {
-  agentId: 'payment-agent',
-});
-
-const result = await generateText({
-  model,
-  tools: {
-    transfer_usdc: {
-      description: 'Transfer USDC to an address',
-      parameters: { to: 'string', amount: 'string' },
-      execute: async ({ to, amount }) => {
-        return { success: true, hash: '0xabc...' };
-      },
-    },
+const evm = new EVMAdapter({
+  chains: ['ethereum', 'base', 'polygon'],
+  rpcUrls: {
+    ethereum: process.env.ETH_RPC_URL,
+    base: process.env.BASE_RPC_URL,
+    polygon: process.env.POLYGON_RPC_URL,
   },
-  prompt: 'Send 500 USDC to 0x1234 for the API invoice',
 });
 
-// Export the tamper-evident audit trail
-const audit = await ctx.export({ format: 'json' });`;
-
-const langchainCode = `import { Kontext } from 'kontext-sdk';
-
-const ctx = Kontext.init({
-  projectId: 'langchain-agent',
-  environment: 'production',
+// Normalize an on-chain transaction into the 8-stage lifecycle
+const event = await evm.normalizeEvent({
+  txHash: '0xabc123...',
+  chain: 'base',
 });
 
-// Log each tool call in your LangChain agent
-async function onToolCall(toolName, input, output) {
-  await ctx.log({
-    action: toolName,
-    agentId: 'langchain-agent',
-    details: JSON.stringify(input),
-    metadata: { output },
-  });
+// event.stage => 'initiated' | 'authorized' | 'confirmed' | ...
+// event.amount => '5000.00'
+// event.token => 'USDC'
+// event.from => '0xsender...'
+// event.to => '0xrecipient...'
 
-  // If it's a financial action, verify it
-  if (toolName === 'transfer_usdc') {
-    const result = await ctx.verify({
-      txHash: output.hash,
-      chain: 'base',
-      amount: input.amount,
-      token: 'USDC',
-      from: input.from,
-      to: input.to,
-      agentId: 'langchain-agent',
-    });
-    console.log('Compliant:', result.compliant);
-  }
-}
+await workspace.ingestEvent(event);`;
 
-// Export tamper-evident audit trail
-const audit = await ctx.export({ format: 'json' });`;
+const solanaAdapterCode = `import { SolanaAdapter } from 'kontext-sdk/adapters';
 
-const crewaiCode = `import { Kontext } from 'kontext-sdk';
-
-const ctx = Kontext.init({
-  projectId: 'crew-project',
-  environment: 'production',
+const solana = new SolanaAdapter({
+  rpcUrl: process.env.SOLANA_RPC_URL,
+  programIds: ['TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'],
 });
 
-// CrewAI task observer — hooks into task lifecycle
-function kontextTaskObserver(ctx) {
-  return {
-    onTaskStart: async (task, agent) => {
-      await ctx.log({
-        action: 'crew_task_start',
-        agentId: agent.role,
-        metadata: {
-          taskDescription: task.description,
-          crewId: task.crew_id,
-        },
-      });
-    },
-
-    onTaskComplete: async (task, agent, output) => {
-      await ctx.log({
-        action: 'crew_task_complete',
-        agentId: agent.role,
-        metadata: {
-          output: output.raw,
-          tokensUsed: output.token_usage,
-        },
-      });
-
-      const trust = await ctx.getTrustScore(agent.role);
-      console.log('Trust score:', trust.score);
-    },
-  };
-}`;
-
-const autogenCode = `import { Kontext } from 'kontext-sdk';
-
-const ctx = Kontext.init({
-  projectId: 'autogen-agents',
-  environment: 'production',
+// Normalize a Solana transaction signature
+const event = await solana.normalizeEvent({
+  signature: '5UfD8s...',
 });
 
-// AutoGen message interceptor for multi-agent conversations
-function kontextMiddleware(ctx) {
-  return {
-    async processMessage(sender, receiver, message) {
-      await ctx.log({
-        action: 'autogen_message',
-        agentId: sender.name,
-        metadata: {
-          receiver: receiver.name,
-          content: message.content?.substring(0, 500),
-        },
-      });
+// event.stage => 'confirmed'
+// event.chain => 'solana'
+// event.amount => '1500.00'
+// event.token => 'USDC'
 
-      // Verify financial decisions
-      if (message.metadata?.isTransaction) {
-        const result = await ctx.verify({
-          txHash: message.metadata.txHash,
-          chain: 'base',
-          amount: message.metadata.amount,
-          token: 'USDC',
-          from: sender.wallet,
-          to: receiver.wallet,
-          agentId: sender.name,
-        });
+await workspace.ingestEvent(event);`;
 
-        if (!result.compliant) {
-          return { ...message, blocked: true };
-        }
-      }
+const circleAdapterCode = `import { CircleAdapter } from 'kontext-sdk/adapters';
 
-      return message;
-    },
-  };
-}`;
+const circle = new CircleAdapter({
+  apiKey: process.env.CIRCLE_API_KEY,
+  entitySecret: process.env.CIRCLE_ENTITY_SECRET,
+});
 
-const agentFrameworks = [
+// Normalize Circle Programmable Wallet events
+const event = await circle.normalizeEvent({
+  walletId: 'wlt_abc123',
+  transferId: 'txn_def456',
+});
+
+// event.stage => 'authorized'
+// event.provider => 'circle'
+// event.metadata.walletSetId => 'ws_789'
+
+await workspace.ingestEvent(event);`;
+
+const x402AdapterCode = `import { X402Adapter } from 'kontext-sdk/adapters';
+
+const x402 = new X402Adapter({
+  chain: 'base',
+  receiverAddress: '0xmerchant...',
+});
+
+// Normalize x402 micropayment events
+const event = x402.normalizeEvent({
+  paymentHeader: req.headers['x-payment'],
+  amount: '0.05',
+  token: 'USDC',
+  resource: '/api/premium-data',
+});
+
+// event.stage => 'settled'
+// event.provider => 'x402'
+// event.metadata.resource => '/api/premium-data'
+
+await workspace.ingestEvent(event);`;
+
+const bridgeAdapterCode = `import { BridgeAdapter } from 'kontext-sdk/adapters';
+
+const bridge = new BridgeAdapter({
+  apiKey: process.env.BRIDGE_API_KEY,
+});
+
+// Normalize Bridge.xyz (Stripe) transfer events
+const event = await bridge.normalizeEvent({
+  transferId: 'brd_transfer_abc',
+  webhookPayload: req.body,
+});
+
+// event.stage => 'initiated'
+// event.provider => 'bridge'
+// event.amount => '25000.00'
+// event.metadata.stripePaymentIntent => 'pi_xyz'
+
+await workspace.ingestEvent(event);`;
+
+const modernTreasuryAdapterCode = `import { ModernTreasuryAdapter } from 'kontext-sdk/adapters';
+
+const mt = new ModernTreasuryAdapter({
+  apiKey: process.env.MT_API_KEY,
+  orgId: process.env.MT_ORG_ID,
+});
+
+// Normalize Modern Treasury payment order events
+const event = await mt.normalizeEvent({
+  paymentOrderId: 'po_abc123',
+  webhookPayload: req.body,
+});
+
+// event.stage => 'authorized'
+// event.provider => 'modern_treasury'
+// event.amount => '50000.00'
+// event.metadata.ledgerTransactionId => 'lt_def456'
+
+await workspace.ingestEvent(event);`;
+
+const providerAdapters = [
   {
-    id: "vercel-ai-sdk",
+    id: "evm-adapter",
+    icon: Globe,
+    title: "EVMAdapter",
+    description:
+      "Normalizes Ethereum, Base, and Polygon transactions into the canonical 8-stage lifecycle. Accepts a transaction hash and chain identifier, fetches on-chain data via RPC, and produces a standardized payment event with amount, token, addresses, and stage classification.",
+    code: evmAdapterCode,
+    filename: "evm-adapter.ts",
+    status: "Provider Adapter",
+    docsLink: "/docs",
+  },
+  {
+    id: "solana-adapter",
     icon: Zap,
-    title: "Vercel AI SDK",
+    title: "SolanaAdapter",
     description:
-      "First-class middleware for the Vercel AI SDK. Wraps generateText(), streamText(), and generateObject() with automatic digest chain logging, financial tool detection, trust scoring, and compliance checks. One line to add tamper-evident audit trails to every AI operation.",
-    code: vercelAICode,
-    filename: "vercel-ai-integration.ts",
-    status: "SDK Wrapper",
+      "Normalizes Solana transaction signatures into the 8-stage lifecycle. Parses SPL token transfers, extracts amount and mint address, and maps Solana finality levels to lifecycle stages. Supports token program filtering.",
+    code: solanaAdapterCode,
+    filename: "solana-adapter.ts",
+    status: "Provider Adapter",
     docsLink: "/docs",
   },
   {
-    id: "langchain",
-    icon: Link2,
-    title: "LangChain",
+    id: "circle-adapter",
+    icon: CircleDollarSign,
+    title: "CircleAdapter",
     description:
-      "Works with verify() and log() — add compliance logging to any LangChain agent by wrapping tool calls. No dedicated wrapper needed; the core SDK functions work directly in callbacks.",
-    code: langchainCode,
-    filename: "langchain-integration.ts",
-    status: "Works with verify()",
+      "Normalizes Circle Programmable Wallet events into the 8-stage lifecycle. Maps wallet transfer statuses to lifecycle stages, preserves wallet set and entity metadata, and handles both on-chain and off-chain Circle transfers.",
+    code: circleAdapterCode,
+    filename: "circle-adapter.ts",
+    status: "Provider Adapter",
     docsLink: "/docs",
   },
   {
-    id: "crewai",
-    icon: Bot,
-    title: "CrewAI",
+    id: "x402-adapter",
+    icon: DollarSign,
+    title: "X402Adapter",
     description:
-      "Works with verify() and log() — hook into CrewAI's task lifecycle to log task starts, verify completions with trust scoring, and capture errors across your entire crew.",
-    code: crewaiCode,
-    filename: "crewai-integration.ts",
-    status: "Works with verify()",
+      "Normalizes x402 HTTP-native micropayment events into the 8-stage lifecycle. Parses the x-payment header, extracts amount and token, and maps single-request payment flows to the settled stage with resource metadata.",
+    code: x402AdapterCode,
+    filename: "x402-adapter.ts",
+    status: "Provider Adapter",
     docsLink: "/docs",
   },
   {
-    id: "autogen",
-    icon: MessageSquare,
-    title: "AutoGen",
+    id: "bridge-adapter",
+    icon: Wallet,
+    title: "BridgeAdapter",
     description:
-      "Works with verify() and log() — intercept multi-agent messages, log exchanges, verify transaction decisions, and block non-compliant actions in real time.",
-    code: autogenCode,
-    filename: "autogen-integration.ts",
-    status: "Works with verify()",
+      "Normalizes Bridge.xyz (Stripe acquisition) transfer events into the 8-stage lifecycle. Handles fiat-to-crypto and crypto-to-fiat flows, maps Bridge transfer statuses to lifecycle stages, and preserves Stripe payment intent references.",
+    code: bridgeAdapterCode,
+    filename: "bridge-adapter.ts",
+    status: "Provider Adapter",
+    docsLink: "/docs",
+  },
+  {
+    id: "modern-treasury-adapter",
+    icon: Landmark,
+    title: "ModernTreasuryAdapter",
+    description:
+      "Normalizes Modern Treasury payment order events into the 8-stage lifecycle. Maps payment order statuses to lifecycle stages, preserves ledger transaction references, and supports ACH, wire, and RTP payment types.",
+    code: modernTreasuryAdapterCode,
+    filename: "modern-treasury-adapter.ts",
+    status: "Provider Adapter",
     docsLink: "/docs",
   },
 ];
 
-const paymentIntegrations = [
+const paymentPresets = [
+  {
+    icon: Zap,
+    title: "Micropayments",
+    archetype: "micropayments",
+    description:
+      "Optimized for high-frequency, low-value payments like x402 per-request billing. Max amount $1.00. Minimal approval overhead, fast settlement, automatic batching for audit trails.",
+    maxAmount: "$1.00",
+    status: "Preset",
+  },
+  {
+    icon: Banknote,
+    title: "Treasury",
+    archetype: "treasury",
+    description:
+      "Configured for corporate treasury operations and large stablecoin movements. Max amount $1,000,000. Multi-signature approval, enhanced due diligence triggers, CTR auto-generation above $10K.",
+    maxAmount: "$1,000,000",
+    status: "Preset",
+  },
   {
     icon: DollarSign,
-    title: "USDC / Circle",
+    title: "Invoicing",
+    archetype: "invoicing",
     description:
-      "Native stablecoin compliance support for USDC transfers on Base and Ethereum. Audit trails, trust scoring, and GENIUS Act alignment.",
-    status: "Available",
-    linkHref: "/use-cases#usdc-payments",
-    linkLabel: "View use case",
+      "Tuned for B2B invoice settlement and accounts receivable. Max amount $100,000. Invoice reference tracking, payment matching, and reconciliation-ready audit exports.",
+    maxAmount: "$100,000",
+    status: "Preset",
   },
   {
-    icon: CreditCard,
-    title: "Stripe",
+    icon: Send,
+    title: "Payroll",
+    archetype: "payroll",
     description:
-      "Verify agent-initiated Stripe payment intents with trust scoring. Audit IDs embedded in Stripe metadata for full traceability.",
-    status: "Available",
-    linkHref: "/use-cases#stripe-agentic",
-    linkLabel: "View use case",
+      "Built for recurring payroll disbursements and contractor payments. Max amount $50,000. Batch payment support, recipient verification, and tax reporting metadata.",
+    maxAmount: "$50,000",
+    status: "Preset",
   },
   {
-    icon: Zap,
-    title: "x402",
+    icon: Globe,
+    title: "Cross-Border",
+    archetype: "cross_border",
     description:
-      "HTTP-native micropayment verification middleware. Per-request compliance checks for agent-to-service payment flows.",
-    status: "Available",
-    linkHref: "/use-cases#x402-protocol",
-    linkLabel: "View use case",
-  },
-];
-
-const protocolIntegrations = [
-  {
-    icon: Anchor,
-    title: "On-Chain Anchoring",
-    description:
-      "Anchor your terminal digest to Base via the KontextAnchor contract. Immutable, publicly verifiable proof that compliance checks ran. Read-only verification needs zero dependencies.",
-    status: "Available",
-    linkHref: "/use-cases#on-chain-anchoring",
-    linkLabel: "View use case",
-  },
-  {
-    icon: Handshake,
-    title: "A2A Attestation",
-    description:
-      "Exchange compliance proofs between agents via .well-known/kontext.json discovery. Both sides prove they ran checks on the same transaction. Zero dependencies.",
-    status: "Available",
-    linkHref: "/use-cases#a2a-attestation",
-    linkLabel: "View use case",
+      "Designed for international transfers across chains and fiat rails. Max amount $500,000. Travel Rule compliance at $3K, OFAC screening, multi-chain lifecycle tracking.",
+    maxAmount: "$500,000",
+    status: "Preset",
   },
 ];
 
@@ -287,8 +287,9 @@ export default function IntegrationsPage() {
               INTEGRATIONS
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
-              First-class Vercel AI SDK wrapper plus verify() compatibility with
-              any agent framework. Add compliance to any workflow in minutes.
+              6 provider adapters normalize payment events from any source into
+              the canonical 8-stage lifecycle. Every example uses the actual
+              adapter API.
             </p>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-center">
               <Button size="lg" className="gap-2" asChild>
@@ -313,28 +314,22 @@ export default function IntegrationsPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex gap-2 overflow-x-auto py-3 scrollbar-none">
             <a
-              href="#vercel-ai-sdk"
+              href="#provider-adapters"
               className="inline-flex shrink-0 border border-border bg-[var(--term-surface-2)] px-3 py-1.5 text-xs text-foreground transition-colors hover:bg-[var(--term-surface-2)]"
             >
-              Vercel AI SDK
+              Provider Adapters
             </a>
             <a
-              href="#agent-frameworks"
+              href="#payment-presets"
               className="inline-flex shrink-0 border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground hover:bg-[var(--term-surface-2)]"
             >
-              Agent Frameworks
+              Payment Presets
             </a>
             <a
-              href="#payment-commerce"
+              href="#operations"
               className="inline-flex shrink-0 border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground hover:bg-[var(--term-surface-2)]"
             >
-              Payment &amp; Commerce
-            </a>
-            <a
-              href="#protocols"
-              className="inline-flex shrink-0 border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground hover:bg-[var(--term-surface-2)]"
-            >
-              Protocols
+              Operations
             </a>
             <a
               href="#cli-devops"
@@ -346,26 +341,27 @@ export default function IntegrationsPage() {
         </div>
       </section>
 
-      {/* Agent Frameworks */}
-      <section id="agent-frameworks" className="scroll-mt-32 bg-background">
+      {/* Provider Adapters */}
+      <section id="provider-adapters" className="scroll-mt-32 bg-background">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="mb-12">
             <Badge variant="outline" className="mb-4">
-              Agent Frameworks
+              Provider Adapters
             </Badge>
             <h2 className="text-sm font-medium">
-              Drop-in agent framework support
+              Normalize any payment source into the 8-stage lifecycle
             </h2>
             <p className="mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
-              First-class Vercel AI SDK wrapper with automatic action logging.
-              LangChain, CrewAI, and AutoGen work directly with verify() and log() —
-              no dedicated wrapper needed.
+              6 adapters convert raw payment events from EVM chains, Solana,
+              Circle, x402, Bridge.xyz, and Modern Treasury into canonical
+              lifecycle events. Each adapter implements normalizeEvent() with
+              provider-specific parsing.
             </p>
           </div>
 
           <div className="space-y-16">
-            {agentFrameworks.map((framework, index) => (
-              <div key={framework.id} id={framework.id} className="scroll-mt-32">
+            {providerAdapters.map((adapter, index) => (
+              <div key={adapter.id} id={adapter.id} className="scroll-mt-32">
                 <div
                   className={`grid items-start gap-8 lg:gap-12 ${
                     index % 2 === 0
@@ -377,21 +373,21 @@ export default function IntegrationsPage() {
                   <div className={index % 2 !== 0 ? "lg:[direction:ltr]" : ""}>
                     <div className="mb-4 flex items-center gap-3">
                       <div className="inline-flex h-10 w-10 items-center justify-center border border-border bg-[var(--term-surface-2)] text-primary">
-                        <framework.icon size={20} />
+                        <adapter.icon size={20} />
                       </div>
                       <Badge variant="outline">
-                        {framework.status}
+                        {adapter.status}
                       </Badge>
                     </div>
                     <h3 className="text-2xl font-bold tracking-tight">
-                      {framework.title}
+                      {adapter.title}
                     </h3>
                     <p className="mt-3 text-muted-foreground leading-relaxed">
-                      {framework.description}
+                      {adapter.description}
                     </p>
                     <div className="mt-6">
                       <Button variant="outline" size="sm" className="gap-2" asChild>
-                        <Link href={framework.docsLink}>
+                        <Link href={adapter.docsLink}>
                           View docs
                           <ArrowRight size={14} />
                         </Link>
@@ -402,14 +398,14 @@ export default function IntegrationsPage() {
                   {/* Code */}
                   <div className={`border border-border ${index % 2 !== 0 ? "lg:[direction:ltr]" : ""}`}>
                     <CodeBlock
-                      code={framework.code}
+                      code={adapter.code}
                       language="typescript"
-                      filename={framework.filename}
+                      filename={adapter.filename}
                     />
                   </div>
                 </div>
 
-                {index < agentFrameworks.length - 1 && (
+                {index < providerAdapters.length - 1 && (
                   <Separator className="mt-16" />
                 )}
               </div>
@@ -418,56 +414,57 @@ export default function IntegrationsPage() {
         </div>
       </section>
 
-      {/* Payment & Commerce */}
+      {/* Payment Presets */}
       <section
-        id="payment-commerce"
+        id="payment-presets"
         className="scroll-mt-32 border-t border-border bg-background"
       >
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="mb-12">
             <Badge variant="outline" className="mb-4">
-              Payment &amp; Commerce
+              Payment Presets
             </Badge>
             <h2 className="text-sm font-medium">
-              Payment and commerce integrations
+              Workspace profiles for every payment archetype
             </h2>
             <p className="mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
-              Verify and audit agent transactions across stablecoin transfers,
-              traditional payment processors, and micropayment protocols.
+              Pre-configured workspace profiles with tuned thresholds, approval
+              rules, and compliance policies. Select an archetype at workspace
+              creation or customize your own.
             </p>
           </div>
 
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {paymentIntegrations.map((integration) => (
+            {paymentPresets.map((preset) => (
               <Card
-                key={integration.title}
+                key={preset.title}
                 className="group relative overflow-hidden transition-all "
               >
                 <CardHeader>
                   <div className="mb-3 flex items-center justify-between">
                     <div className="inline-flex h-10 w-10 items-center justify-center border border-border bg-[var(--term-surface-2)] text-primary">
-                      <integration.icon size={20} />
+                      <preset.icon size={20} />
                     </div>
                     <Badge variant="outline">
-                      {integration.status}
+                      {preset.status}
                     </Badge>
                   </div>
                   <CardTitle className="text-lg">
-                    {integration.title}
+                    {preset.title}
                   </CardTitle>
+                  <div className="mt-1">
+                    <span className="inline-block font-mono text-xs text-[var(--term-green)]">
+                      archetype: {preset.archetype}
+                    </span>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <CardDescription className="text-sm leading-relaxed">
-                    {integration.description}
+                    {preset.description}
                   </CardDescription>
-                  <div className="mt-4">
-                    <Link
-                      href={integration.linkHref}
-                      className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-                    >
-                      {integration.linkLabel}
-                      <ArrowRight size={14} />
-                    </Link>
+                  <div className="mt-4 overflow-hidden border border-border bg-muted/50 p-3 font-mono text-xs">
+                    <span className="text-muted-foreground">max_amount:</span>{" "}
+                    <span className="text-primary">{preset.maxAmount}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -476,60 +473,75 @@ export default function IntegrationsPage() {
         </div>
       </section>
 
-      {/* Protocols */}
+      {/* Operations */}
       <section
-        id="protocols"
+        id="operations"
         className="scroll-mt-32 border-t border-border bg-background"
       >
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="mb-12">
             <Badge variant="outline" className="mb-4">
-              Protocols
+              Operations
             </Badge>
             <h2 className="text-sm font-medium">
-              Protocol integrations
+              Observe and respond to payment lifecycle events
             </h2>
             <p className="mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
-              On-chain anchoring and agent-to-agent attestation — cryptographic proof
-              layers built into verify().
+              Real-time dashboards and configurable notifications keep your ops
+              team informed as payments move through the 8-stage lifecycle.
             </p>
           </div>
 
           <div className="grid gap-6 sm:grid-cols-2">
-            {protocolIntegrations.map((integration) => (
-              <Card
-                key={integration.title}
-                className="group relative overflow-hidden transition-all "
-              >
-                <CardHeader>
-                  <div className="mb-3 flex items-center justify-between">
-                    <div className="inline-flex h-10 w-10 items-center justify-center border border-border bg-[var(--term-surface-2)] text-primary">
-                      <integration.icon size={20} />
-                    </div>
-                    <Badge variant="outline">
-                      {integration.status}
-                    </Badge>
+            <Card className="group relative overflow-hidden transition-all ">
+              <CardHeader>
+                <div className="mb-3 flex items-center justify-between">
+                  <div className="inline-flex h-10 w-10 items-center justify-center border border-border bg-[var(--term-surface-2)] text-primary">
+                    <LayoutDashboard size={20} />
                   </div>
-                  <CardTitle className="text-lg">
-                    {integration.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-sm leading-relaxed">
-                    {integration.description}
-                  </CardDescription>
-                  <div className="mt-4">
-                    <Link
-                      href={integration.linkHref}
-                      className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-                    >
-                      {integration.linkLabel}
-                      <ArrowRight size={14} />
-                    </Link>
+                  <Badge variant="outline">Available</Badge>
+                </div>
+                <CardTitle className="text-lg">Ops Dashboard</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-sm leading-relaxed">
+                  Real-time view of all payment traces across workspaces.
+                  Filter by stage, provider, amount, or risk level. See traces
+                  transition through the 8-stage lifecycle with latency metrics
+                  and failure rates. CSV export for compliance reporting.
+                </CardDescription>
+                <div className="mt-4 overflow-hidden border border-border bg-muted/50 p-3 font-mono text-xs">
+                  <span className="text-muted-foreground">stages:</span> initiated {"->"} authorized {"->"} confirmed {"->"} settled<br/>
+                  <span className="text-muted-foreground">filters:</span> provider, amount, risk, workspace
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="group relative overflow-hidden transition-all ">
+              <CardHeader>
+                <div className="mb-3 flex items-center justify-between">
+                  <div className="inline-flex h-10 w-10 items-center justify-center border border-border bg-[var(--term-surface-2)] text-primary">
+                    <Bell size={20} />
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                  <Badge variant="outline">Available</Badge>
+                </div>
+                <CardTitle className="text-lg">
+                  Slack &amp; Email Notifications
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-sm leading-relaxed">
+                  Configurable alerts for payment lifecycle events. Get notified
+                  on Slack or email when a trace enters a specific stage, exceeds
+                  an amount threshold, triggers a compliance flag, or fails at
+                  any point in the lifecycle. Per-workspace notification rules.
+                </CardDescription>
+                <div className="mt-4 overflow-hidden border border-border bg-muted/50 p-3 font-mono text-xs">
+                  <span className="text-muted-foreground">channels:</span> slack, email, webhook<br/>
+                  <span className="text-muted-foreground">triggers:</span> stage_change, threshold, anomaly, failure
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
@@ -545,11 +557,12 @@ export default function IntegrationsPage() {
               CLI &amp; DevOps
             </Badge>
             <h2 className="text-sm font-medium">
-              Terminal-first compliance
+              Terminal-first payment operations
             </h2>
             <p className="mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
-              Run compliance operations from the command line or integrate with
-              AI coding assistants via the MCP server.
+              Manage payment traces, inspect lifecycle stages, and debug issues
+              from the command line or integrate with AI coding assistants via
+              the MCP server.
             </p>
           </div>
 
@@ -566,13 +579,17 @@ export default function IntegrationsPage() {
               </CardHeader>
               <CardContent>
                 <CardDescription className="text-sm leading-relaxed">
-                  12 commands for compliance operations: check, verify, reason,
-                  cert, audit, anchor, attest, sync, session, checkpoint, status,
-                  and mcp. Install globally or run via npx.
+                  Payment lifecycle commands for trace management: start a trace,
+                  authorize and confirm stages, tail live logs, and debug
+                  failed transitions. Install globally or run via npx.
                 </CardDescription>
                 <div className="mt-4 overflow-hidden border border-border bg-muted/50 p-3 font-mono text-xs">
                   <span className="text-primary">$</span> npm install -g @kontext-sdk/cli<br/>
-                  <span className="text-primary">$</span> kontext verify --chain base --amount 5000
+                  <span className="text-primary">$</span> kontext trace start --provider evm --chain base<br/>
+                  <span className="text-primary">$</span> kontext trace authorize --trace-id tr_abc123<br/>
+                  <span className="text-primary">$</span> kontext trace confirm --trace-id tr_abc123<br/>
+                  <span className="text-primary">$</span> kontext logs --workspace ws_prod --tail<br/>
+                  <span className="text-primary">$</span> kontext debug --trace-id tr_abc123
                 </div>
               </CardContent>
             </Card>
@@ -589,9 +606,10 @@ export default function IntegrationsPage() {
               </CardHeader>
               <CardContent>
                 <CardDescription className="text-sm leading-relaxed">
-                  8 compliance tools exposed via Model Context Protocol for Claude
-                  Code, Cursor, and Windsurf. AI coding assistants get compliance
-                  verification, audit export, and trust scoring as native tools.
+                  Payment lifecycle tools exposed via Model Context Protocol for
+                  Claude Code, Cursor, and Windsurf. AI coding assistants get
+                  trace inspection, stage transitions, and lifecycle debugging
+                  as native tools.
                 </CardDescription>
                 <div className="mt-4 overflow-hidden border border-border bg-muted/50 p-3 font-mono text-xs">
                   <span className="text-primary">$</span> kontext mcp
@@ -602,7 +620,7 @@ export default function IntegrationsPage() {
         </div>
       </section>
 
-      {/* Framework Agnostic Note */}
+      {/* Provider Agnostic Note */}
       <section className="border-t border-border bg-background">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="border border-border bg-[var(--term-surface)] p-8 sm:p-12">
@@ -610,15 +628,16 @@ export default function IntegrationsPage() {
               <div className="mb-4 flex items-center gap-2">
                 <Cpu size={20} className="text-primary" />
                 <h3 className="text-lg font-semibold">
-                  Framework Agnostic
+                  Provider Agnostic
                 </h3>
               </div>
               <p className="text-muted-foreground leading-relaxed">
-                Kontext is a standalone TypeScript SDK with zero framework
-                dependencies. The integrations above are convenience wrappers —
-                you can use <code className="bg-muted px-1.5 py-0.5 font-mono text-sm border border-border">ctx.verify()</code> and{" "}
-                <code className="bg-muted px-1.5 py-0.5 font-mono text-sm border border-border">ctx.log()</code> directly in any
-                agent framework, custom pipeline, or serverless function.
+                Kontext is a standalone TypeScript SDK with zero provider
+                dependencies. The adapters above normalize provider-specific
+                events into the canonical 8-stage lifecycle — you can also
+                use <code className="bg-muted px-1.5 py-0.5 font-mono text-sm border border-border">workspace.ingestEvent()</code> directly
+                with any custom payment source or build your own adapter
+                implementing the <code className="bg-muted px-1.5 py-0.5 font-mono text-sm border border-border">ProviderAdapter</code> interface.
               </p>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <Button size="sm" className="gap-2" asChild>
@@ -648,11 +667,12 @@ export default function IntegrationsPage() {
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center text-center">
             <h2 className="text-sm font-medium">
-              Start building with trust
+              Ready to integrate?
             </h2>
             <p className="mt-4 max-w-md text-muted-foreground">
-              Add compliance to your agentic workflows in minutes. Open source,
-              TypeScript-first, and ready for production.
+              Normalize payment events from any provider into the 8-stage
+              lifecycle. Open source, TypeScript-first, and ready for
+              production.
             </p>
             <div className="mt-6 flex flex-col gap-4 sm:flex-row">
               <Button size="lg" className="gap-2" asChild>

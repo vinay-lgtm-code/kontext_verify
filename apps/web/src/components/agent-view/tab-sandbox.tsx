@@ -8,119 +8,121 @@ interface Message {
 }
 
 const examplePrompts = [
-  "Simulate x402 USDC Payment on Arc",
-  "Send $5K USDC on Base",
-  "Check trust score",
-  "Verify digest chain",
+  "Start a $5K treasury payment",
+  "Authorize a payroll transfer",
+  "Check payment status",
+  "List blocked payments",
 ];
 
 function formatComplianceResult(input: string): Message[] {
   const lower = input.toLowerCase();
 
-  if (lower.includes("x402") || lower.includes("arc")) {
+  if (lower.includes("treasury") || lower.includes("5k") || lower.includes("5000")) {
     return [
       {
         role: "system",
-        content: `$ ctx.verify({
-  txHash: '0x7f2a...e91c',
-  chain: 'arc',
-  amount: '0.50',
-  token: 'USDC',
-  from: '0xAgent...A1',
-  to: '0xAPI...B2',
-  agentId: 'research-agent',
+        content: `$ ctx.start({
+  workspaceRef: 'acme-treasury',
+  archetype: 'treasury',
+  chain: 'base', settlementAsset: 'USDC',
+  senderRefs: { wallet: '0xTreasury...C3' },
+  recipientRefs: { wallet: '0xVendor...D4' },
+})
+
+Attempt ID: att_3b1c...f42d
+Stage: intent → pending
+
+$ ctx.authorize(att_3b1c...f42d, {
+  amount: '5000', token: 'USDC',
+  from: '0xTreasury...C3', to: '0xVendor...D4',
+  actorId: 'treasury-agent',
 })
 
 {
-  compliant: true,
-  riskLevel: 'low',
-  checks: [
-    { name: 'OFAC Sanctions', passed: true },
-    { name: 'Amount Threshold', passed: true },
-    { name: 'Transaction Frequency', passed: true },
+  decision: 'allow',
+  checksRun: [
+    { name: 'Sanctions screening', passed: true },
+    { name: 'Max transaction amount', passed: true },
+    { name: 'Daily aggregate limit', passed: true },
   ],
-  trustScore: { score: 92, level: 'high' },
-  digestProof: { valid: true, chainLength: 7 },
-}
-
-Digest: d4e5f6...a1b2 → chain verified ✓`,
-      },
-    ];
-  }
-
-  if (lower.includes("5k") || lower.includes("5000") || lower.includes("base")) {
-    return [
-      {
-        role: "system",
-        content: `$ ctx.verify({
-  txHash: '0x3b1c...f42d',
-  chain: 'base',
-  amount: '5000',
-  token: 'USDC',
-  from: '0xTreasury...C3',
-  to: '0xVendor...D4',
-  agentId: 'treasury-agent',
-})
-
-{
-  compliant: true,
-  riskLevel: 'medium',
-  checks: [
-    { name: 'OFAC Sanctions', passed: true },
-    { name: 'Amount Threshold (EDD)', passed: true,
-      details: 'Above $3K Travel Rule threshold' },
-    { name: 'Transaction Frequency', passed: true },
-  ],
-  recommendations: ['Enhanced due diligence recommended (>$3K)'],
-  trustScore: { score: 78, level: 'medium' },
+  violations: [],
   digestProof: { valid: true, chainLength: 8 },
-}
-
-⚠ EDD threshold ($3K) triggered. Recommend human review.
-Digest: a7b8c9...d3e4 → chain verified ✓`,
+}`,
       },
     ];
   }
 
-  if (lower.includes("trust")) {
+  if (lower.includes("payroll") || lower.includes("authorize")) {
     return [
       {
         role: "system",
-        content: `$ ctx.getTrustScore('treasury-agent')
+        content: `$ ctx.start({
+  workspaceRef: 'acme-payroll',
+  archetype: 'payroll',
+  chain: 'base', settlementAsset: 'USDC',
+  senderRefs: { wallet: '0xPayroll...A1' },
+  recipientRefs: { wallet: '0xEmployee...B2' },
+})
+
+Attempt ID: att_9e2f...a71c
+Stage: intent → pending
+
+$ ctx.authorize(att_9e2f...a71c, {
+  amount: '3500', token: 'USDC',
+  actorId: 'payroll-agent',
+  metadata: { employeeId: 'emp_042', payPeriod: '2026-03' },
+})
 
 {
-  score: 87,
-  level: 'high',
-  factors: [
-    { name: 'History',     score: 92, weight: 0.25 },
-    { name: 'Amount',      score: 85, weight: 0.20 },
-    { name: 'Frequency',   score: 88, weight: 0.20 },
-    { name: 'Destination', score: 82, weight: 0.20 },
-    { name: 'Behavior',    score: 90, weight: 0.15 },
+  decision: 'allow',
+  checksRun: [
+    { name: 'Sanctions screening', passed: true },
+    { name: 'Required metadata (employeeId)', passed: true },
+    { name: 'Max transaction amount ($15K)', passed: true },
   ],
-}
-
-Agent 'treasury-agent' trusted at 87/100.`,
+  violations: [],
+}`,
       },
     ];
   }
 
-  if (lower.includes("digest") || lower.includes("chain")) {
+  if (lower.includes("status") || lower.includes("check")) {
     return [
       {
         role: "system",
-        content: `$ ctx.verifyDigestChain()
+        content: `$ ctx.get('att_7f3a9c2e')
 
 {
-  valid: true,
-  genesisHash: 'a1b2c3d4e5f6...',
-  terminalDigest: 'f6e5d4c3b2a1...',
-  length: 42,
-  linksVerified: 42,
-}
+  attemptId: 'att_7f3a9c2e',
+  archetype: 'treasury',
+  chain: 'base',
+  currentStage: 'confirm',
+  finalState: 'succeeded',
+  stages: [
+    { stage: 'intent', ts: '2026-03-08T10:00:00Z' },
+    { stage: 'authorize', ts: '2026-03-08T10:00:01Z', decision: 'allow' },
+    { stage: 'prepare', ts: '2026-03-08T10:00:02Z' },
+    { stage: 'transmit', ts: '2026-03-08T10:00:03Z' },
+    { stage: 'confirm', ts: '2026-03-08T10:00:15Z', txHash: '0xe4f7...' },
+  ],
+  digestProof: { valid: true, chainLength: 12 },
+}`,
+      },
+    ];
+  }
 
-Chain integrity: 42/42 links verified ✓
-No tampering detected. All records intact.`,
+  if (lower.includes("blocked") || lower.includes("list")) {
+    return [
+      {
+        role: "system",
+        content: `$ ctx.list({ decision: 'block' })
+
+Found 2 blocked attempts:
+
+att_c4d5...e6f7  treasury   $50,000  SANCTIONED_RECIPIENT
+att_a1b2...c3d4  payroll    $8,000   REQUIRES_HUMAN_APPROVAL
+
+Total: 2 blocked, 45 allowed, 3 in review`,
       },
     ];
   }
@@ -128,19 +130,12 @@ No tampering detected. All records intact.`,
   return [
     {
       role: "system",
-      content: `$ ctx.verify({
-  txHash: '0x...',
-  chain: 'base',
-  amount: '100',
-  token: 'USDC',
-  from: '0xSender',
-  to: '0xReceiver',
-  agentId: 'agent-v1',
-})
+      content: `$ ctx.start({ archetype: 'treasury', chain: 'base', ... })
 
-{ compliant: true, riskLevel: 'low', trustScore: { score: 90 } }
+Attempt created: att_...
+Stage: intent → pending
 
-Try: "Simulate x402 USDC Payment on Arc" or "Send $5K USDC on Base"`,
+Try: "Start a $5K treasury payment" or "Authorize a payroll transfer"`,
     },
   ];
 }
@@ -173,7 +168,7 @@ export function TabSandbox() {
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <p className="text-sm text-[var(--term-text-3)] mb-4">
-              Test USDC transactions with live compliance checks
+              Test payment lifecycle with live policy engine checks
             </p>
             <div className="flex flex-wrap justify-center gap-2">
               {examplePrompts.map((prompt) => (
@@ -230,7 +225,7 @@ export function TabSandbox() {
           onKeyDown={(e) => {
             if (e.key === "Enter") handleSubmit(input);
           }}
-          placeholder="Describe a USDC transaction to verify..."
+          placeholder="Describe a payment to process..."
           className="flex-1 bg-transparent text-sm text-foreground placeholder:text-[var(--term-text-3)] outline-none"
         />
       </div>

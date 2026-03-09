@@ -2,10 +2,10 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
-  Shield,
-  FileCheck,
-  ClipboardCheck,
-  Anchor,
+  Play,
+  ShieldCheck,
+  CheckCircle,
+  Download,
   RotateCcw,
   Copy,
   Check,
@@ -25,7 +25,7 @@ interface TerminalLine {
 interface Scenario {
   id: string;
   label: string;
-  icon: typeof Shield;
+  icon: typeof Play;
   comment: string;
   command: string;
   output: TerminalLine[];
@@ -37,72 +37,78 @@ interface Scenario {
 
 const SCENARIOS: Scenario[] = [
   {
-    id: "verify",
-    label: "Verify",
-    icon: Shield,
-    comment: "# Verify x402 micropayment — OFAC screening required on every transfer",
-    command: `kontext verify \\
-  --tx 0xa1b2c3d4 \\
-  --amount 0.50 --token USDC \\
+    id: "start",
+    label: "Start",
+    icon: Play,
+    comment: "# Start a treasury payment attempt on Base",
+    command: `kontext trace start \\
+  --workspace acme-treasury \\
+  --archetype treasury \\
+  --chain base --asset USDC \\
+  --from 0x8F3a...e21b \\
+  --to 0x4C7d...f93a`,
+    output: [
+      { value: "", delay: 0 },
+      { label: "Attempt ID:", value: "att_7f3a9c2e...", valueColor: "cyan" },
+      { label: "Archetype:", value: "treasury" },
+      { label: "Chain:", value: "base" },
+      { label: "Stage:", value: "intent", valueColor: "green" },
+      { label: "Final State:", value: "pending", valueColor: "yellow" },
+    ],
+  },
+  {
+    id: "authorize",
+    label: "Authorize",
+    icon: ShieldCheck,
+    comment: "# Authorize the payment — policy engine checks OFAC, limits, blocklists",
+    command: `kontext trace authorize \\
+  --attempt att_7f3a9c2e \\
+  --amount 5000 --token USDC \\
   --from 0x8F3a...e21b \\
   --to 0x4C7d...f93a \\
-  --agent research-bot`,
+  --actor treasury-agent`,
     output: [
       { value: "", delay: 0 },
-      { label: "Compliant:", value: "true", valueColor: "green" },
-      { label: "Checks:", value: "5 passed, 0 failed", valueColor: "green" },
-      { label: "Risk Level:", value: "low", valueColor: "green" },
-      { label: "Digest:", value: "7f3a9c2e1b8d4f06...", valueColor: "cyan" },
-      { label: "Persisted to:", value: ".kontext/store.json", valueColor: "muted" },
+      { label: "Decision:", value: "allow", valueColor: "green" },
+      { label: "Checks:", value: "8 passed, 0 failed", valueColor: "green" },
+      { label: "Sanctions:", value: "CLEAR", valueColor: "green" },
+      { label: "Amount:", value: "within limits ($5,000 / $25,000 max)" },
+      { label: "Digest:", value: "a7b8c9d4e5f6...1234", valueColor: "cyan" },
     ],
   },
   {
-    id: "audit",
-    label: "Audit",
-    icon: FileCheck,
-    comment: "# Prove no records were inserted, deleted, or reordered",
-    command: "kontext audit",
+    id: "confirm",
+    label: "Confirm",
+    icon: CheckCircle,
+    comment: "# Confirm the on-chain transaction",
+    command: `kontext trace confirm \\
+  --attempt att_7f3a9c2e \\
+  --tx-hash 0xe4f7a2c9d183b6... \\
+  --block 28491037`,
     output: [
       { value: "", delay: 0 },
-      { label: "Chain length:", value: "12 links" },
-      { label: "All verified:", value: "YES", valueColor: "green" },
-      { label: "Terminal digest:", value: "7f3a9c2e1b8d4f06...", valueColor: "cyan" },
-      { value: "", delay: 0 },
-      { value: "No tampering detected.", valueColor: "bold", delay: 200 },
-    ],
-  },
-  {
-    id: "cert",
-    label: "Certificate",
-    icon: ClipboardCheck,
-    comment: "# Export regulatory-ready certificate with cryptographic proof",
-    command: "kontext cert --agent treasury-bot --output cert.json",
-    output: [
-      { value: "", delay: 0 },
-      { value: "Certificate generated", valueColor: "bold" },
-      { value: "Actions: 12 | Trust Score: 87/100 | Chain: VALID", valueColor: "green" },
-      { label: "SHA-256:", value: "a9f2e3c7d1b84e05...", valueColor: "cyan" },
-      { label: "Saved to:", value: "cert.json", valueColor: "muted" },
-    ],
-  },
-  {
-    id: "anchor",
-    label: "Anchor",
-    icon: Anchor,
-    comment: "# Anchor digest to Base — immutable, publicly verifiable",
-    command: `kontext anchor \\
-  --rpc https://mainnet.base.org \\
-  --contract 0xbc71...b46 \\
-  --key $ANCHOR_KEY`,
-    output: [
-      { value: "", delay: 0 },
-      { label: "Digest:", value: "7f3a9c2e1b8d4f06...", valueColor: "cyan" },
+      { label: "Stage:", value: "confirm", valueColor: "green" },
       { label: "TX Hash:", value: "0xe4f7a2c9d183b6...", valueColor: "cyan" },
       { label: "Block:", value: "28491037" },
-      { label: "Chain:", value: "base" },
-      { label: "Contract:", value: "0xbc71...b46", valueColor: "muted" },
+      { label: "Confirmations:", value: "12" },
+      { label: "Final State:", value: "succeeded", valueColor: "green", delay: 200 },
+    ],
+  },
+  {
+    id: "export",
+    label: "Export",
+    icon: Download,
+    comment: "# Export payment attempts as CSV",
+    command: `kontext logs \\
+  --format csv \\
+  --since 2026-03-01 \\
+  --archetype treasury`,
+    output: [
       { value: "", delay: 0 },
-      { value: "Anchored on-chain.", valueColor: "bold", delay: 200 },
+      { label: "Exported:", value: "47 attempts", valueColor: "green" },
+      { label: "Format:", value: "CSV" },
+      { label: "File:", value: "./exports/treasury-2026-03.csv", valueColor: "cyan" },
+      { label: "Digest chain:", value: "47 links, verified", valueColor: "green", delay: 200 },
     ],
   },
 ];
@@ -225,7 +231,7 @@ export function TerminalDemo() {
 
   // -- Copy install command --
   function handleCopy() {
-    navigator.clipboard.writeText("npm install -g @kontext-sdk/cli").then(() => {
+    navigator.clipboard.writeText("npm install kontext-sdk").then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
@@ -342,7 +348,7 @@ export function TerminalDemo() {
           ) : (
             <>
               <Copy size={11} />
-              npm install -g @kontext-sdk/cli
+              npm install kontext-sdk
             </>
           )}
         </button>

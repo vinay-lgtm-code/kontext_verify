@@ -5,15 +5,15 @@ const footerLinks = {
     { href: "/docs", label: "Documentation" },
     { href: "/use-cases", label: "Use Cases" },
     { href: "/integrations", label: "Integrations" },
-    { href: "/changelog", label: "Changelog" },
-    { href: "/faqs", label: "FAQs" },
+    { href: "/dashboard", label: "Dashboard" },
+    { href: "/pricing", label: "Pricing" },
   ],
-  Ecosystem: [
-    { href: "/use-cases#usdc-payments", label: "USDC Payments" },
-    { href: "/use-cases#x402-protocol", label: "x402 Protocol" },
-    { href: "/use-cases#on-chain-anchoring", label: "On-Chain Anchoring" },
-    { href: "/use-cases#a2a-attestation", label: "A2A Attestation" },
-    { href: "/integrations#agent-frameworks", label: "Agent Frameworks" },
+  Platform: [
+    { href: "/use-cases#treasury", label: "Treasury" },
+    { href: "/use-cases#invoicing", label: "Invoicing" },
+    { href: "/use-cases#payroll", label: "Payroll" },
+    { href: "/use-cases#micropayments", label: "Micropayments" },
+    { href: "/use-cases#cross-border", label: "Cross-Border" },
   ],
   Company: [
     { href: "/about", label: "About" },
@@ -40,9 +40,9 @@ export function Footer() {
         <div className="mx-auto max-w-7xl">
           <p className="text-xs text-[var(--term-text-3)] font-light tracking-wide">
             <span className="text-[var(--term-green)]">$</span>{" "}
-            kontext v0.7.0{" "}
-            <span className="text-[var(--term-surface-3)]">·</span> USDC + x402{" "}
-            <span className="text-[var(--term-surface-3)]">·</span> Base + Arc{" "}
+            kontext v1.0.0{" "}
+            <span className="text-[var(--term-surface-3)]">·</span> Payment Control Plane{" "}
+            <span className="text-[var(--term-surface-3)]">·</span> 8 Stages{" "}
             <span className="text-[var(--term-surface-3)]">·</span>{" "}
             <span className="inline-flex items-center gap-1">
               <span className="led-green" />
@@ -91,7 +91,7 @@ export function Footer() {
           <div className="flex items-center gap-1.5 text-xs text-[var(--term-text-3)]">
             <span className="text-[var(--term-green)]">$</span>
             <span className="font-medium text-[var(--term-text-2)]">kontext</span>
-            <span>v0.7.0</span>
+            <span>v1.0.0</span>
             <span className="text-[var(--term-surface-3)]">·</span>
             <span>Legaci Labs Inc.</span>
             <span className="text-[var(--term-surface-3)]">·</span>

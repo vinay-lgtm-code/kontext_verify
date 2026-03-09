@@ -61,8 +61,8 @@ export default function ContactPage() {
               CONTACT
             </h1>
             <p className="mt-4 text-xs text-[var(--term-text-2)]">
-              Interested in Pro? Have a compliance question? Drop us a
-              line and we will get back to you within one business day.
+              Interested in Pro? Have a question about payment infrastructure?
+              Drop us a line and we will get back to you within one business day.
             </p>
           </div>
         </div>

@@ -5,398 +5,265 @@ import { Button } from "@/components/ui/button";
 import { CodeBlock } from "@/components/code-block";
 import {
   ArrowRight,
-  DollarSign,
   Zap,
-  CreditCard,
   Landmark,
-  Anchor,
-  Handshake,
   Check,
-  UserSearch,
+  Users,
+  FileText,
+  Globe,
 } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Use Cases",
   description:
-    "See how Kontext logs, scores, and proves compliance for agentic transactions — USDC payments, x402 micropayments, Stripe commerce, treasury management, on-chain anchoring, and A2A attestation.",
+    "See how Kontext manages payment lifecycles across payroll, treasury, invoicing, micropayments, and cross-border transfers.",
 };
 
-const usdcCode = `import { Kontext } from 'kontext-sdk';
+const payrollCode = `import { Kontext } from 'kontext-sdk';
 
 const ctx = Kontext.init({
-  projectId: 'my-payment-agent',
+  projectId: 'payroll-ops',
   environment: 'production',
 });
 
-// One call: compliance check + transaction log + digest chain
-const result = await ctx.verify({
-  txHash: '0xabc123...',
+const attempt = await ctx.start({
+  workspaceRef: 'acme-payroll',
+  appRef: 'payroll-agent',
+  archetype: 'payroll',
+  intentCurrency: 'USD',
+  settlementAsset: 'USDC',
   chain: 'base',
-  amount: '5000',
-  token: 'USDC',
-  from: '0xAgentWallet...abc',
-  to: '0xVendor...def',
-  agentId: 'payment-agent-v2',
+  senderRefs: { wallet: '0xPayroll...abc' },
+  recipientRefs: { wallet: '0xEmployee...def' },
+  executionSurface: 'sdk',
 });
 
-if (result.compliant) {
-  console.log('Risk level:', result.riskLevel);       // 'low'
-  console.log('Trust score:', result.trustScore.score); // 87
-  console.log('Checks passed:', result.checks.length);
-} else {
-  // result.checks tells you exactly what failed
-  // result.recommendations tells you what to do about it
-  console.log('Blocked:', result.recommendations);
+const { receipt } = await ctx.authorize(attempt.attemptId, {
+  chain: 'base',
+  token: 'USDC',
+  amount: '3500',
+  from: '0xPayroll...abc',
+  to: '0xEmployee...def',
+  actorId: 'payroll-agent',
+  metadata: {
+    employeeId: 'emp_042',
+    payPeriod: '2026-03',
+    country: 'US',
+  },
+});
+
+if (receipt.allowed) {
+  await ctx.broadcast(attempt.attemptId, txHash, 'base');
+  await ctx.confirm(attempt.attemptId, { txHash, blockNumber });
 }`;
 
-const x402Code = `import { Kontext } from 'kontext-sdk';
+const treasuryCode = `import { Kontext } from 'kontext-sdk';
+
+const ctx = Kontext.init({
+  projectId: 'treasury-ops',
+  environment: 'production',
+});
+
+const attempt = await ctx.start({
+  workspaceRef: 'acme-treasury',
+  appRef: 'treasury-agent',
+  archetype: 'treasury',
+  intentCurrency: 'USD',
+  settlementAsset: 'USDC',
+  chain: 'base',
+  senderRefs: { wallet: '0xTreasury...abc' },
+  recipientRefs: { wallet: '0xVendor...def' },
+  executionSurface: 'sdk',
+});
+
+const { receipt } = await ctx.authorize(attempt.attemptId, {
+  chain: 'base',
+  token: 'USDC',
+  amount: '25000',
+  from: '0xTreasury...abc',
+  to: '0xVendor...def',
+  actorId: 'treasury-agent',
+  metadata: { purpose: 'vendor-payment', department: 'engineering' },
+});
+
+// receipt.decision = 'review' (above $10K threshold)
+// receipt.requiredActions = [{ code: 'REQUEST_APPROVAL', ... }]`;
+
+const invoicingCode = `import { Kontext } from 'kontext-sdk';
+
+const ctx = Kontext.init({
+  projectId: 'invoice-ops',
+  environment: 'production',
+});
+
+const attempt = await ctx.start({
+  workspaceRef: 'acme-invoicing',
+  appRef: 'invoice-agent',
+  archetype: 'invoicing',
+  intentCurrency: 'USD',
+  settlementAsset: 'USDC',
+  chain: 'base',
+  senderRefs: { wallet: '0xAccounts...abc' },
+  recipientRefs: { wallet: '0xVendor...def' },
+  executionSurface: 'sdk',
+});
+
+const { receipt } = await ctx.authorize(attempt.attemptId, {
+  chain: 'base',
+  token: 'USDC',
+  amount: '12000',
+  from: '0xAccounts...abc',
+  to: '0xVendor...def',
+  actorId: 'invoice-agent',
+  metadata: {
+    invoiceId: 'INV-2026-0342',
+    vendorId: 'vendor_acme_supplies',
+    dueDate: '2026-03-15',
+  },
+});`;
+
+const micropaymentCode = `import { Kontext } from 'kontext-sdk';
 
 const ctx = Kontext.init({
   projectId: 'x402-gateway',
   environment: 'production',
 });
 
-// x402 middleware -- verify every micropayment
-export function x402KontextMiddleware(handler) {
-  return async (req, res) => {
-    const payment = req.headers['x-402-payment'];
-
-    if (payment) {
-      const result = await ctx.verify({
-        txHash: payment.txHash,
-        chain: 'base',
-        amount: payment.amount,
-        token: 'USDC',
-        from: payment.payer,
-        to: payment.payee,
-        agentId: payment.agentId || 'unknown',
-        metadata: {
-          resource: req.url,
-          method: req.method,
-        },
-      });
-
-      if (!result.compliant) {
-        return res.status(402).json({
-          error: 'Payment failed compliance check',
-          checks: result.checks.filter(c => !c.passed),
-        });
-      }
-
-      req.kontextResult = result;
-    }
-
-    return handler(req, res);
-  };
-}`;
-
-const stripeCode = `import { Kontext } from 'kontext-sdk';
-import Stripe from 'stripe';
-
-const ctx = Kontext.init({
-  projectId: 'stripe-agent',
-  environment: 'production',
-});
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
-async function handleAgentPayment(agentId: string, amount: number) {
-  // Verify with Kontext before creating payment intent
-  const result = await ctx.verify({
-    amount: String(amount / 100),
-    currency: 'USD',
-    from: agentId,
-    to: 'merchant-account',
-    agentId,
-    paymentMethod: 'card',
-    metadata: { provider: 'stripe', type: 'payment_intent' },
-  });
-
-  if (!result.compliant) {
-    throw new Error('Payment blocked by compliance checks');
-  }
-
-  // Embed Kontext proof in Stripe metadata for traceability
-  const intent = await stripe.paymentIntents.create({
-    amount,
-    currency: 'usd',
-    metadata: {
-      kontext_digest: result.digestProof.terminalDigest,
-      kontext_trust_score: String(result.trustScore.score),
-      agent_id: agentId,
-    },
-  });
-
-  return intent;
-}`;
-
-const treasuryCode = `import { Kontext } from 'kontext-sdk';
-
-const ctx = Kontext.init({
-  apiKey: process.env.KONTEXT_KEY,
-  projectId: 'treasury-ops',
-  environment: 'production',
-  plan: 'payg',
-});
-
-// Enable anomaly detection for treasury movements
-ctx.enableAnomalyDetection({
-  rules: ['unusualAmount', 'frequencySpike', 'newDestination'],
-  thresholds: { maxAmount: '50000', maxFrequency: 10 },
-});
-
-ctx.onAnomaly((event) => {
-  // Alert finance team on Slack/PagerDuty
-  notifyFinanceTeam(event);
-});
-
-async function executeTreasuryTransfer(params) {
-  const result = await ctx.verify({
-    txHash: params.txHash,
-    chain: 'base',
-    amount: params.amount,
-    token: 'USDC',
-    from: params.treasuryWallet,
-    to: params.destinationWallet,
-    agentId: 'treasury-manager-v3',
-    reasoning: \`Transfer for \${params.purpose}. Within \${params.department} budget.\`,
-    confidence: 0.92,
-  });
-
-  if (!result.compliant) {
-    throw new Error('Transfer blocked by compliance checks');
-  }
-
-  // Human-in-the-loop for large transfers
-  if (parseFloat(params.amount) > 50000) {
-    const task = await ctx.createTask({
-      description: \`Approve $\${params.amount} USDC to \${params.destinationWallet}\`,
-      agentId: 'treasury-manager-v3',
-      requiredEvidence: ['txHash', 'budget_approval'],
-    });
-    console.log('Awaiting CFO approval, task:', task.id);
-  }
-
-  console.log('Trust score:', result.trustScore.score);
-  console.log('Risk level:', result.riskLevel);
-}`;
-
-const anchorCode = `import { Kontext } from 'kontext-sdk';
-
-const ctx = Kontext.init({
-  projectId: 'anchored-compliance',
-  environment: 'production',
-});
-
-// verify() with on-chain anchoring -- writes your digest to Base
-const result = await ctx.verify({
-  txHash: '0xdef456...',
+const attempt = await ctx.start({
+  workspaceRef: 'x402-service',
+  appRef: 'api-gateway',
+  archetype: 'micropayments',
+  intentCurrency: 'USD',
+  settlementAsset: 'USDC',
   chain: 'base',
-  amount: '25000',
-  token: 'USDC',
-  from: '0xTreasury...abc',
-  to: '0xVendor...def',
-  agentId: 'payment-agent-v4',
-  reasoning: 'Monthly vendor payment, pre-approved in budget cycle',
-  anchor: {
-    rpcUrl: process.env.BASE_RPC_URL,
-    contractAddress: '0xKontextAnchor...abc',
-    privateKey: process.env.ANCHOR_SIGNER_KEY,
-  },
+  senderRefs: { wallet: '0xPayer...abc' },
+  recipientRefs: { wallet: '0xService...def' },
+  executionSurface: 'sdk',
 });
 
-// The anchor proof is included in the result
-if (result.anchorProof) {
-  console.log('Digest anchored on-chain');
-  console.log('Anchor tx:', result.anchorProof.txHash);
-  console.log('Block:', result.anchorProof.blockNumber);
-  console.log('Digest:', result.anchorProof.digest);
-}
+const { receipt } = await ctx.authorize(attempt.attemptId, {
+  chain: 'base',
+  token: 'USDC',
+  amount: '0.50',
+  from: '0xPayer...abc',
+  to: '0xService...def',
+  actorId: 'api-gateway',
+  metadata: { resource: '/api/data', method: 'GET' },
+});
+// receipt.decision = 'allow' — fast path, no review threshold`;
 
-// Anyone can independently verify the anchor later
-// Zero dependencies -- uses native fetch() + ABI encoding
-import { verifyAnchor } from 'kontext-sdk';
-const verification = await verifyAnchor(
-  process.env.BASE_RPC_URL,
-  '0xKontextAnchor...abc',
-  result.anchorProof.digest,
-);
-console.log('Anchor verified:', verification.anchored); // true`;
-
-const a2aCode = `import { Kontext } from 'kontext-sdk';
+const crossBorderCode = `import { Kontext } from 'kontext-sdk';
 
 const ctx = Kontext.init({
-  projectId: 'buyer-agent',
+  projectId: 'remittance-app',
   environment: 'production',
 });
 
-// verify() with counterparty attestation -- bilateral compliance proof
-const result = await ctx.verify({
-  txHash: '0xabc789...',
+const attempt = await ctx.start({
+  workspaceRef: 'remit-service',
+  appRef: 'remittance-agent',
+  archetype: 'cross_border',
+  intentCurrency: 'USD',
+  settlementAsset: 'USDC',
   chain: 'base',
-  amount: '10000',
-  token: 'USDC',
-  from: '0xBuyerAgent...abc',
-  to: '0xSellerAgent...def',
-  agentId: 'buyer-agent-v2',
-  reasoning: 'Purchase order #1234, seller verified in allowlist',
-  counterparty: {
-    endpoint: 'https://seller-agent.example.com',
-    agentId: 'seller-agent-v3',
-    timeoutMs: 5000,
-  },
+  senderRefs: { wallet: '0xSender...abc' },
+  recipientRefs: { wallet: '0xRecipient...def' },
+  executionSurface: 'sdk',
 });
 
-// Both sides now have cryptographic proof the other ran compliance
-if (result.counterparty?.attested) {
-  console.log('Seller attested:', result.counterparty.agentId);
-  console.log('Seller digest:', result.counterparty.digest);
-  console.log('Attested at:', result.counterparty.timestamp);
-}
-
-// The seller agent exposes /.well-known/kontext.json (agent card)
-// and a /kontext/attest endpoint. The SDK handles the handshake --
-// your agent sends its digest, the seller sends theirs back,
-// and both get linked in their respective audit trails.`;
+const { receipt } = await ctx.authorize(attempt.attemptId, {
+  chain: 'base',
+  token: 'USDC',
+  amount: '2500',
+  from: '0xSender...abc',
+  to: '0xRecipient...def',
+  actorId: 'remittance-agent',
+  metadata: {
+    recipientName: 'Maria Garcia',
+    recipientCountry: 'MX',
+    purpose: 'family-support',
+  },
+});`;
 
 const useCases = [
   {
-    id: "usdc-payments",
-    icon: DollarSign,
-    badge: "Primary",
-    title: "USDC Payments",
+    id: "payroll",
+    icon: Users,
+    badge: "Archetype",
+    title: "Payroll",
     description:
-      "The bread and butter. Your agent moves USDC on Base or Ethereum, and you need a compliance trail that actually holds up. One call to verify() logs the transaction, runs OFAC and threshold checks, computes a trust score, and chains it all into a tamper-evident digest. No config files, no infrastructure — just an npm install and you're logging.",
-    code: usdcCode,
-    filename: "usdc-agent.ts",
+      "Recurring employee USDC payouts with strict metadata requirements. Each payroll transfer must include employeeId, payPeriod, and country. The policy engine enforces required metadata and daily aggregate limits per payment period.",
+    code: payrollCode,
+    filename: "payroll-agent.ts",
     benefits: [
-      "Tamper-evident audit trail for every USDC transfer with SHA-256 digest chaining",
-      "Built-in OFAC screening, Travel Rule ($3K), and CTR ($10K) threshold checks",
-      "Trust scoring per agent based on transaction history and behavioral patterns",
-      "Exportable compliance reports (JSON out of the box, CSV on Pro)",
+      "Required metadata enforcement — employeeId, payPeriod, country checked at authorize()",
+      "Daily aggregate limits per archetype ($15K max for payroll)",
+      "Digest-chained records for payroll audit trails",
+      "OFAC screening on every recipient address",
     ],
   },
   {
-    id: "x402-protocol",
-    icon: Zap,
-    badge: "Protocol",
-    title: "x402 Protocol",
-    description:
-      "HTTP-native micropayments where agents pay per-request. Drop Kontext into your x402 middleware and every micropayment gets compliance-checked before it hits your handler. High-frequency, low-friction — the SDK handles the volume without slowing things down.",
-    code: x402Code,
-    filename: "x402-middleware.ts",
-    benefits: [
-      "Per-request compliance verification that slots into any HTTP middleware stack",
-      "Every micropayment logged with sender, amount, and resource metadata",
-      "Anomaly detection across high-frequency payment streams (velocity, amount spikes)",
-      "Audit trail linking payments to specific API resources and request methods",
-    ],
-  },
-  {
-    id: "stripe-agentic",
-    icon: CreditCard,
-    badge: "Commerce",
-    title: "Stripe Agentic Commerce",
-    description:
-      "Your agent creates Stripe payment intents, and you need to know it is not going off the rails. Verify with Kontext first, then embed the digest proof right in Stripe's metadata. When someone asks \"why did this agent charge that card?\" you have a cryptographically linked answer.",
-    code: stripeCode,
-    filename: "stripe-agent.ts",
-    benefits: [
-      "Pre-payment compliance gate — block untrusted agents before any charge is created",
-      "Digest proof embedded in Stripe payment metadata for end-to-end traceability",
-      "Trust scoring gates payment creation — low-trust agents get stopped automatically",
-      "Full audit trail mapping Kontext digests to Stripe payment intent IDs",
-    ],
-  },
-  {
-    id: "treasury-management",
+    id: "treasury",
     icon: Landmark,
-    badge: "Enterprise",
-    title: "Treasury Management",
+    badge: "Archetype",
+    title: "Treasury",
     description:
-      "AI agents managing corporate treasury with real money need guardrails that actually work. Kontext gives you anomaly detection for unusual patterns, trust scoring that learns from history, and human-in-the-loop approval for transfers above your threshold. Your CFO gets a Slack ping, not a surprise.",
+      "High-value treasury movements with human review thresholds. Transfers above $10K trigger a 'review' decision from the policy engine, requiring explicit human approval before the payment proceeds.",
     code: treasuryCode,
     filename: "treasury-agent.ts",
     benefits: [
-      "Human-in-the-loop approval for transfers exceeding configurable thresholds",
-      "Anomaly detection for unusual amounts, new destinations, and frequency spikes",
-      "Agent reasoning logged alongside every transfer decision (the \"why\" for auditors)",
-      "Trust scoring based on agent history — new agents start cautious, build trust over time",
+      "Human approval thresholds — amounts above $10K require review",
+      "OFAC sanctions screening on every sender and recipient",
+      "Full lifecycle audit from intent to reconciliation",
+      "Max transaction amount ($25K) enforced at authorize()",
     ],
   },
   {
-    id: "on-chain-anchoring",
-    icon: Anchor,
-    badge: "Tamper-Evidence",
-    title: "On-Chain Anchoring",
+    id: "invoicing",
+    icon: FileText,
+    badge: "Archetype",
+    title: "Invoicing",
     description:
-      "The digest chain already gives you tamper-evident logging at the software level. On-chain anchoring takes it further — after verify() runs, the terminal digest gets written to a smart contract on Base. Now you have a publicly verifiable, immutable proof that your compliance checks ran at a specific block height. Anyone can verify it independently, no trust required.",
-    code: anchorCode,
-    filename: "anchor-agent.ts",
+      "B2B invoice settlement with vendor tracking. Each invoice payment carries invoiceId, vendorId, and dueDate metadata. The policy engine enforces vendor allowlists and blocks payments to unverified vendors.",
+    code: invoicingCode,
+    filename: "invoice-agent.ts",
     benefits: [
-      "Terminal digest anchored on-chain after every verify() call — immutable proof on Base",
-      "Block number and timestamp provide a public, verifiable compliance checkpoint",
-      "Independent verification — anyone with the contract address can check the anchor",
-      "Complements the software digest chain with hardware-level tamper-evidence",
+      "Required metadata per payment type — invoiceId, vendorId, dueDate",
+      "Vendor allowlist enforcement at authorize() stage",
+      "Max transaction amount ($20K) with review threshold",
+      "Digest-chained invoice settlement records",
     ],
   },
   {
-    id: "a2a-attestation",
-    icon: Handshake,
-    badge: "Bilateral Proof",
-    title: "A2A Attestation",
+    id: "micropayments",
+    icon: Zap,
+    badge: "Archetype",
+    title: "Micropayments",
     description:
-      "When two agents transact, both sides need proof that the other ran compliance. Pass a counterparty config to verify() and the SDK handles the handshake automatically — your agent sends its digest to the counterparty, gets theirs back, and both get linked in their respective audit trails. Bilateral compliance proof, zero coordination overhead.",
-    code: a2aCode,
-    filename: "a2a-attestation.ts",
+      "High-frequency small payments via x402. Micropayments use a streamlined archetype with a $100 max transaction amount and no human review threshold. Optimized for volume — the policy engine runs fast checks without blocking throughput.",
+    code: micropaymentCode,
+    filename: "micropayment-agent.ts",
     benefits: [
-      "Bilateral compliance proof — both agents prove they ran checks before transacting",
-      "Automatic agent card discovery via /.well-known/kontext.json (like robots.txt for compliance)",
-      "Digest exchange links both audit trails cryptographically — tamper-evident on both sides",
-      "Configurable timeout and agent ID verification for the attestation handshake",
+      "Low-friction, high-volume — $100 max, no review threshold",
+      "OFAC screening on every micropayment sender and recipient",
+      "Per-request metadata (resource, method) logged in digest chain",
+      "Tight amount caps prevent abuse on high-frequency channels",
     ],
   },
   {
-    id: "agent-forensics",
-    icon: UserSearch,
-    badge: "Pro",
-    title: "Agent Forensics",
+    id: "cross-border",
+    icon: Globe,
+    badge: "Archetype",
+    title: "Cross-Border Remittance",
     description:
-      "When multiple agents share wallets or one entity operates many wallets, you need to know. Agent forensics maps wallets to agent identities, detects multi-wallet clustering with 5 heuristics, and computes identity confidence scores. Answer the question regulators will ask: who controls what?",
-    code: `import { Kontext } from 'kontext-sdk';
-
-const ctx = Kontext.init({
-  apiKey: process.env.KONTEXT_KEY,
-  projectId: 'forensics-dashboard',
-  environment: 'production',
-  plan: 'payg',
-});
-
-// Register agent identities with wallet mappings
-ctx.registerAgentIdentity({
-  agentId: 'treasury-agent-v2',
-  displayName: 'Treasury Agent',
-  entityType: 'autonomous',
-  wallets: [
-    { address: '0xTreasury...abc', chain: 'base', label: 'primary' },
-    { address: '0xReserve...def', chain: 'base', label: 'reserve' },
-  ],
-});
-
-// Detect wallet clusters across all registered agents
-const clusters = ctx.getWalletClusters();
-// [{ wallets: ['0xTreasury...abc', '0xReserve...def'],
-//    heuristics: ['shared-owner', 'funding-chain'],
-//    evidence: [...] }]
-
-// Confidence score: how certain is the identity?
-const score = ctx.getKYAConfidenceScore('treasury-agent-v2');
-// { score: 82, level: 'high', components: [...] }`,
-    filename: "forensics.ts",
+      "Consumer remittance with enhanced compliance requirements. Cross-border payments require recipientName, recipientCountry, and purpose metadata. The policy engine applies stricter OFAC screening and country-level restrictions.",
+    code: crossBorderCode,
+    filename: "remittance-agent.ts",
     benefits: [
-      "Wallet-to-agent mapping — register identities and link wallets with evidence",
-      "5 clustering heuristics: shared-owner, temporal-correlation, funding-chain, amount-pattern, network-overlap",
-      "Identity confidence scoring (0-100) with component-level breakdown",
-      "Exportable forensics data via getKYAExport() for compliance reporting",
+      "OFAC screening with country-level restrictions",
+      "Required metadata — recipientName, recipientCountry, purpose",
+      "$10K max per transaction enforced at authorize()",
+      "Full lifecycle audit for cross-border compliance reporting",
     ],
   },
 ];
@@ -413,9 +280,9 @@ export default function UseCasesPage() {
               USE CASES
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
-              See how Kontext fits into real agent workflows — stablecoin
-              payments, micropayments, treasury ops, on-chain anchoring, and
-              agent-to-agent attestation. Every example uses the actual SDK API.
+              See how Kontext fits into real payment workflows — payroll,
+              treasury, invoicing, micropayments, and cross-border transfers.
+              Every example uses the actual SDK API.
             </p>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-center">
               <Button size="lg" className="gap-2" asChild>
@@ -543,10 +410,10 @@ export default function UseCasesPage() {
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center text-center">
             <h2 className="text-sm font-medium">
-              Ready to add compliance to your agents?
+              Ready to add payment lifecycle management?
             </h2>
             <p className="mt-4 max-w-md text-muted-foreground">
-              Install the SDK and start logging agent transactions in under 5
+              Install the SDK and start tracking payment lifecycles in under 5
               minutes. Open source and free to start.
             </p>
             <div className="mt-8 inline-flex items-center gap-2 border border-border bg-card px-4 py-2 font-mono text-sm text-muted-foreground">

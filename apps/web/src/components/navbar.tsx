@@ -10,7 +10,7 @@ const navLinks = [
   { href: "/use-cases", label: "Use Cases" },
   { href: "/integrations", label: "Integrations" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/faqs", label: "FAQs" },
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/blog", label: "Blog" },
 ];
 
@@ -37,17 +37,17 @@ export function Navbar() {
           <div className="hidden lg:flex items-center gap-3 text-[10px] font-light uppercase tracking-widest text-[var(--term-text-3)]">
             <span className="flex items-center gap-1">
               <span className="led-green" />
-              Circle
+              8-Stage Lifecycle
             </span>
             <span className="text-[var(--term-surface-3)]">·</span>
             <span className="flex items-center gap-1">
               <span className="led-green" />
-              Arc
+              Policy Engine
             </span>
             <span className="text-[var(--term-surface-3)]">·</span>
             <span className="flex items-center gap-1">
               <span className="led-green" />
-              USDC
+              6 Adapters
             </span>
           </div>
         </div>
@@ -108,17 +108,17 @@ export function Navbar() {
             <div className="flex items-center gap-3 text-[10px] font-light uppercase tracking-widest text-[var(--term-text-3)] pb-4 border-b border-[var(--term-surface-2)] mb-2">
               <span className="flex items-center gap-1">
                 <span className="led-green" />
-                Circle
+                8-Stage Lifecycle
               </span>
               <span className="text-[var(--term-surface-3)]">·</span>
               <span className="flex items-center gap-1">
                 <span className="led-green" />
-                Arc
+                Policy Engine
               </span>
               <span className="text-[var(--term-surface-3)]">·</span>
               <span className="flex items-center gap-1">
                 <span className="led-green" />
-                USDC
+                6 Adapters
               </span>
             </div>
             {navLinks.map((link) => (
