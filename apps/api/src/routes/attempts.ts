@@ -1,6 +1,8 @@
 import { Hono } from 'hono';
 import { AttemptLedger, ReceiptLedger, MemoryStorage } from '@kontext/core';
 import type { StartAttemptInput, StageEvent } from '@kontext/core';
+import { fireNotifications } from '../services/notifications.js';
+import type { NotificationConfig } from '../services/notifications.js';
 
 export const attemptRoutes = new Hono();
 
@@ -35,11 +37,30 @@ attemptRoutes.get('/:id', async (c) => {
   return c.json(attempt);
 });
 
+// Workspace notification configs — in production, loaded from Firestore
+const workspaceNotifications = new Map<string, NotificationConfig>();
+
+attemptRoutes.put('/:id/notifications', async (c) => {
+  const id = c.req.param('id');
+  const config = await c.req.json<NotificationConfig>();
+  workspaceNotifications.set(id, config);
+  return c.json({ status: 'ok', workspaceRef: id });
+});
+
 attemptRoutes.put('/:id/stages', async (c) => {
   const id = c.req.param('id');
   const event = await c.req.json<StageEvent>();
   try {
     const updated = await attemptLedger.appendStageEvent(id, event);
+
+    // Fire notifications if configured
+    const notifConfig = workspaceNotifications.get(updated.workspaceRef);
+    let notification;
+    if (notifConfig) {
+      notification = await fireNotifications(notifConfig, updated, event);
+    }
+
+    return c.json({ ...updated, notification });
     return c.json(updated);
   } catch (err) {
     return c.json({ error: (err as Error).message }, 400);

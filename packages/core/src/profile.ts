@@ -26,6 +26,11 @@ export interface WorkspaceProfile {
     redactAddresses: boolean;
     redactAmounts: boolean;
   };
+  notifications?: {
+    slack?: { webhookUrl: string; channel?: string };
+    email?: { recipients: string[] };
+    triggers: ('block' | 'review' | 'recipient_not_credited' | 'refund_required')[];
+  };
   createdAt: string;
   updatedAt: string;
 }

@@ -3,3 +3,5 @@ export { EVMAdapter } from './evm.js';
 export { SolanaAdapter } from './solana.js';
 export { CircleAdapter } from './circle.js';
 export { X402Adapter } from './x402.js';
+export { BridgeAdapter } from './bridge.js';
+export { ModernTreasuryAdapter } from './modern-treasury.js';
