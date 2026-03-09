@@ -61,6 +61,7 @@ attemptRoutes.put('/:id/stages', async (c) => {
     }
 
     return c.json({ ...updated, notification });
+    return c.json(updated);
   } catch (err) {
     return c.json({ error: (err as Error).message }, 400);
   }

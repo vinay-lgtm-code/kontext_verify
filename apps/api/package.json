@@ -10,6 +10,7 @@
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@kontext/core": "workspace:*",
@@ -22,5 +23,6 @@
     "tsx": "^4.0.0",
     "typescript": "^5.9.3",
     "vitest": "^1.6.0"
+    "typescript": "^5.9.3"
   }
 }
