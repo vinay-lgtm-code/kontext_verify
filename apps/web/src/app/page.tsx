@@ -1,6 +1,19 @@
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
-import { AgentView } from "@/components/agent-view";
+
+const InteractiveTerminal = dynamic(
+  () => import("@/components/interactive-terminal").then((m) => ({ default: m.InteractiveTerminal })),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="w-full border border-border bg-[#1a1a2e]"
+        style={{ height: "420px" }}
+      />
+    ),
+  },
+);
 
 const authorizeAllowed = `{
   decision: 'allow',
@@ -48,23 +61,20 @@ export default function HomePage() {
     <>
       {/* Hero */}
       <section className="relative">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="pt-16 pb-8 md:pt-24 md:pb-12">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          <div className="pt-16 pb-8 md:pt-24 md:pb-12 text-center">
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
               <span className="text-[var(--term-green)]">$</span>{" "}
-              kontext — payment lifecycle management for{" "}
-              <span className="text-[var(--term-green)] glow">modern fintech</span>
+              kontext — compliance & lifecycle control plane for{" "}
+              <span className="text-[var(--term-green)] glow">AI agents moving stablecoins</span>
             </h1>
-            <p className="mt-4 text-sm sm:text-base text-[var(--term-text-2)] max-w-3xl">
-              8-stage payment lifecycle. Policy engine with OFAC sanctions screening.
-              6 provider adapters. From <code className="text-[var(--term-green)]">intent</code> to{" "}
-              <code className="text-[var(--term-green)]">reconciliation</code> in one SDK.
-              TypeScript-first. Zero dependencies.
+            <p className="mt-4 text-sm sm:text-base text-[var(--term-text-2)] max-w-2xl mx-auto">
+              Watch the CLI run a treasury payment through the 8-stage lifecycle.
+              Then try it yourself.
             </p>
           </div>
 
-          {/* 5-Tab Hero */}
-          <AgentView />
+          <InteractiveTerminal />
         </div>
       </section>
 
