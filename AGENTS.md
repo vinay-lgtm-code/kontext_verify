@@ -4,49 +4,16 @@
 
 ## What Kontext Does
 
-Kontext is a TypeScript SDK providing trust infrastructure for AI agents that move money. It handles compliance audit trails, OFAC screening, trust scoring, on-chain anchoring, and agent-to-agent attestation for autonomous wallet transfers.
+Kontext is a TypeScript SDK providing payment lifecycle management for modern fintech. It tracks every payment from intent to reconciliation through an 8-stage lifecycle, runs a built-in policy engine (OFAC, amount limits, blocklists), and normalizes events from 6 provider adapters into a unified data model.
 
 **Package:** `kontext-sdk` on npm
-**Version:** 0.7.0
 **License:** MIT
-**Runtime dependencies:** Zero
+**Runtime dependencies:** Zero (peer: `@kontext/core`)
 **Node.js:** >= 18.0.0
-
-## MCP Server
-
-Kontext exposes an MCP (Model Context Protocol) server for AI coding assistants.
-
-### Setup
-
-Add to your MCP configuration (Claude Code, Cursor, Windsurf):
-
-```json
-{
-  "mcpServers": {
-    "kontext": {
-      "command": "npx",
-      "args": ["-y", "kontext-sdk", "mcp"]
-    }
-  }
-}
-```
-
-### Available MCP Tools
-
-| Tool | Description | When to Use |
-|------|-------------|-------------|
-| `verify_transaction` | Run compliance check + log transaction + get digest proof | Before or after any financial transfer |
-| `check_sanctions` | OFAC sanctions screening for an address | Before sending to a new address |
-| `log_reasoning` | Log agent reasoning into digest chain | When making financial decisions |
-| `get_trust_score` | Get agent trust score (0-100) | To evaluate agent reliability |
-| `get_compliance_certificate` | Export compliance certificate | For audit reporting |
-| `anchor_digest` | Anchor terminal digest on-chain (Base/Arc) | For immutable proof of compliance |
-| `exchange_attestation` | A2A compliance attestation with counterparty | When two agents transact |
-| `verify_audit_trail` | Verify digest chain integrity | To confirm no tampering |
 
 ## Preferred Integration Pattern
 
-### 1. Initialize (no API key needed for local mode)
+### 1. Initialize
 
 ```typescript
 import { Kontext } from 'kontext-sdk';
@@ -57,147 +24,161 @@ const ctx = Kontext.init({
 });
 ```
 
-### 2. Verify every financial transaction
+### 2. Start a payment attempt
 
 ```typescript
-const result = await ctx.verify({
-  txHash: '0xabc...def',
+const attempt = await ctx.start({
+  workspaceRef: 'ws_acme',
+  appRef: 'invoicing-app',
+  archetype: 'invoicing',
+  intentCurrency: 'USD',
+  settlementAsset: 'USDC',
   chain: 'base',
-  amount: '0.50',
+  senderRefs: { companyId: 'acme-corp' },
+  recipientRefs: { vendorId: 'vendor-123' },
+  executionSurface: 'sdk',
+});
+```
+
+### 3. Authorize (runs the policy engine)
+
+```typescript
+const { attempt: authorized, receipt } = await ctx.authorize(attempt.attemptId, {
+  chain: 'base',
   token: 'USDC',
-  from: '0xAgentWallet',
-  to: '0xAPIProvider',
-  agentId: 'research-agent',
+  amount: '5000',
+  from: '0xSender',
+  to: '0xRecipient',
+  actorId: 'treasury-agent',
 });
 
-if (!result.compliant) {
-  // Block the transfer
-  console.warn('Blocked:', result.checks.filter(c => !c.passed));
+if (!receipt.allowed) {
+  console.warn('Blocked:', receipt.violations);
   return;
 }
 ```
 
-### 3. Log agent reasoning for auditability
+### 4. Track lifecycle stages
 
 ```typescript
-await ctx.logReasoning({
-  agentId: 'payment-agent-v2',
-  action: 'approve-transfer',
-  reasoning: 'Transfer within daily limit. Recipient verified.',
-  confidence: 0.95,
-  context: { dailyTotal: '32000', recipientVerified: true },
+// Broadcast transaction
+await ctx.broadcast(attempt.attemptId, '0xTxHash...');
+
+// Confirm on-chain
+await ctx.confirm(attempt.attemptId, {
+  txHash: '0xTxHash...',
+  blockNumber: 12345,
+  confirmations: 12,
+});
+
+// Credit recipient
+await ctx.credit(attempt.attemptId, {
+  confirmedAt: new Date().toISOString(),
 });
 ```
 
-### 4. Export audit trail
+### 5. Query and export
 
 ```typescript
-const audit = await ctx.export({ format: 'json' });
-const chain = ctx.verifyDigestChain();
-// chain.valid === true means no tampering detected
+// Get attempt by ID
+const a = await ctx.get(attempt.attemptId);
+
+// List with filters
+const pending = ctx.list({ finalState: 'pending' });
+
+// Export via API
+// GET /v1/export/attempts?format=csv
 ```
 
 ## API Surface Summary
 
-### Core Methods
+### Payment Lifecycle
 
-- `ctx.verify(input)` — Compliance check + log + trust score + digest proof
-- `ctx.log(input)` — Log any agent action
-- `ctx.logTransaction(input)` — Log a financial transaction
-- `ctx.logReasoning(input)` — Log agent decision reasoning
+- `ctx.start(input)` — Start a new payment attempt (stage: intent)
+- `ctx.authorize(attemptId, input)` — Run policy engine (OFAC, limits, blocklists)
+- `ctx.record(attemptId, stage, event)` — Append arbitrary stage event
+- `ctx.broadcast(attemptId, txHash)` — Mark transaction broadcast (stage: transmit)
+- `ctx.confirm(attemptId, data)` — Mark transaction confirmed
+- `ctx.credit(attemptId, evidence)` — Mark recipient credited
+- `ctx.fail(attemptId, reason, stage?)` — Mark a stage as failed
+- `ctx.refund(attemptId, data)` — Record a refund
 
-### Trust & Anomaly
+### Query & Config
 
-- `ctx.getTrustScore(agentId)` — Score 0-100 with 5 factors
-- `ctx.enableAnomalyDetection(config)` — Rule-based detection
-- `ctx.onAnomaly(callback)` — React to anomalies
+- `ctx.get(attemptId)` — Get attempt by ID
+- `ctx.list(filter?)` — List attempts with filters
+- `ctx.profile()` — Get workspace profile
+- `ctx.configure(profile)` — Set workspace profile
 
-### Digest Chain (Tamper-Evidence)
+### Lifecycle
 
-- `ctx.getTerminalDigest()` — Current chain fingerprint
-- `ctx.verifyDigestChain()` — Verify integrity
-- `ctx.exportDigestChain()` — Export for external verification
+- `ctx.flush()` — Persist to storage
+- `ctx.destroy()` — Clean up resources
 
-### On-Chain Anchoring
+## 8-Stage Lifecycle
 
-- Pass `anchor` config to `ctx.verify()` to write digest to Base or Arc smart contract
-- `verifyAnchor(rpcUrl, contract, digest)` — Zero-dependency verification
-
-### A2A Attestation
-
-- Pass `counterparty` config to `ctx.verify()` for bilateral attestation
-- `fetchAgentCard(endpoint)` — Discover counterparty via `.well-known/kontext.json`
-
-### Human-in-the-Loop
-
-- `ctx.createTask(input)` — Create approval task
-- `ctx.confirmTask(input)` — Submit evidence and confirm
-
-### Audit Export
-
-- `ctx.export({ format: 'json' })` — Export audit trail
-- `ctx.generateComplianceCertificate(input)` — Compliance certificate with digest proof
-
-### Agent Forensics (Pro)
-
-- `ctx.registerAgentIdentity(input)` — Register agent with wallet mappings
-- `ctx.getAgentIdentity(agentId)` — Retrieve agent identity
-- `ctx.addAgentWallet(agentId, wallet)` — Link additional wallet
-- `ctx.lookupAgentByWallet(address)` — Reverse lookup: wallet → agent
-- `ctx.getWalletClusters()` — Detect multi-wallet clusters (5 heuristics)
-- `ctx.getKYAConfidenceScore(agentId)` — Identity confidence (0-100)
-- `ctx.getKYAExport()` — Export all forensics data
-
-### CLI (`@kontext-sdk/cli`)
-
-```bash
-npm install -g @kontext-sdk/cli
+```
+intent -> authorize -> prepare -> transmit -> confirm -> recipient_credit -> reconcile -> retry_or_refund
 ```
 
-12 commands: `check`, `verify`, `reason`, `cert`, `audit`, `anchor`, `attest`, `sync`, `session`, `checkpoint`, `status`, `mcp`.
+Each stage event has: `stage`, `status` (succeeded/failed/pending), `actorSide` (sender/recipient/provider/network/internal), `code`, `message`, `timestamp`, optional `payload`.
 
-```bash
-# Verify a transaction
-kontext verify --chain base --amount 0.50 --token USDC --from 0xSender --to 0xRecipient
+## Provider Adapters
 
-# Start MCP server for AI coding assistants
-kontext mcp
-```
+6 adapters normalize provider-specific events into the unified lifecycle:
 
-## Error Handling
+| Adapter | Provider | Stages Covered |
+|---------|----------|----------------|
+| `EVMAdapter` | Ethereum, Base, Polygon | transmit, confirm |
+| `SolanaAdapter` | Solana | transmit, confirm |
+| `CircleAdapter` | Circle Programmable Wallets | prepare, transmit, confirm |
+| `X402Adapter` | x402 micropayments | intent, prepare, transmit, confirm |
+| `BridgeAdapter` | Bridge.xyz (Stripe) | prepare, transmit, confirm, recipient_credit |
+| `ModernTreasuryAdapter` | Modern Treasury | prepare, transmit, confirm, reconcile, retry_or_refund |
 
-- `verify()` returns `result.compliant: false` for failed checks — never throws for compliance failures
-- Plan-gated features throw descriptive errors with upgrade URLs
-- All methods are async except `getTerminalDigest()`, `verifyDigestChain()`, `getActions()`
+## Workspace Profiles
 
-## Compliance Thresholds
+Archetype presets configure the policy engine per payment type:
 
-| Threshold | Amount | Trigger |
-|-----------|--------|---------|
-| Travel Rule (EDD) | $3,000 | Enhanced due diligence required |
-| Currency Transaction Report | $10,000 | CTR filing triggered |
-| Large Transaction Alert | $50,000 | High-value monitoring |
+| Archetype | Max TX | Daily Limit | Review Threshold |
+|-----------|--------|-------------|------------------|
+| `micropayments` | $100 | $10,000 | $50 |
+| `treasury` | $25,000 | $100,000 | $10,000 |
+| `invoicing` | $20,000 | $50,000 | $5,000 |
+| `payroll` | $15,000 | $200,000 | $10,000 |
+| `cross_border` | $10,000 | $25,000 | $3,000 |
 
-## Supported Chains & Tokens
+## Policy Engine
 
-**Chains:** Base + Arc (free), Ethereum, Polygon, Arbitrum, Optimism, Avalanche, Solana (Pro)
-**Tokens:** USDC, USDT, DAI, EURC
+The `authorize()` method runs these checks:
+
+1. **OFAC Sanctions** — built-in SDN list, no API key required
+2. **Amount Limits** — per-transaction and daily aggregate
+3. **Blocklists** — sender and recipient address blocking
+4. **Metadata Requirements** — archetype-specific required fields (e.g., invoiceId for invoicing)
+
+Returns `{ allowed: boolean, violations: Violation[] }`.
 
 ## Rules for AI Agents
 
-1. **Always call `verify()` before executing financial transfers** — this is the single most important integration point.
-2. **Log reasoning for every financial decision** — regulators will ask "why did your agent approve this?"
-3. **Check `result.compliant` before proceeding** — never ignore compliance failures.
-4. **Use the MCP server tools** when available — they handle initialization automatically.
-5. **Amounts are strings** — pass `"5000"` not `5000` to avoid floating point issues.
-6. **Chain names are lowercase** — `"base"`, `"ethereum"`, not `"Base"`, `"Ethereum"`.
-7. **Agent IDs should be stable** — use consistent IDs like `"payment-agent-v2"` across sessions for accurate trust scoring.
-8. **Never skip compliance for "small" amounts** — the $3,000 Travel Rule threshold applies to all transfers.
+1. **Always call `authorize()` before executing financial transfers** — the policy engine prevents sanctioned/blocked/overlimit payments.
+2. **Use `start()` at the beginning of every payment flow** — this creates the attempt and enables lifecycle tracking.
+3. **Track stages as they happen** — `broadcast()`, `confirm()`, `credit()` in sequence.
+4. **Amounts are strings** — pass `"5000"` not `5000` to avoid floating point issues.
+5. **Chain names are lowercase** — `"base"`, `"ethereum"`, not `"Base"`.
+
+## CLI Commands
+
+```bash
+kontext init                    # Initialize workspace profile
+kontext login                   # Authenticate with Kontext Cloud
+kontext trace <attemptId>       # View payment attempt lifecycle
+kontext debug <attemptId>       # Debug a failed payment
+kontext logs                    # View recent stage events
+```
 
 ## Links
 
 - Documentation: https://getkontext.com/docs
 - GitHub: https://github.com/Legaci-Labs/kontext
 - npm: https://www.npmjs.com/package/kontext-sdk
-- LLM docs: https://getkontext.com/llms.txt
-- Full LLM docs: https://getkontext.com/llms-full.txt
