@@ -27,24 +27,19 @@ const plans = [
     price: "$0",
     priceDetail: "forever",
     description:
-      "Everything you need to start logging compliance for your agents. No credit card, no catch.",
+      "Everything you need to start managing payment lifecycles. No credit card, no catch.",
     cta: "Get Started",
     ctaHref: "/docs",
     highlighted: false,
     features: [
-      "20,000 events/month",
-      "Core SDK (verify(), log(), logTransaction())",
+      "20,000 payment stage events/month",
+      "8-stage payment lifecycle",
+      "Policy engine (OFAC, amount limits, blocklists)",
       "Tamper-evident digest chain",
-      "Trust scoring",
-      "Basic anomaly detection (2 rules)",
+      "5 workspace profiles / payment presets",
       "JSON audit export",
-      "Base + Arc chain support",
-      "Agent reasoning logs",
-      "Compliance certificates",
-      "On-chain anchoring",
-      "A2A attestation",
-      "Kontext CLI (12 commands)",
-      "MCP server (8 compliance tools)",
+      "Base chain support",
+      "ERC-8021 transaction attribution",
       "Community support via GitHub",
     ],
   },
@@ -53,22 +48,20 @@ const plans = [
     price: "$0.002",
     priceDetail: "per event above 20K free*",
     description:
-      "For agents in production. Usage-based pricing with no monthly minimum. First 20K events always free. Pay with Stripe or USDC on Base via x402.",
+      "For payment infrastructure in production. Usage-based pricing with no monthly minimum. First 20K events always free.",
     cta: "Get Started",
     ctaHref: "/docs",
     highlighted: true,
     features: [
       "First 20,000 events free every month",
       "Everything in Free, plus:",
-      "All 6 anomaly detection rules",
-      "Unified screening (OFAC, Chainalysis, OpenSanctions)",
-      "Custom blocklist/allowlist",
+      "All chains (Base, Ethereum, Solana)",
       "CSV export",
-      "Multi-chain support (6 additional chains)",
-      "Webhook alerts",
-      "Agent forensics (identity, wallet clustering)",
+      "Ops dashboard (5 views)",
+      "Slack + email notifications",
+      "Advanced policy configurations",
+      "6 provider adapters",
       "Cloud persistence",
-      "Pay with USDC via x402 (agent-native)",
       "Email support",
     ],
   },
@@ -78,32 +71,32 @@ const faqs = [
   {
     question: "Is the free tier really free?",
     answer:
-      "Yes. The core Kontext SDK is MIT-licensed and genuinely free — 20,000 events per month, no credit card required, no time limit. It includes verify(), action logging, trust scoring, basic anomaly detection, digest chain verification, on-chain anchoring, A2A attestation, and JSON export. You can run it entirely on your own infrastructure.",
+      "Yes. The core Kontext SDK is MIT-licensed and genuinely free — 20,000 payment stage events per month, no credit card required, no time limit. It includes the full 8-stage payment lifecycle, the policy engine with OFAC screening, amount limits, and blocklists, tamper-evident digest chain verification, and JSON export. You can run it entirely on your own infrastructure.",
   },
   {
     question: "What counts as an event?",
     answer:
-      "Each call to verify(), log(), logTransaction(), or logReasoning() counts as one event. Reads like getTrustScore() or verifyDigestChain() are free and do not count toward your limit.",
+      "Each call to start(), authorize(), record(), broadcast(), confirm(), credit(), fail(), or refund() counts as one payment stage event. Reads like get() and list() are free.",
   },
   {
     question: "What happens when I hit the event limit?",
     answer:
-      "On the Free tier, you will get a clear warning as you approach 20,000 events. Beyond the limit, new logging calls will return a soft error with an upgrade prompt — your agent keeps running, it just stops recording new events until the next month or until you upgrade to Pro.",
+      "On the Free tier, you will get a clear warning as you approach 20,000 payment stage events. Beyond the limit, new stage-transition calls will return a soft error with an upgrade prompt — your agent keeps running, it just stops recording new events until the next month or until you upgrade to Pro.",
   },
   {
     question: "How does Pro pricing work?",
     answer:
-      "Pro is usage-based at $0.002 per event above the 20K free tier. No monthly minimum, no commitment. Your first 20,000 events are always free every month.",
+      "Pro is usage-based at $0.002 per event above the 20K free tier. No monthly minimum, no commitment. Your first 20,000 payment stage events are always free every month.",
   },
   {
     question: "What does Pro add over Free?",
     answer:
-      "Pro unlocks all six anomaly detection rules (adding newDestination, offHoursActivity, rapidSuccession, and roundAmount), unified screening across OFAC SDN, Chainalysis, and OpenSanctions, custom blocklist/allowlist management, CSV export, multi-chain support across 6 additional networks beyond Base and Arc, webhook alerts, cloud persistence, and email support.",
+      "Pro unlocks multi-chain support across Base, Ethereum, and Solana, an ops dashboard with 5 views, CSV export, Slack and email notifications, advanced policy configurations, and 6 provider adapters for integrating external screening and compliance services. Cloud persistence and email support are also included.",
   },
   {
     question: "What chains does Kontext support?",
     answer:
-      "The Free tier supports Base and Arc. Pro unlocks all 8 chains: Ethereum, Base, Polygon, Arbitrum, Optimism, Arc, Avalanche, and Solana.",
+      "Free supports Base. Pro unlocks Ethereum and Solana.",
   },
   {
     question: "How does Kontext handle my data?",
@@ -113,7 +106,7 @@ const faqs = [
   {
     question: "Does Kontext help with GENIUS Act compliance?",
     answer:
-      "Kontext provides the developer tooling to build a compliance audit trail aligned with the GENIUS Act (signed July 2025, regulations due July 2026). It logs what your agents did, why they did it, and proves compliance checks ran with cryptographic proof. That said, Kontext is a developer SDK, not a law firm — consult qualified legal counsel for your specific regulatory obligations.",
+      "Kontext provides the developer tooling to build a compliance audit trail aligned with the GENIUS Act (signed July 2025, regulations due July 2026). The policy engine runs at the authorize() stage to screen transactions against OFAC, enforce amount limits, and apply blocklists before funds move. The digest chain provides cryptographic proof that checks ran. That said, Kontext is a developer SDK, not a law firm — consult qualified legal counsel for your specific regulatory obligations.",
   },
   {
     question: "Can I pay with USDC instead of a credit card?",
@@ -220,7 +213,7 @@ export default function PricingPage() {
             ))}
           </div>
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            *An event is any call to the Kontext SDK or APIs — e.g. verify(), log(), logTransaction(), or logReasoning(). Reads like getTrustScore() are free.
+            *A payment stage event is any call to a stage-transition method — start(), authorize(), record(), broadcast(), confirm(), credit(), fail(), or refund(). Reads like get() and list() are free.
           </p>
         </div>
       </section>
@@ -233,7 +226,7 @@ export default function PricingPage() {
               Up and running in 2 minutes
             </h2>
             <p className="mt-4 text-muted-foreground">
-              Install the SDK, initialize, and call <code className="bg-muted px-1.5 py-0.5 text-sm font-mono border border-border">verify()</code>. That&apos;s it.
+              Install the SDK, initialize, and call <code className="bg-muted px-1.5 py-0.5 text-sm font-mono border border-border">start()</code>. <code className="bg-muted px-1.5 py-0.5 text-sm font-mono border border-border">authorize()</code>. That&apos;s it.
             </p>
           </div>
           <div className="mt-8 overflow-hidden border border-border bg-background">
@@ -241,23 +234,26 @@ export default function PricingPage() {
               <code>{`import { Kontext } from 'kontext-sdk';
 
 const ctx = Kontext.init({
-  projectId: 'my-agent',
+  projectId: 'my-app',
   environment: 'production',
 });
 
-const result = await ctx.verify({
-  txHash: '0xabc...',
+const attempt = await ctx.start({
+  workspaceRef: 'acme', appRef: 'pay-agent',
+  archetype: 'treasury',
+  intentCurrency: 'USD', settlementAsset: 'USDC',
   chain: 'base',
-  amount: '0.50',
-  token: 'USDC',
-  from: '0xAgentWallet',
-  to: '0xAPIProvider',
-  agentId: 'research-agent',
+  senderRefs: { wallet: '0xSender' },
+  recipientRefs: { wallet: '0xRecipient' },
+  executionSurface: 'sdk',
 });
 
-// result.compliant = true/false
-// result.checks = [{ name: 'OFAC Sanctions', passed: true }, ...]
-// result.riskLevel = 'low' | 'medium' | 'high' | 'critical'`}</code>
+const { receipt } = await ctx.authorize(attempt.attemptId, {
+  chain: 'base', token: 'USDC', amount: '5000',
+  from: '0xSender', to: '0xRecipient',
+  actorId: 'treasury-agent',
+});
+// receipt.decision = 'allow' | 'block' | 'review'`}</code>
             </pre>
           </div>
         </div>
@@ -305,11 +301,11 @@ const result = await ctx.verify({
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center text-center">
             <h2 className="text-sm font-medium">
-              Ready to ship compliant agents?
+              Ready to ship payment infrastructure?
             </h2>
             <p className="mt-4 max-w-md text-muted-foreground">
-              Install the SDK and add compliance logging to your first agent in
-              under 5 minutes. No API key required.
+              Install the SDK and add payment lifecycle management in
+              under 5 minutes.
             </p>
             <div className="mt-6 flex flex-col gap-4 sm:flex-row">
               <Button size="lg" asChild>

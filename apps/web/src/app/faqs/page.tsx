@@ -13,7 +13,7 @@ import { ArrowRight } from "lucide-react";
 export const metadata: Metadata = {
   title: "FAQs",
   description:
-    "Frequently asked questions about Kontext — the trust SDK for agentic stablecoin and fiat transactions. Technical details, integrations, pricing, and more.",
+    "Frequently asked questions about Kontext — the Payment Control Plane. 8-stage payment lifecycle, policy engine, provider adapters, workspace profiles, and pricing.",
 };
 
 const faqCategories = [
@@ -23,17 +23,17 @@ const faqCategories = [
       {
         question: "What is Kontext?",
         answer:
-          "Kontext is a TypeScript SDK that provides trust infrastructure for AI agents performing stablecoin and fiat transactions. It handles action logging, trust scoring, anomaly detection, and audit trail export so you can ship compliance-ready agentic workflows without building compliance tooling from scratch.",
+          "Kontext is a TypeScript SDK that provides a Payment Control Plane for developers moving money programmatically. It normalizes payment events from any provider into a canonical 8-stage lifecycle, enforces compliance policies at the authorize stage, and produces a tamper-evident digest chain as cryptographic proof that checks ran.",
       },
       {
         question: "Who is Kontext built for?",
         answer:
-          "Kontext is built for developers integrating AI agents with stablecoin and fiat payments — whether USDC on Base, Stripe payment intents, or any workflow where AI agents move money. Kontext provides the trust and compliance-support layer.",
+          "Kontext is built for developers integrating with payment providers like Circle, Bridge, and Modern Treasury, or sending on-chain stablecoin transfers directly. If you handle payments across multiple providers or chains and need a unified lifecycle with policy enforcement and audit trails, Kontext replaces the custom glue code you would otherwise build yourself.",
       },
       {
         question: "Is Kontext open source?",
         answer:
-          "Yes. The core SDK is fully open source under the MIT license with 20,000 events/month on the free tier. You can self-host the entire stack. Pro ($0.002/event above 20K free) adds all anomaly detection rules, unified screening, CSV export, multi-chain support (6 additional chains beyond Base and Arc), webhooks, and cloud persistence.",
+          "Yes. The core SDK is fully open source under the MIT license. You can self-host the entire stack with zero external dependencies. The free tier includes 20,000 events per month. Pro adds usage-based pricing above that threshold with cloud persistence, CSV export, multi-chain support, and additional policy features.",
       },
       {
         question: "What license does Kontext use?",
@@ -43,177 +43,97 @@ const faqCategories = [
     ],
   },
   {
-    name: "Technical",
+    name: "Payment Lifecycle",
     faqs: [
       {
-        question: "What languages and runtimes are supported?",
+        question: "What are the 8 stages of the payment lifecycle?",
         answer:
-          "The SDK is TypeScript-first with full type safety and ships with zero runtime dependencies. It runs on Node.js 18+, Bun, and Deno. The core API is also accessible via REST for non-JavaScript environments.",
+          "Every payment passes through up to 8 stages: (1) Intent — a payment is requested, (2) Authorize — the policy engine evaluates sanctions, limits, and metadata requirements, (3) Prepare — the transaction is constructed, (4) Transmit — the transaction is broadcast to the network or provider, (5) Confirm — on-chain or provider confirmation is received, (6) Recipient Credit — funds are credited to the recipient, (7) Reconcile — the payment is matched against internal records, (8) Retry or Refund — failed payments are retried or reversed. Not every payment hits all 8 stages. A blocked payment stops at Authorize. A successful payment may skip Retry or Refund entirely.",
       },
       {
-        question: "What blockchain chains are supported?",
+        question: "What is a PaymentAttempt?",
         answer:
-          "The free tier supports Base and Arc. Pro unlocks all 8 chains: Ethereum, Base, Polygon, Arbitrum, Optimism, Arc, Avalanche, and Solana.",
+          "A PaymentAttempt is the canonical object representing a single payment from start to finish. It contains an ordered list of StageEvents, references to the sender and recipient, the chain and settlement asset, the payment archetype (payroll, remittance, invoicing, treasury, or micropayments), and a FinalState. Every payment you process through Kontext becomes a PaymentAttempt, regardless of which provider or chain originated it.",
       },
       {
-        question: "How does trust scoring work?",
+        question: "What is a StageEvent?",
         answer:
-          "Each verified action receives a trust score between 0 and 1 computed from multiple weighted factors: agent history, amount normality relative to the agent's baseline, transaction velocity, recipient trust, and contextual pattern matching. The factors and weights are configurable.",
+          "A StageEvent records a single transition in the payment lifecycle. It includes the stage name (e.g., authorize, confirm), a status (pending, succeeded, failed, review, or collect_info), who performed the action (sender, recipient, network, provider, or internal), a machine-readable code, a human-readable message, a timestamp, and an optional payload for provider-specific data. StageEvents are append-only — once recorded, they cannot be modified.",
       },
       {
-        question: "How does anomaly detection work?",
+        question: "What is a FinalState?",
         answer:
-          "Anomaly detection runs a configurable rule engine on every verify() call. The free tier includes two basic rules: unusual amount and frequency spike. Pro unlocks all six detection rules including new-destination, off-hours, rapid-succession, and round-amount checks.",
-      },
-      {
-        question: "What is the digest chain?",
-        answer:
-          "The digest chain is Kontext's patented append-only audit structure that cryptographically links each logged action to the full history before it. This creates a tamper-evident chain of records — if any entry is modified, the chain breaks, making unauthorized changes immediately detectable.",
-      },
-      {
-        question: "How is audit data stored?",
-        answer:
-          "With the open-source SDK, all data stays on your infrastructure — you control storage entirely. On Pro, audit data is encrypted at rest (AES-256) and in transit (TLS 1.3), stored in cloud infrastructure following SOC 2-aligned practices. You retain full ownership and can export or delete data at any time.",
-      },
-      {
-        question: "What are the performance characteristics?",
-        answer:
-          "The verify() call adds sub-5ms overhead for local rule evaluation. The SDK is under 10kb gzipped with zero runtime dependencies. Cloud-powered trust scoring (Pro) adds a network round-trip but is optimized for P95 latency under 50ms via edge deployment.",
-      },
-      {
-        question: "What is on-chain anchoring?",
-        answer:
-          "On-chain anchoring writes your terminal digest (the SHA-256 hash at the end of your digest chain) to the KontextAnchor smart contract on Base. This creates an immutable, publicly verifiable proof that your audit trail existed at a specific block. Anyone with an RPC URL can verify the anchor — no Kontext account needed. Gas cost is roughly 45K gas per anchor, well under $0.01 on Base.",
-      },
-      {
-        question: "What is A2A attestation?",
-        answer:
-          "A2A (agent-to-agent) attestation lets two agents exchange compliance proofs for the same transaction. The sender posts its terminal digest to the receiver's attestation endpoint (discovered via .well-known/kontext.json). The receiver responds with its own digest. Both sides now have cryptographic proof that the other ran compliance checks. Zero external dependencies — uses native fetch().",
-      },
-      {
-        question: "Does on-chain anchoring cost gas?",
-        answer:
-          "Yes, but it's minimal. Each anchor transaction costs roughly 45K gas on Base, which at current gas prices is well under $0.01. Read-only verification (checking if a digest was anchored) costs nothing — it's a standard eth_call with no gas. The SDK's verifyAnchor() function works with zero dependencies, just a raw RPC URL.",
-      },
-      {
-        question: "What is agent forensics?",
-        answer:
-          "Agent forensics maps wallets to agent identities, detects multi-wallet clustering using 5 heuristics (shared-owner, temporal-correlation, funding-chain, amount-pattern, and network-overlap), and computes identity confidence scores from 0 to 100. It answers the question: which agent controls which wallets? Available on the Pro tier via registerAgentIdentity(), getWalletClusters(), and getKYAConfidenceScore().",
-      },
-      {
-        question: "How does wallet clustering work?",
-        answer:
-          "Wallet clustering uses a Union-Find algorithm with 5 heuristics to detect wallets controlled by the same agent. The heuristics are: shared-owner (explicitly registered), temporal-correlation (wallets active in the same time windows), funding-chain (one wallet funds another), amount-pattern (matching transaction amounts across wallets), and network-overlap (shared counterparties). Each cluster includes evidence trails documenting why wallets were grouped.",
-      },
-      {
-        question: "What is the Kontext CLI?",
-        answer:
-          "The Kontext CLI (@kontext-sdk/cli) provides 12 commands for compliance operations from the terminal: check (static compliance check), verify (full verification with digest chain), reason (log agent reasoning), cert (generate compliance certificates), audit (export audit trails), anchor (on-chain anchoring), attest (A2A attestation), sync (OFAC SDN list sync), session (manage agent sessions), checkpoint (create provenance checkpoints), and mcp (start MCP server for AI coding assistants). Install with npm install -g @kontext-sdk/cli or run via npx. Free tier.",
-      },
-      {
-        question: "Do micropayments need compliance?",
-        answer:
-          "Yes. OFAC screening applies to every transaction regardless of amount. The Travel Rule only requires data-sharing above $3,000, but OFAC sanctions screening, ongoing transaction monitoring, and audit trails are required on every transfer under the BSA. The GENIUS Act reinforces these requirements for stablecoin transactions. Autonomous agents running high-frequency micropayments via x402 create cumulative patterns that can trigger Suspicious Activity Reports regardless of individual amounts. Kontext's verify() + digest chain provides evidence for every payment in a single call.",
+          "FinalState is the terminal status of a PaymentAttempt. The possible values are: pending (still in progress), succeeded (payment completed), failed (payment could not be completed), review (held for human review), blocked (rejected by policy engine), and refunded (funds returned to sender). A PaymentAttempt reaches its FinalState when no further stage transitions are expected.",
       },
     ],
   },
   {
-    name: "Integration",
+    name: "Policy Engine",
     faqs: [
       {
-        question: "How do I integrate Kontext with USDC transfers?",
+        question: "What checks run at the authorize stage?",
         answer:
-          "Call ctx.verify() before executing any USDC transfer. Pass the amount, recipient, chain, and agent ID. Kontext returns a trust score and flag status. If the action is not flagged, proceed with the on-chain transfer using viem, ethers, or your preferred library. See the USDC integration guide in our docs for a complete example.",
+          "The policy engine runs five categories of checks at authorize: (1) OFAC sanctions screening — sender and recipient addresses checked against the Treasury SDN list, (2) Transaction limits — per-transaction maximums and daily aggregate caps, (3) Blocklist/allowlist — explicit recipient and sender controls, (4) Metadata requirements — enforces that the correct fields are present for each payment type (e.g., payroll requires employeeId and payPeriod), (5) Review thresholds — amounts above a configurable limit require human approval. The result is a PaymentReceipt with a decision of allow, block, review, or collect_info.",
       },
       {
-        question: "Does Kontext work with the x402 protocol?",
+        question: "How do I configure policies?",
         answer:
-          "Yes, in two ways. First, Kontext can be used as middleware in x402 HTTP-native payment flows — intercept the payment header, run ctx.verify() against the payment details, and allow or reject based on trust score and flag status. Second, the Kontext API itself accepts x402 USDC payments on Base for usage above the 20K free tier at $0.002/event — your agent pays per API call with no checkout flow needed.",
+          "Policies are defined per payment archetype in your workspace profile. Each archetype (payroll, remittance, invoicing, treasury, micropayments) has a policy preset with sensible defaults for transaction limits, daily caps, review thresholds, required metadata fields, and sanctions screening. You can customize any preset by overriding individual fields, or define a policy from scratch. The policy posture setting controls whether violations are logged but allowed (monitor mode) or block the payment (enforce mode).",
       },
       {
-        question: "Can I use Kontext with Stripe?",
+        question: "What OFAC coverage does Kontext provide?",
         answer:
-          "Yes. Verify agent-initiated payments with Kontext before creating Stripe payment intents. The Kontext audit ID can be attached to Stripe metadata for full end-to-end traceability between your compliance logs and payment records.",
-      },
-      {
-        question: "Does Kontext work with LangChain, CrewAI, or AutoGen?",
-        answer:
-          "Yes. Kontext is framework-agnostic — it works with any agent framework. The Vercel AI SDK has a first-class wrapper (kontextWrapModel). For LangChain, CrewAI, and AutoGen, use ctx.verify() and ctx.log() directly in your agent's tool calls or callbacks.",
-      },
-      {
-        question: "Can I use Kontext with any agent framework?",
-        answer:
-          "Absolutely. Kontext does not depend on any specific agent framework. It is a standalone SDK that you call at the points in your agent's execution where compliance matters — before financial actions, after completions, or at any decision point you want audited.",
+          "The built-in Treasury SDN provider screens sender and recipient addresses against OFAC sanctioned addresses with zero external dependencies and no API key required. This runs on every authorize call when sanctions screening is enabled in the policy (enabled by default). For production deployments that need broader coverage, the pluggable ScreeningProvider architecture supports Chainalysis and OpenSanctions — bring your own API key and the screening aggregator combines results from all configured providers.",
       },
     ],
   },
   {
-    name: "Compliance",
+    name: "Workspace Profiles",
     faqs: [
       {
-        question: "What is the GENIUS Act?",
+        question: "What are payment presets?",
         answer:
-          "The GENIUS Act (Guiding and Establishing National Innovation for U.S. Stablecoins) is U.S. legislation establishing a regulatory framework for stablecoin issuers and the ecosystems around them. It introduces requirements around reserves, transparency, and consumer protection that impact how stablecoin transactions are logged and audited.",
+          "Payment presets are pre-configured policy templates for common payment archetypes. Kontext ships with five: Payroll (employee payouts with required employeeId, payPeriod, and country metadata), Remittance (cross-border transfers with required recipientName, recipientCountry, and purpose), Invoicing (B2B payments with required invoiceId, vendorId, and dueDate), Treasury (internal fund movements with higher limits), and Micropayments (high-frequency low-value transfers). Each preset defines transaction limits, daily aggregate caps, review thresholds, and required metadata fields appropriate for that payment type.",
       },
       {
-        question: "How does Kontext support GENIUS Act compliance efforts?",
+        question: "How do I customize workspace archetypes?",
         answer:
-          "Kontext provides technical infrastructure aligned with where stablecoin regulation is heading: immutable audit trails, transaction-level logging, risk scoring, and exportable compliance reports. It powers your compliance efforts but does not make you compliant on its own — it gives your compliance team the data and tooling they need.",
-      },
-      {
-        question: "Is Kontext itself a certified compliance product?",
-        answer:
-          "Kontext is a developer tool, not a regulated financial entity. Pro plan infrastructure follows SOC 2-aligned practices for data handling. However, Kontext does not guarantee regulatory compliance and is not a substitute for legal counsel — it provides the technical building blocks your compliance program needs.",
-      },
-      {
-        question: "What audit export formats are supported?",
-        answer:
-          "The free tier supports JSON export. Pro adds CSV export. Exports can be filtered by date range, agent, action type, and flag status.",
-      },
-      {
-        question: "Is Kontext a replacement for legal counsel?",
-        answer:
-          "No. Kontext is infrastructure tooling, not legal advice. It provides the technical capabilities — logging, scoring, detection, and reporting — that your legal and compliance teams need to build a compliance program. Always consult qualified legal counsel for regulatory requirements specific to your jurisdiction and use case.",
+          "A workspace profile declares which archetypes are active, which chains and settlement assets are supported, and the policy posture (monitor or enforce). You can override any field in a preset's policy — for example, raise the payroll daily aggregate limit or add custom metadata requirements for invoicing. A single workspace can operate multiple archetypes simultaneously. The profile also controls retry defaults, address redaction settings, and notification triggers for blocked or flagged payments.",
       },
     ],
   },
   {
-    name: "Pricing & Plans",
+    name: "Provider Adapters",
     faqs: [
       {
-        question: "What is included in the free tier?",
+        question: "What does normalizeEvent() do?",
         answer:
-          "The free tier includes the full SDK with 20,000 events/month, action logging, JSON export, basic anomaly detection (2 rules: unusual amount and frequency spike), trust scoring (local), digest chain verification, on-chain anchoring, A2A attestation, compliance certificates, and Base + Arc chain support. It is MIT-licensed and free forever.",
+          "normalizeEvent() is the core method on every provider adapter. It takes a provider-specific event (a Circle webhook payload, a Bridge callback, a Modern Treasury event, a raw EVM transaction receipt, a Solana confirmation) and translates it into a canonical StageEvent. This means your application logic, policy checks, and audit exports work against one data model regardless of how many providers you integrate. Each adapter declares which lifecycle stages it supports.",
       },
       {
-        question: "What does the Pro plan include?",
+        question: "Which providers are supported?",
         answer:
-          "Pro is usage-based at $0.002 per event above the 20K free tier. No monthly minimum, no commitment. It includes everything in Free plus: all six anomaly detection rules, unified screening (OFAC, Chainalysis, OpenSanctions), custom blocklist/allowlist, CSV export, multi-chain support (6 additional chains beyond Base and Arc), webhook alerts, cloud persistence, and email support.",
-      },
-      {
-        question: "Can I self-host the entire stack?",
-        answer:
-          "Yes. The open-source SDK is designed for self-hosting with zero external dependencies. You control where data is stored and how it is processed.",
+          "Kontext ships with six provider adapters: EVM (raw Ethereum-compatible chain transactions), Solana (native Solana transactions), Circle (Circle Programmable Wallets and CCTP), x402 (HTTP-native payment protocol), Bridge (Bridge.xyz orchestration API), and Modern Treasury (fiat payment operations). The ProviderAdapter interface is public — you can implement normalizeEvent() for any payment provider not covered by the built-in adapters.",
       },
     ],
   },
   {
-    name: "Security",
+    name: "Pricing",
     faqs: [
       {
-        question: "How is data encrypted?",
+        question: "What counts as an event?",
         answer:
-          "All data in transit is encrypted with TLS 1.3. On Pro, data at rest is encrypted with AES-256. API keys are hashed and never stored in plaintext. The free tier keeps all data on your infrastructure, so encryption is governed by your own setup.",
+          "An event is a stage-transition call — each time a StageEvent is appended to a PaymentAttempt, that counts as one event. A payment that progresses through intent, authorize, prepare, transmit, confirm, and recipient_credit generates 6 events. A payment that is blocked at authorize generates 2 events (intent + authorize). Policy evaluation at the authorize stage is included in the authorize event and does not count separately.",
       },
       {
-        question: "Where is cloud data stored?",
+        question: "How does Pro pricing work?",
         answer:
-          "Pro plan data is stored in GCP infrastructure following SOC 2-aligned practices. All data is encrypted at rest and in transit.",
+          "The first 20,000 events per month are always free, no credit card required. Above 20,000 events, Pro pricing is usage-based at $2.00 per 1,000 events. No monthly minimum and no commitment. Pro includes everything in the free tier plus cloud persistence, CSV audit export, multi-chain support (Ethereum and Solana in addition to Base), webhook notifications, and all policy engine features. Formula: max(0, events - 20,000) / 1,000 x $2.00.",
       },
       {
-        question: "How does Kontext handle PII?",
+        question: "How is audit data handled?",
         answer:
-          "Kontext logs action metadata, not user PII. The SDK is designed so that you control what data is passed in the metadata fields. We recommend against including raw PII in action logs — instead, use anonymized identifiers.",
+          "With the open-source SDK, all data stays on your infrastructure — you control storage entirely using the built-in file storage adapter or any custom storage implementation. On Pro, audit data is encrypted at rest (AES-256) and in transit (TLS 1.3), stored in GCP infrastructure following SOC 2-aligned practices. You retain full ownership and can export your complete audit history as JSON or CSV at any time.",
       },
     ],
   },
@@ -252,8 +172,9 @@ export default function FAQsPage() {
               FREQUENTLY ASKED QUESTIONS
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
-              Technical answers for developers building with Kontext. Can&apos;t
-              find what you need? Reach out on{" "}
+              Technical answers for developers building with the Kontext
+              Payment Control Plane. Can&apos;t find what you need? Reach out
+              on{" "}
               <a
                 href="https://github.com/Legaci-Labs/kontext"
                 target="_blank"

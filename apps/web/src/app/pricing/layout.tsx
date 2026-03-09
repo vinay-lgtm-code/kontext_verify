@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Simple, transparent pricing for Kontext. Start free with 20K events/month, or upgrade for cloud features, compliance templates, and advanced anomaly detection.",
+    "Simple, transparent pricing for Kontext. Start free with 20K payment stage events/month. Pay as you go for multi-chain, ops dashboard, and advanced policy configurations.",
 };
 
 export default function PricingLayout({

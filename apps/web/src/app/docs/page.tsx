@@ -5,370 +5,739 @@ import { Separator } from "@/components/ui/separator";
 import { BookOpen, Zap, Code2, Shield } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Documentation",
+  title: "Documentation — Payment Control Plane",
   description:
-    "Get started with the Kontext SDK in minutes. Installation, quick start, API reference, and guides for compliance logging, trust scoring, on-chain anchoring, and A2A attestation.",
+    "Kontext Payment Control Plane documentation. 8-stage payment lifecycle, policy engine, provider adapters, workspace profiles, and ops dashboard for autonomous payment agents.",
 };
 
 const installCode = `npm install kontext-sdk`;
 
 const quickStartCode = `import { Kontext } from 'kontext-sdk';
 
-// Initialize -- no API key needed for local mode
 const ctx = Kontext.init({
-  projectId: 'my-project',
+  projectId: 'my-app',
   environment: 'development',
 });
 
-// Verify an x402 micropayment — OFAC screening on every transfer
-const result = await ctx.verify({
-  txHash: '0xabc...def',
+const attempt = await ctx.start({
+  workspaceRef: 'my-workspace',
+  appRef: 'payment-agent',
+  archetype: 'treasury',
+  intentCurrency: 'USD',
+  settlementAsset: 'USDC',
   chain: 'base',
-  amount: '0.50',
-  token: 'USDC',
-  from: '0xAgentWallet',
-  to: '0xAPIProvider',
-  agentId: 'research-agent',
+  senderRefs: { wallet: '0xSender' },
+  recipientRefs: { wallet: '0xRecipient' },
+  executionSurface: 'sdk',
 });
 
-if (!result.compliant) {
-  console.warn('Blocked:', result.checks.filter(c => !c.passed));
-  console.warn('Risk level:', result.riskLevel);
-  // result.recommendations tells you what to do next
-} else {
-  console.log('Trust score:', result.trustScore.score);
-  console.log('Digest proof valid:', result.digestProof.valid);
+const { receipt } = await ctx.authorize(attempt.attemptId, {
+  chain: 'base', token: 'USDC', amount: '5000',
+  from: '0xSender', to: '0xRecipient',
+  actorId: 'payment-agent',
+  metadata: { paymentType: 'treasury', purpose: 'vendor-payment' },
+});
+
+if (receipt.allowed) {
+  await ctx.broadcast(attempt.attemptId, '0xTxHash...', 'base');
+  await ctx.confirm(attempt.attemptId, { txHash: '0xTxHash...', blockNumber: 12345 });
 }`;
 
-const actionLoggingCode = `import { Kontext } from 'kontext-sdk';
+const lifecycleStagesCode = `// The 8 stages every payment flows through:
+//
+// 1. START       — Declare intent (amount, currency, sender, recipient)
+// 2. AUTHORIZE   — Run policy engine (OFAC, limits, blocklists, metadata)
+// 3. PREPARE     — Lock funds or record pre-execution state
+// 4. TRANSMIT    — Broadcast the on-chain transaction
+// 5. CONFIRM     — Wait for block confirmation
+// 6. CREDIT      — Mark recipient as credited
+// 7. FAIL        — Terminal failure at any stage
+// 8. REFUND      — Reverse a previously confirmed payment
+//
+// Each stage emits a StageEvent into the digest chain.
+// Transitions are enforced — you cannot skip stages.
 
-const ctx = Kontext.init({ projectId: 'my-project' });
+import { Kontext } from 'kontext-sdk';
 
-// Log any agent action -- not just transfers
-await ctx.log({
-  action: 'data_access',
-  agentId: 'research-agent',
-  details: 'Queried customer database',
-  metadata: { purpose: 'quarterly_report' },
-});
+const ctx = Kontext.init({ projectId: 'my-app' });
 
-// Log agent reasoning separately
-// When regulators ask "why did your agent do that?" -- you can answer
-await ctx.logReasoning({
-  agentId: 'payment-agent-v2',
-  action: 'approve-transfer',
-  reasoning: 'Transfer within daily limit. Recipient verified in allowlist.',
-  confidence: 0.95,
-  context: { dailyTotal: '32000', recipientVerified: true },
-});
+// Full lifecycle flow:
+const attempt = await ctx.start({ /* ... */ });
+const { receipt } = await ctx.authorize(attempt.attemptId, { /* ... */ });
 
-// Retrieve reasoning entries later
-const entries = ctx.getReasoningEntries('payment-agent-v2');`;
+if (receipt.allowed) {
+  await ctx.record(attempt.attemptId, 'prepare', { lockedAmount: '5000' });
+  await ctx.broadcast(attempt.attemptId, '0xTxHash...', 'base');
+  await ctx.confirm(attempt.attemptId, { txHash: '0xTxHash...', blockNumber: 12345 });
+  await ctx.credit(attempt.attemptId, { creditedAt: new Date().toISOString() });
+}`;
 
-const taskConfirmationCode = `import { Kontext } from 'kontext-sdk';
+const startCode = `import { Kontext } from 'kontext-sdk';
 
-const ctx = Kontext.init({ projectId: 'treasury-app' });
+const ctx = Kontext.init({ projectId: 'my-app' });
 
-// Create a task that requires human approval
-const task = await ctx.createTask({
-  description: 'Approve $25,000 USDC transfer to 0xrecipient',
-  agentId: 'treasury-agent-v2',
-  requiredEvidence: ['txHash', 'recipientVerified'],
-});
-
-// ... human reviews and approves ...
-
-// Confirm with evidence
-const confirmed = await ctx.confirmTask({
-  taskId: task.id,
-  evidence: {
-    txHash: '0xabc...def',
-    recipientVerified: true,
+// start() declares payment intent and creates an attempt
+const attempt = await ctx.start({
+  workspaceRef: 'acme-corp',            // Workspace identifier
+  appRef: 'treasury-agent',             // Application or agent reference
+  archetype: 'treasury',                // Payment preset to apply
+  intentCurrency: 'USD',                // What the sender thinks in
+  settlementAsset: 'USDC',              // What actually moves on-chain
+  chain: 'base',                        // Target chain
+  senderRefs: {
+    wallet: '0xSenderWallet',
+    label: 'treasury-hot-wallet',
   },
-  confirmedBy: 'admin@company.com',
-});
-
-// Check task status at any time
-const status = await ctx.getTaskStatus(task.id);
-
-// List all pending tasks
-const pending = ctx.getTasks('pending');`;
-
-const auditExportCode = `import { Kontext } from 'kontext-sdk';
-
-const ctx = Kontext.init({ projectId: 'my-project' });
-
-// ... log some actions and transactions ...
-
-// Export the full audit trail as JSON
-const audit = await ctx.export({ format: 'json' });
-// audit.data contains all action logs with digest proofs
-
-// Verify the digest chain is intact (no tampering)
-const chain = ctx.verifyDigestChain();
-console.log('Chain valid:', chain.valid);
-console.log('Chain length:', chain.chainLength);
-
-// Get the terminal digest -- your tamper-evident fingerprint
-const terminal = ctx.getTerminalDigest();
-
-// Export the full digest chain for external verification
-const exported = ctx.exportDigestChain();
-// { genesisHash, links, terminalDigest }
-
-// Generate a compliance certificate (includes digest proof + trust score)
-const cert = await ctx.generateComplianceCertificate({
-  agentId: 'treasury-agent-v2',
-  timeRange: { from: startOfMonth, to: endOfMonth },
-  includeReasoning: true,
-});`;
-
-const trustScoringCode = `import { Kontext } from 'kontext-sdk';
-
-const ctx = Kontext.init({ projectId: 'my-project' });
-
-// Get trust score for any agent
-const trust = await ctx.getTrustScore('payment-agent-v2');
-
-console.log(trust.score);   // 87 (0-100)
-console.log(trust.level);   // 'high'
-console.log(trust.factors);
-// {
-//   history: 0.95,       -- agent's track record
-//   amount: 0.88,        -- transaction amount patterns
-//   frequency: 0.92,     -- how often the agent transacts
-//   destination: 0.85,   -- recipient trust level
-//   behavior: 0.90,      -- behavioral consistency
-// }
-
-// Evaluate a transaction before executing it
-const evaluation = await ctx.evaluateTransaction({
-  txHash: '0xabc...def',
-  chain: 'base',
-  amount: '15000',
-  token: 'USDC',
-  from: '0xsender...',
-  to: '0xrecipient...',
-  agentId: 'payment-agent-v2',
-});`;
-
-const anomalyDetectionCode = `import { Kontext } from 'kontext-sdk';
-
-const ctx = Kontext.init({ projectId: 'my-project' });
-
-// Enable anomaly detection with rules
-ctx.enableAnomalyDetection({
-  rules: ['unusualAmount', 'frequencySpike'],
-  thresholds: {
-    maxAmount: '50000',
-    maxFrequency: 20,
+  recipientRefs: {
+    wallet: '0xRecipientWallet',
+    label: 'vendor-acme',
+  },
+  executionSurface: 'sdk',              // 'sdk' | 'api' | 'dashboard'
+  metadata: {
+    invoiceId: 'INV-2026-0042',
+    department: 'engineering',
   },
 });
 
-// React to anomalies in real time
-const unsubscribe = ctx.onAnomaly((event) => {
-  console.log('Anomaly detected:', event.type);
-  console.log('Details:', event.details);
-  // Alert your compliance team via Slack, PagerDuty, etc.
-});
+// attempt.attemptId — unique identifier for this payment
+// attempt.stage — 'start'
+// attempt.createdAt — ISO timestamp`;
 
-// verify() automatically checks anomaly rules
-const result = await ctx.verify({
-  txHash: '0xabc...def',
+const authorizeCode = `import { Kontext } from 'kontext-sdk';
+
+const ctx = Kontext.init({ projectId: 'my-app' });
+
+// authorize() runs every configured policy rule
+const { receipt } = await ctx.authorize(attempt.attemptId, {
   chain: 'base',
-  amount: '75000',
   token: 'USDC',
-  from: '0xsender...',
-  to: '0xrecipient...',
-  agentId: 'payment-agent-v2',
+  amount: '25000',
+  from: '0xSender',
+  to: '0xRecipient',
+  actorId: 'treasury-agent-v2',
+  metadata: {
+    paymentType: 'treasury',
+    purpose: 'vendor-payment',
+  },
 });
 
-// Turn it off when you don't need it
-ctx.disableAnomalyDetection();`;
+// receipt.allowed — true if all rules passed
+// receipt.rules — array of individual rule results:
+// [
+//   { rule: 'ofac-sdn', passed: true, detail: 'No match' },
+//   { rule: 'amount-limit', passed: true, detail: 'Under $25K treasury limit' },
+//   { rule: 'blocklist', passed: true, detail: 'Not on blocklist' },
+//   { rule: 'metadata-required', passed: true, detail: 'All fields present' },
+// ]
+// receipt.riskLevel — 'low' | 'medium' | 'high' | 'critical'
 
-const onChainAnchoringCode = `import { Kontext, verifyAnchor, getAnchor, anchorDigest } from 'kontext-sdk';
+if (!receipt.allowed) {
+  const failed = receipt.rules.filter(r => !r.passed);
+  console.warn('Blocked by:', failed.map(r => r.rule));
+  await ctx.fail(attempt.attemptId, { reason: failed[0].detail });
+}`;
 
-const ctx = Kontext.init({ projectId: 'my-project' });
+const recordCode = `import { Kontext } from 'kontext-sdk';
 
-// Option 1: Anchor automatically via verify()
-const result = await ctx.verify({
-  txHash: '0xabc...def',
+const ctx = Kontext.init({ projectId: 'my-app' });
+
+// record() logs a state change (prepare or reconcile)
+// Use 'prepare' before execution, 'reconcile' after settlement
+
+// Pre-execution: record that funds are locked or ready
+await ctx.record(attempt.attemptId, 'prepare', {
+  lockedAmount: '5000',
+  lockedAt: new Date().toISOString(),
+  lockTxHash: '0xLockTx...',
+});
+
+// Post-settlement: record reconciliation data
+await ctx.record(attempt.attemptId, 'reconcile', {
+  settledAmount: '5000',
+  settledAt: new Date().toISOString(),
+  feesPaid: '0.50',
+  exchangeRate: '1.0001',
+});`;
+
+const broadcastCode = `import { Kontext } from 'kontext-sdk';
+
+const ctx = Kontext.init({ projectId: 'my-app' });
+
+// broadcast() records that the transaction was submitted on-chain
+await ctx.broadcast(attempt.attemptId, '0xTxHash...', 'base');
+
+// Parameters:
+//   attemptId — the payment attempt
+//   txHash    — on-chain transaction hash
+//   chain     — which chain was used ('base', 'ethereum', etc.)`;
+
+const confirmCode = `import { Kontext } from 'kontext-sdk';
+
+const ctx = Kontext.init({ projectId: 'my-app' });
+
+// confirm() records block confirmation
+await ctx.confirm(attempt.attemptId, {
+  txHash: '0xTxHash...',
+  blockNumber: 12345,
+  blockHash: '0xBlockHash...',       // optional
+  gasUsed: '21000',                  // optional
+  effectiveGasPrice: '1000000000',   // optional
+  confirmedAt: new Date().toISOString(),
+});`;
+
+const creditCode = `import { Kontext } from 'kontext-sdk';
+
+const ctx = Kontext.init({ projectId: 'my-app' });
+
+// credit() marks that the recipient has been credited
+await ctx.credit(attempt.attemptId, {
+  creditedAt: new Date().toISOString(),
+  creditRef: 'credit-ref-123',        // optional external reference
+  recipientNotified: true,             // optional
+});
+
+// After credit(), the payment is in its terminal success state.`;
+
+const failRefundCode = `import { Kontext } from 'kontext-sdk';
+
+const ctx = Kontext.init({ projectId: 'my-app' });
+
+// fail() — terminal failure at any stage
+await ctx.fail(attempt.attemptId, {
+  reason: 'OFAC sanctions match on recipient address',
+  failedAt: new Date().toISOString(),
+  code: 'POLICY_VIOLATION',
+  recoverable: false,
+});
+
+// refund() — reverse a previously confirmed payment
+await ctx.refund(attempt.attemptId, {
+  refundTxHash: '0xRefundTx...',
+  chain: 'base',
+  amount: '5000',
+  reason: 'Duplicate payment detected',
+  refundedAt: new Date().toISOString(),
+});
+
+// Both fail() and refund() are terminal — no further transitions allowed.`;
+
+const policyEngineCode = `import { Kontext } from 'kontext-sdk';
+
+const ctx = Kontext.init({ projectId: 'my-app' });
+
+// Policy rules are evaluated automatically during authorize().
+// Configure rules via workspace profiles:
+
+ctx.configure({
+  workspaceRef: 'acme-corp',
+  policies: {
+    // OFAC sanctions screening (built-in SDN list, no API key needed)
+    ofac: { enabled: true },
+
+    // Amount limits per archetype
+    amountLimits: {
+      treasury: { maxPerTx: '25000', dailyLimit: '100000' },
+      micropayments: { maxPerTx: '100', dailyLimit: '1000' },
+    },
+
+    // Blocklist / allowlist
+    blocklist: {
+      addresses: ['0xBlocked1...', '0xBlocked2...'],
+      mode: 'deny',  // 'deny' | 'allow-only'
+    },
+
+    // Required metadata fields per archetype
+    metadataRequirements: {
+      treasury: ['purpose', 'approvedBy'],
+      invoicing: ['invoiceId', 'vendorName'],
+    },
+  },
+});`;
+
+const sanctionsCode = `import { Kontext, UsdcCompliance } from 'kontext-sdk';
+
+// Option 1: Automatic screening during authorize()
+// OFAC screening runs as part of the policy engine.
+// No additional code needed — just enable in your profile.
+
+// Option 2: Standalone screening
+const result = UsdcCompliance.checkTransaction({
   chain: 'base',
   amount: '5000',
   token: 'USDC',
-  from: '0xsender...',
-  to: '0xrecipient...',
-  agentId: 'payment-agent-v2',
-  anchor: {
-    rpcUrl: 'https://base-mainnet.g.alchemy.com/v2/YOUR_KEY',
-    contractAddress: '0xYourAnchorContract',
-    privateKey: process.env.ANCHOR_PRIVATE_KEY,
+  from: '0xSender',
+  to: '0xRecipient',
+});
+// result.compliant — true if no sanctions match
+// result.checks — array of individual check results
+// result.riskLevel — 'low' | 'medium' | 'high' | 'critical'
+
+// Check a specific address
+const sanctioned = UsdcCompliance.isSanctioned('0xAddress...');
+
+// Comprehensive OFAC screening with detailed results
+const detailed = UsdcCompliance.screenComprehensive('0xAddress...');`;
+
+const amountLimitsCode = `// Amount limits are configured per archetype in workspace profiles.
+// The policy engine checks limits during authorize().
+
+ctx.configure({
+  workspaceRef: 'acme-corp',
+  policies: {
+    amountLimits: {
+      // Per-archetype limits
+      treasury:      { maxPerTx: '25000', dailyLimit: '100000' },
+      micropayments: { maxPerTx: '100',   dailyLimit: '1000' },
+      invoicing:     { maxPerTx: '20000', dailyLimit: '50000' },
+      payroll:       { maxPerTx: '15000', dailyLimit: '75000' },
+      cross_border:  { maxPerTx: '10000', dailyLimit: '30000' },
+    },
   },
 });
-// result.anchorProof = { txHash, blockNumber, chain, ... }
 
-// Option 2: Read-only verification -- zero dependencies
-const verified = await verifyAnchor(rpcUrl, contractAddress, digest);
-// verified.anchored = true/false
+// Built-in regulatory thresholds (always active):
+//   $3,000  — Travel Rule / EDD threshold
+//   $10,000 — CTR (Currency Transaction Report) threshold
+//   $50,000 — Large Transaction threshold`;
 
-// Option 3: Get full anchor details
-const details = await getAnchor(rpcUrl, contractAddress, digest);
-// details = { anchorer, projectHash, timestamp }
+const blocklistCode = `// Blocklist mode: deny specific addresses
+ctx.configure({
+  workspaceRef: 'acme-corp',
+  policies: {
+    blocklist: {
+      addresses: [
+        '0xKnownBadActor1...',
+        '0xKnownBadActor2...',
+      ],
+      mode: 'deny',  // Block these addresses, allow everything else
+    },
+  },
+});
 
-// Option 4: Write an anchor manually (requires viem as peer dep)
-const anchorResult = await anchorDigest(
-  { rpcUrl, contractAddress, privateKey },
-  digest,
-  'my-project'
-);`;
+// Allowlist mode: only allow specific addresses
+ctx.configure({
+  workspaceRef: 'acme-corp',
+  policies: {
+    blocklist: {
+      addresses: [
+        '0xApprovedVendor1...',
+        '0xApprovedVendor2...',
+        '0xApprovedVendor3...',
+      ],
+      mode: 'allow-only',  // Only these addresses can receive payments
+    },
+  },
+});`;
 
-const a2aAttestationCode = `import { Kontext, fetchAgentCard, exchangeAttestation } from 'kontext-sdk';
+const metadataRequirementsCode = `// Require specific metadata fields per archetype.
+// authorize() will reject payments missing required fields.
 
-const ctx = Kontext.init({ projectId: 'my-project' });
+ctx.configure({
+  workspaceRef: 'acme-corp',
+  policies: {
+    metadataRequirements: {
+      treasury: ['purpose', 'approvedBy'],
+      invoicing: ['invoiceId', 'vendorName', 'dueDate'],
+      payroll: ['employeeId', 'payPeriod'],
+      cross_border: ['corridorCode', 'beneficiaryCountry'],
+    },
+  },
+});
 
-// Option 1: Attestation via verify()
-const result = await ctx.verify({
-  txHash: '0xabc...def',
+// This authorize() call would fail — missing 'approvedBy':
+const { receipt } = await ctx.authorize(attempt.attemptId, {
+  chain: 'base', token: 'USDC', amount: '5000',
+  from: '0xSender', to: '0xRecipient',
+  actorId: 'treasury-agent',
+  metadata: { purpose: 'vendor-payment' },  // missing 'approvedBy'
+});
+// receipt.allowed = false
+// receipt.rules = [{ rule: 'metadata-required', passed: false,
+//   detail: 'Missing required field: approvedBy' }]`;
+
+const profileCode = `import { Kontext } from 'kontext-sdk';
+
+const ctx = Kontext.init({ projectId: 'my-app' });
+
+// Create or update a workspace profile
+ctx.configure({
+  workspaceRef: 'acme-corp',
+  defaultArchetype: 'treasury',
+  defaultChain: 'base',
+  policies: {
+    ofac: { enabled: true },
+    amountLimits: {
+      treasury: { maxPerTx: '25000', dailyLimit: '100000' },
+    },
+    blocklist: { addresses: [], mode: 'deny' },
+    metadataRequirements: {
+      treasury: ['purpose', 'approvedBy'],
+    },
+  },
+  notifications: {
+    slack: { webhookUrl: 'https://hooks.slack.com/services/...' },
+    email: { recipients: ['compliance@acme.com'] },
+  },
+});
+
+// Retrieve a workspace profile
+const profile = ctx.profile('acme-corp');
+// profile.workspaceRef — 'acme-corp'
+// profile.policies — configured policy rules
+// profile.notifications — notification channels`;
+
+const presetsCode = `// 5 built-in payment presets (archetypes):
+//
+// +-----------------+----------+--------------------+
+// | Archetype       | Max / Tx | Use Case           |
+// +-----------------+----------+--------------------+
+// | micropayments   | $100     | x402, tips, APIs   |
+// | treasury        | $25,000  | Vendor payments    |
+// | invoicing       | $20,000  | Invoice settlement |
+// | payroll         | $15,000  | Salary disbursement|
+// | cross_border    | $10,000  | International USDC |
+// +-----------------+----------+--------------------+
+//
+// Presets configure default limits. Override them per workspace:
+
+const attempt = await ctx.start({
+  workspaceRef: 'acme-corp',
+  appRef: 'payment-agent',
+  archetype: 'treasury',   // applies treasury preset limits
+  intentCurrency: 'USD',
+  settlementAsset: 'USDC',
   chain: 'base',
-  amount: '5000',
-  token: 'USDC',
-  from: '0xsender...',
-  to: '0xrecipient...',
-  agentId: 'sender-agent',
-  counterparty: {
-    endpoint: 'https://receiver.example.com',
-    agentId: 'receiver-v1',
+  senderRefs: { wallet: '0xSender' },
+  recipientRefs: { wallet: '0xRecipient' },
+  executionSurface: 'sdk',
+});`;
+
+const notificationsCode = `import { Kontext } from 'kontext-sdk';
+
+const ctx = Kontext.init({ projectId: 'my-app' });
+
+// Configure notifications per workspace
+ctx.configure({
+  workspaceRef: 'acme-corp',
+  notifications: {
+    // Slack notifications
+    slack: {
+      webhookUrl: 'https://hooks.slack.com/services/T.../B.../xxx',
+      channel: '#compliance-alerts',
+      events: ['payment.failed', 'policy.violation', 'anomaly.detected'],
+    },
+
+    // Email notifications
+    email: {
+      recipients: ['compliance@acme.com', 'ops@acme.com'],
+      events: ['payment.failed', 'payment.refunded', 'policy.violation'],
+    },
   },
 });
-// result.counterparty = { attested, digest, agentId, timestamp }
 
-// Option 2: Discover a counterparty agent
-const card = await fetchAgentCard('https://receiver.example.com');
-// card = { agentId, kontextVersion, capabilities, attestEndpoint }
+// Notifications fire automatically when events occur.
+// No additional code needed after configuration.`;
 
-// Option 3: Exchange attestation directly
-const attestation = await exchangeAttestation(
-  { endpoint: 'https://receiver.example.com', agentId: 'receiver-v1' },
-  {
-    senderDigest: ctx.getTerminalDigest(),
-    senderAgentId: 'sender-agent',
-    amount: '5000',
-    token: 'USDC',
-    timestamp: new Date().toISOString(),
-  }
-);`;
+const adapterInterfaceCode = `// Every provider adapter implements the ProviderAdapter interface:
 
-const agentProvenanceCode = `import { Kontext, FileStorage } from 'kontext-sdk';
+interface ProviderAdapter {
+  name: string;
+  supportedChains: string[];
+  supportedAssets: string[];
+
+  // Send a payment through this provider
+  send(params: AdapterSendParams): Promise<AdapterSendResult>;
+
+  // Check transaction status
+  status(txRef: string): Promise<AdapterStatusResult>;
+
+  // Estimate fees for a payment
+  estimateFee?(params: AdapterFeeParams): Promise<AdapterFeeResult>;
+}
+
+interface AdapterSendParams {
+  chain: string;
+  asset: string;
+  amount: string;
+  from: string;
+  to: string;
+  metadata?: Record<string, unknown>;
+}
+
+interface AdapterSendResult {
+  txHash: string;
+  chain: string;
+  status: 'submitted' | 'pending' | 'confirmed' | 'failed';
+  providerRef?: string;
+}`;
+
+const evmAdapterCode = `import { Kontext, EVMAdapter } from 'kontext-sdk';
+
+const evm = new EVMAdapter({
+  rpcUrl: 'https://base-mainnet.g.alchemy.com/v2/YOUR_KEY',
+  privateKey: process.env.WALLET_PRIVATE_KEY,
+});
 
 const ctx = Kontext.init({
-  projectId: 'treasury-app',
-  storage: new FileStorage('.kontext'),
+  projectId: 'my-app',
+  adapters: [evm],
 });
 
-// Layer 1: Session delegation — record who authorized the agent
-const session = await ctx.createAgentSession({
-  agentId: 'treasury-agent',
-  delegatedBy: 'user:vinay',
-  scope: ['transfer', 'approve'],
-  expiresAt: new Date(Date.now() + 3600_000).toISOString(),
+// EVMAdapter supports:
+//   Chains: ethereum, base, polygon, arbitrum, optimism, avalanche
+//   Assets: USDC, USDT, DAI, EURC`;
+
+const solanaAdapterCode = `import { Kontext, SolanaAdapter } from 'kontext-sdk';
+
+const solana = new SolanaAdapter({
+  rpcUrl: 'https://api.mainnet-beta.solana.com',
+  privateKey: process.env.SOLANA_PRIVATE_KEY,
 });
 
-// Layer 2: Action binding — every verify() call ties to the session
-const result = await ctx.verify({
-  txHash: '0xabc...def',
-  chain: 'base',
-  amount: '5000',
-  token: 'USDC',
-  from: '0xAgentWallet',
-  to: '0xRecipient',
-  agentId: 'treasury-agent',
-  sessionId: session.sessionId,
+const ctx = Kontext.init({
+  projectId: 'my-app',
+  adapters: [solana],
 });
 
-// Layer 3: Human attestation — reviewer signs off
-const checkpoint = await ctx.createCheckpoint({
-  sessionId: session.sessionId,
-  actionIds: [result.transaction.id],
-  summary: 'Reviewed $5K USDC transfer to known vendor',
+// SolanaAdapter supports:
+//   Chains: solana
+//   Assets: USDC, USDT`;
+
+const circleAdapterCode = `import { Kontext, CircleAdapter } from 'kontext-sdk';
+
+const circle = new CircleAdapter({
+  apiKey: process.env.CIRCLE_API_KEY,
+  environment: 'production',  // 'sandbox' | 'production'
 });
 
-// Attest with a key the agent never touches
-const attested = await ctx.attestCheckpoint({
-  checkpointId: checkpoint.checkpointId,
-  attestedBy: 'compliance-officer@company.com',
-  signature: reviewerSignature,
+const ctx = Kontext.init({
+  projectId: 'my-app',
+  adapters: [circle],
 });
 
-// End the session when done
-await ctx.endAgentSession(session.sessionId);
+// CircleAdapter supports:
+//   Circle Programmable Wallets
+//   CCTP cross-chain transfers (V1 and V2)
+//   Chains: ethereum, base, polygon, arbitrum, avalanche, solana
+//   Assets: USDC, EURC`;
 
-// List all sessions and checkpoints
-const sessions = ctx.getAgentSessions('treasury-agent');
-const checkpoints = ctx.getCheckpoints(session.sessionId);`;
+const x402AdapterCode = `import { Kontext, X402Adapter } from 'kontext-sdk';
+
+const x402 = new X402Adapter({
+  rpcUrl: 'https://base-mainnet.g.alchemy.com/v2/YOUR_KEY',
+  privateKey: process.env.WALLET_PRIVATE_KEY,
+});
+
+const ctx = Kontext.init({
+  projectId: 'my-app',
+  adapters: [x402],
+});
+
+// X402Adapter supports:
+//   HTTP 402 payment protocol
+//   Micropayment flows (sub-$1 USDC)
+//   Chains: base, ethereum
+//   Assets: USDC`;
+
+const bridgeAdapterCode = `import { Kontext, BridgeAdapter } from 'kontext-sdk';
+
+const bridge = new BridgeAdapter({
+  apiKey: process.env.BRIDGE_API_KEY,
+  environment: 'production',
+});
+
+const ctx = Kontext.init({
+  projectId: 'my-app',
+  adapters: [bridge],
+});
+
+// BridgeAdapter supports:
+//   Bridge.xyz (Stripe) orchestration API
+//   Fiat on/off ramp flows
+//   Chains: ethereum, base, polygon, solana
+//   Assets: USDC, USDT`;
+
+const modernTreasuryAdapterCode = `import { Kontext, ModernTreasuryAdapter } from 'kontext-sdk';
+
+const mt = new ModernTreasuryAdapter({
+  apiKey: process.env.MODERN_TREASURY_API_KEY,
+  organizationId: process.env.MODERN_TREASURY_ORG_ID,
+});
+
+const ctx = Kontext.init({
+  projectId: 'my-app',
+  adapters: [mt],
+});
+
+// ModernTreasuryAdapter supports:
+//   Bank payment rails (ACH, Wire, RTP)
+//   Ledger-based reconciliation
+//   Multi-currency support`;
+
+const dashboardCode = `// The Ops Dashboard provides a real-time view of payment activity.
+//
+// Features:
+//   - Live payment attempt feed with stage progression
+//   - Policy violation alerts and blocked payments
+//   - Per-workspace volume and success rate metrics
+//   - Anomaly detection event timeline
+//   - Digest chain verification status
+//
+// Access the dashboard at:
+//   https://app.getkontext.com/dashboard
+//
+// Or embed in your own app:
+import { Kontext } from 'kontext-sdk';
+
+const ctx = Kontext.init({
+  projectId: 'my-app',
+  apiKey: 'sk_live_...',
+});
+
+// List recent payment attempts
+const attempts = await ctx.list({
+  workspaceRef: 'acme-corp',
+  limit: 50,
+  stage: 'confirmed',        // filter by current stage
+  since: '2026-03-01',       // filter by date
+});
+
+// Get a specific attempt with full history
+const attempt = await ctx.get(attemptId);
+// attempt.stages — ordered array of StageEvent objects
+// attempt.currentStage — current stage name
+// attempt.finalState — 'success' | 'failed' | 'refunded' | null`;
+
+const exportCode = `import { Kontext } from 'kontext-sdk';
+
+const ctx = Kontext.init({ projectId: 'my-app' });
+
+// Export audit trail as JSON
+const jsonExport = await ctx.export({ format: 'json' });
+// jsonExport.data — serialized payment attempts with stage events
+
+// Export audit trail as CSV
+const csvExport = await ctx.export({ format: 'csv' });
+// csvExport.data — CSV rows: attemptId, stage, timestamp, amount, chain, ...
+
+// Filter exports by workspace, date range, or stage
+const filtered = await ctx.export({
+  format: 'json',
+  workspaceRef: 'acme-corp',
+  since: '2026-03-01',
+  until: '2026-03-08',
+  stages: ['confirmed', 'failed'],
+});
+
+// Verify digest chain integrity
+const chain = ctx.verifyDigestChain();
+console.log('Chain valid:', chain.valid);
+console.log('Chain length:', chain.chainLength);`;
+
+const notificationsOpsCode = `// Slack and email alerts fire on configured events.
+// Set up once in your workspace profile:
+
+ctx.configure({
+  workspaceRef: 'acme-corp',
+  notifications: {
+    slack: {
+      webhookUrl: 'https://hooks.slack.com/services/T.../B.../xxx',
+      events: [
+        'payment.failed',        // Payment reached fail() state
+        'payment.refunded',      // Payment was refunded
+        'policy.violation',      // authorize() blocked a payment
+        'anomaly.detected',      // Anomaly detection triggered
+        'limit.approaching',     // 80% of daily limit used
+      ],
+    },
+    email: {
+      recipients: ['compliance@acme.com'],
+      events: ['policy.violation', 'payment.failed'],
+      digest: 'daily',          // 'immediate' | 'daily' | 'weekly'
+    },
+  },
+});`;
 
 const apiReferenceCode = `// Initialization
 const ctx = Kontext.init(config: KontextConfig): Kontext;
 
-// The main function -- compliance check + transaction log in one call
-await ctx.verify(input: VerifyInput): Promise<VerifyResult>;
+// Payment Lifecycle
+await ctx.start(input: StartAttemptInput): Promise<PaymentAttempt>;
+await ctx.authorize(attemptId: string, input: AuthorizeInput): Promise<{ receipt: PaymentReceipt }>;
+await ctx.record(attemptId: string, phase: 'prepare' | 'reconcile', data: Record<string, unknown>): Promise<StageEvent>;
+await ctx.broadcast(attemptId: string, txHash: string, chain: string): Promise<StageEvent>;
+await ctx.confirm(attemptId: string, input: ConfirmInput): Promise<StageEvent>;
+await ctx.credit(attemptId: string, input: CreditInput): Promise<StageEvent>;
+await ctx.fail(attemptId: string, input: FailInput): Promise<StageEvent>;
+await ctx.refund(attemptId: string, input: RefundInput): Promise<StageEvent>;
 
-// Action logging
-await ctx.log(input: LogActionInput): Promise<ActionLog>;
-await ctx.logTransaction(input: LogTransactionInput): Promise<TransactionRecord>;
-await ctx.logReasoning(input: LogReasoningInput): Promise<ReasoningEntry>;
-ctx.getReasoningEntries(agentId: string): ReasoningEntry[];
-await ctx.flushLogs(): Promise<void>;
+// Query
+await ctx.get(attemptId: string): Promise<PaymentAttempt>;
+await ctx.list(filter?: ListFilter): Promise<PaymentAttempt[]>;
 
-// Task confirmation (human-in-the-loop)
-await ctx.createTask(input: CreateTaskInput): Promise<Task>;
-await ctx.confirmTask(input: ConfirmTaskInput): Promise<Task>;
-await ctx.getTaskStatus(taskId: string): Promise<Task | undefined>;
-await ctx.startTask(taskId: string): Promise<Task>;
-await ctx.failTask(taskId: string, reason: string): Promise<Task>;
-ctx.getTasks(status?: TaskStatus): Task[];
+// Workspace Profiles
+ctx.profile(workspaceRef: string): WorkspaceProfile;
+ctx.configure(config: WorkspaceConfig): void;
 
-// Trust scoring
-await ctx.getTrustScore(agentId: string): Promise<TrustScore>;
-await ctx.evaluateTransaction(tx: LogTransactionInput): Promise<TransactionEvaluation>;
-
-// Anomaly detection
-ctx.enableAnomalyDetection(config: AnomalyDetectionConfig): void;
-ctx.disableAnomalyDetection(): void;
-ctx.onAnomaly(callback: AnomalyCallback): () => void;
-
-// Audit export
-await ctx.export(options: ExportOptions): Promise<ExportResult>;
-await ctx.generateReport(options: ReportOptions): Promise<ComplianceReport>;
-await ctx.generateComplianceCertificate(input): Promise<ComplianceCertificate>;
-
-// Digest chain (tamper-evidence)
+// Digest Chain
 ctx.getTerminalDigest(): string;
 ctx.verifyDigestChain(): DigestVerification;
 ctx.exportDigestChain(): { genesisHash, links, terminalDigest };
-ctx.getActions(): ActionLog[];
 
-// Agent provenance
-await ctx.createAgentSession(input: CreateAgentSessionInput): Promise<AgentSession>;
-await ctx.endAgentSession(sessionId: string): Promise<AgentSession>;
-ctx.getAgentSessions(agentId: string): AgentSession[];
-await ctx.createCheckpoint(input: CreateCheckpointInput): Promise<Checkpoint>;
-await ctx.attestCheckpoint(input: AttestCheckpointInput): Promise<Checkpoint>;
-ctx.getCheckpoints(sessionId: string): Checkpoint[];
+// Export
+await ctx.export(options: ExportOptions): Promise<ExportResult>;
 
 // Persistence
 await ctx.flush(): Promise<void>;
-await ctx.restore(): Promise<void>;
-
-// Plan management
-ctx.getUsage(): PlanUsage;
-ctx.setPlan(tier: PlanTier): void;
-ctx.onUsageWarning(callback): () => void;
-ctx.onLimitReached(callback): () => void;
 
 // Lifecycle
 await ctx.destroy(): Promise<void>;`;
 
-const configCode = `import { Kontext, FileStorage } from 'kontext-sdk';
+const typesCode = `import type {
+  // Payment lifecycle
+  StartAttemptInput,
+  PaymentAttempt,
+  PaymentReceipt,
+  StageEvent,
+  StageName,
+  FinalState,
+
+  // Authorization
+  AuthorizeInput,
+  PolicyRule,
+  PolicyResult,
+
+  // Stage inputs
+  ConfirmInput,
+  CreditInput,
+  FailInput,
+  RefundInput,
+
+  // Query
+  ListFilter,
+
+  // Workspace
+  WorkspaceProfile,
+  WorkspaceConfig,
+
+  // Configuration
+  KontextConfig,
+  KontextMode,
+
+  // Provider adapters
+  ProviderAdapter,
+  AdapterSendParams,
+  AdapterSendResult,
+
+  // Export
+  ExportOptions,
+  ExportResult,
+
+  // Digest chain
+  DigestVerification,
+} from 'kontext-sdk';`;
+
+const configCode = `import { Kontext, FileStorage, EVMAdapter } from 'kontext-sdk';
 
 const ctx = Kontext.init({
   // Required
@@ -379,10 +748,18 @@ const ctx = Kontext.init({
   apiKey: 'sk_live_...',      // only needed for cloud mode
   plan: 'free',               // 'free' | 'payg' | 'enterprise'
 
-  // Persistence -- default is in-memory (resets on restart)
-  storage: new FileStorage('./compliance-data'),
+  // Persistence — default is in-memory (resets on restart)
+  storage: new FileStorage('./payment-data'),
 
-  // Event exporters -- where to send events
+  // Provider adapters — plug in one or more
+  adapters: [
+    new EVMAdapter({
+      rpcUrl: 'https://base-mainnet.g.alchemy.com/v2/YOUR_KEY',
+      privateKey: process.env.WALLET_PRIVATE_KEY,
+    }),
+  ],
+
+  // Event exporters — where to send events
   exporters: [
     // new ConsoleExporter(),       // prints to stdout (dev)
     // new JsonFileExporter(path),  // writes JSONL to disk
@@ -391,200 +768,25 @@ const ctx = Kontext.init({
   ],
 });`;
 
-const typesCode = `import type {
-  // Core
-  KontextConfig,
-  KontextMode,
-  LogActionInput,
-  LogTransactionInput,
-  TransactionRecord,
-  ActionLog,
+const cliCommandsCode = `# Initialize a new Kontext project
+kontext init
 
-  // Verify
-  VerifyInput,
-  VerifyResult,
+# Start a payment trace
+kontext trace start --workspace acme-corp --archetype treasury \\
+  --amount 5000 --chain base --from 0xSender --to 0xRecipient
 
-  // Tasks
-  Task,
-  CreateTaskInput,
-  ConfirmTaskInput,
+# Authorize a payment attempt
+kontext trace authorize <attemptId> --amount 5000 --chain base \\
+  --from 0xSender --to 0xRecipient --actor payment-agent
 
-  // Trust & Anomaly
-  TrustScore,
-  AnomalyEvent,
-  AnomalyDetectionConfig,
+# Confirm a payment
+kontext trace confirm <attemptId> --tx-hash 0xTxHash --block 12345
 
-  // Export & Reports
-  ExportOptions,
-  ExportResult,
-  ComplianceReport,
-  DigestVerification,
+# View payment logs
+kontext logs --workspace acme-corp --limit 50 --stage confirmed
 
-  // Reasoning & Certificates
-  ReasoningEntry,
-  ComplianceCertificate,
-
-  // On-chain anchoring
-  OnChainAnchorConfig,
-  AnchorResult,
-  AnchorVerification,
-
-  // A2A attestation
-  AgentCard,
-  CounterpartyConfig,
-  AttestationRequest,
-  AttestationResponse,
-  CounterpartyAttestation,
-
-  // Agent provenance
-  AgentSession,
-  CreateAgentSessionInput,
-  Checkpoint,
-  CreateCheckpointInput,
-  AttestCheckpointInput,
-} from 'kontext-sdk';`;
-
-const agentIdentityCode = `import { Kontext } from 'kontext-sdk';
-
-const ctx = Kontext.init({
-  apiKey: process.env.KONTEXT_KEY,
-  projectId: 'forensics',
-  plan: 'payg',
-});
-
-// Register an agent with wallet mappings
-ctx.registerAgentIdentity({
-  agentId: 'treasury-agent-v2',
-  displayName: 'Treasury Agent',
-  entityType: 'autonomous',  // 'autonomous' | 'semi-autonomous' | 'human-supervised'
-  wallets: [
-    { address: '0xTreasury...abc', chain: 'base', label: 'primary' },
-    { address: '0xReserve...def', chain: 'base', label: 'reserve' },
-  ],
-});
-
-// Add a wallet later
-ctx.addAgentWallet('treasury-agent-v2', {
-  address: '0xOps...ghi', chain: 'ethereum', label: 'operations',
-});
-
-// Reverse lookup: which agent owns this wallet?
-const agent = ctx.lookupAgentByWallet('0xTreasury...abc');
-console.log(agent?.agentId); // 'treasury-agent-v2'
-
-// Retrieve identity
-const identity = ctx.getAgentIdentity('treasury-agent-v2');`;
-
-const walletClusteringCode = `import { Kontext } from 'kontext-sdk';
-
-const ctx = Kontext.init({
-  apiKey: process.env.KONTEXT_KEY,
-  projectId: 'forensics',
-  plan: 'payg',
-});
-
-// Register agents and their wallets...
-// Then detect clusters across all registered agents
-const clusters = ctx.getWalletClusters();
-
-for (const cluster of clusters) {
-  console.log('Cluster wallets:', cluster.wallets);
-  console.log('Heuristics matched:', cluster.heuristics);
-  // e.g. ['shared-owner', 'funding-chain', 'temporal-correlation']
-  console.log('Evidence:', cluster.evidence);
-}
-
-// 5 clustering heuristics:
-// - shared-owner: wallets registered to the same agent
-// - temporal-correlation: wallets active in the same time windows
-// - funding-chain: one wallet funds another
-// - amount-pattern: matching transaction amounts across wallets
-// - network-overlap: shared counterparties`;
-
-const confidenceScoringCode = `import { Kontext } from 'kontext-sdk';
-
-const ctx = Kontext.init({
-  apiKey: process.env.KONTEXT_KEY,
-  projectId: 'forensics',
-  plan: 'payg',
-});
-
-// Compute identity confidence for an agent
-const score = ctx.getKYAConfidenceScore('treasury-agent-v2');
-
-console.log(score.score);      // 82 (0-100)
-console.log(score.level);      // 'high' | 'medium' | 'low' | 'very-low'
-console.log(score.components); // breakdown by factor
-
-// Components: identity-completeness, wallet-verification,
-//             behavioral-consistency, historical-depth, cluster-coherence
-
-// Export all forensics data
-const envelope = ctx.getKYAExport();
-// { identities, clusters, embeddings, links, scores, generatedAt }`;
-
-const cliInstallCode = `# Install globally
-npm install -g @kontext-sdk/cli
-
-# Or run directly with npx (no install)
-npx @kontext-sdk/cli verify --chain base --amount 0.50
-
-# Verify installation
-kontext --version  # 0.8.0`;
-
-const cliCommandsCode = `# Static compliance check (no digest chain)
-kontext check --chain base --amount 0.50 --from 0xSender --to 0xRecipient
-
-# Full verification with digest chain and trust scoring
-kontext verify --chain base --amount 0.50 --token USDC \\
-  --from 0xSender --to 0xRecipient --agent research-agent
-
-# Log agent reasoning
-kontext reason --agent payment-agent-v2 \\
-  --action approve-transfer \\
-  --reasoning "Within daily limit. Recipient verified."
-
-# Generate compliance certificate
-kontext cert --agent payment-agent-v2 --format json
-
-# Export audit trail
-kontext audit --format json --output ./audit-trail.json
-
-# Anchor digest on-chain
-kontext anchor --rpc https://mainnet.base.org --contract 0xbc71...b46
-
-# Exchange A2A attestation
-kontext attest --endpoint https://counterparty.example.com
-
-# Sync OFAC SDN list
-kontext sync --list ofac
-
-# Manage agent sessions and checkpoints
-kontext session create --agent treasury-agent --scope transfer,approve
-kontext checkpoint create --session <sessionId> --summary "Reviewed batch"`;
-
-const cliMcpCode = `# Start the MCP server
-kontext mcp
-
-# Add to Claude Code / Cursor / Windsurf config:
-{
-  "mcpServers": {
-    "kontext": {
-      "command": "npx",
-      "args": ["@kontext-sdk/cli", "mcp"]
-    }
-  }
-}
-
-# 8 MCP tools exposed:
-# - kontext_check: static compliance check
-# - kontext_verify: full verification
-# - kontext_reason: log agent reasoning
-# - kontext_cert: generate certificate
-# - kontext_audit: export audit trail
-# - kontext_trust: get trust score
-# - kontext_anchor: on-chain anchoring
-# - kontext_attest: A2A attestation`;
+# Debug a specific payment attempt
+kontext debug <attemptId>`;
 
 const sidebarSections = [
   {
@@ -595,45 +797,63 @@ const sidebarSections = [
     ],
   },
   {
-    title: "Core Features",
+    title: "Payment Lifecycle",
     items: [
-      { id: "action-logging", label: "Action Logging" },
-      { id: "task-confirmation", label: "Task Confirmation" },
-      { id: "audit-export", label: "Audit Export" },
-      { id: "trust-scoring", label: "Trust Scoring" },
-      { id: "anomaly-detection", label: "Anomaly Detection" },
+      { id: "8-stages", label: "8-Stage Lifecycle" },
+      { id: "start", label: "start() -- Intent" },
+      { id: "authorize", label: "authorize() -- Policy Engine" },
+      { id: "record", label: "record() -- Prepare / Reconcile" },
+      { id: "broadcast", label: "broadcast() -- Transmit" },
+      { id: "confirm", label: "confirm() -- Confirmation" },
+      { id: "credit", label: "credit() -- Recipient Credit" },
+      { id: "fail-refund", label: "fail() / refund()" },
     ],
   },
   {
-    title: "On-Chain & A2A",
+    title: "Policy Engine",
     items: [
-      { id: "on-chain-anchoring", label: "On-Chain Anchoring" },
-      { id: "a2a-attestation", label: "A2A Attestation" },
-      { id: "agent-provenance", label: "Agent Provenance" },
+      { id: "policy-engine", label: "Policy Configuration" },
+      { id: "sanctions", label: "OFAC Sanctions" },
+      { id: "amount-limits", label: "Amount Limits" },
+      { id: "blocklists", label: "Blocklist / Allowlist" },
+      { id: "metadata-requirements", label: "Required Metadata" },
     ],
   },
   {
-    title: "Agent Forensics",
+    title: "Workspace Profiles",
     items: [
-      { id: "agent-identity", label: "Agent Identity" },
-      { id: "wallet-clustering", label: "Wallet Clustering" },
-      { id: "confidence-scoring", label: "Confidence Scoring" },
+      { id: "profiles", label: "Profile Configuration" },
+      { id: "presets", label: "Payment Presets" },
+      { id: "notifications", label: "Notifications" },
     ],
   },
   {
-    title: "CLI",
+    title: "Provider Adapters",
     items: [
-      { id: "cli-install", label: "Installation" },
-      { id: "cli-commands", label: "Commands" },
-      { id: "cli-mcp", label: "MCP Server" },
+      { id: "adapters", label: "Adapter Interface" },
+      { id: "evm-adapter", label: "EVMAdapter" },
+      { id: "solana-adapter", label: "SolanaAdapter" },
+      { id: "circle-adapter", label: "CircleAdapter" },
+      { id: "x402-adapter", label: "X402Adapter" },
+      { id: "bridge-adapter", label: "BridgeAdapter" },
+      { id: "modern-treasury", label: "ModernTreasuryAdapter" },
+    ],
+  },
+  {
+    title: "Operations",
+    items: [
+      { id: "dashboard", label: "Ops Dashboard" },
+      { id: "export", label: "CSV / JSON Export" },
+      { id: "notifications-ops", label: "Slack + Email Alerts" },
     ],
   },
   {
     title: "Reference",
     items: [
       { id: "api", label: "API Reference" },
-      { id: "configuration", label: "Configuration" },
       { id: "types", label: "TypeScript Types" },
+      { id: "configuration", label: "Configuration" },
+      { id: "cli", label: "CLI Commands" },
     ],
   },
 ];
@@ -694,10 +914,10 @@ export default function DocsPage() {
                 DOCUMENTATION
               </h1>
               <p>
-                Kontext is a TypeScript SDK that provides compliance
-                infrastructure for agents that move money. Audit trails, OFAC
-                screening, trust scoring, on-chain anchoring, and agent-to-agent
-                attestation -- all in a single function call.
+                Kontext is the Payment Control Plane for autonomous agents. Every
+                payment flows through an 8-stage lifecycle with policy enforcement,
+                provider-agnostic adapters, and a tamper-evident audit trail. One SDK,
+                any payment rail, full compliance coverage.
               </p>
             </div>
 
@@ -707,26 +927,26 @@ export default function DocsPage() {
                 {
                   icon: Zap,
                   title: "Quick Start",
-                  description: "Get up and running in 2 minutes",
+                  description: "First payment in 2 minutes",
                   href: "#quickstart",
+                },
+                {
+                  icon: Shield,
+                  title: "Policy Engine",
+                  description: "OFAC, limits, blocklists, metadata",
+                  href: "#policy-engine",
                 },
                 {
                   icon: Code2,
                   title: "API Reference",
-                  description: "Full API documentation",
+                  description: "Full method reference",
                   href: "#api",
                 },
                 {
-                  icon: Shield,
-                  title: "On-Chain & A2A",
-                  description: "Anchoring and attestation guides",
-                  href: "#on-chain-anchoring",
-                },
-                {
                   icon: BookOpen,
-                  title: "Examples",
-                  description: "Real-world code examples",
-                  href: "https://github.com/Legaci-Labs/kontext",
+                  title: "Provider Adapters",
+                  description: "EVM, Solana, Circle, Bridge, and more",
+                  href: "#adapters",
                 },
               ].map((link) => (
                 <a
@@ -782,8 +1002,9 @@ export default function DocsPage() {
             <section id="quickstart">
               <h2>Quick Start</h2>
               <p>
-                Get compliance working in your agent in under 2 minutes. Initialize
-                the SDK, call <code>verify()</code>, and check the result.
+                Initialize the SDK, declare a payment intent with <code>start()</code>,
+                run policy checks with <code>authorize()</code>, then broadcast and
+                confirm the transaction. Every step is recorded in the digest chain.
               </p>
               <CodeBlock
                 code={quickStartCode}
@@ -791,65 +1012,485 @@ export default function DocsPage() {
                 filename="agent.ts"
               />
               <p>
-                The <code>verify()</code> method is the core of Kontext. It
-                logs the transaction, runs OFAC and threshold checks, computes a
-                trust score, and returns everything you need to make a decision.
-                Every call is chained into a tamper-evident SHA-256 digest.
+                The payment flows through <code>start</code> to <code>authorize</code> to <code>broadcast</code> to <code>confirm</code>.
+                If <code>authorize()</code> rejects the payment, call <code>fail()</code> to
+                record the terminal state. Every stage transition is chained into
+                a tamper-evident SHA-256 digest.
               </p>
             </section>
 
             <Separator className="my-12" />
 
-            {/* Action Logging */}
-            <section id="action-logging">
-              <h2>Action Logging</h2>
+            {/* 8-Stage Lifecycle */}
+            <section id="8-stages">
+              <h2>8-Stage Payment Lifecycle</h2>
               <p>
-                Every action your agents take should be logged for auditability.
-                Kontext provides action logging, transaction logging, and
-                reasoning logging -- each feeds into the digest chain.
+                Every payment in Kontext flows through a structured lifecycle of
+                8 stages. Stage transitions are enforced -- you cannot skip from
+                start to confirm without authorizing first. Each stage emits
+                a <code>StageEvent</code> into the digest chain, creating a
+                tamper-evident record of the full payment history.
               </p>
               <CodeBlock
-                code={actionLoggingCode}
+                code={lifecycleStagesCode}
                 language="typescript"
-                filename="logging.ts"
+                filename="lifecycle.ts"
               />
-              <p>
-                Reasoning entries are separate from action logs. When regulators
-                ask &quot;why did your agent approve that transfer?&quot; -- reasoning
-                logs are your answer.
-              </p>
+              <div className="mt-6 border border-border bg-[var(--term-surface)] p-6">
+                <h4 className="text-sm font-semibold mb-4">Stage Flow</h4>
+                <div className="space-y-2 font-mono text-xs">
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline">1</Badge>
+                    <span className="font-semibold text-[var(--term-green)]">START</span>
+                    <span className="text-muted-foreground">Declare intent -- amount, currency, sender, recipient</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline">2</Badge>
+                    <span className="font-semibold text-[var(--term-green)]">AUTHORIZE</span>
+                    <span className="text-muted-foreground">Run policy engine -- OFAC, limits, blocklists, metadata</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline">3</Badge>
+                    <span className="font-semibold text-[var(--term-green)]">PREPARE</span>
+                    <span className="text-muted-foreground">Lock funds or record pre-execution state</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline">4</Badge>
+                    <span className="font-semibold text-[var(--term-green)]">TRANSMIT</span>
+                    <span className="text-muted-foreground">Broadcast the on-chain transaction</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline">5</Badge>
+                    <span className="font-semibold text-[var(--term-green)]">CONFIRM</span>
+                    <span className="text-muted-foreground">Wait for block confirmation</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline">6</Badge>
+                    <span className="font-semibold text-[var(--term-green)]">CREDIT</span>
+                    <span className="text-muted-foreground">Mark recipient as credited</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline">7</Badge>
+                    <span className="font-semibold text-[var(--term-red)]">FAIL</span>
+                    <span className="text-muted-foreground">Terminal failure at any stage</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline">8</Badge>
+                    <span className="font-semibold text-[var(--term-amber)]">REFUND</span>
+                    <span className="text-muted-foreground">Reverse a previously confirmed payment</span>
+                  </div>
+                </div>
+              </div>
             </section>
 
             <Separator className="my-12" />
 
-            {/* Task Confirmation */}
-            <section id="task-confirmation">
-              <h2>Task Confirmation</h2>
+            {/* start() */}
+            <section id="start">
+              <h2>start() -- Declare Intent</h2>
               <p>
-                For high-value or sensitive actions, create a task that requires
-                human approval before the agent proceeds. Tasks track required
-                evidence and who confirmed them.
+                The <code>start()</code> method creates a new payment attempt and
+                records the declared intent. It captures the workspace, application,
+                archetype, currency, chain, sender, and recipient. No funds move
+                at this stage -- it is purely declarative.
               </p>
               <CodeBlock
-                code={taskConfirmationCode}
+                code={startCode}
                 language="typescript"
-                filename="confirmation.ts"
+                filename="start.ts"
               />
             </section>
 
             <Separator className="my-12" />
 
-            {/* Audit Export */}
-            <section id="audit-export">
-              <h2>Audit Export</h2>
+            {/* authorize() */}
+            <section id="authorize">
+              <h2>authorize() -- Policy Engine</h2>
               <p>
-                Export your complete audit trail as JSON (CSV on Pro). The
-                digest chain provides cryptographic proof that no records have
-                been tampered with. Generate compliance certificates that bundle
-                the audit trail, trust scores, and reasoning.
+                The <code>authorize()</code> method runs every configured policy
+                rule against the payment. It returns a <code>PaymentReceipt</code> with
+                the overall decision, individual rule results, and a risk level.
+                If any rule fails, the payment is blocked.
               </p>
               <CodeBlock
-                code={auditExportCode}
+                code={authorizeCode}
+                language="typescript"
+                filename="authorize.ts"
+              />
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* record() */}
+            <section id="record">
+              <h2>record() -- Prepare / Reconcile</h2>
+              <p>
+                The <code>record()</code> method logs a state change during the
+                payment lifecycle. Use <code>&apos;prepare&apos;</code> before execution to
+                record fund locks or pre-flight checks.
+                Use <code>&apos;reconcile&apos;</code> after settlement to record
+                final amounts, fees, and exchange rates.
+              </p>
+              <CodeBlock
+                code={recordCode}
+                language="typescript"
+                filename="record.ts"
+              />
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* broadcast() */}
+            <section id="broadcast">
+              <h2>broadcast() -- Transmit</h2>
+              <p>
+                The <code>broadcast()</code> method records that the transaction
+                has been submitted on-chain. It captures the transaction hash and
+                chain for tracking.
+              </p>
+              <CodeBlock
+                code={broadcastCode}
+                language="typescript"
+                filename="broadcast.ts"
+              />
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* confirm() */}
+            <section id="confirm">
+              <h2>confirm() -- Confirmation</h2>
+              <p>
+                The <code>confirm()</code> method records that the transaction has
+                been confirmed on-chain at a specific block number. After confirmation,
+                the payment can proceed to credit or be refunded.
+              </p>
+              <CodeBlock
+                code={confirmCode}
+                language="typescript"
+                filename="confirm.ts"
+              />
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* credit() */}
+            <section id="credit">
+              <h2>credit() -- Recipient Credit</h2>
+              <p>
+                The <code>credit()</code> method marks the payment as fully settled
+                with the recipient credited. This is the terminal success state.
+              </p>
+              <CodeBlock
+                code={creditCode}
+                language="typescript"
+                filename="credit.ts"
+              />
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* fail() / refund() */}
+            <section id="fail-refund">
+              <h2>fail() / refund()</h2>
+              <p>
+                Both <code>fail()</code> and <code>refund()</code> are terminal states.
+                Use <code>fail()</code> when a payment cannot proceed at any stage --
+                policy violation, network error, insufficient funds.
+                Use <code>refund()</code> to reverse a previously confirmed payment.
+              </p>
+              <CodeBlock
+                code={failRefundCode}
+                language="typescript"
+                filename="fail-refund.ts"
+              />
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* Policy Engine */}
+            <section id="policy-engine">
+              <h2>Policy Configuration</h2>
+              <p>
+                The policy engine runs automatically during <code>authorize()</code>.
+                Configure rules via workspace profiles. Four rule categories are
+                available: OFAC sanctions screening, amount limits, blocklist/allowlist,
+                and metadata requirements.
+              </p>
+              <CodeBlock
+                code={policyEngineCode}
+                language="typescript"
+                filename="policy.ts"
+              />
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* OFAC Sanctions */}
+            <section id="sanctions">
+              <h2>OFAC Sanctions</h2>
+              <p>
+                OFAC screening runs against the built-in SDN (Specially Designated
+                Nationals) list. No API key required for the built-in list. The
+                screening checks both sender and recipient addresses against
+                sanctioned entities.
+              </p>
+              <CodeBlock
+                code={sanctionsCode}
+                language="typescript"
+                filename="sanctions.ts"
+              />
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* Amount Limits */}
+            <section id="amount-limits">
+              <h2>Amount Limits</h2>
+              <p>
+                Configure per-transaction and daily limits for each payment archetype.
+                The policy engine enforces these limits during <code>authorize()</code>.
+                Built-in regulatory thresholds (Travel Rule, CTR, Large Transaction)
+                are always active regardless of your configuration.
+              </p>
+              <CodeBlock
+                code={amountLimitsCode}
+                language="typescript"
+                filename="limits.ts"
+              />
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* Blocklist / Allowlist */}
+            <section id="blocklists">
+              <h2>Blocklist / Allowlist</h2>
+              <p>
+                Control which addresses can send or receive payments. In <code>deny</code> mode,
+                listed addresses are blocked. In <code>allow-only</code> mode, only
+                listed addresses are permitted.
+              </p>
+              <CodeBlock
+                code={blocklistCode}
+                language="typescript"
+                filename="blocklist.ts"
+              />
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* Metadata Requirements */}
+            <section id="metadata-requirements">
+              <h2>Required Metadata</h2>
+              <p>
+                Enforce metadata presence on payment attempts. Define required fields
+                per archetype. The policy engine rejects payments missing required
+                fields during <code>authorize()</code>.
+              </p>
+              <CodeBlock
+                code={metadataRequirementsCode}
+                language="typescript"
+                filename="metadata.ts"
+              />
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* Workspace Profiles */}
+            <section id="profiles">
+              <h2>Profile Configuration</h2>
+              <p>
+                Workspace profiles group policy rules, notification channels, and
+                default settings under a single reference. Use <code>configure()</code> to
+                create or update profiles and <code>profile()</code> to retrieve them.
+              </p>
+              <CodeBlock
+                code={profileCode}
+                language="typescript"
+                filename="profile.ts"
+              />
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* Payment Presets */}
+            <section id="presets">
+              <h2>Payment Presets</h2>
+              <p>
+                Kontext ships with 5 built-in payment archetypes. Each preset
+                configures default amount limits for a common payment pattern.
+                Override any preset by configuring custom limits in your
+                workspace profile.
+              </p>
+              <CodeBlock
+                code={presetsCode}
+                language="typescript"
+                filename="presets.ts"
+              />
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* Notifications */}
+            <section id="notifications">
+              <h2>Notifications</h2>
+              <p>
+                Configure Slack and email notifications per workspace. Notifications
+                fire automatically when configured events occur -- payment failures,
+                policy violations, anomaly detection, and limit warnings.
+              </p>
+              <CodeBlock
+                code={notificationsCode}
+                language="typescript"
+                filename="notifications.ts"
+              />
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* Adapter Interface */}
+            <section id="adapters">
+              <h2>Adapter Interface</h2>
+              <p>
+                Provider adapters abstract the payment rail. Every adapter implements
+                the same <code>ProviderAdapter</code> interface -- swap adapters
+                without changing your payment logic. Kontext ships with 6 adapters
+                covering on-chain, custodial, and traditional rails.
+              </p>
+              <CodeBlock
+                code={adapterInterfaceCode}
+                language="typescript"
+                filename="adapter.ts"
+              />
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* EVMAdapter */}
+            <section id="evm-adapter">
+              <h2>EVMAdapter</h2>
+              <p>
+                Direct EVM chain support for Ethereum, Base, Polygon, Arbitrum,
+                Optimism, and Avalanche. Handles ERC-20 token transfers with
+                built-in gas estimation.
+              </p>
+              <CodeBlock
+                code={evmAdapterCode}
+                language="typescript"
+                filename="evm-adapter.ts"
+              />
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* SolanaAdapter */}
+            <section id="solana-adapter">
+              <h2>SolanaAdapter</h2>
+              <p>
+                Native Solana support for SPL token transfers. Handles USDC and
+                USDT on Solana mainnet.
+              </p>
+              <CodeBlock
+                code={solanaAdapterCode}
+                language="typescript"
+                filename="solana-adapter.ts"
+              />
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* CircleAdapter */}
+            <section id="circle-adapter">
+              <h2>CircleAdapter</h2>
+              <p>
+                Integration with Circle Programmable Wallets and CCTP cross-chain
+                transfers. Supports both CCTP V1 and V2 for cross-chain USDC movement.
+              </p>
+              <CodeBlock
+                code={circleAdapterCode}
+                language="typescript"
+                filename="circle-adapter.ts"
+              />
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* X402Adapter */}
+            <section id="x402-adapter">
+              <h2>X402Adapter</h2>
+              <p>
+                Support for the HTTP 402 payment protocol. Optimized for
+                micropayment flows under $1 USDC -- API calls, content access,
+                agent-to-agent payments.
+              </p>
+              <CodeBlock
+                code={x402AdapterCode}
+                language="typescript"
+                filename="x402-adapter.ts"
+              />
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* BridgeAdapter */}
+            <section id="bridge-adapter">
+              <h2>BridgeAdapter</h2>
+              <p>
+                Integration with Bridge.xyz (Stripe) orchestration API. Supports
+                fiat on/off ramp flows and multi-chain stablecoin transfers.
+              </p>
+              <CodeBlock
+                code={bridgeAdapterCode}
+                language="typescript"
+                filename="bridge-adapter.ts"
+              />
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* ModernTreasuryAdapter */}
+            <section id="modern-treasury">
+              <h2>ModernTreasuryAdapter</h2>
+              <p>
+                Integration with Modern Treasury for traditional bank payment rails.
+                Supports ACH, Wire, and RTP with ledger-based reconciliation.
+              </p>
+              <CodeBlock
+                code={modernTreasuryAdapterCode}
+                language="typescript"
+                filename="modern-treasury-adapter.ts"
+              />
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* Ops Dashboard */}
+            <section id="dashboard">
+              <h2>Ops Dashboard</h2>
+              <p>
+                The Ops Dashboard provides real-time visibility into payment
+                activity across all workspaces. Monitor live payment flows,
+                track policy violations, and verify digest chain integrity.
+              </p>
+              <CodeBlock
+                code={dashboardCode}
+                language="typescript"
+                filename="dashboard.ts"
+              />
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* CSV / JSON Export */}
+            <section id="export">
+              <h2>CSV / JSON Export</h2>
+              <p>
+                Export your complete payment audit trail as JSON or CSV. Filter
+                by workspace, date range, or stage. The digest chain provides
+                cryptographic proof that no records have been tampered with.
+              </p>
+              <CodeBlock
+                code={exportCode}
                 language="typescript"
                 filename="export.ts"
               />
@@ -857,253 +1498,19 @@ export default function DocsPage() {
 
             <Separator className="my-12" />
 
-            {/* Trust Scoring */}
-            <section id="trust-scoring">
-              <h2>Trust Scoring</h2>
+            {/* Slack + Email Alerts */}
+            <section id="notifications-ops">
+              <h2>Slack + Email Alerts</h2>
               <p>
-                Every agent gets a trust score from 0 to 100, computed from five
-                factors: history, amount patterns, transaction frequency,
-                destination trust, and behavioral consistency. Use it to
-                gate actions, set thresholds, or flag agents for review.
+                Configure event-driven notifications for your operations team.
+                Alerts fire on payment failures, policy violations, anomaly
+                detection, and limit warnings. Email notifications support
+                immediate, daily, or weekly digest modes.
               </p>
               <CodeBlock
-                code={trustScoringCode}
+                code={notificationsOpsCode}
                 language="typescript"
-                filename="trust.ts"
-              />
-            </section>
-
-            <Separator className="my-12" />
-
-            {/* Anomaly Detection */}
-            <section id="anomaly-detection">
-              <h2>Anomaly Detection</h2>
-              <p>
-                Enable rule-based anomaly detection to flag or block suspicious
-                agent behavior. The free tier includes two rules (<code>unusualAmount</code> and <code>frequencySpike</code>).
-                Pro unlocks four more: <code>newDestination</code>, <code>offHoursActivity</code>, <code>rapidSuccession</code>,
-                and <code>roundAmount</code>.
-              </p>
-              <CodeBlock
-                code={anomalyDetectionCode}
-                language="typescript"
-                filename="anomaly.ts"
-              />
-            </section>
-
-            <Separator className="my-12" />
-
-            {/* On-Chain Anchoring */}
-            <section id="on-chain-anchoring">
-              <h2>On-Chain Anchoring</h2>
-              <p>
-                The digest chain gives you tamper-evidence at the software level.
-                On-chain anchoring takes it further -- write the terminal digest
-                to a smart contract on Base or Arc. Now anyone can independently verify
-                that your compliance checks ran at a specific block height. No
-                Kontext account needed.
-              </p>
-              <CodeBlock
-                code={onChainAnchoringCode}
-                language="typescript"
-                filename="anchoring.ts"
-              />
-              <p>
-                The <code>verifyAnchor()</code> and <code>getAnchor()</code> functions
-                have zero dependencies -- they use native <code>fetch()</code> with
-                ABI-encoded RPC calls. The <code>anchorDigest()</code> write function
-                requires <code>viem</code> as a peer dependency.
-              </p>
-            </section>
-
-            <Separator className="my-12" />
-
-            {/* A2A Attestation */}
-            <section id="a2a-attestation">
-              <h2>A2A Attestation</h2>
-              <p>
-                When two agents transact, both sides need proof that the other
-                ran compliance. A2A attestation handles this automatically --
-                pass a <code>counterparty</code> config to <code>verify()</code> and
-                the SDK exchanges digests via the counterparty&apos;s <code>/.well-known/kontext.json</code> agent
-                card and <code>/kontext/attest</code> endpoint.
-              </p>
-              <CodeBlock
-                code={a2aAttestationCode}
-                language="typescript"
-                filename="attestation.ts"
-              />
-              <p>
-                The attestation protocol uses native <code>fetch()</code> with zero
-                dependencies. Both agents end up with the other&apos;s digest linked
-                in their audit trail -- bilateral, cryptographic proof of mutual
-                compliance.
-              </p>
-            </section>
-
-            <Separator className="my-12" />
-
-            {/* Agent Provenance */}
-            <section id="agent-provenance">
-              <h2>Agent Provenance</h2>
-              <p>
-                Agent provenance adds three layers of accountability on top of the
-                digest chain. Each layer answers a different question regulators ask.
-              </p>
-              <h3>Layer 1: Session Delegation</h3>
-              <p>
-                Records who authorized the agent to act. Every session captures the
-                delegator, the agent, the permitted scope, and an optional expiration.
-                The agent cannot create its own session -- a human or upstream system
-                delegates authority.
-              </p>
-              <h3>Layer 2: Action Binding</h3>
-              <p>
-                Every <code>verify()</code>, <code>log()</code>, and <code>logReasoning()</code> call
-                accepts a <code>sessionId</code>. The action envelope binds the call to the
-                session that authorized it. Actions without a <code>sessionId</code> still log
-                normally but lack the provenance binding.
-              </p>
-              <h3>Layer 3: Human Attestation</h3>
-              <p>
-                After actions execute, a human reviewer creates a checkpoint that
-                references specific action IDs, then attests to it with a signature.
-                The attestation key is held by the reviewer -- the agent never touches it.
-                This proves a human reviewed the actions, not just that they ran.
-              </p>
-              <CodeBlock
-                code={agentProvenanceCode}
-                language="typescript"
-                filename="provenance.ts"
-              />
-              <h3>CLI Commands</h3>
-              <CodeBlock
-                code={`# Create a session for an agent
-npx kontext-sdk session create --agent treasury-agent --delegated-by user:vinay --scope transfer,approve
-
-# List active sessions
-npx kontext-sdk session list --agent treasury-agent
-
-# End a session
-npx kontext-sdk session end <sessionId>
-
-# Create a checkpoint referencing specific actions
-npx kontext-sdk checkpoint create --session <sessionId> --actions act_1,act_2 --summary "Reviewed transfers"
-
-# Attest a checkpoint (human signs off)
-npx kontext-sdk checkpoint attest <checkpointId> --attested-by compliance@company.com
-
-# List checkpoints for a session
-npx kontext-sdk checkpoint list --session <sessionId>`}
-                language="bash"
-                filename="Terminal"
-              />
-            </section>
-
-            <Separator className="my-12" />
-
-            {/* Agent Identity */}
-            <section id="agent-identity">
-              <h2>Agent Identity</h2>
-              <Badge variant="outline" className="mb-4">Pro</Badge>
-              <p>
-                Register agent identities with wallet mappings, reverse-lookup
-                which agent owns a wallet, and manage identity lifecycles.
-                Requires the Pro plan (<code>kya-identity</code> gate).
-              </p>
-              <CodeBlock
-                code={agentIdentityCode}
-                language="typescript"
-                filename="agent-identity.ts"
-              />
-            </section>
-
-            <Separator className="my-12" />
-
-            {/* Wallet Clustering */}
-            <section id="wallet-clustering">
-              <h2>Wallet Clustering</h2>
-              <Badge variant="outline" className="mb-4">Pro</Badge>
-              <p>
-                Detect wallets controlled by the same agent using a Union-Find
-                algorithm with 5 heuristics. Each cluster includes evidence
-                trails documenting why wallets were grouped.
-              </p>
-              <CodeBlock
-                code={walletClusteringCode}
-                language="typescript"
-                filename="wallet-clustering.ts"
-              />
-            </section>
-
-            <Separator className="my-12" />
-
-            {/* Confidence Scoring */}
-            <section id="confidence-scoring">
-              <h2>Confidence Scoring</h2>
-              <Badge variant="outline" className="mb-4">Pro</Badge>
-              <p>
-                Compute a composite identity confidence score (0-100) for
-                registered agents. The score combines 5 components:
-                identity-completeness, wallet-verification, behavioral-consistency,
-                historical-depth, and cluster-coherence.
-              </p>
-              <CodeBlock
-                code={confidenceScoringCode}
-                language="typescript"
-                filename="confidence-scoring.ts"
-              />
-            </section>
-
-            <Separator className="my-12" />
-
-            {/* CLI Installation */}
-            <section id="cli-install">
-              <h2>CLI Installation</h2>
-              <p>
-                The Kontext CLI (<code>@kontext-sdk/cli</code>) provides 12
-                commands for compliance operations from the terminal. Install
-                globally or run via npx — no project setup required.
-              </p>
-              <CodeBlock
-                code={cliInstallCode}
-                language="bash"
-                filename="Terminal"
-              />
-            </section>
-
-            <Separator className="my-12" />
-
-            {/* CLI Commands */}
-            <section id="cli-commands">
-              <h2>CLI Commands</h2>
-              <p>
-                Every SDK operation has a CLI equivalent. Run compliance checks,
-                verify transactions, generate certificates, export audit trails,
-                and anchor digests — all from the command line.
-              </p>
-              <CodeBlock
-                code={cliCommandsCode}
-                language="bash"
-                filename="Terminal"
-              />
-            </section>
-
-            <Separator className="my-12" />
-
-            {/* CLI MCP Server */}
-            <section id="cli-mcp">
-              <h2>MCP Server</h2>
-              <p>
-                The CLI includes a built-in MCP (Model Context Protocol) server
-                that exposes 8 compliance tools to AI coding assistants like
-                Claude Code, Cursor, and Windsurf. Start it
-                with <code>kontext mcp</code>.
-              </p>
-              <CodeBlock
-                code={cliMcpCode}
-                language="bash"
-                filename="Terminal"
+                filename="alerts.ts"
               />
             </section>
 
@@ -1115,6 +1522,7 @@ npx kontext-sdk checkpoint list --session <sessionId>`}
               <p>
                 Complete reference for all Kontext SDK methods. The SDK uses a
                 private constructor with a static <code>Kontext.init(config)</code> factory.
+                All payment lifecycle methods require an <code>attemptId</code> from <code>start()</code>.
               </p>
               <CodeBlock
                 code={apiReferenceCode}
@@ -1125,12 +1533,59 @@ npx kontext-sdk checkpoint list --session <sessionId>`}
 
             <Separator className="my-12" />
 
+            {/* TypeScript Types */}
+            <section id="types">
+              <h2>TypeScript Types</h2>
+              <p>
+                All types are exported from the main package. Full autocomplete
+                in any TypeScript-aware editor. Key types for the payment lifecycle
+                are listed below.
+              </p>
+              <CodeBlock
+                code={typesCode}
+                language="typescript"
+                filename="types.ts"
+              />
+              <div className="mt-6 border border-border bg-[var(--term-surface)] p-6">
+                <h4 className="text-sm font-semibold mb-4">Key Types</h4>
+                <div className="space-y-3 text-xs font-mono">
+                  <div>
+                    <span className="text-[var(--term-green)]">StartAttemptInput</span>
+                    <span className="text-muted-foreground"> -- Input for start(). Declares payment intent.</span>
+                  </div>
+                  <div>
+                    <span className="text-[var(--term-green)]">PaymentAttempt</span>
+                    <span className="text-muted-foreground"> -- Full payment object with stages, state, and metadata.</span>
+                  </div>
+                  <div>
+                    <span className="text-[var(--term-green)]">PaymentReceipt</span>
+                    <span className="text-muted-foreground"> -- Authorization result with allowed, rules, and riskLevel.</span>
+                  </div>
+                  <div>
+                    <span className="text-[var(--term-green)]">StageEvent</span>
+                    <span className="text-muted-foreground"> -- Individual stage transition with timestamp and data.</span>
+                  </div>
+                  <div>
+                    <span className="text-[var(--term-green)]">StageName</span>
+                    <span className="text-muted-foreground"> -- Union type: &apos;start&apos; | &apos;authorize&apos; | &apos;prepare&apos; | &apos;transmit&apos; | &apos;confirm&apos; | &apos;credit&apos; | &apos;fail&apos; | &apos;refund&apos;</span>
+                  </div>
+                  <div>
+                    <span className="text-[var(--term-green)]">FinalState</span>
+                    <span className="text-muted-foreground"> -- Terminal state: &apos;success&apos; | &apos;failed&apos; | &apos;refunded&apos;</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <Separator className="my-12" />
+
             {/* Configuration */}
             <section id="configuration">
               <h2>Configuration</h2>
               <p>
                 Kontext is configured via <code>Kontext.init(config)</code>. No config
                 files, no environment variable magic. Everything is explicit in code.
+                Provider adapters and exporters are passed at initialization.
               </p>
               <CodeBlock
                 code={configCode}
@@ -1140,7 +1595,7 @@ npx kontext-sdk checkpoint list --session <sessionId>`}
 
               <h3>Environment Variables</h3>
               <CodeBlock
-                code={`KONTEXT_API_KEY=sk_live_...     # API key for cloud mode (Pro)
+                code={`KONTEXT_API_KEY=sk_live_...     # API key for cloud mode
 KONTEXT_CHAIN=base              # Default chain
 KONTEXT_ENVIRONMENT=production  # Environment`}
                 language="bash"
@@ -1150,17 +1605,17 @@ KONTEXT_ENVIRONMENT=production  # Environment`}
 
             <Separator className="my-12" />
 
-            {/* Types */}
-            <section id="types">
-              <h2>TypeScript Types</h2>
+            {/* CLI Commands */}
+            <section id="cli">
+              <h2>CLI Commands</h2>
               <p>
-                All types are exported from the main package. Full autocomplete
-                in any TypeScript-aware editor.
+                The Kontext CLI provides commands for tracing payment lifecycles,
+                viewing logs, and debugging payment attempts from the terminal.
               </p>
               <CodeBlock
-                code={typesCode}
-                language="typescript"
-                filename="types.ts"
+                code={cliCommandsCode}
+                language="bash"
+                filename="Terminal"
               />
             </section>
 

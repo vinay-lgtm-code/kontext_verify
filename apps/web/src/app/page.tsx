@@ -2,38 +2,45 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { AgentView } from "@/components/agent-view";
 
-const verifyClean = `{
-  compliant: true,
-  riskLevel: 'low',
-  checks: [
-    { name: 'OFAC Sanctions', passed: true },
-    { name: 'Amount Threshold', passed: true },
+const authorizeAllowed = `{
+  decision: 'allow',
+  allowed: true,
+  checksRun: [
+    { name: 'Sanctions screening', passed: true },
+    { name: 'Max transaction amount', passed: true },
+    { name: 'Daily aggregate limit', passed: true },
   ],
-  trustScore: { score: 92, level: 'high' },
-  digestProof: { valid: true, chainLength: 42 },
+  violations: [],
+  digestProof: { valid: true, chainLength: 12 },
 }`;
 
-const verifyAlert = `{
-  compliant: true,
-  riskLevel: 'medium',
-  checks: [
-    { name: 'OFAC Sanctions', passed: true },
-    { name: 'Amount Threshold (CTR)', passed: true,
-      details: 'Above $10K CTR threshold' },
+const authorizeReview = `{
+  decision: 'review',
+  allowed: false,
+  checksRun: [
+    { name: 'Sanctions screening', passed: true },
+    { name: 'Human approval threshold', passed: false },
   ],
-  recommendations: ['File CTR within 15 days'],
-  trustScore: { score: 71, level: 'medium' },
+  violations: [
+    { code: 'REQUIRES_HUMAN_APPROVAL', severity: 'medium' }
+  ],
+  requiredActions: [
+    { code: 'REQUEST_APPROVAL', message: 'Collect human approval' }
+  ],
 }`;
 
-const verifyBlocked = `{
-  compliant: false,
-  riskLevel: 'critical',
-  checks: [
-    { name: 'OFAC Sanctions', passed: false,
-      details: 'Address on SDN list' },
+const authorizeBlocked = `{
+  decision: 'block',
+  allowed: false,
+  checksRun: [
+    { name: 'Sanctions screening (recipient)', passed: false },
   ],
-  recommendations: ['Block transaction', 'File SAR'],
-  trustScore: { score: 12, level: 'untrusted' },
+  violations: [
+    { code: 'SANCTIONED_RECIPIENT', severity: 'critical' }
+  ],
+  requiredActions: [
+    { code: 'CHANGE_RECIPIENT', message: 'Do not send to this recipient' }
+  ],
 }`;
 
 export default function HomePage() {
@@ -45,15 +52,14 @@ export default function HomePage() {
           <div className="pt-16 pb-8 md:pt-24 md:pb-12">
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
               <span className="text-[var(--term-green)]">$</span>{" "}
-              kontext — trust infrastructure for agents that move{" "}
-              <span className="text-[var(--term-green)] glow">USDC</span> on{" "}
-              <span className="text-[var(--term-green)] glow">Base</span> &amp;{" "}
-              <span className="text-[var(--term-green)] glow">Arc</span>
+              kontext — payment lifecycle management for{" "}
+              <span className="text-[var(--term-green)] glow">modern fintech</span>
             </h1>
             <p className="mt-4 text-sm sm:text-base text-[var(--term-text-2)] max-w-3xl">
-              One call — <code className="text-[var(--term-green)]">verify()</code> — runs
-              OFAC screening, logs into a tamper-evident digest chain, computes trust
-              score, and returns structured compliance. Zero dependencies. Free on Base + Arc.
+              8-stage payment lifecycle. Policy engine with OFAC sanctions screening.
+              6 provider adapters. From <code className="text-[var(--term-green)]">intent</code> to{" "}
+              <code className="text-[var(--term-green)]">reconciliation</code> in one SDK.
+              TypeScript-first. Zero dependencies.
             </p>
           </div>
 
@@ -62,15 +68,15 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* What verify() Returns */}
+      {/* What start() + authorize() Returns */}
       <section className="border-t border-[var(--term-surface-2)]">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
           <div className="mb-10">
             <h2 className="text-xl sm:text-2xl font-bold">
-              <span className="text-[var(--term-green)]">$</span> What verify() returns
+              <span className="text-[var(--term-green)]">$</span> What authorize() returns
             </h2>
             <p className="mt-2 text-sm text-[var(--term-text-2)]">
-              Three scenarios. One function call each.
+              Three outcomes. One policy engine call each.
             </p>
           </div>
 
@@ -79,12 +85,12 @@ export default function HomePage() {
               <div className="border-b border-[var(--term-green)] px-4 py-2 flex items-center gap-2">
                 <span className="led-green" />
                 <span className="text-xs text-[var(--term-green)]">
-                  $500 USDC — Clean
+                  $500 USDC — Allowed
                 </span>
               </div>
               <div className="p-4">
                 <pre className="text-[11px] text-[var(--term-text-2)] leading-relaxed whitespace-pre-wrap font-mono">
-                  {verifyClean}
+                  {authorizeAllowed}
                 </pre>
               </div>
             </div>
@@ -93,12 +99,12 @@ export default function HomePage() {
               <div className="border-b border-[var(--term-amber)] px-4 py-2 flex items-center gap-2">
                 <span className="led-amber" />
                 <span className="text-xs text-[var(--term-amber)]">
-                  $15K USDC — CTR Alert
+                  $15K USDC — Review Required
                 </span>
               </div>
               <div className="p-4">
                 <pre className="text-[11px] text-[var(--term-text-2)] leading-relaxed whitespace-pre-wrap font-mono">
-                  {verifyAlert}
+                  {authorizeReview}
                 </pre>
               </div>
             </div>
@@ -112,7 +118,7 @@ export default function HomePage() {
               </div>
               <div className="p-4">
                 <pre className="text-[11px] text-[var(--term-text-2)] leading-relaxed whitespace-pre-wrap font-mono">
-                  {verifyBlocked}
+                  {authorizeBlocked}
                 </pre>
               </div>
             </div>
@@ -120,102 +126,84 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Three Layers of Proof */}
+      {/* 8-Stage Payment Lifecycle */}
       <section className="border-t border-[var(--term-surface-2)]">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
           <div className="mb-10">
             <h2 className="text-xl sm:text-2xl font-bold">
-              <span className="text-[var(--term-green)]">$</span> Three layers of proof
+              <span className="text-[var(--term-green)]">$</span> 8-stage payment lifecycle
             </h2>
+            <p className="mt-2 text-sm text-[var(--term-text-2)]">
+              Every payment follows the same path. Every stage is logged.
+            </p>
           </div>
-
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="border border-[var(--term-surface-2)] bg-[var(--term-surface)] p-6">
-              <h3 className="text-sm font-medium mb-3">
-                <span className="text-[var(--term-text-3)]">1.</span> DIGEST CHAIN
-              </h3>
-              <p className="text-xs text-[var(--term-text-2)] leading-relaxed mb-4">
-                SHA-256 hash chain linking every action. Tamper = chain breaks.
-              </p>
-              <pre className="text-[11px] text-[var(--term-text-3)] font-mono">
-{`getTerminalDigest()
-verifyDigestChain()
-exportDigestChain()`}
-              </pre>
-            </div>
-
-            <div className="border border-[var(--term-green)] bg-[var(--term-surface)] p-6">
-              <h3 className="text-sm font-medium mb-3">
-                <span className="text-[var(--term-text-3)]">2.</span> ON-CHAIN ANCHOR
-              </h3>
-              <p className="text-[10px] text-[var(--term-green)] uppercase tracking-wider mb-2">
-                Batch Optimized
-              </p>
-              <pre className="text-[11px] text-[var(--term-text-2)] font-mono leading-relaxed">
-{`batchAnchor(digests, {
-  batchSize: 50
-})
-
-One tx anchors 50 events
-~$0.001 total on Base`}
-              </pre>
-            </div>
-
-            <div className="border border-[var(--term-surface-2)] bg-[var(--term-surface)] p-6">
-              <h3 className="text-sm font-medium mb-3">
-                <span className="text-[var(--term-text-3)]">3.</span> A2A ATTESTATION
-              </h3>
-              <p className="text-xs text-[var(--term-text-2)] leading-relaxed mb-4">
-                Bilateral compliance proof between agent pairs via x402. Cryptographic.
-              </p>
-              <pre className="text-[11px] text-[var(--term-text-3)] font-mono">
-{`exchangeAttestation()
-fetchAgentCard()
-/.well-known/kontext`}
-              </pre>
-            </div>
+          <div className="grid gap-2 grid-cols-2 sm:grid-cols-4 lg:grid-cols-8">
+            {[
+              { num: "1", name: "intent", method: "start()" },
+              { num: "2", name: "authorize", method: "authorize()" },
+              { num: "3", name: "prepare", method: "record()" },
+              { num: "4", name: "transmit", method: "broadcast()" },
+              { num: "5", name: "confirm", method: "confirm()" },
+              { num: "6", name: "recipient_credit", method: "credit()" },
+              { num: "7", name: "reconcile", method: "record()" },
+              { num: "8", name: "retry_or_refund", method: "refund()" },
+            ].map((stage) => (
+              <div
+                key={stage.name}
+                className="border border-[var(--term-surface-2)] bg-[var(--term-surface)] p-3 text-center"
+              >
+                <span className="text-[var(--term-green)] text-lg font-bold">
+                  {stage.num}
+                </span>
+                <p className="text-[10px] text-[var(--term-text-2)] mt-1 font-mono">
+                  {stage.name}
+                </p>
+                <p className="text-[10px] text-[var(--term-text-3)] mt-0.5">
+                  {stage.method}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Regulatory Context */}
+      {/* Policy Engine — Compliance */}
       <section className="border-t border-[var(--term-surface-2)]">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
           <div className="border border-[var(--term-surface-2)] bg-[var(--term-surface)] p-6 sm:p-8">
             <h2 className="text-sm font-medium mb-4">
-              <span className="text-[var(--term-green)]">$</span> GENIUS ACT (S. 1582) — signed July 18, 2025
+              <span className="text-[var(--term-green)]">$</span> Policy engine — compliance at every authorize()
             </h2>
             <div className="grid gap-4 sm:grid-cols-2 text-xs text-[var(--term-text-2)]">
               <div className="space-y-2">
                 <p>
-                  <span className="text-[var(--term-text-3)]">Implementing regulations:</span>{" "}
-                  <span className="text-[var(--term-amber)]">July 2026</span>
+                  The policy engine runs at the <code>authorize</code> stage. Every payment
+                  is checked against configurable rules before transmission.
                 </p>
-                <p>
-                  <span className="text-[var(--term-text-3)]">Prohibitions effective:</span>{" "}
-                  <span className="text-[var(--term-red)]">November 2026</span>
-                </p>
-                <p className="mt-4 leading-relaxed">
-                  Payment stablecoin issuers are financial institutions under the BSA.
-                  Agents handling $3K+ transfers need:
+                <p className="mt-4 text-[var(--term-text-3)]">
+                  GENIUS Act (S. 1582) regulations due{" "}
+                  <span className="text-[var(--term-amber)]">July 2026</span>.
+                  Kontext policy engine covers BSA requirements out of the box.
                 </p>
               </div>
               <div className="space-y-1.5">
                 <p>
-                  <span className="text-[var(--term-green)]">✓</span> OFAC screening{" "}
-                  <span className="text-[var(--term-text-3)]">← verify() does this</span>
+                  <span className="text-[var(--term-green)]">+</span> OFAC sanctions screening (sender + recipient)
                 </p>
                 <p>
-                  <span className="text-[var(--term-green)]">✓</span> Audit trails{" "}
-                  <span className="text-[var(--term-text-3)]">← digest chain does this</span>
+                  <span className="text-[var(--term-green)]">+</span> Amount limits (max transaction, daily aggregate)
                 </p>
                 <p>
-                  <span className="text-[var(--term-green)]">✓</span> Transaction records{" "}
-                  <span className="text-[var(--term-text-3)]">← logTransaction() does this</span>
+                  <span className="text-[var(--term-green)]">+</span> Blocklist / allowlist enforcement
                 </p>
                 <p>
-                  <span className="text-[var(--term-green)]">✓</span> Suspicious activity reports{" "}
-                  <span className="text-[var(--term-text-3)]">← generateSARReport() does this</span>
+                  <span className="text-[var(--term-green)]">+</span> Required metadata by payment type
+                </p>
+                <p>
+                  <span className="text-[var(--term-green)]">+</span> Human approval thresholds
+                </p>
+                <p>
+                  <span className="text-[var(--term-green)]">+</span> Tamper-evident digest chain on every receipt
                 </p>
               </div>
             </div>
@@ -237,13 +225,13 @@ fetchAgentCard()
               <h3 className="text-sm font-medium mb-1">FREE</h3>
               <p className="text-2xl font-bold text-[var(--term-green)] mb-4">$0 forever</p>
               <ul className="space-y-1.5 text-xs text-[var(--term-text-2)]">
-                <li>20K events/month on Base + Arc</li>
-                <li>No credit card required</li>
-                <li>OFAC screening</li>
+                <li>20K payment stage events/month</li>
+                <li>Core lifecycle (8 stages)</li>
+                <li>Policy engine (OFAC, limits, blocklists)</li>
                 <li>Digest chain</li>
-                <li>Trust scoring</li>
-                <li>JSON audit export</li>
-                <li>Human-in-the-loop tasks</li>
+                <li>5 workspace profiles</li>
+                <li>JSON export</li>
+                <li>Base chain</li>
               </ul>
               <div className="mt-6">
                 <Button size="sm" className="w-full" asChild>
@@ -255,16 +243,19 @@ fetchAgentCard()
             <div className="border border-[var(--term-border-bright)] bg-[var(--term-surface)] p-6">
               <h3 className="text-sm font-medium mb-1">PAY AS YOU GO</h3>
               <p className="text-2xl font-bold mb-4">
-                $2.00 <span className="text-sm font-normal text-[var(--term-text-3)]">/ 1K events above 20K</span>
+                $0.002{" "}
+                <span className="text-sm font-normal text-[var(--term-text-3)]">
+                  / payment stage event above 20K
+                </span>
               </p>
               <ul className="space-y-1.5 text-xs text-[var(--term-text-2)]">
-                <li>No monthly minimum</li>
-                <li>All 8 chains</li>
+                <li>First 20K events free every month</li>
+                <li>All chains (Base, Ethereum, Solana)</li>
                 <li>CSV export</li>
-                <li>SAR/CTR reports</li>
-                <li>Advanced anomaly rules</li>
-                <li>Webhook alerts</li>
-                <li>Unified screening</li>
+                <li>Ops dashboard (5 views)</li>
+                <li>Slack + email notifications</li>
+                <li>Advanced policy configurations</li>
+                <li>6 provider adapters</li>
               </ul>
               <div className="mt-6">
                 <Button variant="outline" size="sm" className="w-full" asChild>
@@ -283,12 +274,12 @@ fetchAgentCard()
             {[
               "MIT Licensed",
               "Patented Digest Chain",
-              "GENIUS Act Aligned",
-              "USDC Native",
-              "Base + Arc Free",
+              "8-Stage Lifecycle",
+              "Policy Engine",
+              "6 Provider Adapters",
+              "5 Workspace Profiles",
+              "Ops Dashboard",
               "Open Source",
-              "x402 Compatible",
-              "8 MCP Tools",
               "Zero Dependencies",
             ].map((item, i) => (
               <span key={item} className="flex items-center gap-2">
@@ -306,11 +297,11 @@ fetchAgentCard()
       <section className="border-t border-[var(--term-surface-2)]">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 text-center">
           <h2 className="text-xl sm:text-2xl font-bold">
-            Ship compliance before the deadline.
+            Ship payment infrastructure in minutes.
           </h2>
           <p className="mt-3 text-sm text-[var(--term-text-2)] max-w-xl mx-auto">
-            npm install. Kontext.init(). verify(). Three layers of proof in one call.
-            Open source, TypeScript-first, free forever on Base + Arc.
+            npm install. Kontext.init(). start(). authorize(). 8 stages, fully logged.
+            Open source, TypeScript-first, free tier included.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Button size="lg" asChild>

@@ -2,106 +2,117 @@
 
 import { useState, useRef, useEffect } from "react";
 
-const HELP_TEXT = `kontext-sdk v0.7.0 — compliance at agent speed
+const HELP_TEXT = `kontext v1.0.0 — payment control plane
 
 commands:
-  check <from> <to>              OFAC + compliance check
-  verify --chain --amount --to   Full verify() with audit trail
-  audit --verify                 Verify digest chain integrity
-  cert --agent <id>              Compliance certificate
-  trust <agentId>                Trust score breakdown
-  help                           Show all commands
-  clear                          Clear terminal
+  trace start <opts>           Start a payment attempt
+  trace authorize <opts>       Authorize via policy engine
+  trace confirm <opts>         Confirm on-chain settlement
+  logs --format csv|json       Export payment attempts
+  debug <attemptId>            Inspect attempt stages
+  init                         Initialize workspace profile
+  help                         Show all commands
+  clear                        Clear terminal
 
-try: check 0xAgentWallet 0xRecipient`;
+try: trace start --archetype treasury --chain base`;
 
 function processCommand(cmd: string): string {
   const parts = cmd.trim().split(/\s+/);
   const command = parts[0]?.toLowerCase();
+  const subcommand = parts[1]?.toLowerCase();
 
   if (!command) return "";
 
   if (command === "help") return HELP_TEXT;
   if (command === "clear") return "__CLEAR__";
 
-  if (command === "check") {
-    const from = parts[1] || "0xAgentWallet";
-    const to = parts[2] || "0xRecipient";
-    return `Checking ${from} → ${to}...
-
-┌─────────────────────────────────────────┐
-│ OFAC Sanctions Check                    │
-├─────────────────────────────────────────┤
-│ From: ${from.slice(0, 20).padEnd(20)}       │
-│ To:   ${to.slice(0, 20).padEnd(20)}       │
-│ Status: CLEAR                           │
-│ Risk: LOW                               │
-│ OFAC: Not sanctioned ✓                  │
-│ Threshold: Below $3K EDD ✓             │
-└─────────────────────────────────────────┘`;
-  }
-
-  if (command === "verify") {
+  if (command === "trace" && subcommand === "start") {
+    const archetype = parts.find((p) => p.startsWith("--archetype="))?.split("=")[1] || "treasury";
     const chain = parts.find((p) => p.startsWith("--chain="))?.split("=")[1] || "base";
-    const amount = parts.find((p) => p.startsWith("--amount="))?.split("=")[1] || "500";
-    return `Verifying transaction on ${chain}...
+    return `Starting payment attempt...
 
-Chain:   ${chain}
-Amount:  $${amount} USDC
-Token:   USDC
-Status:  COMPLIANT ✓
+Attempt ID:     att_7f3a9c2e...
+Archetype:      ${archetype}
+Chain:          ${chain}
+Asset:          USDC
+Stage:          intent
+Final State:    pending
 
-Checks:
-  [✓] OFAC Sanctions — not sanctioned
-  [✓] Amount Threshold — ${parseFloat(amount) >= 3000 ? "EDD required (>$3K)" : "below threshold"}
-  [✓] Transaction Frequency — normal
-  [✓] Destination Risk — low
+Digest: a1b2c3d4e5f6...7890`;
+  }
 
-Trust Score: 87/100 (high)
+  if (command === "trace" && subcommand === "authorize") {
+    const amount = parts.find((p) => p.startsWith("--amount="))?.split("=")[1] || "5000";
+    return `Authorizing payment...
+
+Decision:       allow
+Checks:         8 passed, 0 failed
+Sanctions:      CLEAR
+Amount:         within limits ($${amount} / $25,000 max)
+Blocklist:      not listed
+Metadata:       valid
+
 Digest: a7b8c9d4e5f6...1234
-Chain Length: 42 links, verified ✓`;
+Stage: authorize → allowed`;
   }
 
-  if (command === "audit") {
-    return `Verifying digest chain integrity...
+  if (command === "trace" && subcommand === "confirm") {
+    return `Confirming on-chain settlement...
 
-Genesis:  a1b2c3d4e5f6...
-Terminal: f6e5d4c3b2a1...
-Links:    42
-Verified: 42/42 ✓
+Stage:          confirm
+TX Hash:        0xe4f7a2c9d183b6...
+Block:          28491037
+Confirmations:  12
+Final State:    succeeded
 
-Status: CHAIN INTACT — no tampering detected.`;
+Payment lifecycle complete. 5 stages logged.`;
   }
 
-  if (command === "cert") {
-    const agentId = parts.find((p) => p.startsWith("--agent="))?.split("=")[1] || "treasury-agent";
-    return `Generating compliance certificate for ${agentId}...
+  if (command === "logs") {
+    const format = parts.find((p) => p.startsWith("--format="))?.split("=")[1] || "json";
+    return `Exporting payment attempts...
+
+Exported:       47 attempts
+Format:         ${format.toUpperCase()}
+File:           ./exports/treasury-2026-03.${format}
+Digest chain:   47 links, verified ✓`;
+  }
+
+  if (command === "debug") {
+    const attemptId = parts[1] || "att_7f3a9c2e";
+    return `Debugging ${attemptId}...
 
 ┌─────────────────────────────────────────┐
-│ COMPLIANCE CERTIFICATE                  │
+│ PAYMENT ATTEMPT: ${attemptId.padEnd(22)}│
 ├─────────────────────────────────────────┤
-│ Agent: ${agentId.padEnd(33)}│
-│ Period: 2026-02-01 to 2026-03-01       │
-│ Status: COMPLIANT                       │
-│ Trust Score: 87/100 (high)              │
-│ Events Logged: 142                      │
-│ Digest Chain: 142 links, verified ✓    │
-│ Content Hash: sha256:9f8e7d...         │
+│ Archetype:  treasury                    │
+│ Chain:      base                        │
+│ Asset:      USDC                        │
+│ Amount:     $5,000                      │
+│ State:      succeeded                   │
+├─────────────────────────────────────────┤
+│ Stages:                                 │
+│  1. intent        10:00:00  ✓          │
+│  2. authorize     10:00:01  allow      │
+│  3. prepare       10:00:02  ✓          │
+│  4. transmit      10:00:03  ✓          │
+│  5. confirm       10:00:15  ✓          │
+│                                         │
+│ Digest chain: 5 links, verified ✓      │
 └─────────────────────────────────────────┘`;
   }
 
-  if (command === "trust") {
-    const agentId = parts[1] || "treasury-agent";
-    return `Trust score for ${agentId}:
+  if (command === "init") {
+    return `Initializing workspace profile...
 
-Score: 87/100 (HIGH)
+Workspace:      acme-treasury
+Archetype:      treasury
+Max Amount:     $25,000
+Review Over:    $10,000
+OFAC:           enabled
+Blocklist:      enabled
 
-Factors:
-  History     ████████████████████░░ 92/100 (w: 0.25)
-  Amount      █████████████████░░░░░ 85/100 (w: 0.20)
-  Frequency   ██████████████████░░░░ 88/100 (w: 0.20)
-  Destination ████████████████░░░░░░ 82/100 (w: 0.20)
-  Behavior    ██████████████████░░░░ 90/100 (w: 0.15)`;
+Profile saved to .kontext/workspace.json`;
   }
 
   return `Unknown command: ${command}. Type 'help' for available commands.`;

@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
-  description: "Terms of service for Kontext SDK and getkontext.com.",
+  description: "Terms of service for the Kontext payment lifecycle SDK and getkontext.com.",
 };
 
 export default function TermsPage() {
@@ -15,7 +15,7 @@ export default function TermsPage() {
           TERMS OF SERVICE
         </h1>
         <p className="mt-4 text-sm text-muted-foreground">
-          Last updated: February 28, 2026
+          Last updated: March 9, 2026
         </p>
 
         <div className="prose-kontext mt-12">
@@ -61,9 +61,10 @@ export default function TermsPage() {
 
           <h2>Not Legal or Compliance Advice</h2>
           <p>
-            Kontext is a developer tool. It provides technical infrastructure
-            that can support compliance efforts, but it does not constitute legal
-            advice, regulatory guidance, or a compliance certification.{" "}
+            Kontext is a developer tool for payment lifecycle management. It
+            provides technical infrastructure that can support compliance
+            efforts, but it does not constitute legal advice, regulatory
+            guidance, or a compliance certification.{" "}
             <strong>
               Using Kontext does not make you compliant with any regulation.
             </strong>{" "}
@@ -73,9 +74,9 @@ export default function TermsPage() {
           <h2>No Warranty</h2>
           <p>
             The Service is provided &quot;as is&quot; without warranty of any
-            kind. We do not guarantee uptime, accuracy of compliance checks, or
-            completeness of audit trails. You are responsible for validating that
-            the SDK meets your requirements.
+            kind. We do not guarantee uptime, accuracy of policy checks, or
+            completeness of payment records. You are responsible for validating
+            that the SDK meets your requirements.
           </p>
 
           <h2>Limitation of Liability</h2>
@@ -83,8 +84,8 @@ export default function TermsPage() {
             To the maximum extent permitted by law, Legaci Labs Inc. shall not be
             liable for any indirect, incidental, special, consequential, or
             punitive damages arising from your use of the Service, including but
-            not limited to regulatory fines, failed compliance audits, or
-            financial losses from agent transactions.
+            not limited to regulatory fines, failed audits, or financial losses
+            from payment transactions.
           </p>
 
           <h2>Your Responsibilities</h2>
@@ -99,7 +100,7 @@ export default function TermsPage() {
               jurisdiction
             </li>
             <li>
-              Maintain your own backups of audit data -- we are not a backup
+              Maintain your own backups of payment data -- we are not a backup
               service
             </li>
           </ul>

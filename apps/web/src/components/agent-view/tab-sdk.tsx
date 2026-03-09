@@ -5,36 +5,46 @@ import { CopyBlock } from "./copy-block";
 const sdkCode = `import { Kontext } from 'kontext-sdk';
 
 const ctx = Kontext.init({
-  projectId: 'my-agent',
+  projectId: 'treasury-ops',
   environment: 'production',
 });
 
-// x402: agent hits 402, reasons, verifies USDC payment on Base
-const result = await ctx.verify({
-  txHash: '0xabc...def',
-  chain: 'base',         // or 'arc' — both free tier
-  amount: '0.50',
-  token: 'USDC',
-  from: '0xAgentWallet',
-  to: '0xAPIProvider',
-  agentId: 'research-agent',
-  reasoning: 'Paying CoinGecko API via x402. Provider not sanctioned.',
+// 1. Start a payment attempt
+const attempt = await ctx.start({
+  workspaceRef: 'acme-treasury',
+  appRef: 'payroll-agent',
+  archetype: 'treasury',
+  intentCurrency: 'USD',
+  settlementAsset: 'USDC',
+  chain: 'base',
+  senderRefs: { wallet: '0xTreasury...abc' },
+  recipientRefs: { wallet: '0xVendor...def' },
+  executionSurface: 'sdk',
 });
 
-// result.compliant    → true
-// result.riskLevel    → 'low'
-// result.trustScore   → { score: 87, level: 'high' }
-// result.digestProof  → { valid: true, chainLength: 42 }`;
+// 2. Authorize — policy engine checks OFAC, limits, blocklists
+const { receipt } = await ctx.authorize(attempt.attemptId, {
+  chain: 'base',
+  token: 'USDC',
+  amount: '5000',
+  from: '0xTreasury...abc',
+  to: '0xVendor...def',
+  actorId: 'treasury-agent',
+  metadata: { paymentType: 'treasury', purpose: 'vendor-payment' },
+});
+
+// receipt.decision = 'allow' | 'block' | 'review'
+// receipt.checksRun = [{ name, passed, severity }]
+// receipt.digestProof = { valid: true, chainLength: 12 }`;
 
 const badges = [
-  { label: "USDC", href: "/docs#usdc" },
-  { label: "x402", href: "/docs#x402" },
-  { label: "Circle Wallets", href: "/docs#circle-wallets" },
-  { label: "Base", href: "/docs#base" },
-  { label: "Arc", href: "/docs#arc" },
-  { label: "CCTP", href: "/docs#cctp" },
+  { label: "USDC", href: "/docs#settlement" },
+  { label: "Base", href: "/docs#chains" },
+  { label: "Ethereum", href: "/docs#chains" },
+  { label: "Policy Engine", href: "/docs#policy-engine" },
   { label: "ERC-8021", href: "/docs#erc-8021" },
-  { label: "MCP", href: "/docs#mcp" },
+  { label: "Adapters", href: "/docs#adapters" },
+  { label: "Workspace Profiles", href: "/docs#profiles" },
 ];
 
 export function TabSdk() {
@@ -52,9 +62,7 @@ export function TabSdk() {
           <Link
             key={badge.label}
             href={badge.href}
-            className={`text-[10px] font-mono px-2 py-1 border transition-colors ${
-              "border-[var(--term-border-bright)] text-[var(--term-text-3)] hover:text-[var(--term-text-2)] hover:border-[var(--term-text-3)]"
-            }`}
+            className="text-[10px] font-mono px-2 py-1 border transition-colors border-[var(--term-border-bright)] text-[var(--term-text-3)] hover:text-[var(--term-text-2)] hover:border-[var(--term-text-3)]"
           >
             {badge.label}
           </Link>

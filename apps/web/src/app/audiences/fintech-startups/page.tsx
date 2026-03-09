@@ -13,123 +13,120 @@ import { CodeBlock } from "@/components/code-block";
 import {
   ArrowRight,
   Check,
-  Bot,
-  ClipboardCheck,
-  BarChart3,
-  AlertTriangle,
+  Rocket,
+  Layers,
   Shield,
-  Cpu,
-  FileCheck,
+  Settings,
+  BarChart3,
+  Workflow,
+  AlertTriangle,
+  Gauge,
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "AI Agent Startups",
+  title: "Fintech Startups",
   description:
-    "Compliance infrastructure for AI agents that move money. Action logging, trust scoring, anomaly detection, and audit export -- ship compliance in 5 lines of code with Kontext.",
+    "Payment infrastructure for fintech startups. 8-stage payment lifecycle, policy engine, workspace profiles, and ops dashboard -- ship payment infrastructure in minutes, not months.",
 };
 
 const painPoints = [
   {
-    title: "Regulatory uncertainty for autonomous transactions",
+    title: "Payment fragmentation across providers",
     description:
-      "AI agents making financial decisions create novel compliance questions. Regulators are watching, and your agents need a verifiable record of every decision they make.",
+      "You are stitching together Stripe, Circle, Bridge, and on-chain rails with custom glue code. Every provider has its own status model, webhook format, and failure mode. There is no unified lifecycle.",
   },
   {
-    title: "No audit trail for agent decisions",
+    title: "Compliance overhead slowing down launches",
     description:
-      "When an agent moves money, you need to know what it decided, why it decided it, and exactly when it happened. Most agent frameworks have zero built-in compliance support.",
+      "Before you can move a dollar, you need sanctions screening, threshold checks, and audit trails. Building this from scratch takes months and diverts engineering from your core product.",
   },
   {
-    title: "Trust and safety requirements from enterprise customers",
+    title: "Provider lock-in limits your options",
     description:
-      "Enterprise buyers demand compliance reports, audit trails, and risk scoring before letting your agents near their money. Without these, deals stall at security review.",
+      "Once you build on one payment provider, switching costs are enormous. Your transaction state, audit history, and compliance records are all trapped in provider-specific formats.",
   },
   {
-    title: "Scaling compliance across multiple agent frameworks",
+    title: "Monitoring gaps across payment flows",
     description:
-      "You might use Vercel AI SDK today and LangChain tomorrow. Your compliance infrastructure should work across all of them without rewriting integration code.",
+      "When a payment stalls at authorization or fails at settlement, you find out from a customer support ticket, not from your infrastructure. No unified dashboard, no proactive alerts.",
   },
 ];
 
 const features = [
   {
-    icon: ClipboardCheck,
-    title: "Action Logging",
+    icon: Workflow,
+    title: "8-Stage Payment Lifecycle",
     description:
-      "Every agent decision is recorded with a tamper-evident cryptographic digest chain. Know what happened, when, and why -- with proof that the record has not been altered.",
+      "Every payment moves through start, authorize, capture, settle, confirm, reconcile, close, and archive. Each stage transition is recorded with a tamper-evident digest chain.",
   },
   {
-    icon: BarChart3,
-    title: "Trust Scoring API",
+    icon: Shield,
+    title: "Policy Engine",
     description:
-      "Real-time risk assessment for every agent action. Score agent behavior based on historical patterns, transaction amounts, recipient analysis, and contextual signals.",
+      "Define rules that run before stage transitions. Sanctions screening, amount thresholds, velocity checks, and custom policies -- all evaluated automatically before a payment advances.",
+  },
+  {
+    icon: Settings,
+    title: "Workspace Profiles",
+    description:
+      "Pre-configured profiles for treasury, micropayments, and subscription billing. Each profile sets default policies, thresholds, and lifecycle behavior tuned to the use case.",
+  },
+  {
+    icon: Gauge,
+    title: "Ops Dashboard",
+    description:
+      "Real-time visibility into every payment across every provider. Filter by stage, amount, provider, and risk level. Drill into any payment to see the full lifecycle with digest proof.",
+  },
+  {
+    icon: Layers,
+    title: "Provider Adapters",
+    description:
+      "Normalize events from EVM chains, Solana, Circle, x402, Bridge, and Modern Treasury into a single lifecycle. Swap providers without changing your application code.",
   },
   {
     icon: AlertTriangle,
     title: "Anomaly Detection",
     description:
-      "Flag unusual agent behavior automatically. Velocity checks, amount thresholds, recipient analysis, and behavioral anomalies detected before transactions execute.",
-  },
-  {
-    icon: Shield,
-    title: "Digest Chain",
-    description:
-      "Tamper-evident proof that your audit trail has not been modified. Each entry is cryptographically linked to the previous one, creating an unbreakable chain of evidence.",
-  },
-  {
-    icon: Cpu,
-    title: "Multi-Framework Support",
-    description:
-      "First-class integrations for Vercel AI SDK, LangChain, CrewAI, and AutoGen. Drop-in callbacks, observers, and middleware that work across all major agent frameworks.",
-  },
-  {
-    icon: FileCheck,
-    title: "Compliance Export",
-    description:
-      "Generate compliance reports for enterprise customers in JSON, CSV, and PDF formats. Ready for security reviews, audits, and regulatory inquiries.",
+      "Flag unusual payment patterns before they become problems. Velocity spikes, unusual amounts, new destinations, and off-hours activity detected automatically across all providers.",
   },
 ];
 
-const agentCode = `import { Kontext } from 'kontext-sdk';
+const fintechCode = `import { Kontext } from 'kontext-sdk';
 
+// Initialize with treasury archetype
 const ctx = Kontext.init({
-  projectId: 'payment-agent',
+  projectId: 'acme-payments',
   environment: 'production',
+  workspace: 'treasury',
 });
 
-// Wrap any agent tool call with compliance verification
-async function agentTransfer(to: string, amount: string) {
-  // Verify the action before execution
-  const result = await ctx.verify({
-    txHash: '0x...',
-    chain: 'base',
-    amount,
-    token: 'USDC',
-    from: '0xAgentWallet',
-    to,
-    agentId: 'payment-agent-v2',
-  });
+// Start a payment -- enters the 8-stage lifecycle
+const payment = await ctx.start({
+  amount: '5000',
+  token: 'USDC',
+  chain: 'base',
+  from: '0xTreasury...abc',
+  to: '0xVendor...def',
+  metadata: { invoiceId: 'INV-2026-042' },
+});
 
-  // Check compliance result
-  if (!result.compliant) {
-    console.log('Blocked:', result.checks);
-    return { success: false, reason: result.checks };
-  }
+// Authorize -- policy engine runs sanctions + threshold checks
+const auth = await ctx.authorize(payment.id);
 
-  console.log('Trust score:', result.trustScore.score); // 87
-  console.log('Digest valid:', result.digestProof.valid);
+if (!auth.approved) {
+  console.log('Blocked by policy:', auth.violations);
+  return;
+}
 
-  // Proceed with the on-chain transfer
-  const tx = await executeTransfer(to, amount);
+// Capture and settle
+await ctx.capture(payment.id);
+await ctx.settle(payment.id, { txHash: '0xabc...def' });
 
-  return {
-    success: true,
-    txHash: tx.hash,
-    trustScore: result.trustScore.score,
-  };
-}`;
+// Full lifecycle with digest proof
+console.log('Stage:', payment.stage);       // 'settled'
+console.log('Digest valid:', payment.proof); // true`;
 
-export default function AIAgentStartupsPage() {
+export default function FintechStartupsPage() {
   return (
     <>
       {/* Hero */}
@@ -138,12 +135,12 @@ export default function AIAgentStartupsPage() {
           <div className="text-center">
             <h1 className="text-sm font-medium">
               <span className="text-[var(--term-green)]">$</span>{" "}
-              AI AGENT STARTUPS
+              FINTECH STARTUPS
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
-              Your agents are making financial decisions autonomously. Kontext
-              gives them a verifiable compliance layer -- action logging, trust
-              scoring, and anomaly detection in 5 lines of code.
+              Ship payment infrastructure in minutes, not months. Kontext gives
+              fintech startups an 8-stage payment lifecycle, a policy engine for
+              compliance, and provider adapters that prevent lock-in.
             </p>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-center">
               <Button size="lg" className="gap-2" asChild>
@@ -179,11 +176,11 @@ export default function AIAgentStartupsPage() {
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-sm font-medium">
-              Why AI agent startups need compliance now
+              Why fintech startups need a payment control plane
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
-              Agents moving money without a compliance layer is a ticking clock.
-              Here is what keeps founders up at night.
+              You are building a payments product, not a payments infrastructure
+              company. Stop reinventing lifecycle management.
             </p>
           </div>
           <div className="grid gap-6 sm:grid-cols-2">
@@ -211,11 +208,11 @@ export default function AIAgentStartupsPage() {
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-sm font-medium">
-              Compliance infrastructure built for agent developers
+              Payment lifecycle infrastructure built for startups
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
-              Everything you need to make your agents production-ready for
-              enterprise customers and regulators.
+              Everything you need to manage payments across providers, enforce
+              compliance policies, and maintain a tamper-evident audit trail.
             </p>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -247,22 +244,30 @@ export default function AIAgentStartupsPage() {
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div>
               <h2 className="text-sm font-medium">
-                Wrap any agent tool call with compliance
+                From start to settlement in 10 lines
               </h2>
               <p className="mt-4 text-xs text-[var(--term-text-2)]">
-                Call{" "}
+                Initialize with a workspace profile, then move payments through
+                the lifecycle with{" "}
                 <code className="bg-muted px-1.5 py-0.5 font-mono text-sm">
-                  ctx.verify()
-                </code>{" "}
-                before executing any financial action. You get a trust score,
-                anomaly flags, and a tamper-evident audit entry -- automatically.
+                  start()
+                </code>
+                ,{" "}
+                <code className="bg-muted px-1.5 py-0.5 font-mono text-sm">
+                  authorize()
+                </code>
+                , and{" "}
+                <code className="bg-muted px-1.5 py-0.5 font-mono text-sm">
+                  settle()
+                </code>
+                . The policy engine checks compliance at every transition.
               </p>
               <ul className="mt-6 space-y-3">
                 {[
-                  "Works with any agent framework or custom pipeline",
-                  "Trust score returned in under 50ms",
-                  "Flagged transactions blocked before execution",
-                  "Every action linked in a cryptographic digest chain",
+                  "8-stage lifecycle with tamper-evident transitions",
+                  "Policy engine evaluates rules before every stage change",
+                  "Workspace profiles for treasury, micropayments, subscriptions",
+                  "Provider adapters normalize events across 6 integrations",
                 ].map((item) => (
                   <li
                     key={item}
@@ -279,9 +284,9 @@ export default function AIAgentStartupsPage() {
             </div>
             <div className="">
               <CodeBlock
-                code={agentCode}
+                code={fintechCode}
                 language="typescript"
-                filename="agent-transfer.ts"
+                filename="fintech-quickstart.ts"
               />
             </div>
           </div>
@@ -298,15 +303,15 @@ export default function AIAgentStartupsPage() {
               </h2>
               <p className="mt-4 text-xs text-[var(--term-text-2)] leading-relaxed">
                 The Free tier includes 20,000 events per month -- enough to
-                build and validate your agent workflows. Pro is usage-based
-                at $2 per 1,000 events above 20K free, with cloud
-                persistence, anomaly detection, and no monthly minimum.
+                build and validate your payment flows. Pay as you go is
+                usage-based at $2 per 1,000 events above 20K free, with cloud
+                persistence, advanced policies, and no monthly minimum.
               </p>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 {[
                   "Free: 20K events/month, local SDK, open source",
-                  "Pro: $2/1K events above 20K free, usage-based",
-                  "Cloud persistence, anomaly detection, multi-chain support",
+                  "Pay as you go: $2/1K events above 20K free",
+                  "Cloud persistence, ops dashboard, multi-chain support",
                   "No credit card required to start",
                 ].map((item) => (
                   <div
@@ -336,10 +341,10 @@ export default function AIAgentStartupsPage() {
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center text-center">
             <h2 className="text-sm font-medium">
-              Ready to add compliance to your agents?
+              Ready to ship payment infrastructure?
             </h2>
             <p className="mt-4 max-w-md text-muted-foreground">
-              Install the SDK and start logging agent transactions in under 5
+              Install the SDK and start managing payment lifecycles in under 5
               minutes. Open source and free to start.
             </p>
             <div className="mt-8 inline-flex items-center gap-2 rounded-none border border-[var(--term-surface-2)] bg-[var(--term-surface)] px-4 py-2 font-mono text-sm text-muted-foreground ">

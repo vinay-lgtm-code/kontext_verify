@@ -13,123 +13,127 @@ import { CodeBlock } from "@/components/code-block";
 import {
   ArrowRight,
   Check,
-  Network,
-  ClipboardCheck,
-  ArrowLeftRight,
-  AlertTriangle,
-  BarChart3,
+  Landmark,
+  Layers,
   Shield,
-  FileCheck,
+  FileSpreadsheet,
+  Bell,
+  UserCheck,
+  Link2,
+  ClipboardCheck,
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "DeFi Protocols",
+  title: "Treasury & Ops Teams",
   description:
-    "On-chain compliance infrastructure for decentralized finance. Action logging for governance, transaction tracking across chains, anomaly detection for treasury, and audit export for regulatory inquiries.",
+    "Payment control plane for treasury and operations teams. Unified lifecycle across providers, digest chain audit trails, CSV export, Slack alerts, and human review workflows.",
 };
 
 const painPoints = [
   {
-    title: "Regulatory pressure increasing on DeFi",
+    title: "Multi-provider complexity",
     description:
-      "Regulators worldwide are turning their attention to DeFi protocols. Whether it is the SEC, CFTC, or international bodies, protocols that cannot demonstrate compliance infrastructure will face increasing risk.",
+      "Your payments flow through Stripe, Circle, Bridge, and on-chain rails. Each provider has its own dashboard, webhook format, and status model. You are context-switching between five tabs to understand one payment.",
   },
   {
-    title: "No standard compliance tooling for protocols",
+    title: "Audit trail gaps across systems",
     description:
-      "Traditional compliance tools were built for centralized entities. DeFi protocols need compliance infrastructure that works with on-chain governance, multi-sig treasuries, and decentralized decision-making.",
+      "When compliance asks for the full history of a payment, you are pulling data from three different systems and stitching it together in a spreadsheet. There is no single source of truth with tamper-evident proof.",
   },
   {
-    title: "Governance decisions need audit trails",
+    title: "Manual reconciliation burns hours",
     description:
-      "Every governance proposal, vote, and execution should be recorded in a tamper-evident audit trail. When regulators ask how a decision was made, you need verifiable proof.",
+      "Matching settlements to authorizations across providers is a manual, error-prone process. Every discrepancy triggers a time-consuming investigation with no tooling to help.",
   },
   {
-    title: "Treasury operations need accountability",
+    title: "Compliance reporting takes days, not minutes",
     description:
-      "Protocol treasuries manage significant assets across multiple chains. Every transfer, swap, and allocation needs a compliance record that can withstand regulatory scrutiny.",
+      "Generating reports for regulators means exporting from multiple systems, normalizing formats, and manually verifying completeness. A process that should take minutes takes days.",
   },
 ];
 
 const features = [
   {
+    icon: Layers,
+    title: "Unified Lifecycle Across Providers",
+    description:
+      "Every payment from every provider moves through the same 8-stage lifecycle. One data model, one dashboard, one audit trail -- regardless of whether the payment went through Stripe, Circle, or on-chain.",
+  },
+  {
+    icon: Link2,
+    title: "Tamper-Evident Digest Chain",
+    description:
+      "Every stage transition is cryptographically linked to the previous one. When compliance asks if the audit trail has been modified, the answer is mathematically verifiable.",
+  },
+  {
+    icon: FileSpreadsheet,
+    title: "CSV Export for Reconciliation",
+    description:
+      "Export payment lifecycle data in CSV for reconciliation, reporting, and analysis. Filter by date range, provider, stage, and risk level. Ready for your existing accounting workflows.",
+  },
+  {
+    icon: Bell,
+    title: "Slack and Email Alerts",
+    description:
+      "Get notified when payments stall, anomalies are detected, or human review is required. Route alerts to the right channel based on amount, provider, or risk level.",
+  },
+  {
+    icon: UserCheck,
+    title: "Human Review Workflows",
+    description:
+      "Configure amount thresholds that require human approval before a payment advances. Treasury managers review and approve directly from Slack or the ops dashboard.",
+  },
+  {
     icon: ClipboardCheck,
-    title: "Governance Action Logging",
+    title: "Compliance-Ready Reports",
     description:
-      "Record every governance proposal, vote, and execution in a tamper-evident audit trail. Cryptographic digest chains ensure governance records cannot be altered after the fact.",
-  },
-  {
-    icon: ArrowLeftRight,
-    title: "Cross-Chain Transaction Tracking",
-    description:
-      "Track transactions across Ethereum, Base, Polygon, Arbitrum, Optimism, and more. A unified audit trail spanning every chain your protocol operates on.",
-  },
-  {
-    icon: AlertTriangle,
-    title: "Treasury Anomaly Detection",
-    description:
-      "Flag unusual treasury movements automatically. Velocity checks, amount thresholds, and behavioral analysis tuned for DeFi treasury operations.",
-  },
-  {
-    icon: BarChart3,
-    title: "Participant Trust Scoring",
-    description:
-      "Score protocol participants based on on-chain history, behavioral patterns, and interaction frequency. Identify high-risk actors before they impact the protocol.",
-  },
-  {
-    icon: Shield,
-    title: "Immutable Governance Records",
-    description:
-      "Every governance action is linked in a cryptographic digest chain. Provide regulators and community members with verifiable proof of governance decisions.",
-  },
-  {
-    icon: FileCheck,
-    title: "Regulatory Inquiry Export",
-    description:
-      "Export compliance-ready audit trails in JSON, CSV, and PDF when regulators come asking. Structured data ready for legal review and regulatory response.",
+      "Generate SAR/CTR templates, compliance certificates, and audit exports from the unified payment lifecycle. All backed by the digest chain for tamper-evident proof.",
   },
 ];
 
-const defiCode = `import { Kontext } from 'kontext-sdk';
+const treasuryCode = `import { Kontext } from 'kontext-sdk';
 
 const ctx = Kontext.init({
-  projectId: 'defi-governance',
+  projectId: 'treasury-ops',
   environment: 'production',
-});
-
-// Log a governance vote with full context
-await ctx.log({
-  action: 'governance_vote',
-  agentId: 'governance-module',
-  details: 'Vote on PROP-042: Increase treasury allocation to L2 liquidity',
-  metadata: {
-    proposalId: 'PROP-042',
-    voter: '0xDelegate...abc',
-    vote: 'for',
-    votingPower: '150000',
-    snapshotBlock: 19_500_000,
+  workspace: 'treasury',
+  notifications: {
+    slack: { webhookUrl: process.env.SLACK_WEBHOOK },
+    email: { to: 'treasury@acme.com' },
   },
 });
 
-// Log a treasury transfer with compliance verification
-const transfer = await ctx.verify({
-  txHash: '0xabc...def',
-  chain: 'ethereum',
-  amount: '250000',
+// Start a vendor payment
+const payment = await ctx.start({
+  amount: '25000',
   token: 'USDC',
+  chain: 'base',
   from: '0xTreasury...abc',
-  to: '0xL2Bridge...def',
-  agentId: 'treasury-multisig',
+  to: '0xVendor...def',
+  metadata: { invoiceId: 'INV-2026-089', department: 'engineering' },
 });
 
-if (!transfer.compliant) {
-  console.log('Treasury transfer blocked:', transfer.checks);
-} else {
-  console.log('Trust score:', transfer.trustScore.score);
-  console.log('Digest valid:', transfer.digestProof.valid);
-}`;
+// Authorize -- triggers human review for amounts > $10,000
+const auth = await ctx.authorize(payment.id);
 
-export default function DeFiProtocolsPage() {
+if (auth.requiresReview) {
+  // Slack alert sent automatically to #treasury-approvals
+  console.log('Pending review:', auth.reviewId);
+  // Treasury manager approves via Slack or dashboard
+  return;
+}
+
+// After approval, continue the lifecycle
+await ctx.capture(payment.id);
+await ctx.settle(payment.id, { txHash: '0xabc...def' });
+
+// Export for monthly reconciliation
+const report = await ctx.export({
+  format: 'csv',
+  dateRange: { from: startOfMonth, to: endOfMonth },
+});`;
+
+export default function TreasuryOpsPage() {
   return (
     <>
       {/* Hero */}
@@ -138,13 +142,12 @@ export default function DeFiProtocolsPage() {
           <div className="text-center">
             <h1 className="text-sm font-medium">
               <span className="text-[var(--term-green)]">$</span>{" "}
-              DEFI PROTOCOLS
+              TREASURY & OPS TEAMS
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
-              DeFi protocols face increasing regulatory pressure. Kontext gives
-              your protocol tamper-evident governance records, treasury anomaly
-              detection, and audit trails that satisfy regulators without
-              sacrificing decentralization.
+              Unified payment lifecycle with review workflows and export. Kontext
+              gives treasury and operations teams a single control plane across
+              every provider, with tamper-evident audit trails and Slack alerts.
             </p>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-center">
               <Button size="lg" className="gap-2" asChild>
@@ -180,12 +183,11 @@ export default function DeFiProtocolsPage() {
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-sm font-medium">
-              Why DeFi protocols need compliance infrastructure
+              Why treasury teams need a payment control plane
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
-              Decentralization does not mean deregulation. Protocols that invest
-              in compliance infrastructure now will be better positioned as
-              regulation matures.
+              Multi-provider payment operations were never designed to be managed
+              from a spreadsheet. Here is what costs you hours every week.
             </p>
           </div>
           <div className="grid gap-6 sm:grid-cols-2">
@@ -213,11 +215,12 @@ export default function DeFiProtocolsPage() {
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-sm font-medium">
-              Compliance tooling designed for decentralized protocols
+              One control plane for every payment
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
-              Governance logging, treasury monitoring, and audit export -- built
-              for the way DeFi protocols actually work.
+              Unified lifecycle, tamper-evident audit trails, and review
+              workflows -- built for teams that manage payments across multiple
+              providers.
             </p>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -249,24 +252,21 @@ export default function DeFiProtocolsPage() {
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div>
               <h2 className="text-sm font-medium">
-                Governance voting and treasury transfers
+                Treasury workflow with human review
               </h2>
               <p className="mt-4 text-xs text-[var(--term-text-2)]">
-                Log governance votes and treasury transfers with{" "}
-                <code className="bg-muted px-1.5 py-0.5 font-mono text-sm">
-                  ctx.verify()
-                </code>
-                . Every action is recorded in a tamper-evident digest chain,
-                linking governance decisions to the treasury operations they
-                authorize.
+                Configure amount thresholds for human review. Payments above the
+                threshold pause at authorization and send a Slack alert to your
+                treasury channel. Approved payments continue through the lifecycle
+                automatically.
               </p>
               <ul className="mt-6 space-y-3">
                 {[
-                  "Governance proposals linked to treasury executions",
-                  "Multi-sig signer tracking for treasury transfers",
-                  "Anomaly detection for unusual treasury movements",
-                  "Cross-chain audit trail for L2 operations",
-                  "Export audit trails for regulatory inquiries",
+                  "Human review for payments above configurable thresholds",
+                  "Slack and email alerts routed by amount and risk level",
+                  "CSV export for monthly reconciliation and audit",
+                  "Tamper-evident digest chain proves nothing was modified",
+                  "Works across Stripe, Circle, Bridge, and on-chain rails",
                 ].map((item) => (
                   <li
                     key={item}
@@ -283,9 +283,9 @@ export default function DeFiProtocolsPage() {
             </div>
             <div className="">
               <CodeBlock
-                code={defiCode}
+                code={treasuryCode}
                 language="typescript"
-                filename="defi-governance.ts"
+                filename="treasury-workflow.ts"
               />
             </div>
           </div>
@@ -298,20 +298,20 @@ export default function DeFiProtocolsPage() {
           <div className="border border-[var(--term-surface-2)] bg-[var(--term-surface)] p-8 sm:p-12">
             <div className="max-w-2xl">
               <h2 className="text-sm font-medium">
-                Start free, upgrade for advanced features
+                Start free, scale with usage
               </h2>
               <p className="mt-4 text-xs text-[var(--term-text-2)] leading-relaxed">
-                The Free tier includes 20,000 events per month -- enough to add
-                compliance to governance and treasury operations. Pro is
-                usage-based at $2 per 1,000 events above 20K free, with cloud
-                persistence, anomaly detection, and no monthly minimum.
+                The Free tier includes 20,000 events per month -- enough to
+                manage treasury operations at scale. Pay as you go is
+                usage-based at $2 per 1,000 events above 20K free, with CSV
+                export, Slack alerts, and cloud persistence.
               </p>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 {[
-                  "Free: 20K events/month, governance logging, local SDK",
-                  "Pro: $2/1K events above 20K free, usage-based",
-                  "Cloud persistence, anomaly detection, multi-chain support",
-                  "Open source SDK -- audit the code yourself",
+                  "Free: 20K events/month, local SDK, open source",
+                  "Pay as you go: $2/1K events, CSV export, Slack alerts",
+                  "Cloud persistence, ops dashboard, multi-provider",
+                  "No credit card required to start",
                 ].map((item) => (
                   <div
                     key={item}
@@ -346,11 +346,11 @@ export default function DeFiProtocolsPage() {
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center text-center">
             <h2 className="text-sm font-medium">
-              Ready to add compliance to your protocol?
+              Ready to unify your payment operations?
             </h2>
             <p className="mt-4 max-w-md text-muted-foreground">
-              Install the SDK and start logging governance and treasury
-              operations in minutes. Open source and free to start.
+              Install the SDK and start managing payment lifecycles across all
+              your providers in minutes. Open source and free to start.
             </p>
             <div className="mt-8 inline-flex items-center gap-2 rounded-none border border-[var(--term-surface-2)] bg-[var(--term-surface)] px-4 py-2 font-mono text-sm text-muted-foreground ">
               <span className="text-primary">$</span>

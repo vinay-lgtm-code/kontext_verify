@@ -1,108 +1,46 @@
 # Kontext SDK
-> Compliance logging for AI agents that move USDC on Base & Arc
+> Payment lifecycle management for modern fintech
 
 ## Install
 npm install kontext-sdk
 
-## Quick Start (x402 canonical flow)
+## Quick Start
 ```typescript
 import { Kontext } from 'kontext-sdk';
-const ctx = Kontext.init({ projectId: 'my-agent', environment: 'production' });
-// Agent receives HTTP 402 → reasons → verify USDC → anchor on Base
-const result = await ctx.verify({
-  txHash, chain: 'base', amount: '0.50', token: 'USDC',
-  from: agentWallet, to: apiProvider, agentId: 'research-agent',
-  reasoning: 'Paying API via x402. Provider not sanctioned.',
+const ctx = Kontext.init({ projectId: 'my-app', environment: 'production' });
+const attempt = await ctx.start({
+  workspaceRef: 'acme', appRef: 'pay-agent', archetype: 'treasury',
+  intentCurrency: 'USD', settlementAsset: 'USDC', chain: 'base',
+  senderRefs: { wallet: '0xSender' }, recipientRefs: { wallet: '0xRecipient' },
+  executionSurface: 'sdk',
+});
+const { receipt } = await ctx.authorize(attempt.attemptId, {
+  chain: 'base', token: 'USDC', amount: '5000',
+  from: '0xSender', to: '0xRecipient', actorId: 'treasury-agent',
 });
 ```
 
-## verify() returns
-```typescript
-{
-  compliant: boolean,
-  checks: Array<{ name: string, passed: boolean, details?: string }>,
-  riskLevel: 'low' | 'medium' | 'high' | 'critical',
-  trustScore: { score: 0-100, level: string, factors: Factor[] },
-  digestProof: { valid: boolean, chainLength: number },
-  transaction: TransactionRecord,
-  counterparty?: { attested: boolean, digest: string },
-  anchorProof?: { txHash: string, blockNumber: number },
-}
-```
+## 8-Stage Payment Lifecycle
+intent -> authorize -> prepare -> transmit -> confirm -> recipient_credit -> reconcile -> retry_or_refund
 
-## Ecosystem
-Primary: USDC on Base + Arc (free tier)
-Protocol: x402 (agentic HTTP 402 micropayments)
-Wallets: Circle Programmable Wallets
-Bridging: CCTP V2
-All chains: ethereum, base, polygon, arbitrum, optimism, arc, avalanche, solana
+## SDK Client API
+start(), authorize(), record(), broadcast(), confirm(), credit(), fail(), refund(), get(), list(), profile(), configure()
+
+## Policy Engine
+OFAC sanctions screening, amount limits, blocklists/allowlists, required metadata, human approval thresholds
+
+## 6 Provider Adapters
+EVMAdapter, SolanaAdapter, CircleAdapter, X402Adapter, BridgeAdapter, ModernTreasuryAdapter
+
+## 5 Workspace Profiles
+micropayments ($100 max), treasury ($25K), invoicing ($20K), payroll ($15K), cross_border ($10K)
 
 ## Pricing
-Free: 20,000 events/month, Base + Arc chains, no API key needed
-Pro: $0.002/event above 20K free (Stripe or USDC on Base via x402)
-
-## Batch Anchoring
-```typescript
-batchAnchor(digests, { batchSize: 50 }) // one tx anchors 50 compliance events (~$0.001)
-```
-
-## Core Capabilities
-
-1. **verify()** — OFAC screening + transaction logging + trust scoring + digest proof in one call
-2. **Digest chain** — Tamper-evident SHA-256 hash chain for every logged action (patented)
-3. **On-chain anchoring** — Write terminal digest to Base or Arc smart contract for immutable proof
-4. **Batch anchoring** — 50 digests per tx on Base (~$0.001)
-5. **A2A attestation** — Exchange compliance digests between agent counterparties via x402
-6. **Trust scoring** — 0-100 score from 5 factors (history, amount, frequency, destination, behavior)
-7. **Anomaly detection** — Rule-based detection (unusualAmount, frequencySpike + 4 advanced rules)
-8. **Compliance certificates** — Exportable certificates with digest proof + trust score + reasoning
-9. **Agent reasoning logs** — Log why agents made decisions, linked to digest chain
-10. **ERC-8021 attribution** — Transaction attribution via calldata suffix
-
-## Key Pages
-
-- Docs: https://getkontext.com/docs
-- Pricing: https://getkontext.com/pricing
-- Use Cases: https://getkontext.com/use-cases
-
-## MCP Integration
-
-```json
-{
-  "mcpServers": {
-    "kontext": {
-      "command": "npx",
-      "args": ["-y", "kontext-sdk", "mcp"]
-    }
-  }
-}
-```
-
-MCP tools: verify_transaction, check_sanctions, log_reasoning, get_trust_score, get_compliance_certificate, anchor_digest, exchange_attestation, verify_audit_trail.
-
-## Supported Chains
-
-Base, Ethereum, Polygon, Arbitrum, Optimism, Arc, Avalanche, Solana (free tier: Base + Arc).
-
-## Supported Tokens
-
-USDC, USDT, DAI, EURC.
-
-## Compliance Thresholds
-
-- $3,000: Enhanced Due Diligence (Travel Rule)
-- $10,000: Currency Transaction Report (CTR)
-- $50,000: Large Transaction Alert
+Free: 20,000 payment stage events/month, Base chain
+Pro: $0.002/event above 20K free, all chains
 
 ## Links
 - Docs: https://getkontext.com/docs
 - npm: https://npmjs.com/package/kontext-sdk
 - GitHub: https://github.com/Legaci-Labs/kontext
-- API: https://api.getkontext.com
-- Agent Card: https://getkontext.com/.well-known/kontext.json
-- Full API Reference: https://getkontext.com/llms-full.txt
-
-## Contact
-- Website: https://getkontext.com
-- Email: hello@kontext.dev
-- Twitter: https://x.com/kontextverify
+- Full Reference: https://getkontext.com/llms-full.txt

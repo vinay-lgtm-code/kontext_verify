@@ -11,41 +11,38 @@ import {
 } from "@/components/ui/card";
 import {
   ArrowRight,
-  Bot,
-  Coins,
-  Network,
+  Rocket,
+  Landmark,
+  Layers,
 } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Audiences",
   description:
-    "Kontext serves AI agent startups, stablecoin issuers, and DeFi protocols with trust infrastructure tailored to each audience's compliance needs.",
+    "Kontext serves fintech startups, treasury and ops teams, and payment platform builders with a unified payment lifecycle tailored to each audience.",
 };
 
 const audiences = [
   {
-    slug: "ai-agent-startups",
-    icon: Bot,
-    title: "AI Agent Startups",
-    description:
-      "Building agents that move money? Ship compliance in 5 lines of code.",
-    tags: ["x402", "Stripe", "Vercel AI SDK"],
+    slug: "fintech-startups",
+    icon: Rocket,
+    title: "Fintech Startups",
+    description: "Ship payment infrastructure in minutes, not months.",
+    tags: ["8-Stage Lifecycle", "Policy Engine", "USDC"],
   },
   {
-    slug: "stablecoin-issuers",
-    icon: Coins,
-    title: "Stablecoin Issuers",
-    description:
-      "GENIUS Act-aligned audit trails for stablecoin operations.",
-    tags: ["USDC", "GENIUS Act", "Reserves"],
+    slug: "treasury-ops",
+    icon: Landmark,
+    title: "Treasury & Ops Teams",
+    description: "Unified payment lifecycle with review workflows and export.",
+    tags: ["CSV Export", "Slack Alerts", "Reconciliation"],
   },
   {
-    slug: "defi-protocols",
-    icon: Network,
-    title: "DeFi Protocols",
-    description:
-      "On-chain compliance for decentralized finance.",
-    tags: ["Multi-chain", "Governance", "Treasury"],
+    slug: "payment-platforms",
+    icon: Layers,
+    title: "Payment Platform Builders",
+    description: "Provider-agnostic lifecycle with 6 adapters.",
+    tags: ["Adapters", "Workspace Profiles", "Multi-Archetype"],
   },
 ];
 
@@ -61,9 +58,9 @@ export default function AudiencesPage() {
               AUDIENCES
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
-              Different builders have different compliance needs. Whether you are
-              shipping AI agents, issuing stablecoins, or building DeFi protocols —
-              Kontext adapts to your regulatory reality.
+              Different builders need different payment workflows. Whether you are
+              shipping a fintech product, running treasury operations, or building
+              a payment platform — Kontext gives you the lifecycle control plane.
             </p>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-center">
               <Button size="lg" className="gap-2" asChild>
@@ -155,7 +152,7 @@ export default function AudiencesPage() {
               Not sure where to start?
             </h2>
             <p className="mt-4 max-w-md text-muted-foreground">
-              Install the SDK and start logging agent transactions in under 5
+              Install the SDK and start managing payment lifecycles in under 5
               minutes. Open source and free to start.
             </p>
             <div className="mt-8 inline-flex items-center gap-2 border border-border bg-card px-4 py-2 font-mono text-sm text-muted-foreground">

@@ -4,27 +4,27 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Blog",
   description:
-    "Insights on agent compliance, stablecoin regulation, and building trust in the agent economy.",
+    "Insights on payment infrastructure, lifecycle management, and fintech compliance.",
 };
 
 const posts = [
   {
-    slug: "introducing-kontext",
-    title: "Introducing Kontext: Trust Layer for Agentic Stablecoin Transactions",
+    slug: "payment-control-plane",
+    title: "Introducing the Kontext Payment Control Plane",
     description:
-      "AI agents are moving real money. Here is why they need a compliance layer, and how Kontext provides it in five lines of code.",
-    date: "2026-02-07",
-    readTime: "6 min",
-    tags: ["Launch", "GENIUS Act", "USDC"],
+      "We rebuilt Kontext from a compliance logging SDK into a full payment lifecycle manager. Here is why.",
+    date: "2026-03-08",
+    readTime: "7 min",
+    tags: ["Launch", "Payment Lifecycle", "SDK"],
   },
   {
-    slug: "tamper-evident-audit-trails",
-    title: "Building Tamper-Evident Audit Trails for AI Agent Transactions",
+    slug: "8-stage-payment-lifecycle",
+    title: "Why Every Payment Needs 8 Stages",
     description:
-      "AI agents are making autonomous financial decisions. Learn how digest chains provide cryptographic proof that your audit logs have not been altered.",
-    date: "2026-02-05",
-    readTime: "8 min",
-    tags: ["Engineering", "Audit", "Cryptography"],
+      "From intent to reconciliation: the taxonomy that makes payment operations auditable, debuggable, and compliant.",
+    date: "2026-03-06",
+    readTime: "10 min",
+    tags: ["Engineering", "Architecture", "Compliance"],
   },
 ];
 
@@ -39,8 +39,8 @@ export default function BlogPage() {
             BLOG
           </h1>
           <p className="mt-4 text-xs text-[var(--term-text-2)]">
-            Insights on agent compliance, stablecoin regulation, and building
-            trust in the agent economy.
+            Insights on payment infrastructure, lifecycle management, and
+            fintech compliance.
           </p>
         </div>
       </section>
