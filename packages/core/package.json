@@ -30,13 +30,13 @@
     "test": "vitest run"
   },
   "keywords": [
-    "base",
-    "usdc",
-    "authorization",
-    "receipts",
-    "audit-trail",
+    "payment-lifecycle",
+    "policy-engine",
+    "payment-authorization",
+    "attempt-ledger",
     "digest-chain",
-    "payments"
+    "usdc",
+    "base"
   ],
   "license": "MIT",
   "devDependencies": {

@@ -1,4 +1,4 @@
-# Kontext — Trust SDK for agents that move money
+# Kontext — Payment lifecycle management for modern fintech
 # https://getkontext.com
 
 # Default: allow all crawlers

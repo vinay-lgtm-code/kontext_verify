@@ -17,15 +17,12 @@
   },
   "keywords": [
     "kontext",
-    "compliance",
+    "payment-lifecycle",
+    "payment-control-plane",
     "cli",
     "usdc",
-    "ofac",
     "stablecoin",
-    "agent",
-    "audit-trail",
-    "genius-act",
-    "mcp"
+    "policy-engine"
   ],
   "author": "Legaci Labs Inc.",
   "license": "MIT",

@@ -1,256 +1,142 @@
 # kontext-sdk
 
-Compliance audit trail CLI and SDK for AI agents making stablecoin payments on Base.
+Payment lifecycle SDK for modern fintech. Track every payment from intent to reconciliation.
 
-**USDC** · **USDT** · **DAI** · **EURC** · **USDP** · **USDG** · **x402** · **Circle Programmable Wallets**
+**8-Stage Lifecycle** . **Policy Engine** . **6 Provider Adapters** . **Zero Dependencies**
 
 ---
-
-## 30-Second Demo
-
-```bash
-npx kontext-sdk check 0xAgentWallet 0xMerchant --amount 5000 --token USDC
-```
-
-```
-OFAC Sanctions:  CLEAR
-Travel Rule:     TRIGGERED ($5,000 >= $3,000 EDD threshold)
-CTR Threshold:   CLEAR ($5,000 < $10,000)
-Large TX Alert:  CLEAR ($5,000 < $50,000)
-Risk Level:      medium
-```
-
-No install. No config. No API key. One command.
 
 ## Install
 
 ```bash
-npm install -g kontext-sdk
+npm install kontext-sdk
 ```
 
-Then run `kontext` from anywhere. Or use `npx kontext-sdk` for one-off checks.
+## Quick Start
 
-## Claude Code / Cursor / Windsurf
+```typescript
+import { Kontext } from 'kontext-sdk';
 
-```json
-{
-  "mcpServers": {
-    "kontext": {
-      "command": "npx",
-      "args": ["-y", "kontext-sdk", "mcp"]
-    }
-  }
+const ctx = Kontext.init({
+  projectId: 'my-app',
+  environment: 'production',
+});
+
+// Start a payment attempt
+const attempt = await ctx.start({
+  workspaceRef: 'ws_acme',
+  appRef: 'invoicing',
+  archetype: 'invoicing',
+  intentCurrency: 'USD',
+  settlementAsset: 'USDC',
+  chain: 'base',
+  senderRefs: { companyId: 'acme' },
+  recipientRefs: { vendorId: 'v-123' },
+  executionSurface: 'sdk',
+});
+
+// Authorize — runs policy engine (OFAC, limits, blocklists)
+const { receipt } = await ctx.authorize(attempt.attemptId, {
+  chain: 'base',
+  token: 'USDC',
+  amount: '5000',
+  from: '0xSender',
+  to: '0xRecipient',
+  actorId: 'treasury-agent',
+});
+
+if (!receipt.allowed) {
+  console.log('Blocked:', receipt.violations);
+  return;
 }
+
+// Track the payment lifecycle
+await ctx.broadcast(attempt.attemptId, '0xTxHash...');
+await ctx.confirm(attempt.attemptId, { txHash: '0xTxHash...', blockNumber: 12345 });
+await ctx.credit(attempt.attemptId, { confirmedAt: new Date().toISOString() });
 ```
 
-Then ask: *"verify this USDC transaction for compliance"*
+## SDK API
 
-## CLI Commands
-
-### `kontext check <from> <to>` — stateless compliance check
-
-```bash
-npx kontext-sdk check 0xSender 0xReceiver --amount 5000 --token USDC
-```
-
-Instant OFAC screening + threshold checks. No state, no persistence.
-
-### `kontext verify` — log + check + digest proof
-
-```bash
-npx kontext-sdk verify --tx 0xabc123 --amount 5000 --token USDC \
-  --from 0xAgent --to 0xMerchant --agent my-bot
-```
-
-Runs compliance checks, logs the transaction, appends to the tamper-evident digest chain. Persists to `.kontext/` in the current directory.
-
-### `kontext reason` — log agent reasoning
-
-```bash
-npx kontext-sdk reason "API returned data I need. Price within budget." \
-  --agent my-bot --session sess_abc --step 1
-```
-
-### `kontext cert` — export compliance certificate
-
-```bash
-npx kontext-sdk cert --agent my-bot --output cert.json
-```
-
-### `kontext audit` — verify digest chain integrity
-
-```bash
-npx kontext-sdk audit --verify
-```
-
-### `kontext mcp` — MCP server mode
-
-```bash
-npx kontext-sdk mcp
-```
-
-Starts an MCP server on stdio for Claude Code, Cursor, and Windsurf.
-
-### Flags
-
-- `--json` on any command outputs structured JSON
-- `--amount <number>` transaction amount in token units
-- `--token <symbol>` one of USDC, USDT, DAI, EURC, USDP, USDG
-
-## SDK — Programmatic Usage
-
-For tighter integration, use the SDK directly:
+### Payment Lifecycle
 
 ```typescript
-import { Kontext, FileStorage } from 'kontext-sdk';
-
-const ctx = Kontext.init({
-  projectId: 'my-agent',
-  environment: 'production',
-  storage: new FileStorage('.kontext'),
-});
-
-// One-call: compliance check + transaction log + digest proof
-const result = await ctx.verify({
-  txHash: '0xabc...',
-  chain: 'base',
-  amount: '5000',
-  token: 'USDC',
-  from: '0xAgent...',
-  to: '0xMerchant...',
-  agentId: 'payment-agent',
-});
-
-// result.compliant = true/false
-// result.checks = [{ name: 'OFAC Sanctions', passed: true }, ...]
-// result.riskLevel = 'low' | 'medium' | 'high' | 'critical'
-// result.digestProof = 'sha256:a1b2c3...'
+ctx.start(input)                          // Start attempt (stage: intent)
+ctx.authorize(attemptId, input)           // Run policy engine (stage: authorize)
+ctx.record(attemptId, stage, event)       // Append arbitrary stage event
+ctx.broadcast(attemptId, txHash, chain?)  // Mark tx broadcast (stage: transmit)
+ctx.confirm(attemptId, confirmation)      // Mark tx confirmed (stage: confirm)
+ctx.credit(attemptId, evidence)           // Mark recipient credited
+ctx.fail(attemptId, reason, stage?)       // Mark stage failed
+ctx.refund(attemptId, data)               // Record refund
 ```
 
-### Log Reasoning
+### Query
 
 ```typescript
-await ctx.logReasoning({
-  agentId: 'payment-agent',
-  action: 'approve-transfer',
-  reasoning: 'Price within budget. Merchant verified.',
-  confidence: 0.95,
-});
+ctx.get(attemptId)         // Get attempt by ID
+ctx.list(filter?)          // List with filters (archetype, chain, state, date range)
 ```
 
-### Compliance Certificate
+### Workspace
 
 ```typescript
-const cert = await ctx.generateComplianceCertificate({
-  agentId: 'payment-agent',
-  includeReasoning: true,
-});
+ctx.profile()              // Get workspace profile
+ctx.configure(profile)     // Set workspace profile
 ```
 
-### Trust Score
+### Lifecycle
 
 ```typescript
-const score = await ctx.getTrustScore('payment-agent');
-// score.score = 87, score.level = 'high'
+ctx.flush()                // Persist to storage
+ctx.destroy()              // Clean up
 ```
 
-### Verify Digest Chain
+## 8-Stage Payment Lifecycle
+
+```
+intent -> authorize -> prepare -> transmit -> confirm -> recipient_credit -> reconcile -> retry_or_refund
+```
+
+## Provider Adapters
 
 ```typescript
-const chain = ctx.verifyDigestChain();
-console.log(chain.valid); // true — no tampering
+import { EVMAdapter, BridgeAdapter, ModernTreasuryAdapter } from 'kontext-sdk';
+
+const adapter = new EVMAdapter();
+const stageEvent = adapter.normalizeEvent(providerEvent);
+await ctx.record(attemptId, stageEvent.stage, stageEvent);
 ```
 
-### Agent Provenance
+| Adapter | Provider | Stages |
+|---------|----------|--------|
+| `EVMAdapter` | Ethereum, Base | transmit, confirm |
+| `SolanaAdapter` | Solana | transmit, confirm |
+| `CircleAdapter` | Circle Wallets | prepare, transmit, confirm |
+| `X402Adapter` | x402 | intent, prepare, transmit, confirm |
+| `BridgeAdapter` | Bridge.xyz | prepare, transmit, confirm, recipient_credit |
+| `ModernTreasuryAdapter` | Modern Treasury | prepare, transmit, confirm, reconcile, retry_or_refund |
 
-Three layers of accountability: session delegation, action binding, and human attestation.
+## Policy Engine
+
+`authorize()` runs these checks:
+
+- **OFAC Sanctions** — built-in SDN list, no API key
+- **Amount Limits** — per-transaction and daily aggregate
+- **Blocklists** — sender/recipient address blocking
+- **Metadata Requirements** — archetype-specific (e.g., invoiceId for invoicing)
+
+## Persistence
 
 ```typescript
-// Layer 1: Session delegation — record who authorized the agent
-const session = await ctx.createAgentSession({
-  agentId: 'treasury-agent',
-  delegatedBy: 'user:vinay',
-  scope: ['transfer', 'approve'],
-  expiresAt: new Date(Date.now() + 3600_000).toISOString(),
-});
+import { Kontext } from 'kontext-sdk';
 
-// Layer 2: Action binding — tie every call to the session
-const result = await ctx.verify({
-  txHash: '0xabc...',
-  chain: 'base',
-  amount: '5000',
-  token: 'USDC',
-  from: '0xAgent...',
-  to: '0xMerchant...',
-  agentId: 'treasury-agent',
-  sessionId: session.sessionId,
-});
+// File storage (default) — persists to .kontext/ directory
+const ctx = Kontext.init({ projectId: 'my-app', environment: 'production' });
 
-// Layer 3: Human attestation — reviewer signs off
-const checkpoint = await ctx.createCheckpoint({
-  sessionId: session.sessionId,
-  actionIds: [result.transaction.id],
-  summary: 'Reviewed $5K transfer to known vendor',
-});
-
-await ctx.attestCheckpoint({
-  checkpointId: checkpoint.checkpointId,
-  attestedBy: 'compliance@company.com',
-  signature: reviewerSignature,
-});
-
-// End session, list sessions, list checkpoints
-await ctx.endAgentSession(session.sessionId);
-const sessions = ctx.getAgentSessions('treasury-agent');
-const checkpoints = ctx.getCheckpoints(session.sessionId);
+// In-memory — for tests
+const ctx = Kontext.inMemory({ projectId: 'test', environment: 'development' });
 ```
-
-#### CLI Commands
-
-```bash
-npx kontext-sdk session create --agent treasury-agent --delegated-by user:vinay --scope transfer,approve
-npx kontext-sdk session list --agent treasury-agent
-npx kontext-sdk session end <sessionId>
-npx kontext-sdk checkpoint create --session <sessionId> --actions act_1,act_2 --summary "Reviewed transfers"
-npx kontext-sdk checkpoint attest <checkpointId> --attested-by compliance@company.com
-npx kontext-sdk checkpoint list --session <sessionId>
-```
-
-### Persist Across Restarts
-
-```typescript
-import { FileStorage } from 'kontext-sdk';
-
-const ctx = Kontext.init({
-  projectId: 'my-agent',
-  environment: 'production',
-  storage: new FileStorage('.kontext'),
-});
-
-// Data persists to .kontext/ directory
-// Call ctx.flush() to write, ctx.restore() to reload
-```
-
-## Compliance Thresholds
-
-| Threshold | Amount | Trigger |
-|-----------|--------|---------|
-| **EDD / Travel Rule** | $3,000 | Enhanced Due Diligence required |
-| **CTR** | $10,000 | Currency Transaction Report |
-| **Large TX Alert** | $50,000 | Large Transaction Alert |
-
-OFAC sanctions screening uses the built-in SDN list. No API key required.
-
-## What's Included
-
-- Tamper-evident audit trail (patented digest chain)
-- OFAC sanctions screening (SDN list, no API key)
-- Compliance certificates with SHA-256 proof
-- Agent reasoning logs
-- Trust scoring and anomaly detection
-- Agent provenance — session delegation, action binding, human attestation
-- MCP server mode for AI coding tools
-- Zero runtime dependencies
 
 ## License
 
@@ -258,6 +144,6 @@ MIT
 
 ---
 
-Kontext provides compliance logging tools. Regulatory responsibility remains with the operator. This software does not constitute legal advice and does not guarantee regulatory compliance. Consult qualified legal counsel for your specific obligations.
+Kontext provides payment lifecycle management tools. Regulatory responsibility remains with the operator.
 
 Built by [Legaci Labs](https://www.getkontext.com)
