@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kontext"
+version = "0.8.0"
+description = "Proof of compliance Python client for AI agents making agentic stablecoin and fiat payments."
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.9"
+authors = [{name = "Legaci Labs Inc.", email = "hello@kontext.dev"}]
+keywords = ["compliance", "USDC", "stablecoin", "AI agent", "audit trail", "OFAC"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+    "Typing :: Typed",
+]
+dependencies = [
+    "httpx>=0.24",
+    "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-httpx>=0.30",
+    "pytest-asyncio>=0.23",
+]
+
+[project.urls]
+Homepage = "https://getkontext.com"
+Repository = "https://github.com/Legaci-Labs/kontext"
+Documentation = "https://getkontext.com/docs"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["kontext*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
