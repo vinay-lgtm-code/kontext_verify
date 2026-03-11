@@ -104,4 +104,3 @@ USDC, USDT, DAI, EURC.
 ## Contact
 - Website: https://getkontext.com
 - Email: hello@kontext.dev
-- Twitter: https://x.com/kontextverify

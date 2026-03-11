@@ -581,7 +581,7 @@ Free tier includes: verify(), log(), logTransaction(), logReasoning(), trust sco
 | Currency Transaction Report | $10,000 | CTR filing triggered |
 | Large Transaction Alert | $50,000 | High-value monitoring |
 
-Regulatory context: GENIUS Act (S. 1582), signed July 18, 2025. Implementing regulations due July 2026, prohibitions effective November 2026.
+Regulatory context: GENIUS Act, signed July 18, 2025. Implementing regulations due July 2026, prohibitions effective November 2026.
 
 ---
 
@@ -619,4 +619,3 @@ Website: https://getkontext.com
 GitHub: https://github.com/Legaci-Labs/kontext
 npm: https://www.npmjs.com/package/kontext-sdk
 Email: hello@kontext.dev
-Twitter: https://x.com/kontextverify

@@ -30,39 +30,8 @@ import {
 export const metadata: Metadata = {
   title: "Integrations",
   description:
-    "Integrate Kontext with Vercel AI SDK, LangChain, CrewAI, AutoGen, USDC, Stripe, x402, on-chain anchoring, and A2A attestation. Add compliance to any agent framework or payment protocol.",
+    "Integrate Kontext with LangChain, CrewAI, AutoGen, USDC, Stripe, x402, on-chain anchoring, and A2A attestation. Add proof of compliance to any agent framework or payment protocol.",
 };
-
-const vercelAICode = `import { openai } from '@ai-sdk/openai';
-import { generateText } from 'ai';
-import { Kontext, kontextWrapModel } from 'kontext-sdk';
-
-const ctx = Kontext.init({
-  projectId: 'payment-agent',
-  environment: 'production',
-});
-
-// Wrap your model — every tool call gets logged
-const model = kontextWrapModel(openai('gpt-4o'), ctx, {
-  agentId: 'payment-agent',
-});
-
-const result = await generateText({
-  model,
-  tools: {
-    transfer_usdc: {
-      description: 'Transfer USDC to an address',
-      parameters: { to: 'string', amount: 'string' },
-      execute: async ({ to, amount }) => {
-        return { success: true, hash: '0xabc...' };
-      },
-    },
-  },
-  prompt: 'Send 500 USDC to 0x1234 for the API invoice',
-});
-
-// Export the tamper-evident audit trail
-const audit = await ctx.export({ format: 'json' });`;
 
 const langchainCode = `import { Kontext } from 'kontext-sdk';
 
@@ -179,22 +148,11 @@ function kontextMiddleware(ctx) {
 
 const agentFrameworks = [
   {
-    id: "vercel-ai-sdk",
-    icon: Zap,
-    title: "Vercel AI SDK",
-    description:
-      "First-class middleware for the Vercel AI SDK. Wraps generateText(), streamText(), and generateObject() with automatic digest chain logging, financial tool detection, trust scoring, and compliance checks. One line to add tamper-evident audit trails to every AI operation.",
-    code: vercelAICode,
-    filename: "vercel-ai-integration.ts",
-    status: "SDK Wrapper",
-    docsLink: "/docs",
-  },
-  {
     id: "langchain",
     icon: Link2,
     title: "LangChain",
     description:
-      "Works with verify() and log() — add compliance logging to any LangChain agent by wrapping tool calls. No dedicated wrapper needed; the core SDK functions work directly in callbacks.",
+      "Works with verify() and log() — add proof of compliance to any LangChain agent by wrapping tool calls. No dedicated wrapper needed; the core SDK functions work directly in callbacks.",
     code: langchainCode,
     filename: "langchain-integration.ts",
     status: "Works with verify()",
@@ -287,8 +245,7 @@ export default function IntegrationsPage() {
               INTEGRATIONS
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
-              First-class Vercel AI SDK wrapper plus verify() compatibility with
-              any agent framework. Add compliance to any workflow in minutes.
+              verify() works with any agent framework. Add proof of compliance to any workflow in minutes.
             </p>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-center">
               <Button size="lg" className="gap-2" asChild>
@@ -313,10 +270,10 @@ export default function IntegrationsPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex gap-2 overflow-x-auto py-3 scrollbar-none">
             <a
-              href="#vercel-ai-sdk"
+              href="#cli-devops"
               className="inline-flex shrink-0 border border-border bg-[var(--term-surface-2)] px-3 py-1.5 text-xs text-foreground transition-colors hover:bg-[var(--term-surface-2)]"
             >
-              Vercel AI SDK
+              CLI &amp; DevOps
             </a>
             <a
               href="#agent-frameworks"
@@ -336,18 +293,80 @@ export default function IntegrationsPage() {
             >
               Protocols
             </a>
-            <a
-              href="#cli-devops"
-              className="inline-flex shrink-0 border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground hover:bg-[var(--term-surface-2)]"
-            >
+          </div>
+        </div>
+      </section>
+
+      {/* CLI & DevOps */}
+      <section
+        id="cli-devops"
+        className="scroll-mt-32 bg-background"
+      >
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="mb-12">
+            <Badge variant="outline" className="mb-4">
               CLI &amp; DevOps
-            </a>
+            </Badge>
+            <h2 className="text-sm font-medium">
+              Terminal-first proof of compliance
+            </h2>
+            <p className="mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
+              Run proof of compliance operations from the command line or integrate with
+              AI coding assistants via the MCP server.
+            </p>
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-2">
+            <Card className="group relative overflow-hidden transition-all ">
+              <CardHeader>
+                <div className="mb-3 flex items-center justify-between">
+                  <div className="inline-flex h-10 w-10 items-center justify-center border border-border bg-[var(--term-surface-2)] text-primary">
+                    <Terminal size={20} />
+                  </div>
+                  <Badge variant="outline">Available</Badge>
+                </div>
+                <CardTitle className="text-lg">Kontext CLI</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-sm leading-relaxed">
+                  12 commands for proof of compliance operations: check, verify, reason,
+                  cert, audit, anchor, attest, sync, session, checkpoint, status,
+                  and mcp. Install globally or run via npx.
+                </CardDescription>
+                <div className="mt-4 overflow-hidden border border-border bg-muted/50 p-3 font-mono text-xs">
+                  <span className="text-primary">$</span> npm install -g @kontext-sdk/cli<br/>
+                  <span className="text-primary">$</span> kontext verify --chain base --amount 5000
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="group relative overflow-hidden transition-all ">
+              <CardHeader>
+                <div className="mb-3 flex items-center justify-between">
+                  <div className="inline-flex h-10 w-10 items-center justify-center border border-border bg-[var(--term-surface-2)] text-primary">
+                    <Wrench size={20} />
+                  </div>
+                  <Badge variant="outline">Available</Badge>
+                </div>
+                <CardTitle className="text-lg">MCP Server</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-sm leading-relaxed">
+                  8 proof of compliance tools exposed via Model Context Protocol for Claude
+                  Code, Cursor, and Windsurf. AI coding assistants get proof of compliance
+                  verification, audit export, and trust scoring as native tools.
+                </CardDescription>
+                <div className="mt-4 overflow-hidden border border-border bg-muted/50 p-3 font-mono text-xs">
+                  <span className="text-primary">$</span> kontext mcp
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
 
       {/* Agent Frameworks */}
-      <section id="agent-frameworks" className="scroll-mt-32 bg-background">
+      <section id="agent-frameworks" className="scroll-mt-32 border-t border-border bg-background">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="mb-12">
             <Badge variant="outline" className="mb-4">
@@ -357,9 +376,8 @@ export default function IntegrationsPage() {
               Drop-in agent framework support
             </h2>
             <p className="mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
-              First-class Vercel AI SDK wrapper with automatic action logging.
-              LangChain, CrewAI, and AutoGen work directly with verify() and log() —
-              no dedicated wrapper needed.
+              LangChain, CrewAI, and AutoGen work directly with verify() and log().
+              No dedicated wrapper needed — the core SDK functions work in any callback or lifecycle hook.
             </p>
           </div>
 
@@ -534,74 +552,6 @@ export default function IntegrationsPage() {
         </div>
       </section>
 
-      {/* CLI & DevOps */}
-      <section
-        id="cli-devops"
-        className="scroll-mt-32 border-t border-border bg-background"
-      >
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="mb-12">
-            <Badge variant="outline" className="mb-4">
-              CLI &amp; DevOps
-            </Badge>
-            <h2 className="text-sm font-medium">
-              Terminal-first compliance
-            </h2>
-            <p className="mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
-              Run compliance operations from the command line or integrate with
-              AI coding assistants via the MCP server.
-            </p>
-          </div>
-
-          <div className="grid gap-6 sm:grid-cols-2">
-            <Card className="group relative overflow-hidden transition-all ">
-              <CardHeader>
-                <div className="mb-3 flex items-center justify-between">
-                  <div className="inline-flex h-10 w-10 items-center justify-center border border-border bg-[var(--term-surface-2)] text-primary">
-                    <Terminal size={20} />
-                  </div>
-                  <Badge variant="outline">Available</Badge>
-                </div>
-                <CardTitle className="text-lg">Kontext CLI</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-sm leading-relaxed">
-                  12 commands for compliance operations: check, verify, reason,
-                  cert, audit, anchor, attest, sync, session, checkpoint, status,
-                  and mcp. Install globally or run via npx.
-                </CardDescription>
-                <div className="mt-4 overflow-hidden border border-border bg-muted/50 p-3 font-mono text-xs">
-                  <span className="text-primary">$</span> npm install -g @kontext-sdk/cli<br/>
-                  <span className="text-primary">$</span> kontext verify --chain base --amount 5000
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="group relative overflow-hidden transition-all ">
-              <CardHeader>
-                <div className="mb-3 flex items-center justify-between">
-                  <div className="inline-flex h-10 w-10 items-center justify-center border border-border bg-[var(--term-surface-2)] text-primary">
-                    <Wrench size={20} />
-                  </div>
-                  <Badge variant="outline">Available</Badge>
-                </div>
-                <CardTitle className="text-lg">MCP Server</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-sm leading-relaxed">
-                  8 compliance tools exposed via Model Context Protocol for Claude
-                  Code, Cursor, and Windsurf. AI coding assistants get compliance
-                  verification, audit export, and trust scoring as native tools.
-                </CardDescription>
-                <div className="mt-4 overflow-hidden border border-border bg-muted/50 p-3 font-mono text-xs">
-                  <span className="text-primary">$</span> kontext mcp
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
       {/* Framework Agnostic Note */}
       <section className="border-t border-border bg-background">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
@@ -651,7 +601,7 @@ export default function IntegrationsPage() {
               Start building with trust
             </h2>
             <p className="mt-4 max-w-md text-muted-foreground">
-              Add compliance to your agentic workflows in minutes. Open source,
+              Add proof of compliance to your agentic workflows in minutes. Open source,
               TypeScript-first, and ready for production.
             </p>
             <div className="mt-6 flex flex-col gap-4 sm:flex-row">

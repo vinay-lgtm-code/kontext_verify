@@ -10,10 +10,10 @@ import { TabCli } from "./tab-cli";
 
 const tabs = [
   { id: "agents", label: "Agents" },
+  { id: "cli", label: "CLI" },
   { id: "sdk", label: "SDK" },
   { id: "prompt", label: "Prompt" },
   { id: "sandbox", label: "Sandbox" },
-  { id: "cli", label: "CLI" },
 ];
 
 export function AgentView() {

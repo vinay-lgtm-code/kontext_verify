@@ -55,8 +55,8 @@ const config: Config = {
         sm: "var(--radius)",
       },
       fontFamily: {
-        mono: ["var(--font-martian-mono)", "monospace"],
-        sans: ["var(--font-martian-mono)", "monospace"],
+        mono: ["var(--font-fira-code)", "monospace"],
+        sans: ["var(--font-fira-code)", "monospace"],
       },
       keyframes: {
         "fade-in": {
