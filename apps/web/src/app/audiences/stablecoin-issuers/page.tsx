@@ -16,7 +16,6 @@ import {
   Coins,
   Shield,
   Search,
-  FileCheck,
   ArrowLeftRight,
   BarChart3,
   ClipboardCheck,
@@ -25,7 +24,7 @@ import {
 export const metadata: Metadata = {
   title: "Stablecoin Issuers",
   description:
-    "GENIUS Act-aligned compliance infrastructure for stablecoin operations. Unified screening (OFAC, Chainalysis, OpenSanctions), SAR/CTR generation, multi-chain support, trust scoring, and audit export for stablecoin issuers.",
+    "GENIUS Act-aligned compliance infrastructure for stablecoin operations. Unified screening (OFAC, Chainalysis, OpenSanctions), multi-chain support, trust scoring, and audit export for stablecoin issuers.",
 };
 
 const painPoints = [
@@ -63,12 +62,6 @@ const features = [
     title: "Unified Compliance Screening",
     description:
       "Best-in-class screening aggregating OFAC SDN, Chainalysis Oracle, Chainalysis API, and OpenSanctions into a single result. Pluggable provider architecture with weighted scoring and configurable thresholds.",
-  },
-  {
-    icon: FileCheck,
-    title: "SAR/CTR Report Generation",
-    description:
-      "Generate Suspicious Activity Reports and Currency Transaction Reports from your Kontext audit trail. Structured data ready for FinCEN filing.",
   },
   {
     icon: ArrowLeftRight,
@@ -296,13 +289,13 @@ export default function StablecoinIssuersPage() {
               </h2>
               <p className="mt-4 text-xs text-[var(--term-text-2)] leading-relaxed">
                 The Free tier includes 20,000 events per month. Pro is
-                usage-based at $2 per 1,000 events above 20K free -- cloud
+                usage-based at $0.002 per event above 20K free -- cloud
                 persistence, unified compliance screening, anomaly detection,
                 and no monthly minimum.
               </p>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 {[
-                  "Pro: $2/1K events above 20K free, usage-based",
+                  "Pro: $0.002/event above 20K free, usage-based",
                   "Unified screening, cloud persistence, anomaly detection",
                   "GENIUS Act alignment templates included",
                   "Multi-chain support across 8 networks",

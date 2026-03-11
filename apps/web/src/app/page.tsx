@@ -18,10 +18,10 @@ const verifyAlert = `{
   riskLevel: 'medium',
   checks: [
     { name: 'OFAC Sanctions', passed: true },
-    { name: 'Amount Threshold (CTR)', passed: true,
-      details: 'Above $10K CTR threshold' },
+    { name: 'Amount Threshold', passed: true,
+      details: 'Above review threshold' },
   ],
-  recommendations: ['File CTR within 15 days'],
+  recommendations: ['Manual review recommended'],
   trustScore: { score: 71, level: 'medium' },
 }`;
 
@@ -32,7 +32,7 @@ const verifyBlocked = `{
     { name: 'OFAC Sanctions', passed: false,
       details: 'Address on SDN list' },
   ],
-  recommendations: ['Block transaction', 'File SAR'],
+  recommendations: ['Block transaction'],
   trustScore: { score: 12, level: 'untrusted' },
 }`;
 
@@ -93,7 +93,7 @@ export default function HomePage() {
               <div className="border-b border-[var(--term-amber)] px-4 py-2 flex items-center gap-2">
                 <span className="led-amber" />
                 <span className="text-xs text-[var(--term-amber)]">
-                  $15K USDC — CTR Alert
+                  $15K USDC — Review Required
                 </span>
               </div>
               <div className="p-4">
@@ -114,6 +114,99 @@ export default function HomePage() {
                 <pre className="text-[11px] text-[var(--term-text-2)] leading-relaxed whitespace-pre-wrap font-mono">
                   {verifyBlocked}
                 </pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Reasoning Trace */}
+      <section className="border-t-2 border-border bg-background">
+        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              <span className="text-[var(--term-green)]">$</span> Reasoning trace — 500 USDC via x402
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+              Kontext follows agents that move programmable money
+            </p>
+          </div>
+
+          <div className="max-w-3xl mx-auto">
+            {/* Sender Agent */}
+            <div className="border border-[var(--term-green)] bg-[var(--term-surface)]">
+              <div className="border-b border-[var(--term-green)] px-4 py-2 flex items-center gap-2">
+                <span className="led-green" />
+                <span className="text-xs text-[var(--term-green)] uppercase tracking-wider">
+                  Sender Agent (US)
+                </span>
+              </div>
+              <div className="p-4 space-y-3">
+                <p className="text-xs text-[var(--term-text-2)]">
+                  Circle Programmable Wallet{" "}
+                  <span className="text-[var(--term-text-3)]">· 0xTreasury...C3</span>
+                </p>
+                <div className="border-l-2 border-[var(--term-surface-3)] pl-3">
+                  <p className="text-[11px] text-[var(--term-text-3)] italic leading-relaxed">
+                    reasoning: &quot;Vendor invoice #4821. Recipient verified in allowlist.
+                    Amount within daily limit ($25K remaining). Routing via x402 on Base
+                    for lowest settlement cost.&quot;
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-3 text-[11px]">
+                  <span className="text-[var(--term-green)]">verify() →</span>
+                  <span className="text-[var(--term-green)]">OFAC ✓</span>
+                  <span className="text-[var(--term-green)]">Amount ✓</span>
+                  <span className="text-[var(--term-text-2)]">Trust: 92</span>
+                  <span className="text-[var(--term-text-3)]">Digest: a7b8...</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Flow connector */}
+            <div className="flex flex-col items-center py-2">
+              <div className="w-px h-4 bg-[var(--term-surface-3)]" />
+              <div className="border border-[var(--term-surface-2)] bg-[var(--term-surface)] px-4 py-2 text-center">
+                <p className="text-[11px] text-[var(--term-text-2)]">x402 / Base</p>
+                <p className="text-xs font-medium text-[var(--term-green)]">500 USDC</p>
+                <p className="text-[10px] text-[var(--term-text-3)]">tx: 0x3f...a91</p>
+              </div>
+              <div className="w-px h-2 bg-[var(--term-surface-3)]" />
+              <div className="border border-[var(--term-surface-2)] bg-[var(--term-surface)] px-4 py-2 text-center">
+                <p className="text-[11px] text-[var(--term-text-2)]">On-Chain Anchor</p>
+                <p className="text-[10px] text-[var(--term-text-3)]">~$0.001 on Base</p>
+              </div>
+              <div className="w-px h-4 bg-[var(--term-surface-3)]" />
+            </div>
+
+            {/* Recipient Agent */}
+            <div className="border border-[var(--term-blue)] bg-[var(--term-surface)]">
+              <div className="border-b border-[var(--term-blue)] px-4 py-2 flex items-center gap-2">
+                <span className="led-green" />
+                <span className="text-xs text-[var(--term-blue)] uppercase tracking-wider">
+                  Recipient Agent (Italy)
+                </span>
+              </div>
+              <div className="p-4 space-y-3">
+                <p className="text-xs text-[var(--term-text-2)]">
+                  MetaMask Wallet{" "}
+                  <span className="text-[var(--term-text-3)]">· 0xVendor...D4</span>
+                </p>
+                <div className="border-l-2 border-[var(--term-surface-3)] pl-3">
+                  <p className="text-[11px] text-[var(--term-text-3)] italic leading-relaxed">
+                    reasoning: &quot;Incoming 500 USDC from 0xTreasury...C3. Sender not
+                    sanctioned. Payment matches expected invoice. Confirming receipt and
+                    closing settlement.&quot;
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-3 text-[11px]">
+                  <span className="text-[var(--term-green)]">verify() →</span>
+                  <span className="text-[var(--term-green)]">OFAC ✓</span>
+                  <span className="text-[var(--term-green)]">Sender ✓</span>
+                  <span className="text-[var(--term-text-2)]">Trust: 88</span>
+                  <span className="text-[var(--term-text-3)]">Digest: c4e2...</span>
+                </div>
+                <p className="text-[11px] text-[var(--term-green)]">A2A attestation exchanged ✓</p>
               </div>
             </div>
           </div>
@@ -183,7 +276,7 @@ fetchAgentCard()
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
           <div className="border border-[var(--term-surface-2)] bg-[var(--term-surface)] p-6 sm:p-8">
             <h2 className="text-sm font-medium mb-4">
-              <span className="text-[var(--term-green)]">$</span> GENIUS ACT (S. 1582) — signed July 18, 2025
+              <span className="text-[var(--term-green)]">$</span> GENIUS ACT — signed July 18, 2025
             </h2>
             <div className="grid gap-4 sm:grid-cols-2 text-xs text-[var(--term-text-2)]">
               <div className="space-y-2">
@@ -212,10 +305,6 @@ fetchAgentCard()
                 <p>
                   <span className="text-[var(--term-green)]">✓</span> Transaction records{" "}
                   <span className="text-[var(--term-text-3)]">← logTransaction() does this</span>
-                </p>
-                <p>
-                  <span className="text-[var(--term-green)]">✓</span> Suspicious activity reports{" "}
-                  <span className="text-[var(--term-text-3)]">← generateSARReport() does this</span>
                 </p>
               </div>
             </div>
@@ -255,14 +344,13 @@ fetchAgentCard()
             <div className="border border-[var(--term-border-bright)] bg-[var(--term-surface)] p-6">
               <h3 className="text-sm font-medium mb-1">PAY AS YOU GO</h3>
               <p className="text-2xl font-bold mb-4">
-                $2.00 <span className="text-sm font-normal text-[var(--term-text-3)]">/ 1K events above 20K</span>
+                $0.002 <span className="text-sm font-normal text-[var(--term-text-3)]">/ event above 20K</span>
               </p>
               <ul className="space-y-1.5 text-xs text-[var(--term-text-2)]">
                 <li>No monthly minimum</li>
-                <li>All 8 chains</li>
+                <li>ETH, SOL, Base, Polygon, Arbitrum, Optimism, Arc, Avalanche</li>
                 <li>CSV export</li>
-                <li>SAR/CTR reports</li>
-                <li>Advanced anomaly rules</li>
+                <li>Anomaly rules</li>
                 <li>Webhook alerts</li>
                 <li>Unified screening</li>
               </ul>
@@ -305,11 +393,10 @@ fetchAgentCard()
       <section className="border-t border-[var(--term-surface-2)]">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 text-center">
           <h2 className="text-xl sm:text-2xl font-bold">
-            Ship compliance before the deadline.
+            Proof of compliance as code.
           </h2>
           <p className="mt-3 text-sm text-[var(--term-text-2)] max-w-xl mx-auto">
-            npm install. Kontext.init(). verify(). Three layers of proof in one call.
-            Open source, TypeScript-first, free forever on Base + Arc.
+            Open Source cryptographic proof in an SDK.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Button size="lg" asChild>

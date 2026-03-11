@@ -1,6 +1,6 @@
 # kontext
 
-Compliance audit trail for AI agents making stablecoin payments on Base.
+Proof of compliance for AI agents making agentic stablecoin and fiat payments.
 
 **USDC** · **USDT** · **DAI** · **EURC** · **USDP** · **USDG** · **x402** · **Circle Programmable Wallets** · **Patented Technology**
 
@@ -283,6 +283,6 @@ MIT
 
 ---
 
-Kontext provides compliance logging tools. Regulatory responsibility remains with the operator. This software does not constitute legal advice and does not guarantee regulatory compliance. Consult qualified legal counsel for your specific obligations.
+Kontext provides proof of compliance tools for agentic stablecoin and fiat payments. Regulatory responsibility remains with the operator. This software does not constitute legal advice and does not guarantee regulatory compliance. Consult qualified legal counsel for your specific obligations.
 
 Built by [Legaci Labs](https://www.getkontext.com)

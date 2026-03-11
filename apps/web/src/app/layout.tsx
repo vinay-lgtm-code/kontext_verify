@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Martian_Mono } from "next/font/google";
+import { Fira_Code } from "next/font/google";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import "./globals.css";
 
-const martianMono = Martian_Mono({
+const firaCode = Fira_Code({
   subsets: ["latin"],
-  variable: "--font-martian-mono",
+  variable: "--font-fira-code",
   display: "swap",
 });
 
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     template: "%s | Kontext",
   },
   description:
-    "Compliance logging SDK for AI agents. OFAC screening, audit trails, on-chain anchoring, and A2A attestation for every USDC transfer. Free on Base + Arc. Zero dependencies.",
+    "Proof of compliance SDK for AI agents making agentic stablecoin and fiat payments. OFAC screening, audit trails, on-chain anchoring, and A2A attestation. Free on Base + Arc. Zero dependencies.",
   keywords: [
     "USDC compliance SDK",
     "AI agent audit trail",
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     siteName: "Kontext",
     title: "Kontext — Trust infrastructure for agents that move USDC on Base & Arc",
     description:
-      "Compliance logging SDK for AI agents. OFAC screening, audit trails, on-chain anchoring. Free on Base + Arc.",
+      "Proof of compliance SDK for AI agents. OFAC screening, audit trails, on-chain anchoring. Free on Base + Arc.",
     images: [
       {
         url: "/og-image.png",
@@ -54,14 +54,6 @@ export const metadata: Metadata = {
         alt: "Kontext — Trust infrastructure for agents that move USDC",
       },
     ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Kontext — Trust infrastructure for agents that move USDC on Base & Arc",
-    description:
-      "Compliance logging SDK for AI agents. OFAC screening, audit trails, on-chain anchoring. Free forever.",
-    images: ["/og-image.png"],
-    creator: "@kontextverify",
   },
   robots: {
     index: true,
@@ -78,7 +70,6 @@ const organizationJsonLd = {
   logo: "https://getkontext.com/og-image.png",
   sameAs: [
     "https://github.com/Legaci-Labs/kontext",
-    "https://x.com/kontextverify",
     "https://www.npmjs.com/package/kontext-sdk",
   ],
   contactPoint: {
@@ -95,7 +86,7 @@ const softwareJsonLd = {
   applicationCategory: "DeveloperApplication",
   operatingSystem: "Cross-platform (Node.js 18+)",
   programmingLanguage: "TypeScript",
-  softwareVersion: "0.7.0",
+  softwareVersion: "0.8.0",
   license: "https://opensource.org/licenses/MIT",
   url: "https://getkontext.com",
   downloadUrl: "https://www.npmjs.com/package/kontext-sdk",
@@ -113,10 +104,10 @@ const softwareJsonLd = {
     {
       "@type": "Offer",
       name: "Pay as you go",
-      price: "2.00",
+      price: "0.002",
       priceCurrency: "USD",
-      unitText: "per 1,000 events above 20K free",
-      description: "All 8 chains, advanced anomaly rules, unified screening, CSV export, cloud persistence.",
+      unitText: "per event above 20K free",
+      description: "ETH, SOL, Base, Polygon, Arbitrum, Optimism, Arc, Avalanche. Anomaly rules, unified screening, CSV export, cloud persistence.",
     },
   ],
   author: {
@@ -152,7 +143,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={martianMono.variable}
+      className={firaCode.variable}
     >
       <head>
         <meta name="base:app_id" content="69a630f4a0fdf68983d307ed" />

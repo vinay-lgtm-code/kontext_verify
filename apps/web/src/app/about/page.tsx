@@ -232,15 +232,6 @@ export default function AboutPage() {
                 <ArrowRight size={16} />
               </Link>
             </Button>
-            <Button variant="ghost" size="lg" asChild>
-              <a
-                href="https://x.com/kontextverify"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Follow on X
-              </a>
-            </Button>
           </div>
         </div>
       </section>

@@ -27,14 +27,6 @@ export const metadata: Metadata = {
       },
     ],
   },
-  twitter: {
-    card: "summary_large_image",
-    title: "Introducing Kontext: Trust Layer for Agentic Stablecoin Transactions",
-    description:
-      "AI agents are moving real money. Here is why they need a compliance layer.",
-    images: ["/og-image.png"],
-    creator: "@kontextverify",
-  },
 };
 
 const blogPostJsonLd = {
@@ -258,9 +250,9 @@ const result = await ctx.verify({
         <p>
           For teams that need more, Kontext Pro adds cloud persistence, all
           protocol integrations (x402, A2A, Stripe), GENIUS Act alignment
-          templates, SAR/CTR report generation, OFAC screening, anomaly
-          detection, trust scoring API, and webhooks -- usage-based at $2
-          per 1,000 events above 20K free, with no monthly minimum.
+          templates, OFAC screening, anomaly
+          detection, trust scoring API, and webhooks -- usage-based at $0.002
+          per event above 20K free, with no monthly minimum.
         </p>
 
         <h2>Getting started</h2>

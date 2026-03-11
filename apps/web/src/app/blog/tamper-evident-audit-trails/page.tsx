@@ -27,14 +27,6 @@ export const metadata: Metadata = {
       },
     ],
   },
-  twitter: {
-    card: "summary_large_image",
-    title: "Building Tamper-Evident Audit Trails for AI Agent Transactions",
-    description:
-      "AI agents are making autonomous financial decisions. Learn how digest chains provide cryptographic proof of log integrity.",
-    images: ["/og-image.png"],
-    creator: "@kontextverify",
-  },
 };
 
 const blogPostJsonLd = {

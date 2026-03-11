@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 
-const HELP_TEXT = `kontext-sdk v0.7.0 — compliance at agent speed
+const HELP_TEXT = `kontext-sdk v0.8.0 — compliance proof at agent speed
 
 commands:
   check <from> <to>              OFAC + compliance check

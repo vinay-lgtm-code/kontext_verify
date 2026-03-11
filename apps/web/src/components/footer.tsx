@@ -23,7 +23,6 @@ const footerLinks = {
       label: "GitHub",
       external: true,
     },
-    { href: "https://x.com/kontextverify", label: "X (Twitter)", external: true },
   ],
   Legal: [
     { href: "/privacy", label: "Privacy" },
@@ -40,7 +39,7 @@ export function Footer() {
         <div className="mx-auto max-w-7xl">
           <p className="text-xs text-[var(--term-text-3)] font-light tracking-wide">
             <span className="text-[var(--term-green)]">$</span>{" "}
-            kontext v0.7.0{" "}
+            kontext v0.8.0{" "}
             <span className="text-[var(--term-surface-3)]">·</span> USDC + x402{" "}
             <span className="text-[var(--term-surface-3)]">·</span> Base + Arc{" "}
             <span className="text-[var(--term-surface-3)]">·</span>{" "}
@@ -91,7 +90,7 @@ export function Footer() {
           <div className="flex items-center gap-1.5 text-xs text-[var(--term-text-3)]">
             <span className="text-[var(--term-green)]">$</span>
             <span className="font-medium text-[var(--term-text-2)]">kontext</span>
-            <span>v0.7.0</span>
+            <span>v0.8.0</span>
             <span className="text-[var(--term-surface-3)]">·</span>
             <span>Legaci Labs Inc.</span>
             <span className="text-[var(--term-surface-3)]">·</span>
@@ -104,7 +103,7 @@ export function Footer() {
 
         <div className="border-t border-[var(--term-surface-2)] py-4">
           <p className="text-center text-[10px] text-[var(--term-text-3)] leading-relaxed max-w-3xl mx-auto">
-            Kontext provides developer tools that support compliance efforts. It
+            Kontext provides developer tools that generate proof of compliance for agentic payments. It
             does not constitute legal advice or guarantee regulatory compliance.
             Consult qualified legal counsel for compliance certification.
           </p>

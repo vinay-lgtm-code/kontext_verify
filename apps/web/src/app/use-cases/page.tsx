@@ -270,7 +270,7 @@ const useCases = [
     filename: "usdc-agent.ts",
     benefits: [
       "Tamper-evident audit trail for every USDC transfer with SHA-256 digest chaining",
-      "Built-in OFAC screening, Travel Rule ($3K), and CTR ($10K) threshold checks",
+      "Built-in OFAC screening and Travel Rule ($3K) threshold checks",
       "Trust scoring per agent based on transaction history and behavioral patterns",
       "Exportable compliance reports (JSON out of the box, CSV on Pro)",
     ],

@@ -27,7 +27,7 @@ const plans = [
     price: "$0",
     priceDetail: "forever",
     description:
-      "Everything you need to start logging compliance for your agents. No credit card, no catch.",
+      "Everything you need to start proving compliance for your agents. No credit card, no catch.",
     cta: "Get Started",
     ctaHref: "/docs",
     highlighted: false,
@@ -49,8 +49,8 @@ const plans = [
   },
   {
     name: "Pro",
-    price: "$2",
-    priceDetail: "per 1,000 events above 20K free",
+    price: "$0.002",
+    priceDetail: "per event above 20K",
     description:
       "For agents in production. Usage-based pricing with no monthly minimum. First 20K events always free.",
     cta: "Get Started",
@@ -59,11 +59,11 @@ const plans = [
     features: [
       "First 20,000 events free every month",
       "Everything in Free, plus:",
-      "All 6 anomaly detection rules",
+      "All 6 anomaly rules",
       "Unified screening (OFAC, Chainalysis, OpenSanctions)",
       "Custom blocklist/allowlist",
       "CSV export",
-      "Multi-chain support (6 additional chains)",
+      "Multi-chain: ETH, SOL, Base, Polygon, Arbitrum, Optimism, Arc, Avalanche",
       "Webhook alerts",
       "Agent forensics (identity, wallet clustering)",
       "Cloud persistence",
@@ -91,17 +91,17 @@ const faqs = [
   {
     question: "How does Pro pricing work?",
     answer:
-      "Pro is usage-based at $2 per 1,000 events above the 20K free tier. No monthly minimum, no commitment. Your first 20,000 events are always free every month. Formula: max(0, events - 20,000) / 1,000 × $2.00.",
+      "Pro is usage-based at $0.002 per event above the 20K free tier. No monthly minimum, no commitment. Your first 20,000 events are always free every month. Formula: max(0, events - 20,000) x $0.002.",
   },
   {
     question: "What does Pro add over Free?",
     answer:
-      "Pro unlocks all six anomaly detection rules (adding newDestination, offHoursActivity, rapidSuccession, and roundAmount), unified screening across OFAC SDN, Chainalysis, and OpenSanctions, custom blocklist/allowlist management, CSV export, multi-chain support across 6 additional networks beyond Base and Arc, webhook alerts, cloud persistence, and email support.",
+      "Pro unlocks all six anomaly rules (adding newDestination, offHoursActivity, rapidSuccession, and roundAmount), unified screening across OFAC SDN, Chainalysis, and OpenSanctions, custom blocklist/allowlist management, CSV export, multi-chain support across ETH, SOL, Base, Polygon, Arbitrum, Optimism, Arc, and Avalanche, webhook alerts, cloud persistence, and email support.",
   },
   {
     question: "What chains does Kontext support?",
     answer:
-      "The Free tier supports Base and Arc. Pro unlocks all 8 chains: Ethereum, Base, Polygon, Arbitrum, Optimism, Arc, Avalanche, and Solana.",
+      "The Free tier supports Base and Arc. Pro unlocks all 8 chains: ETH, SOL, Base, Polygon, Arbitrum, Optimism, Arc, and Avalanche.",
   },
   {
     question: "How does Kontext handle my data?",
