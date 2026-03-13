@@ -43,7 +43,7 @@ const verifyBlocked = `{
 export default function HomePage() {
   return (
     <>
-      {/* Hero */}
+      {/* Hero — split view */}
       <section className="relative">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="pt-16 pb-8 md:pt-24 md:pb-12">
@@ -58,12 +58,18 @@ export default function HomePage() {
               OFAC screening, audit trail, and trust score in one call.
             </p>
 
-            <div className="mt-6">
-              <CopyInstall />
-            </div>
+            {/* Split: code + playground */}
+            <div className="mt-8 grid gap-6 lg:grid-cols-12">
+              {/* Left: Code snippet + install */}
+              <div className="order-2 lg:order-1 lg:col-span-5 flex flex-col gap-4">
+                <HeroCodeSnippet />
+                <CopyInstall />
+              </div>
 
-            <div className="mt-8">
-              <HeroCodeSnippet />
+              {/* Right: Interactive playground */}
+              <div className="order-1 lg:order-2 lg:col-span-7">
+                <PlaygroundPreview />
+              </div>
             </div>
 
             <div className="mt-8 flex flex-col sm:flex-row items-start gap-3">
@@ -81,21 +87,6 @@ export default function HomePage() {
               </Button>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Try It Now */}
-      <section className="border-t border-[var(--term-surface-2)]">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-          <div className="mb-8">
-            <h2 className="text-xl sm:text-2xl font-bold">
-              <span className="text-[var(--term-green)]">$</span> Try it now
-            </h2>
-            <p className="mt-2 text-sm text-[var(--term-text-2)]">
-              Run verify() in your browser. No install required.
-            </p>
-          </div>
-          <PlaygroundPreview />
         </div>
       </section>
 
