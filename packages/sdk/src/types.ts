@@ -829,6 +829,8 @@ export interface VerifyResult {
   task?: Task;
   /** ERC-8021 builder attribution (present when erc8021 config provided and tx has attribution) */
   attribution?: ERC8021Attribution;
+  /** Coverage warning when using built-in screening only (no external providers configured) */
+  coverageWarning?: string;
 }
 
 // ============================================================================
