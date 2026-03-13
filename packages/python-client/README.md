@@ -1,4 +1,4 @@
-# kontext
+# kontext-sdk
 
 Proof of compliance Python client for AI agents making agentic stablecoin and fiat payments.
 
@@ -7,7 +7,7 @@ Thin HTTP client wrapping the [Kontext REST API](https://getkontext.com/docs). A
 ## Install
 
 ```bash
-pip install kontext
+pip install kontext-sdk
 ```
 
 ## Quick Start

@@ -181,6 +181,75 @@ export interface KontextConfig {
    * ```
    */
   approvalThreshold?: string;
+
+  /**
+   * Pluggable sanctions screening configuration. When provided, verify()
+   * uses the ScreeningAggregator instead of the built-in UsdcCompliance /
+   * PaymentCompliance code paths.
+   *
+   * Free tier — no plan gating. Each screen() call counts as 1 event.
+   *
+   * @example
+   * ```typescript
+   * import { Kontext, OFACAddressProvider, UKOFSIProvider } from 'kontext-sdk';
+   *
+   * const ctx = Kontext.init({
+   *   projectId: 'my-app',
+   *   environment: 'production',
+   *   screening: {
+   *     providers: [new OFACAddressProvider(), new UKOFSIProvider()],
+   *     consensus: 'ANY_MATCH',
+   *   },
+   * });
+   * ```
+   */
+  screening?: ScreeningConfig;
+
+  /**
+   * Compliance policy configuration. Customizes thresholds, allowed
+   * tokens/currencies, and blocked corridors.
+   *
+   * All fields optional — defaults match current behavior ($3K EDD,
+   * $10K CTR, $50K large transaction).
+   */
+  policy?: PolicyConfig;
+}
+
+/** Screening configuration for pluggable multi-provider sanctions screening */
+export interface ScreeningConfig {
+  /** Screening providers to use */
+  providers: import('./integrations/screening-provider.js').ScreeningProvider[];
+  /** How to combine results from multiple providers (default: 'ANY_MATCH') */
+  consensus?: 'ANY_MATCH' | 'ALL_MATCH' | 'MAJORITY';
+  /** Addresses or entity names to always block */
+  blocklist?: string[];
+  /** Addresses or entity names to always allow (overrides provider hits) */
+  allowlist?: string[];
+  /** Per-provider timeout in milliseconds (default: 5000) */
+  providerTimeoutMs?: number;
+}
+
+/** Compliance policy configuration */
+export interface PolicyConfig {
+  /** Customizable compliance thresholds */
+  thresholds?: {
+    /** Enhanced Due Diligence threshold (default: 3000) */
+    edd?: number;
+    /** CTR reporting threshold (default: 10000) */
+    reporting?: number;
+    /** Large transaction threshold (default: 50000) */
+    largeTransaction?: number;
+  };
+  /** Restrict to specific tokens */
+  allowedTokens?: Token[];
+  /** Restrict to specific currencies */
+  allowedCurrencies?: string[];
+  /** Blocked jurisdiction pairs */
+  corridors?: {
+    blocked?: Array<{ from: string; to: string }>;
+  };
+  /** When true, refuse verify() if no screening provider is configured (default: false) */
+  requireScreening?: boolean;
 }
 
 /**

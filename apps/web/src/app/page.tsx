@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { AgentView } from "@/components/agent-view";
+import { CopyInstall } from "@/components/copy-install";
+import { HeroCodeSnippet } from "@/components/hero-code-snippet";
+import { LogoStrip } from "@/components/logo-strip";
+import { PlaygroundPreview } from "@/components/playground-preview";
 
 const verifyClean = `{
   compliant: true,
@@ -45,20 +49,53 @@ export default function HomePage() {
           <div className="pt-16 pb-8 md:pt-24 md:pb-12">
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
               <span className="text-[var(--term-green)]">$</span>{" "}
-              kontext — trust infrastructure for agents that move{" "}
-              <span className="text-[var(--term-green)] glow">USDC</span> on{" "}
-              <span className="text-[var(--term-green)] glow">Base</span> &amp;{" "}
-              <span className="text-[var(--term-green)] glow">Arc</span>
+              Compliance logging for agents that move{" "}
+              <span className="text-[var(--term-green)] glow">USDC</span>
             </h1>
-            <p className="mt-4 text-sm sm:text-base text-[var(--term-text-2)] max-w-3xl">
-              One call — <code className="text-[var(--term-green)]">verify()</code> — runs
-              OFAC screening, logs into a tamper-evident digest chain, computes trust
-              score, and returns structured compliance. Zero dependencies. Free on Base + Arc.
+            <p className="mt-4 text-sm sm:text-base text-[var(--term-text-2)] max-w-2xl">
+              Your agents handle $3K+ transfers with zero compliance infrastructure.{" "}
+              <code className="text-[var(--term-green)]">verify()</code> returns
+              OFAC screening, audit trail, and trust score in one call.
+            </p>
+
+            <div className="mt-6">
+              <CopyInstall />
+            </div>
+
+            <div className="mt-8">
+              <HeroCodeSnippet />
+            </div>
+
+            <div className="mt-8 flex flex-col sm:flex-row items-start gap-3">
+              <Button size="lg" asChild>
+                <Link href="/docs">Get Started</Link>
+              </Button>
+              <Button variant="outline" size="lg" asChild>
+                <a
+                  href="https://github.com/Legaci-Labs/kontext"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  View on GitHub
+                </a>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Try It Now */}
+      <section className="border-t border-[var(--term-surface-2)]">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+          <div className="mb-8">
+            <h2 className="text-xl sm:text-2xl font-bold">
+              <span className="text-[var(--term-green)]">$</span> Try it now
+            </h2>
+            <p className="mt-2 text-sm text-[var(--term-text-2)]">
+              Run verify() in your browser. No install required.
             </p>
           </div>
-
-          {/* 5-Tab Hero */}
-          <AgentView />
+          <PlaygroundPreview />
         </div>
       </section>
 
@@ -117,6 +154,21 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Explore the SDK */}
+      <section className="border-t border-[var(--term-surface-2)]">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+          <div className="mb-10">
+            <h2 className="text-xl sm:text-2xl font-bold">
+              <span className="text-[var(--term-green)]">$</span> Explore the SDK
+            </h2>
+            <p className="mt-2 text-sm text-[var(--term-text-2)]">
+              Five ways to integrate Kontext into your stack.
+            </p>
+          </div>
+          <AgentView />
         </div>
       </section>
 
@@ -364,28 +416,10 @@ fetchAgentCard()
         </div>
       </section>
 
-      {/* Social Proof */}
+      {/* Compatible With */}
       <section className="border-t border-[var(--term-surface-2)]">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-[var(--term-text-3)]">
-            {[
-              "MIT Licensed",
-              "Patented Digest Chain",
-              "GENIUS Act Aligned",
-              "USDC Native",
-              "Base + Arc Free",
-              "Open Source",
-              "x402 Compatible",
-              "Zero Dependencies",
-            ].map((item, i) => (
-              <span key={item} className="flex items-center gap-2">
-                {item}
-                {i < 7 && (
-                  <span className="text-[var(--term-surface-3)]">·</span>
-                )}
-              </span>
-            ))}
-          </div>
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <LogoStrip />
         </div>
       </section>
 

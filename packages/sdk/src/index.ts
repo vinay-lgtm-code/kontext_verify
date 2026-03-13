@@ -166,6 +166,45 @@ export { TrustScorer } from './trust.js';
 export type { AgentData } from './trust.js';
 export { AnomalyDetector } from './anomaly.js';
 
+// Screening Providers
+export { OFACAddressProvider } from './integrations/provider-treasury-sdn.js';
+export { OFACEntityProvider } from './integrations/provider-ofac-entity.js';
+export { UKOFSIProvider } from './integrations/provider-uk-ofsi.js';
+export { OpenSanctionsLocalProvider } from './integrations/provider-opensanctions-local.js';
+export { OpenSanctionsProvider, ChainalysisFreeAPIProvider } from './integrations/provider-apis.js';
+export { ChainalysisOracleProvider } from './integrations/provider-ofac.js';
+
+// Screening Aggregator
+export { ScreeningAggregator } from './integrations/screening-aggregator.js';
+export type {
+  ConsensusStrategy,
+  ScreeningAggregatorConfig,
+  AggregatedScreeningResult,
+} from './integrations/screening-aggregator.js';
+
+// Screening Types
+export type {
+  ScreeningProvider,
+  ScreeningResult,
+  ScreeningMatch,
+  ScreeningContext,
+  QueryType,
+  SanctionsList,
+  MatchType,
+  EntityStatus,
+  Jurisdiction,
+} from './integrations/screening-provider.js';
+export {
+  isBlockchainAddress,
+  providerSupportsQuery,
+  getRequiredLists,
+  TOKEN_REQUIRED_LISTS,
+  CURRENCY_REQUIRED_LISTS,
+} from './integrations/screening-provider.js';
+
+// Screening Config types (re-exported from types.ts)
+export type { ScreeningConfig, PolicyConfig } from './types.js';
+
 // Agent Forensics (KYA)
 export {
   AgentIdentityRegistry,

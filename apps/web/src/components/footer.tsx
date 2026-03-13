@@ -3,31 +3,25 @@ import Link from "next/link";
 const footerLinks = {
   Product: [
     { href: "/docs", label: "Documentation" },
+    { href: "/pricing", label: "Pricing" },
     { href: "/use-cases", label: "Use Cases" },
     { href: "/integrations", label: "Integrations" },
     { href: "/changelog", label: "Changelog" },
+  ],
+  Resources: [
     { href: "/faqs", label: "FAQs" },
-  ],
-  Ecosystem: [
-    { href: "/use-cases#usdc-payments", label: "USDC Payments" },
-    { href: "/use-cases#x402-protocol", label: "x402 Protocol" },
-    { href: "/use-cases#on-chain-anchoring", label: "On-Chain Anchoring" },
-    { href: "/use-cases#a2a-attestation", label: "A2A Attestation" },
-    { href: "/integrations#agent-frameworks", label: "Agent Frameworks" },
-  ],
-  Company: [
-    { href: "/about", label: "About" },
     { href: "/blog", label: "Blog" },
+    { href: "/contact", label: "Contact" },
     {
       href: "https://github.com/Legaci-Labs/kontext",
       label: "GitHub",
       external: true,
     },
   ],
-  Legal: [
+  Company: [
+    { href: "/about", label: "About" },
     { href: "/privacy", label: "Privacy" },
     { href: "/terms", label: "Terms" },
-    { href: "/contact", label: "Contact" },
   ],
 };
 
@@ -53,7 +47,7 @@ export function Footer() {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 gap-8 py-10 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-8 py-10 md:grid-cols-3">
           {Object.entries(footerLinks).map(([category, links]) => (
             <div key={category}>
               <h3 className="text-[10px] font-light uppercase tracking-widest text-[var(--term-text-3)]">

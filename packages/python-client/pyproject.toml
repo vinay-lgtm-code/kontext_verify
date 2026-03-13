@@ -3,7 +3,7 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "kontext"
+name = "kontext-sdk"
 version = "0.8.0"
 description = "Proof of compliance Python client for AI agents making agentic stablecoin and fiat payments."
 readme = "README.md"
