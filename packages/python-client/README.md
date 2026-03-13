@@ -1,8 +1,8 @@
 # kontext-sdk
 
-Proof of compliance Python client for AI agents making agentic stablecoin and fiat payments.
+Python client for the Kontext trust layer. Cryptographic verifiable intent for org-wide payments.
 
-Thin HTTP client wrapping the [Kontext REST API](https://getkontext.com/docs). All compliance logic runs server-side in TypeScript — this package provides typed Python bindings with sync and async support.
+Thin HTTP client wrapping the [Kontext REST API](https://getkontext.com/docs). All compliance logic runs server-side -- this package provides typed Python bindings with sync and async support.
 
 ## Install
 
@@ -10,7 +10,7 @@ Thin HTTP client wrapping the [Kontext REST API](https://getkontext.com/docs). A
 pip install kontext-sdk
 ```
 
-## Quick Start
+## Quick start
 
 ```python
 from kontext import Kontext
@@ -28,23 +28,11 @@ ctx.log_transaction(
     agent_id="payment-agent",
 )
 
-# Flush to server
 ctx.flush()
 
 # Trust score
 trust = ctx.get_trust_score("payment-agent")
 print(f"Trust: {trust.score}/100 ({trust.level})")
-
-# Human-in-the-loop
-task = ctx.create_task(
-    description="Approve $5K transfer",
-    agent_id="payment-agent",
-    required_evidence=["txHash"],
-)
-confirmed = ctx.confirm_task(task.id, evidence={"txHash": "0xabc..."})
-
-# Audit export
-audit = ctx.export_audit(format="json")
 ```
 
 ## Async
@@ -57,14 +45,6 @@ async with AsyncKontext(api_key="sk_...", project_id="my-agent") as ctx:
     trust = await ctx.get_trust_score("agent-1")
 ```
 
-## Context Manager
-
-```python
-with Kontext(api_key="sk_...", project_id="my-agent") as ctx:
-    ctx.log(action="transfer", agent_id="agent-1")
-# auto-flushes on exit
-```
-
 ## API
 
 | Method | Description |
@@ -73,25 +53,15 @@ with Kontext(api_key="sk_...", project_id="my-agent") as ctx:
 | `log_transaction(tx_hash, chain, ...)` | Buffer a transaction log |
 | `flush()` | Send buffered actions to server |
 | `create_task(description, agent_id, ...)` | Create human-in-the-loop task |
-| `get_task(task_id)` | Get task status |
 | `confirm_task(task_id, evidence)` | Confirm task with evidence |
 | `get_trust_score(agent_id)` | Get agent trust score (0-100) |
 | `export_audit(format)` | Export audit trail (JSON or CSV) |
-| `get_usage()` | Get usage and plan limits |
-| `evaluate_anomalies(amount, agent_id, ...)` | Evaluate transaction for anomalies |
+| `evaluate_anomalies(amount, agent_id, ...)` | Evaluate for anomalies |
 | `health()` | Check API health |
 
-## TypeScript SDK Features (server-side)
+## TypeScript SDK
 
-The Python client wraps the Kontext REST API. The full TypeScript SDK (`kontext-sdk` on npm) includes:
-
-- Pluggable multi-provider sanctions screening (OFAC, UK OFSI, OpenSanctions, Chainalysis)
-- Tamper-evident digest chains (patented)
-- Agent provenance and session tracking
-- Compliance certificates with SHA-256 proof
-- Trust scoring and anomaly detection
-- MCP server mode for AI coding tools
-- Viem auto-instrumentation (`withKontextCompliance()`) — TypeScript only
+The full TypeScript SDK (`kontext-sdk` on npm) includes auto-instrumentation, pluggable sanctions screening, tamper-evident digest chains, and MCP server mode. See [getkontext.com/docs](https://getkontext.com/docs).
 
 ## License
 
