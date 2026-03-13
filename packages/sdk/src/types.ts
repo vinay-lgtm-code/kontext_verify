@@ -213,6 +213,27 @@ export interface KontextConfig {
    * $10K CTR, $50K large transaction).
    */
   policy?: PolicyConfig;
+
+  /**
+   * Default agent ID for verify/log calls when not specified per-call.
+   * Set automatically when loading from kontext.config.json.
+   */
+  agentId?: string;
+
+  /**
+   * Wallet monitoring configuration. When provided, SDK watches these
+   * addresses on-chain for stablecoin transfers and auto-calls verify().
+   * Requires viem as a peer dependency.
+   */
+  walletMonitoring?: WalletMonitoringConfig;
+
+  /**
+   * Viem interceptor mode for withKontextCompliance() (default: 'post-send').
+   * - 'post-send': verify() runs after tx succeeds, never blocks
+   * - 'pre-send': verify() runs before tx, throws if non-compliant
+   * - 'both': pre-send screening + post-send full verify
+   */
+  interceptorMode?: 'post-send' | 'pre-send' | 'both';
 }
 
 /** Screening configuration for pluggable multi-provider sanctions screening */
@@ -250,6 +271,16 @@ export interface PolicyConfig {
   };
   /** When true, refuse verify() if no screening provider is configured (default: false) */
   requireScreening?: boolean;
+}
+
+/** Wallet monitoring configuration for on-chain event listening */
+export interface WalletMonitoringConfig {
+  /** Wallet addresses to watch for outgoing stablecoin transfers */
+  wallets: string[];
+  /** RPC endpoints per chain (required for on-chain listening) */
+  rpcEndpoints: Partial<Record<Chain, string>>;
+  /** Polling interval in ms for HTTP transports (default: 12000) */
+  pollingIntervalMs?: number;
 }
 
 /**

@@ -90,6 +90,7 @@ function printHelp(): void {
 Usage: kontext <command> [options]
 
 Commands:
+  init                Interactive project setup wizard
   check <addr> [<to>]  Stateless OFAC + threshold compliance check
   verify              Log transaction + compliance check + digest proof
   reason <text>       Log agent reasoning into digest chain
@@ -150,6 +151,12 @@ async function main(): Promise<void> {
   }
 
   switch (command) {
+    case 'init': {
+      const { runInit } = await import('./commands/init.js');
+      await runInit({ json });
+      break;
+    }
+
     case 'check': {
       const from = positional[0];
       const to = positional[1];

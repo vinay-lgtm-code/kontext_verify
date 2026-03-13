@@ -54,9 +54,8 @@ export default function HomePage() {
               <FlipText words={["USD", "USDC", "EUR", "EURC", "GBP", "AED", "SGD", "CNY"]} />
             </h1>
             <p className="mt-4 text-sm sm:text-base text-[var(--term-text-2)] max-w-2xl">
-              Your agents handle $3K+ transfers with zero compliance infrastructure.{" "}
-              <code className="text-[var(--term-green)]">verify()</code> returns
-              OFAC screening, audit trail, and trust score in one call.
+              Run one command. Wrap your client. Every stablecoin transfer gets
+              OFAC screening, audit trail, and trust score — automatically.
             </p>
 
             {/* Split: code + playground */}

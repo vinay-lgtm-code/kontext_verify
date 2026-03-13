@@ -91,6 +91,7 @@ The Python client wraps the Kontext REST API. The full TypeScript SDK (`kontext-
 - Compliance certificates with SHA-256 proof
 - Trust scoring and anomaly detection
 - MCP server mode for AI coding tools
+- Viem auto-instrumentation (`withKontextCompliance()`) — TypeScript only
 
 ## License
 
