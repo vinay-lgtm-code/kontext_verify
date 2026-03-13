@@ -231,6 +231,35 @@ const ctx = Kontext.init({
 // Call ctx.flush() to write, ctx.restore() to reload
 ```
 
+## Auto-Instrumentation (viem)
+
+Run `npx kontext init` to generate a config file, then wrap your viem client — every stablecoin transfer is automatically logged.
+
+```bash
+npx kontext init
+# Wizard asks: project name, agent ID, wallets to monitor, tokens, chains, mode
+# Creates kontext.config.json
+```
+
+```typescript
+import { Kontext, withKontextCompliance } from 'kontext-sdk';
+import { createWalletClient, http } from 'viem';
+import { base } from 'viem/chains';
+
+const kontext = Kontext.init();  // reads kontext.config.json
+const client = withKontextCompliance(
+  createWalletClient({ chain: base, transport: http() }),
+  kontext,
+);
+
+// Every USDC/USDT/DAI/EURC transfer now auto-logged with compliance proof
+await client.sendTransaction({ to: USDC_ADDRESS, data: transferCalldata });
+```
+
+**Two interception layers:**
+- **Code wrap:** `withKontextCompliance()` intercepts `sendTransaction`/`writeContract` calls. Can block pre-send if non-compliant.
+- **Chain listener:** SDK watches monitored wallet addresses on-chain for ERC-20 Transfer events — catches ALL outgoing stablecoin transfers regardless of origin.
+
 ## Pluggable Sanctions Screening
 
 Multi-provider screening with consensus strategies. Bring your own API keys, or use the built-in OFAC SDN list at zero cost.

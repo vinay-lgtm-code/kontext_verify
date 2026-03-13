@@ -61,6 +61,8 @@ import type { EventExporter } from './exporters.js';
 import { NoopExporter } from './exporters.js';
 import { FeatureFlagManager } from './feature-flags.js';
 import { generateId, now, parseAmount } from './utils.js';
+import { loadConfigFile } from './config-loader.js';
+import { WalletMonitor } from './integrations/wallet-monitor.js';
 import { ProvenanceManager } from './provenance.js';
 import {
   AgentIdentityRegistry,
@@ -127,6 +129,7 @@ export class Kontext {
   private readonly trustScorer: TrustScorer;
   private readonly anomalyDetector: AnomalyDetector;
   private readonly screeningAggregator: ScreeningAggregator | null;
+  private walletMonitor: WalletMonitor | null = null;
   private provenanceManager: ProvenanceManager | null = null;
   private identityRegistry: AgentIdentityRegistry | null = null;
   private walletClusterer: WalletClusterer | null = null;
@@ -199,6 +202,22 @@ export class Kontext {
         thresholds: config.anomalyThresholds,
       });
     }
+
+    // Start wallet monitoring if configured (requires viem peer dep)
+    if (config.walletMonitoring && config.walletMonitoring.wallets.length > 0) {
+      const tokens = config.policy?.allowedTokens;
+      this.walletMonitor = new WalletMonitor(
+        this,
+        config.walletMonitoring,
+        { agentId: config.agentId, tokens: tokens ?? undefined },
+      );
+      // Start asynchronously — don't block init
+      this.walletMonitor.start().catch((err) => {
+        if (config.debug) {
+          console.debug(`[Kontext] Wallet monitor failed to start: ${err}`);
+        }
+      });
+    }
   }
 
   /**
@@ -230,7 +249,38 @@ export class Kontext {
    * });
    * ```
    */
-  static init(config: KontextConfig): Kontext {
+  static init(config?: KontextConfig): Kontext {
+    // Zero-arg: load from kontext.config.json
+    if (!config) {
+      const fileConfig = loadConfigFile();
+      if (!fileConfig) {
+        throw new KontextError(
+          KontextErrorCode.INITIALIZATION_ERROR,
+          'No config provided and no kontext.config.json found. Run `npx kontext init` to create one, or pass config to Kontext.init().',
+        );
+      }
+      const mapped: KontextConfig = {
+        projectId: fileConfig.projectId,
+        environment: fileConfig.environment ?? 'production',
+        apiKey: fileConfig.apiKey,
+        agentId: fileConfig.agentId,
+        interceptorMode: fileConfig.mode,
+        policy: {
+          allowedTokens: fileConfig.tokens,
+          corridors: fileConfig.corridors?.from
+            ? { blocked: fileConfig.corridors.to ? [{ from: fileConfig.corridors.from, to: fileConfig.corridors.to }] : undefined }
+            : undefined,
+          thresholds: fileConfig.thresholds
+            ? { edd: fileConfig.thresholds.alertAmount ? Number(fileConfig.thresholds.alertAmount) : undefined }
+            : undefined,
+        },
+        walletMonitoring: fileConfig.wallets && fileConfig.wallets.length > 0 && fileConfig.rpcEndpoints
+          ? { wallets: fileConfig.wallets, rpcEndpoints: fileConfig.rpcEndpoints }
+          : undefined,
+      };
+      return Kontext.init(mapped);
+    }
+
     if (!config.projectId || config.projectId.trim() === '') {
       throw new KontextError(
         KontextErrorCode.INITIALIZATION_ERROR,
@@ -1609,9 +1659,21 @@ export class Kontext {
   // --------------------------------------------------------------------------
 
   /**
-   * Gracefully shut down the SDK, flushing any pending data.
+   * Get the wallet monitor instance (or null if not configured).
+   * Used by the viem interceptor for dedup registration.
+   */
+  getWalletMonitor(): WalletMonitor | null {
+    return this.walletMonitor;
+  }
+
+  /**
+   * Gracefully shut down the SDK, flushing any pending data and stopping watchers.
    */
   async destroy(): Promise<void> {
+    if (this.walletMonitor) {
+      this.walletMonitor.stop();
+      this.walletMonitor = null;
+    }
     await this.logger.destroy();
     await this.exporter.shutdown();
   }

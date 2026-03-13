@@ -81,6 +81,9 @@ export type {
 
   // Metadata Validation
   MetadataValidator,
+
+  // Wallet Monitoring
+  WalletMonitoringConfig,
 } from './types.js';
 
 // Feature Flags
@@ -204,6 +207,19 @@ export {
 
 // Screening Config types (re-exported from types.ts)
 export type { ScreeningConfig, PolicyConfig } from './types.js';
+
+// Viem Auto-Instrumentation
+export { withKontextCompliance, ViemComplianceError } from './integrations/viem-interceptor.js';
+export type { ViemInstrumentationOptions, WalletClientLike } from './integrations/viem-interceptor.js';
+
+// Wallet Monitoring
+export { WalletMonitor } from './integrations/wallet-monitor.js';
+
+// Stablecoin Registry
+export { STABLECOIN_CONTRACTS, CHAIN_ID_MAP } from './integrations/data/stablecoin-contracts.js';
+
+// Config Loading
+export { loadConfigFile } from './config-loader.js';
 
 // Agent Forensics (KYA)
 export {

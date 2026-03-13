@@ -9,7 +9,7 @@ interface CopyInstallProps {
 }
 
 export function CopyInstall({
-  command = "npm install kontext-sdk",
+  command = "npx kontext init",
   className = "",
 }: CopyInstallProps) {
   const [copied, setCopied] = useState(false);
