@@ -2,25 +2,31 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { checkCompliance, type ComplianceResult } from "@/lib/compliance-checker";
+import {
+  checkCompliance,
+  isBlockchainAddress,
+  type ComplianceResult,
+} from "@/lib/compliance-checker";
 
 export function PlaygroundPreview() {
-  const [address, setAddress] = useState("");
+  const [query, setQuery] = useState("");
   const [result, setResult] = useState<ComplianceResult | null>(null);
 
   const handleVerify = () => {
+    const isAddress = isBlockchainAddress(query);
     const res = checkCompliance({
-      from: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68",
-      to: address,
+      from: isAddress
+        ? "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68"
+        : "Acme Corp",
+      to: query,
       amount: "1000",
-      chain: "base",
-      token: "USDC",
+      ...(isAddress ? { chain: "base", token: "USDC" } : { currency: "USD" }),
     });
     setResult(res);
   };
 
-  const tryExample = (addr: string) => {
-    setAddress(addr);
+  const tryExample = (val: string) => {
+    setQuery(val);
     setResult(null);
   };
 
@@ -38,17 +44,17 @@ export function PlaygroundPreview() {
         <div className="flex gap-2 mb-3">
           <input
             type="text"
-            value={address}
+            value={query}
             onChange={(e) => {
-              setAddress(e.target.value);
+              setQuery(e.target.value);
               setResult(null);
             }}
-            placeholder="Paste a wallet address to screen..."
+            placeholder="Wallet address or entity name..."
             className="flex-1 border border-[var(--term-surface-2)] bg-background px-3 py-2 text-sm font-mono text-[var(--term-text-2)] placeholder:text-[var(--term-text-3)] focus:border-[var(--term-green)] focus:outline-none"
           />
           <button
             onClick={handleVerify}
-            disabled={!address}
+            disabled={!query}
             className="border border-[var(--term-green)] bg-transparent px-4 py-2 text-xs text-[var(--term-green)] font-mono hover:bg-[var(--term-green)] hover:text-black transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
             verify()
@@ -64,7 +70,7 @@ export function PlaygroundPreview() {
           >
             Try clean address
           </button>
-          <span className="text-[var(--term-surface-3)]">·</span>
+          <span className="text-[var(--term-surface-3)]">&middot;</span>
           <button
             onClick={() =>
               tryExample("0x098B716B8Aaf21512996dC57EB0615e2383E2f96")
@@ -72,6 +78,13 @@ export function PlaygroundPreview() {
             className="text-[10px] text-[var(--term-text-3)] hover:text-[var(--term-red)] transition-colors"
           >
             Try sanctioned address
+          </button>
+          <span className="text-[var(--term-surface-3)]">&middot;</span>
+          <button
+            onClick={() => tryExample("Lazarus Group")}
+            className="text-[10px] text-[var(--term-text-3)] hover:text-[var(--term-red)] transition-colors"
+          >
+            Try sanctioned entity
           </button>
         </div>
 
@@ -104,7 +117,7 @@ export function PlaygroundPreview() {
               href="/playground"
               className="text-[11px] text-[var(--term-blue)] hover:underline"
             >
-              Full playground →
+              Full playground &rarr;
             </Link>
           </div>
         )}
@@ -115,7 +128,7 @@ export function PlaygroundPreview() {
               href="/playground"
               className="text-[11px] text-[var(--term-blue)] hover:underline"
             >
-              Full playground →
+              Full playground &rarr;
             </Link>
           </div>
         )}
