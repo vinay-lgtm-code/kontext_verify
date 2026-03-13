@@ -12,6 +12,48 @@ export const metadata: Metadata = {
 
 const installCode = `npm install kontext-sdk`;
 
+const pythonInstallCode = `pip install kontext-sdk`;
+
+const pythonQuickStartCode = `from kontext import Kontext
+
+ctx = Kontext(api_key="sk_...", project_id="my-agent")
+
+# Log a transaction
+ctx.log_transaction(
+    tx_hash="0xabc...",
+    chain="base",
+    amount="5000",
+    token="USDC",
+    from_address="0xsender...",
+    to_address="0xrecipient...",
+    agent_id="payment-agent",
+)
+
+# Trust score
+trust = ctx.get_trust_score("payment-agent")
+print(f"Trust: {trust.score}/100 ({trust.level})")
+
+# Human-in-the-loop
+task = ctx.create_task(
+    description="Approve $5K transfer",
+    agent_id="payment-agent",
+    required_evidence=["txHash"],
+)
+confirmed = ctx.confirm_task(task.id, evidence={"txHash": "0xabc..."})
+
+# Export audit trail
+audit = ctx.export_audit(format="json")
+
+# Flush to server
+ctx.flush()`;
+
+const pythonAsyncCode = `from kontext import AsyncKontext
+
+async with AsyncKontext(api_key="sk_...", project_id="my-agent") as ctx:
+    await ctx.log(action="transfer", agent_id="agent-1")
+    trust = await ctx.get_trust_score("agent-1")
+    print(f"Trust: {trust.score}/100")`;
+
 const quickStartCode = `import { Kontext } from 'kontext-sdk';
 
 // Initialize -- no API key needed for local mode
@@ -530,7 +572,7 @@ npm install -g @kontext-sdk/cli
 npx @kontext-sdk/cli verify --chain base --amount 0.50
 
 # Verify installation
-kontext --version  # 0.8.0`;
+kontext --version  # 0.9.0`;
 
 const cliCommandsCode = `# Static compliance check (no digest chain)
 kontext check --chain base --amount 0.50 --from 0xSender --to 0xRecipient
@@ -621,6 +663,13 @@ const sidebarSections = [
     ],
   },
   {
+    title: "Python Client",
+    items: [
+      { id: "python-install", label: "Installation" },
+      { id: "python-usage", label: "Usage" },
+    ],
+  },
+  {
     title: "CLI",
     items: [
       { id: "cli-install", label: "Installation" },
@@ -694,10 +743,10 @@ export default function DocsPage() {
                 DOCUMENTATION
               </h1>
               <p>
-                Kontext is a TypeScript SDK that provides compliance
-                infrastructure for agents that move money. Audit trails, OFAC
-                screening, trust scoring, on-chain anchoring, and agent-to-agent
-                attestation -- all in a single function call.
+                Kontext provides compliance infrastructure for agents that move
+                money. Available as a TypeScript SDK (npm) and Python client (PyPI).
+                Audit trails, OFAC screening, trust scoring, on-chain anchoring,
+                and agent-to-agent attestation -- all in a single function call.
               </p>
             </div>
 
@@ -770,9 +819,18 @@ export default function DocsPage() {
                 language="bash"
                 filename="Terminal"
               />
+              <p className="mt-4">
+                <strong>Python:</strong>
+              </p>
+              <CodeBlock
+                code={pythonInstallCode}
+                language="bash"
+                filename="Terminal"
+              />
               <p>
-                <strong>Requirements:</strong> Node.js 18+ and TypeScript 5.0+.
-                The SDK has zero runtime dependencies.
+                <strong>Requirements:</strong> Node.js 18+ and TypeScript 5.0+
+                for the SDK. Python 3.9+ for the Python client.
+                The TypeScript SDK has zero runtime dependencies.
               </p>
             </section>
 
@@ -1053,6 +1111,67 @@ npx kontext-sdk checkpoint list --session <sessionId>`}
                 language="typescript"
                 filename="confidence-scoring.ts"
               />
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* Python Client Installation */}
+            <section id="python-install">
+              <h2>Python Client</h2>
+              <p>
+                The Python client (<code>kontext-sdk</code> on PyPI) provides typed
+                sync and async HTTP bindings for the Kontext REST API. All compliance
+                logic runs server-side — the Python package is a thin wrapper with
+                zero local processing.
+              </p>
+              <CodeBlock
+                code={pythonInstallCode}
+                language="bash"
+                filename="Terminal"
+              />
+              <p>
+                <strong>Requirements:</strong> Python 3.9+. Dependencies: <code>httpx</code> and <code>pydantic</code>.
+              </p>
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* Python Client Usage */}
+            <section id="python-usage">
+              <h2>Python Usage</h2>
+              <h3>Sync Client</h3>
+              <CodeBlock
+                code={pythonQuickStartCode}
+                language="python"
+                filename="agent.py"
+              />
+              <h3>Async Client</h3>
+              <CodeBlock
+                code={pythonAsyncCode}
+                language="python"
+                filename="async_agent.py"
+              />
+              <h3>API Methods</h3>
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[var(--term-surface-2)]">
+                      <th className="text-left py-2 pr-4 text-[var(--term-text-2)]">Method</th>
+                      <th className="text-left py-2 text-[var(--term-text-2)]">Description</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-[var(--term-text-3)]">
+                    <tr className="border-b border-[var(--term-surface-2)]"><td className="py-1.5 pr-4"><code>log(action, agent_id)</code></td><td>Buffer an action log</td></tr>
+                    <tr className="border-b border-[var(--term-surface-2)]"><td className="py-1.5 pr-4"><code>log_transaction(tx_hash, chain, ...)</code></td><td>Buffer a transaction log</td></tr>
+                    <tr className="border-b border-[var(--term-surface-2)]"><td className="py-1.5 pr-4"><code>flush()</code></td><td>Send buffered actions to server</td></tr>
+                    <tr className="border-b border-[var(--term-surface-2)]"><td className="py-1.5 pr-4"><code>create_task(description, agent_id)</code></td><td>Create human-in-the-loop task</td></tr>
+                    <tr className="border-b border-[var(--term-surface-2)]"><td className="py-1.5 pr-4"><code>get_trust_score(agent_id)</code></td><td>Get agent trust score (0-100)</td></tr>
+                    <tr className="border-b border-[var(--term-surface-2)]"><td className="py-1.5 pr-4"><code>export_audit(format)</code></td><td>Export audit trail (JSON/CSV)</td></tr>
+                    <tr className="border-b border-[var(--term-surface-2)]"><td className="py-1.5 pr-4"><code>evaluate_anomalies(amount, agent_id)</code></td><td>Evaluate for anomalies</td></tr>
+                    <tr><td className="py-1.5 pr-4"><code>health()</code></td><td>Check API health</td></tr>
+                  </tbody>
+                </table>
+              </div>
             </section>
 
             <Separator className="my-12" />
