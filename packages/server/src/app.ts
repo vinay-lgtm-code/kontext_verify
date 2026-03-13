@@ -916,4 +916,122 @@ app.get('/v1/checkout/success', async (c) => {
   }
 });
 
+// ============================================================================
+// Unified Screening Service — Pre-cached government sanctions data
+// ============================================================================
+
+// Lazy-initialized screening engine
+let screeningEngine: import('./screening/screening-engine.js').ScreeningEngine | null = null;
+let screeningInitPromise: Promise<void> | null = null;
+
+async function initScreeningEngine(): Promise<void> {
+  if (process.env['SCREENING_ENABLED'] === 'false') return;
+
+  try {
+    const { ScreeningEngine, OFACSDNSource, UKSanctionsSource, EUFSFSource, OpenSanctionsSource } = await import('./screening/index.js');
+    screeningEngine = new ScreeningEngine();
+    await screeningEngine.init([
+      new OFACSDNSource(),
+      new UKSanctionsSource(),
+      new EUFSFSource(),
+      new OpenSanctionsSource(),
+    ]);
+    screeningEngine.startPeriodicSync();
+    console.log('[Kontext] Unified screening engine initialized');
+  } catch (err) {
+    console.warn('[Kontext] Screening engine initialization failed:', err instanceof Error ? err.message : String(err));
+  }
+}
+
+// Start initialization (non-blocking)
+screeningInitPromise = initScreeningEngine();
+
+// POST /v1/screening/address — O(1) crypto address lookup
+app.post('/v1/screening/address', authMiddleware, requireFlag('unified-screening'), async (c) => {
+  await screeningInitPromise;
+  if (!screeningEngine?.isReady()) {
+    return c.json({ error: 'Screening service not ready' }, 503);
+  }
+
+  let body: { address?: string };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: 'Invalid JSON body' }, 400);
+  }
+
+  if (!body.address || typeof body.address !== 'string') {
+    return c.json({ error: 'address is required' }, 400);
+  }
+
+  const result = screeningEngine.screenAddress(body.address);
+
+  // Track usage
+  const apiKey = c.req.header('Authorization')?.slice(7) ?? '';
+  trackEvents(apiKey, 1);
+
+  return c.json(result);
+});
+
+// POST /v1/screening/entity — Fuzzy entity name search
+app.post('/v1/screening/entity', authMiddleware, requireFlag('unified-screening'), async (c) => {
+  await screeningInitPromise;
+  if (!screeningEngine?.isReady()) {
+    return c.json({ error: 'Screening service not ready' }, 503);
+  }
+
+  let body: { query?: string; threshold?: number; maxResults?: number };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: 'Invalid JSON body' }, 400);
+  }
+
+  if (!body.query || typeof body.query !== 'string') {
+    return c.json({ error: 'query is required' }, 400);
+  }
+
+  const threshold = typeof body.threshold === 'number' ? body.threshold : undefined;
+  const maxResults = typeof body.maxResults === 'number' ? body.maxResults : undefined;
+  const result = screeningEngine.screenEntity(body.query, threshold, maxResults);
+
+  const apiKey = c.req.header('Authorization')?.slice(7) ?? '';
+  trackEvents(apiKey, 1);
+
+  return c.json(result);
+});
+
+// GET /v1/screening/status — Screening service status
+app.get('/v1/screening/status', authMiddleware, async (c) => {
+  await screeningInitPromise;
+  if (!screeningEngine) {
+    return c.json({ error: 'Screening service not available' }, 503);
+  }
+
+  return c.json(screeningEngine.getStatus());
+});
+
+// POST /v1/screening/sync — Manual sync trigger (enterprise or admin)
+app.post('/v1/screening/sync', authMiddleware, async (c) => {
+  const apiKey = c.req.header('Authorization')?.slice(7) ?? '';
+  const planInfo = apiKeyPlans.get(apiKey);
+  const plan = planInfo?.plan ?? 'free';
+
+  // Only enterprise plan or admin key can trigger manual sync
+  const adminKey = process.env['SCREENING_ADMIN_KEY'];
+  const isAdmin = adminKey && apiKey === adminKey;
+
+  if (plan !== 'enterprise' && !isAdmin) {
+    return c.json({ error: 'Manual sync requires Enterprise plan' }, 403);
+  }
+
+  await screeningInitPromise;
+  if (!screeningEngine) {
+    return c.json({ error: 'Screening service not available' }, 503);
+  }
+
+  const result = await screeningEngine.sync();
+  return c.json(result);
+});
+
 export default app;

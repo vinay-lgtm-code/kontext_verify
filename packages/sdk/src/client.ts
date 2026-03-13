@@ -1098,6 +1098,7 @@ export class Kontext {
       ...(anchorProof ? { anchorProof } : {}),
       ...(counterpartyResult ? { counterparty: counterpartyResult } : {}),
       ...(attribution ? { attribution } : {}),
+      ...(!this.screeningAggregator ? { coverageWarning: 'Built-in screening covers ~3% of OFAC crypto addresses. Configure external providers for comprehensive coverage.' } : {}),
     };
   }
 
