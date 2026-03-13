@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { CodeBlock } from "@/components/code-block";
 import { CopyBlock } from "./copy-block";

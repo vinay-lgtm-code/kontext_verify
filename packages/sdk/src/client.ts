@@ -18,6 +18,7 @@ import type {
   ReportOptions,
   ComplianceReport,
   UsdcComplianceCheck,
+  ComplianceCheckResult,
   Environment,
   VerifyInput,
   VerifyResult,
@@ -52,6 +53,8 @@ import { AuditExporter } from './audit.js';
 import { UsdcCompliance } from './integrations/usdc.js';
 import { PaymentCompliance } from './integrations/payment-compliance.js';
 import { isCryptoTransaction } from './types.js';
+import { ScreeningAggregator } from './integrations/screening-aggregator.js';
+import type { AggregatedScreeningResult } from './integrations/screening-aggregator.js';
 import { PlanManager } from './plans.js';
 import { requirePlan } from './plan-gate.js';
 import type { EventExporter } from './exporters.js';
@@ -123,6 +126,7 @@ export class Kontext {
   private readonly featureFlagManager: FeatureFlagManager | null;
   private readonly trustScorer: TrustScorer;
   private readonly anomalyDetector: AnomalyDetector;
+  private readonly screeningAggregator: ScreeningAggregator | null;
   private provenanceManager: ProvenanceManager | null = null;
   private identityRegistry: AgentIdentityRegistry | null = null;
   private walletClusterer: WalletClusterer | null = null;
@@ -169,6 +173,18 @@ export class Kontext {
     // Initialize feature flag manager if configured
     this.featureFlagManager = config.featureFlags
       ? new FeatureFlagManager(config.featureFlags)
+      : null;
+
+    // Initialize screening aggregator if configured (free — no plan gating)
+    this.screeningAggregator = config.screening
+      ? new ScreeningAggregator({
+          providers: config.screening.providers,
+          consensus: config.screening.consensus,
+          blocklist: config.screening.blocklist,
+          allowlist: config.screening.allowlist,
+          providerTimeoutMs: config.screening.providerTimeoutMs,
+          onEvent: () => this.planManager.recordEvent(),
+        })
       : null;
 
     // Auto-enable anomaly detection if rules provided in config
@@ -279,6 +295,139 @@ export class Kontext {
         `Metadata validation failed: ${err instanceof Error ? err.message : String(err)}`,
       );
     }
+  }
+
+  /**
+   * Map aggregated screening results into UsdcComplianceCheck format.
+   * Produces the same check/riskLevel/recommendations shape as
+   * UsdcCompliance.checkTransaction() and PaymentCompliance.checkPayment().
+   */
+  private buildComplianceFromScreening(
+    input: VerifyInput,
+    fromResult: AggregatedScreeningResult,
+    toResult: AggregatedScreeningResult,
+  ): UsdcComplianceCheck {
+    const checks: ComplianceCheckResult[] = [];
+
+    // Sanctions check: sender
+    const fromHit = fromResult.hit;
+    const fromProviders = fromResult.providerResults
+      .filter((r) => r.hit)
+      .map((r) => r.providerId)
+      .join(', ');
+    checks.push({
+      name: 'sanctions_sender',
+      passed: !fromHit,
+      description: fromHit
+        ? `Sender flagged by: ${fromProviders}`
+        : `Sender cleared (${fromResult.totalProviders} provider${fromResult.totalProviders !== 1 ? 's' : ''} checked)`,
+      severity: fromHit ? 'critical' : 'low',
+    });
+
+    // Sanctions check: recipient
+    const toHit = toResult.hit;
+    const toProviders = toResult.providerResults
+      .filter((r) => r.hit)
+      .map((r) => r.providerId)
+      .join(', ');
+    checks.push({
+      name: 'sanctions_recipient',
+      passed: !toHit,
+      description: toHit
+        ? `Recipient flagged by: ${toProviders}`
+        : `Recipient cleared (${toResult.totalProviders} provider${toResult.totalProviders !== 1 ? 's' : ''} checked)`,
+      severity: toHit ? 'critical' : 'low',
+    });
+
+    // Jurisdiction coverage warning
+    const allUncovered = [
+      ...new Set([...fromResult.uncoveredLists, ...toResult.uncoveredLists]),
+    ];
+    if (allUncovered.length > 0) {
+      checks.push({
+        name: 'jurisdiction_coverage',
+        passed: false,
+        description: `Required lists not covered: ${allUncovered.join(', ')}`,
+        severity: 'medium',
+      });
+    }
+
+    // Threshold checks (EDD, CTR, large transaction)
+    const thresholds = this.config.policy?.thresholds;
+    const eddThreshold = thresholds?.edd ?? 3000;
+    const reportingThreshold = thresholds?.reporting ?? 10000;
+    const largeThreshold = thresholds?.largeTransaction ?? 50000;
+    const amount = parseAmount(input.amount);
+
+    if (amount >= eddThreshold) {
+      checks.push({
+        name: 'enhanced_due_diligence',
+        passed: false,
+        description: `Amount $${amount.toLocaleString()} meets EDD threshold ($${eddThreshold.toLocaleString()})`,
+        severity: 'low',
+      });
+    }
+
+    if (amount >= reportingThreshold) {
+      checks.push({
+        name: 'reporting_threshold',
+        passed: false,
+        description: `Amount $${amount.toLocaleString()} meets CTR threshold ($${reportingThreshold.toLocaleString()})`,
+        severity: 'low',
+      });
+    }
+
+    if (amount >= largeThreshold) {
+      checks.push({
+        name: 'large_transaction',
+        passed: false,
+        description: `Large transaction: $${amount.toLocaleString()} exceeds $${largeThreshold.toLocaleString()}`,
+        severity: 'medium',
+      });
+    }
+
+    // Provider errors
+    const allErrors = [...fromResult.errors, ...toResult.errors];
+    if (allErrors.length > 0) {
+      checks.push({
+        name: 'screening_errors',
+        passed: false,
+        description: `Provider errors: ${allErrors.map((e) => `${e.providerId}: ${e.error}`).join('; ')}`,
+        severity: 'medium',
+      });
+    }
+
+    // Compute overall result
+    const failedChecks = checks.filter((c) => !c.passed);
+    const compliant = failedChecks.every((c) => c.severity === 'low');
+
+    const severityOrder: Array<'low' | 'medium' | 'high' | 'critical'> = ['low', 'medium', 'high', 'critical'];
+    const highestSeverity = failedChecks.reduce<'low' | 'medium' | 'high' | 'critical'>(
+      (max, c) => (severityOrder.indexOf(c.severity) > severityOrder.indexOf(max) ? c.severity : max),
+      'low',
+    );
+
+    // Recommendations
+    const recommendations: string[] = [];
+    if (fromHit || toHit) {
+      recommendations.push('Block transaction: sanctions match detected');
+    }
+    if (allUncovered.length > 0) {
+      recommendations.push(`Add providers covering: ${allUncovered.join(', ')}`);
+    }
+    if (amount >= eddThreshold && amount < reportingThreshold) {
+      recommendations.push('Collect enhanced due diligence information');
+    }
+    if (amount >= reportingThreshold) {
+      recommendations.push('File Currency Transaction Report (CTR)');
+    }
+
+    return {
+      compliant,
+      checks,
+      riskLevel: highestSeverity,
+      recommendations,
+    };
   }
 
   /** Lazy-init ProvenanceManager on first use. */
@@ -767,10 +916,30 @@ export class Kontext {
     // 1. Log the transaction (includes anomaly eval via logTransaction)
     const transaction = await this.logTransaction(input);
 
-    // 2. Run compliance checks (crypto vs general payment)
-    const compliance = isCryptoTransaction(input)
-      ? UsdcCompliance.checkTransaction(input)
-      : PaymentCompliance.checkPayment(input);
+    // 2. Run compliance checks
+    let compliance: UsdcComplianceCheck;
+    if (this.screeningAggregator) {
+      // Unified path: ScreeningAggregator handles both crypto addresses and fiat entity names
+      const fromResult = await this.screeningAggregator.screen(input.from, {
+        chain: input.chain,
+        token: input.token,
+        currency: input.currency,
+        amount: input.amount,
+        agentId: input.agentId,
+      });
+      const toResult = await this.screeningAggregator.screen(input.to, {
+        chain: input.chain,
+        token: input.token,
+        currency: input.currency,
+        amount: input.amount,
+        agentId: input.agentId,
+      });
+      compliance = this.buildComplianceFromScreening(input, fromResult, toResult);
+    } else if (isCryptoTransaction(input)) {
+      compliance = UsdcCompliance.checkTransaction(input);
+    } else {
+      compliance = PaymentCompliance.checkPayment(input);
+    }
 
     // 3. Log reasoning if provided
     let reasoningId: string | undefined;
