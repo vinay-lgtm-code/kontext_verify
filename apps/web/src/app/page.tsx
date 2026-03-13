@@ -5,6 +5,7 @@ import { CopyInstall } from "@/components/copy-install";
 import { HeroCodeSnippet } from "@/components/hero-code-snippet";
 import { LogoStrip } from "@/components/logo-strip";
 import { PlaygroundPreview } from "@/components/playground-preview";
+import { FlipText } from "@/components/flip-text";
 
 const verifyClean = `{
   compliant: true,
@@ -50,7 +51,7 @@ export default function HomePage() {
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
               <span className="text-[var(--term-green)]">$</span>{" "}
               Compliance logging for agents that move{" "}
-              <span className="text-[var(--term-green)] glow">USDC</span>
+              <FlipText words={["USD", "USDC", "EUR", "EURC", "GBP", "AED", "SGD", "CNY"]} />
             </h1>
             <p className="mt-4 text-sm sm:text-base text-[var(--term-text-2)] max-w-2xl">
               Your agents handle $3K+ transfers with zero compliance infrastructure.{" "}
