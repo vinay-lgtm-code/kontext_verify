@@ -1,7 +1,12 @@
 // Browser-safe compliance checker extracted from packages/sdk/src/integrations/usdc.ts
 // No Node.js imports (fs, path, crypto). Pure logic only.
+// Supports both crypto (address) and fiat (entity name) screening modes.
+
+import { matchEntityName } from "./data/ofac-entity-names";
 
 type Severity = "low" | "medium" | "high" | "critical";
+
+export type ScreeningMode = "address" | "entity_name";
 
 export interface ComplianceCheck {
   name: string;
@@ -15,14 +20,18 @@ export interface ComplianceResult {
   checks: ComplianceCheck[];
   riskLevel: Severity;
   recommendations: string[];
+  screeningMode: ScreeningMode;
+  listsChecked: string[];
 }
 
 export interface ComplianceInput {
   from: string;
   to: string;
   amount: string;
-  chain: string;
-  token: string;
+  chain?: string;
+  token?: string;
+  currency?: string;
+  paymentMethod?: string;
 }
 
 const USDC_CONTRACTS: Record<string, string> = {
@@ -81,6 +90,11 @@ const EDD_THRESHOLD = 3000;
 const REPORTING_THRESHOLD = 10000;
 const LARGE_TX_THRESHOLD = 50000;
 
+/** Detect whether a query is a blockchain address */
+export function isBlockchainAddress(query: string): boolean {
+  return /^0x[a-fA-F0-9]{40}$/.test(query.trim());
+}
+
 function checkAddressFormat(
   address: string,
   label: string,
@@ -105,6 +119,21 @@ function checkSanctions(address: string, label: string): ComplianceCheck {
       ? `${label} address matches OFAC SDN sanctioned address`
       : `${label} address passed sanctions screening`,
     severity: sanctioned ? "critical" : "low",
+  };
+}
+
+function checkEntitySanctions(
+  name: string,
+  label: string,
+): ComplianceCheck {
+  const match = matchEntityName(name);
+  return {
+    name: `sanctions_${label}`,
+    passed: !match,
+    description: match
+      ? `${label} matches OFAC SDN sanctioned entity: ${match}`
+      : `${label} passed entity name screening`,
+    severity: match ? "critical" : "low",
   };
 }
 
@@ -142,6 +171,23 @@ function checkToken(token: string): ComplianceCheck {
       ? "Transaction token is USDC"
       : `Expected USDC but got ${token}`,
     severity: isUsdc ? "low" : "high",
+  };
+}
+
+const SUPPORTED_CURRENCIES = [
+  "USD", "EUR", "GBP", "AED", "INR", "SGD",
+  "HKD", "KRW", "MYR", "THB", "NZD",
+];
+
+function checkCurrency(currency: string): ComplianceCheck {
+  const supported = SUPPORTED_CURRENCIES.includes(currency);
+  return {
+    name: "currency_support",
+    passed: supported,
+    description: supported
+      ? `Currency ${currency} is supported for compliance monitoring`
+      : `Currency ${currency} is not recognized`,
+    severity: supported ? "low" : "medium",
   };
 }
 
@@ -198,7 +244,7 @@ function generateRecommendations(
   );
   if (sanctionsFailed) {
     recs.push(
-      "BLOCK: Address matches OFAC SDN sanctioned entity. Transaction is prohibited under U.S. law.",
+      "BLOCK: Matches OFAC SDN sanctioned entity. Transaction is prohibited under U.S. law.",
     );
   }
 
@@ -229,14 +275,44 @@ function generateRecommendations(
 
 export function checkCompliance(input: ComplianceInput): ComplianceResult {
   const checks: ComplianceCheck[] = [];
+  const listsChecked: string[] = ["OFAC_SDN"];
 
-  checks.push(checkToken(input.token));
-  checks.push(checkChain(input.chain));
-  checks.push(checkAddressFormat(input.from, "sender"));
-  checks.push(checkAddressFormat(input.to, "recipient"));
+  // Auto-detect screening mode per field
+  const fromIsAddress = isBlockchainAddress(input.from);
+  const toIsAddress = isBlockchainAddress(input.to);
+  const isCryptoMode = !!(input.chain || input.token);
+
+  // Determine overall screening mode for display
+  const screeningMode: ScreeningMode =
+    fromIsAddress || toIsAddress ? "address" : "entity_name";
+
+  // Chain and token checks only in crypto mode
+  if (isCryptoMode) {
+    if (input.token) checks.push(checkToken(input.token));
+    if (input.chain) checks.push(checkChain(input.chain));
+  }
+
+  // Currency check in fiat mode
+  if (input.currency) {
+    checks.push(checkCurrency(input.currency));
+  }
+
+  // Per-field screening: address format + sanctions for addresses, entity sanctions for names
+  if (fromIsAddress) {
+    checks.push(checkAddressFormat(input.from, "sender"));
+    checks.push(checkSanctions(input.from, "sender"));
+  } else if (input.from.trim()) {
+    checks.push(checkEntitySanctions(input.from, "sender"));
+  }
+
+  if (toIsAddress) {
+    checks.push(checkAddressFormat(input.to, "recipient"));
+    checks.push(checkSanctions(input.to, "recipient"));
+  } else if (input.to.trim()) {
+    checks.push(checkEntitySanctions(input.to, "recipient"));
+  }
+
   checks.push(checkAmount(input.amount));
-  checks.push(checkSanctions(input.from, "sender"));
-  checks.push(checkSanctions(input.to, "recipient"));
   checks.push(checkEDD(input.amount));
   checks.push(checkReporting(input.amount));
 
@@ -264,5 +340,7 @@ export function checkCompliance(input: ComplianceInput): ComplianceResult {
     checks,
     riskLevel: compliant ? highestOverall : riskLevel,
     recommendations,
+    screeningMode,
+    listsChecked,
   };
 }

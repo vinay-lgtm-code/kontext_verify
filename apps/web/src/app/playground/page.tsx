@@ -9,6 +9,8 @@ import {
   type ComplianceResult,
 } from "@/lib/compliance-checker";
 
+type Mode = "crypto" | "fiat";
+
 const CHAINS = [
   { value: "base", label: "Base", free: true },
   { value: "arc", label: "Arc", free: true },
@@ -22,9 +24,25 @@ const CHAINS = [
 
 const TOKENS = ["USDC", "USDT", "DAI", "EURC"];
 
+const CURRENCIES = [
+  "USD", "EUR", "GBP", "AED", "INR", "SGD",
+  "HKD", "KRW", "MYR", "THB", "NZD",
+];
+
+const PAYMENT_METHODS = [
+  { value: "wire", label: "Wire Transfer" },
+  { value: "ach", label: "ACH" },
+  { value: "card", label: "Card" },
+];
+
 const EXAMPLE_ADDRESSES = {
   clean: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68",
   sanctioned: "0x098B716B8Aaf21512996dC57EB0615e2383E2f96",
+};
+
+const EXAMPLE_ENTITIES = {
+  clean: { from: "Acme Corp", to: "Global Trade Ltd" },
+  sanctioned: { from: "Acme Corp", to: "Lazarus Group" },
 };
 
 function severityColor(severity: string): string {
@@ -53,16 +71,26 @@ function riskLed(riskLevel: string): string {
 }
 
 export default function PlaygroundPage() {
+  const [mode, setMode] = useState<Mode>("crypto");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [amount, setAmount] = useState("5000");
   const [chain, setChain] = useState("base");
   const [token, setToken] = useState("USDC");
+  const [currency, setCurrency] = useState("USD");
+  const [paymentMethod, setPaymentMethod] = useState("wire");
   const [result, setResult] = useState<ComplianceResult | null>(null);
   const [copied, setCopied] = useState(false);
 
   const handleVerify = () => {
-    const res = checkCompliance({ from, to, amount, chain, token });
+    const res = checkCompliance({
+      from,
+      to,
+      amount,
+      ...(mode === "crypto"
+        ? { chain, token }
+        : { currency, paymentMethod }),
+    });
     setResult(res);
   };
 
@@ -73,16 +101,32 @@ export default function PlaygroundPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const switchMode = (newMode: Mode) => {
+    setMode(newMode);
+    setFrom("");
+    setTo("");
+    setAmount("5000");
+    setResult(null);
+  };
+
   const loadExample = (type: "clean" | "sanctioned") => {
-    setFrom(EXAMPLE_ADDRESSES.clean);
-    setTo(
-      type === "sanctioned"
-        ? EXAMPLE_ADDRESSES.sanctioned
-        : "0x388C818CA8B9251b393131C08a736A67ccB19297",
-    );
+    if (mode === "crypto") {
+      setFrom(EXAMPLE_ADDRESSES.clean);
+      setTo(
+        type === "sanctioned"
+          ? EXAMPLE_ADDRESSES.sanctioned
+          : "0x388C818CA8B9251b393131C08a736A67ccB19297",
+      );
+      setChain("base");
+      setToken("USDC");
+    } else {
+      const example = type === "sanctioned" ? EXAMPLE_ENTITIES.sanctioned : EXAMPLE_ENTITIES.clean;
+      setFrom(example.from);
+      setTo(example.to);
+      setCurrency("USD");
+      setPaymentMethod("wire");
+    }
     setAmount(type === "sanctioned" ? "5000" : "5000");
-    setChain("base");
-    setToken("USDC");
     setResult(null);
   };
 
@@ -101,11 +145,35 @@ export default function PlaygroundPage() {
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
           <span className="text-[var(--term-green)]">$</span> Playground
         </h1>
-        <p className="text-sm text-[var(--term-text-2)] mb-8">
+        <p className="text-sm text-[var(--term-text-2)] mb-6">
           Run{" "}
           <code className="text-[var(--term-green)]">verify()</code> in your
           browser. Real OFAC screening, real thresholds. No install required.
         </p>
+
+        {/* Mode toggle */}
+        <div className="flex gap-0 mb-6">
+          <button
+            onClick={() => switchMode("crypto")}
+            className={`text-xs font-mono px-4 py-2 border transition-colors ${
+              mode === "crypto"
+                ? "border-[var(--term-green)] text-[var(--term-green)] bg-[var(--term-green)]/10"
+                : "border-[var(--term-surface-2)] text-[var(--term-text-3)] hover:text-[var(--term-text-2)]"
+            }`}
+          >
+            Crypto
+          </button>
+          <button
+            onClick={() => switchMode("fiat")}
+            className={`text-xs font-mono px-4 py-2 border border-l-0 transition-colors ${
+              mode === "fiat"
+                ? "border-[var(--term-green)] text-[var(--term-green)] bg-[var(--term-green)]/10"
+                : "border-[var(--term-surface-2)] text-[var(--term-text-3)] hover:text-[var(--term-text-2)]"
+            }`}
+          >
+            Fiat
+          </button>
+        </div>
 
         {/* Example buttons */}
         <div className="flex gap-2 mb-6">
@@ -113,13 +181,15 @@ export default function PlaygroundPage() {
             onClick={() => loadExample("clean")}
             className="text-[11px] text-[var(--term-text-3)] border border-[var(--term-surface-2)] px-3 py-1.5 hover:border-[var(--term-green)] hover:text-[var(--term-green)] transition-colors"
           >
-            Load clean example
+            {mode === "crypto" ? "Load clean address" : "Load clean entity"}
           </button>
           <button
             onClick={() => loadExample("sanctioned")}
             className="text-[11px] text-[var(--term-text-3)] border border-[var(--term-surface-2)] px-3 py-1.5 hover:border-[var(--term-red)] hover:text-[var(--term-red)] transition-colors"
           >
-            Load sanctioned example
+            {mode === "crypto"
+              ? "Load sanctioned address"
+              : "Load sanctioned entity"}
           </button>
         </div>
 
@@ -137,25 +207,33 @@ export default function PlaygroundPage() {
             <div className="p-4 space-y-4">
               <div>
                 <label className="block text-[11px] text-[var(--term-text-3)] mb-1.5">
-                  From address
+                  {mode === "crypto" ? "From address" : "From (entity or address)"}
                 </label>
                 <input
                   type="text"
                   value={from}
                   onChange={(e) => setFrom(e.target.value)}
-                  placeholder="0xSender..."
+                  placeholder={
+                    mode === "crypto"
+                      ? "0xSender..."
+                      : "Sender name or 0x..."
+                  }
                   className="w-full border border-[var(--term-surface-2)] bg-background px-3 py-2 text-sm font-mono text-[var(--term-text-2)] placeholder:text-[var(--term-text-3)] focus:border-[var(--term-green)] focus:outline-none"
                 />
               </div>
               <div>
                 <label className="block text-[11px] text-[var(--term-text-3)] mb-1.5">
-                  To address
+                  {mode === "crypto" ? "To address" : "To (entity or address)"}
                 </label>
                 <input
                   type="text"
                   value={to}
                   onChange={(e) => setTo(e.target.value)}
-                  placeholder="0xRecipient..."
+                  placeholder={
+                    mode === "crypto"
+                      ? "0xRecipient..."
+                      : "Recipient name or 0x..."
+                  }
                   className="w-full border border-[var(--term-surface-2)] bg-background px-3 py-2 text-sm font-mono text-[var(--term-text-2)] placeholder:text-[var(--term-text-3)] focus:border-[var(--term-green)] focus:outline-none"
                 />
               </div>
@@ -172,39 +250,78 @@ export default function PlaygroundPage() {
                     className="w-full border border-[var(--term-surface-2)] bg-background px-3 py-2 text-sm font-mono text-[var(--term-text-2)] placeholder:text-[var(--term-text-3)] focus:border-[var(--term-green)] focus:outline-none"
                   />
                 </div>
-                <div>
-                  <label className="block text-[11px] text-[var(--term-text-3)] mb-1.5">
-                    Chain
-                  </label>
-                  <select
-                    value={chain}
-                    onChange={(e) => setChain(e.target.value)}
-                    className="w-full border border-[var(--term-surface-2)] bg-background px-3 py-2 text-sm font-mono text-[var(--term-text-2)] focus:border-[var(--term-green)] focus:outline-none"
-                  >
-                    {CHAINS.map((c) => (
-                      <option key={c.value} value={c.value}>
-                        {c.label}
-                        {c.free ? " (free)" : ""}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[11px] text-[var(--term-text-3)] mb-1.5">
-                    Token
-                  </label>
-                  <select
-                    value={token}
-                    onChange={(e) => setToken(e.target.value)}
-                    className="w-full border border-[var(--term-surface-2)] bg-background px-3 py-2 text-sm font-mono text-[var(--term-text-2)] focus:border-[var(--term-green)] focus:outline-none"
-                  >
-                    {TOKENS.map((t) => (
-                      <option key={t} value={t}>
-                        {t}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {mode === "crypto" ? (
+                  <>
+                    <div>
+                      <label className="block text-[11px] text-[var(--term-text-3)] mb-1.5">
+                        Chain
+                      </label>
+                      <select
+                        value={chain}
+                        onChange={(e) => setChain(e.target.value)}
+                        className="w-full border border-[var(--term-surface-2)] bg-background px-3 py-2 text-sm font-mono text-[var(--term-text-2)] focus:border-[var(--term-green)] focus:outline-none"
+                      >
+                        {CHAINS.map((c) => (
+                          <option key={c.value} value={c.value}>
+                            {c.label}
+                            {c.free ? " (free)" : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] text-[var(--term-text-3)] mb-1.5">
+                        Token
+                      </label>
+                      <select
+                        value={token}
+                        onChange={(e) => setToken(e.target.value)}
+                        className="w-full border border-[var(--term-surface-2)] bg-background px-3 py-2 text-sm font-mono text-[var(--term-text-2)] focus:border-[var(--term-green)] focus:outline-none"
+                      >
+                        {TOKENS.map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-[11px] text-[var(--term-text-3)] mb-1.5">
+                        Currency
+                      </label>
+                      <select
+                        value={currency}
+                        onChange={(e) => setCurrency(e.target.value)}
+                        className="w-full border border-[var(--term-surface-2)] bg-background px-3 py-2 text-sm font-mono text-[var(--term-text-2)] focus:border-[var(--term-green)] focus:outline-none"
+                      >
+                        {CURRENCIES.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] text-[var(--term-text-3)] mb-1.5">
+                        Payment
+                      </label>
+                      <select
+                        value={paymentMethod}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        className="w-full border border-[var(--term-surface-2)] bg-background px-3 py-2 text-sm font-mono text-[var(--term-text-2)] focus:border-[var(--term-green)] focus:outline-none"
+                      >
+                        {PAYMENT_METHODS.map((p) => (
+                          <option key={p.value} value={p.value}>
+                            {p.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                )}
               </div>
               <Button
                 size="sm"
@@ -245,7 +362,9 @@ export default function PlaygroundPage() {
             <div className="p-4">
               {!result ? (
                 <p className="text-xs text-[var(--term-text-3)] italic">
-                  Enter addresses and click verify() to see results.
+                  {mode === "crypto"
+                    ? "Enter addresses and click verify() to see results."
+                    : "Enter entity names or addresses and click verify() to see results."}
                 </p>
               ) : (
                 <div className="space-y-4">
@@ -268,6 +387,16 @@ export default function PlaygroundPage() {
                     </span>
                   </div>
 
+                  {/* Screening metadata */}
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-[var(--term-text-3)]">
+                    <span>
+                      Mode: {result.screeningMode === "address" ? "Address" : "Entity Name"}
+                    </span>
+                    <span>
+                      Lists: {result.listsChecked.join(", ")}
+                    </span>
+                  </div>
+
                   {/* Checks */}
                   <div>
                     <p className="text-[10px] text-[var(--term-text-3)] uppercase tracking-wider mb-2">
@@ -286,7 +415,7 @@ export default function PlaygroundPage() {
                                 : "text-[var(--term-red)]"
                             }
                           >
-                            {check.passed ? "✓" : "✗"}
+                            {check.passed ? "\u2713" : "\u2717"}
                           </span>
                           <div>
                             <span className="text-[var(--term-text-2)]">
