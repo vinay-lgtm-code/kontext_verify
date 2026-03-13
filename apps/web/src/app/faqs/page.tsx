@@ -13,7 +13,7 @@ import { ArrowRight } from "lucide-react";
 export const metadata: Metadata = {
   title: "FAQs",
   description:
-    "Frequently asked questions about Kontext — the trust SDK for agentic stablecoin and fiat transactions. Technical details, integrations, pricing, and more.",
+    "Frequently asked questions about Kontext — the trust layer for agentic stablecoin and fiat payments. Cryptographic verifiable intent, auto-instrumentation, pricing, and more.",
 };
 
 const faqCategories = [
@@ -23,17 +23,22 @@ const faqCategories = [
       {
         question: "What is Kontext?",
         answer:
-          "Kontext is a TypeScript SDK that provides trust infrastructure for AI agents performing stablecoin and fiat transactions. It handles action logging, trust scoring, anomaly detection, and audit trail export so you can ship compliance-ready agentic workflows without building compliance tooling from scratch.",
+          "Kontext is the trust layer for agentic stablecoin and fiat payments. It provides cryptographic verifiable intent for org-wide payments — run npx kontext init, wrap your client in one line, and every stablecoin transfer gets OFAC screening, a tamper-evident audit trail, and a trust score automatically.",
       },
       {
         question: "Who is Kontext built for?",
         answer:
-          "Kontext is built for developers integrating AI agents with stablecoin and fiat payments — whether USDC on Base, Stripe payment intents, or any workflow where AI agents move money. Kontext provides the trust and compliance-support layer.",
+          "Developers and teams building autonomous agents that move money — USDC on Base, cross-chain CCTP transfers, Stripe payment intents, or any workflow where AI agents initiate payments. Kontext captures cryptographic proof that every payment was intended, screened, and logged across your entire organization.",
+      },
+      {
+        question: "What does 'verifiable intent' mean?",
+        answer:
+          "Verifiable intent means cryptographic proof that a payment was authorized, screened for sanctions, and logged before it happened. Kontext's patented digest chain links each action to the full history before it, creating tamper-evident evidence that compliance checks actually ran — not just a promise that they did.",
       },
       {
         question: "Is Kontext open source?",
         answer:
-          "Yes. The core SDK is fully open source under the MIT license with 20,000 events/month on the free tier. You can self-host the entire stack. Pro ($2/1K events above 20K free) adds all anomaly detection rules, unified screening, CSV export, multi-chain support (6 additional chains beyond Base and Arc), webhooks, and cloud persistence.",
+          "Yes. The core SDK is fully open source under the MIT license with 20,000 events/month on the free tier. You can self-host the entire stack. Pay as you go ($2/1K events above 20K free) adds all anomaly detection rules, unified screening, CSV export, multi-chain support, webhooks, and cloud persistence.",
       },
       {
         question: "What license does Kontext use?",
@@ -106,9 +111,14 @@ const faqCategories = [
           "Wallet clustering uses a Union-Find algorithm with 5 heuristics to detect wallets controlled by the same agent. The heuristics are: shared-owner (explicitly registered), temporal-correlation (wallets active in the same time windows), funding-chain (one wallet funds another), amount-pattern (matching transaction amounts across wallets), and network-overlap (shared counterparties). Each cluster includes evidence trails documenting why wallets were grouped.",
       },
       {
+        question: "How does auto-instrumentation work?",
+        answer:
+          "Run npx kontext init to generate a kontext.config.json with your wallets, tokens, chains, and compliance mode. Then wrap your viem client with withKontextCompliance(client, kontext) — one line. Two interception layers provide full coverage: the code wrap intercepts sendTransaction/writeContract calls on your client, and the chain listener watches your monitored wallets on-chain for all outgoing stablecoin transfers regardless of source (other scripts, wallet UIs, Circle dashboard, other agents). Deduplication is built in.",
+      },
+      {
         question: "What is the Kontext CLI?",
         answer:
-          "The Kontext CLI (@kontext-sdk/cli) provides 12 commands for compliance operations from the terminal: check (static compliance check), verify (full verification with digest chain), reason (log agent reasoning), cert (generate compliance certificates), audit (export audit trails), anchor (on-chain anchoring), attest (A2A attestation), sync (OFAC SDN list sync), session (manage agent sessions), checkpoint (create provenance checkpoints), and mcp (start MCP server for AI coding assistants). Install with npm install -g @kontext-sdk/cli or run via npx. Free tier.",
+          "The Kontext CLI (@kontext-sdk/cli) is the starting point for most developers. Run npx kontext init to set up your project with an interactive wizard. The CLI also provides commands for verify (full verification with digest chain), check (static compliance check), reason (log agent reasoning), cert (generate certificates), audit (export audit trails), anchor (on-chain anchoring), attest (A2A attestation), sync (OFAC SDN list sync), session/checkpoint (agent provenance), and mcp (MCP server for AI coding assistants).",
       },
       {
         question: "Do micropayments need compliance?",
@@ -123,27 +133,27 @@ const faqCategories = [
       {
         question: "How do I integrate Kontext with USDC transfers?",
         answer:
-          "Call ctx.verify() before executing any USDC transfer. Pass the amount, recipient, chain, and agent ID. Kontext returns a trust score and flag status. If the action is not flagged, proceed with the on-chain transfer using viem, ethers, or your preferred library. See the USDC integration guide in our docs for a complete example.",
+          "The recommended path: run npx kontext init, then wrap your viem client with withKontextCompliance(). Every USDC transfer is automatically verified. For explicit control, call ctx.verify() directly on individual transactions. Both approaches produce the same cryptographic audit trail.",
+      },
+      {
+        question: "Does auto-instrumentation work with any viem client?",
+        answer:
+          "Yes. withKontextCompliance() wraps any viem WalletClient. It intercepts sendTransaction and writeContract calls, detects stablecoin transfers by contract address and function selector, and runs verify() automatically. Non-stablecoin transactions pass through untouched with zero overhead.",
       },
       {
         question: "Does Kontext work with the x402 protocol?",
         answer:
-          "Yes. Kontext can be used as middleware in x402 HTTP-native payment flows. Intercept the x-402-payment header, run ctx.verify() against the payment details, and either allow or reject the request based on the trust score and flag status.",
+          "Yes. Auto-instrumentation catches x402 micropayments automatically when they flow through your wrapped viem client. For non-viem x402 flows, call ctx.verify() directly on the payment details.",
       },
       {
         question: "Can I use Kontext with Stripe?",
         answer:
-          "Yes. Verify agent-initiated payments with Kontext before creating Stripe payment intents. The Kontext audit ID can be attached to Stripe metadata for full end-to-end traceability between your compliance logs and payment records.",
+          "Yes. Call ctx.verify() on agent-initiated payments before creating Stripe payment intents. The Kontext audit ID can be attached to Stripe metadata for full end-to-end traceability between your compliance logs and payment records.",
       },
       {
         question: "Does Kontext work with LangChain, CrewAI, or AutoGen?",
         answer:
-          "Yes. Kontext is framework-agnostic — it works with any agent framework. The Vercel AI SDK has a first-class wrapper (kontextWrapModel). For LangChain, CrewAI, and AutoGen, use ctx.verify() and ctx.log() directly in your agent's tool calls or callbacks.",
-      },
-      {
-        question: "Can I use Kontext with any agent framework?",
-        answer:
-          "Absolutely. Kontext does not depend on any specific agent framework. It is a standalone SDK that you call at the points in your agent's execution where compliance matters — before financial actions, after completions, or at any decision point you want audited.",
+          "Yes. Kontext is framework-agnostic. The Vercel AI SDK has a first-class wrapper (kontextWrapModel). For LangChain, CrewAI, and AutoGen, use ctx.verify() and ctx.log() directly in your agent's tool calls or callbacks. Auto-instrumentation via withKontextCompliance() works regardless of framework.",
       },
     ],
   },
@@ -158,7 +168,7 @@ const faqCategories = [
       {
         question: "How does Kontext support GENIUS Act compliance efforts?",
         answer:
-          "Kontext provides technical infrastructure aligned with where stablecoin regulation is heading: immutable audit trails, transaction-level logging, risk scoring, and exportable compliance reports. It powers your compliance efforts but does not make you compliant on its own — it gives your compliance team the data and tooling they need.",
+          "Kontext provides cryptographic verifiable intent — proof that every payment was authorized, screened, and logged. The patented digest chain creates tamper-evident audit trails, OFAC screening runs on every transfer, and compliance certificates bundle the evidence your team needs. It powers your compliance efforts but does not make you compliant on its own.",
       },
       {
         question: "Is Kontext itself a certified compliance product?",
@@ -183,12 +193,12 @@ const faqCategories = [
       {
         question: "What is included in the free tier?",
         answer:
-          "The free tier includes the full SDK with 20,000 events/month, action logging, JSON export, basic anomaly detection (2 rules: unusual amount and frequency spike), trust scoring (local), digest chain verification, on-chain anchoring, A2A attestation, compliance certificates, and Base + Arc chain support. It is MIT-licensed and free forever.",
+          "The free tier includes auto-instrumentation (npx kontext init + withKontextCompliance), wallet monitoring, the full SDK with 20,000 events/month, action logging, JSON export, basic anomaly detection (2 rules), trust scoring, digest chain verification, on-chain anchoring, A2A attestation, compliance certificates, and Base + Arc chain support. MIT-licensed, free forever.",
       },
       {
-        question: "What does the Pro plan include?",
+        question: "What does Pay as you go include?",
         answer:
-          "Pro is usage-based at $2 per 1,000 events above the 20K free tier. No monthly minimum, no commitment. It includes everything in Free plus: all six anomaly detection rules, unified screening (OFAC, Chainalysis, OpenSanctions), custom blocklist/allowlist, CSV export, multi-chain support (6 additional chains beyond Base and Arc), webhook alerts, cloud persistence, and email support.",
+          "Pay as you go is $2 per 1,000 events above the 20K free tier. No monthly minimum, no commitment. It includes everything in Free plus: all six anomaly detection rules, unified screening (OFAC, Chainalysis, OpenSanctions), custom blocklist/allowlist, CSV export, multi-chain support (all 8 chains), webhook alerts, cloud persistence, and email support.",
       },
       {
         question: "Can I self-host the entire stack?",
