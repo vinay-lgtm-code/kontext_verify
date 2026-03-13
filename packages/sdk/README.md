@@ -231,6 +231,39 @@ const ctx = Kontext.init({
 // Call ctx.flush() to write, ctx.restore() to reload
 ```
 
+## Pluggable Sanctions Screening
+
+Multi-provider screening with consensus strategies. Bring your own API keys, or use the built-in OFAC SDN list at zero cost.
+
+```typescript
+import {
+  ScreeningAggregator,
+  OFACAddressProvider,
+  UKOFSIProvider,
+  OpenSanctionsProvider,
+  ChainalysisOracleProvider,
+} from 'kontext-sdk';
+
+const screener = new ScreeningAggregator({
+  providers: [
+    new OFACAddressProvider(),                             // built-in, no API key
+    new UKOFSIProvider(),                                  // built-in, no API key
+    new OpenSanctionsProvider({ apiKey: 'os_...' }),       // 331+ sources
+    new ChainalysisOracleProvider({ apiKey: 'ch_...' }),   // on-chain oracle
+  ],
+  consensus: 'ANY_MATCH',
+});
+
+const result = await screener.screenAddress('0x...');
+// result.flagged = true/false
+// result.matches = [{ provider, list, matchType, confidence, ... }]
+// result.providerResults = per-provider breakdown
+```
+
+**Built-in providers (no API key):** OFAC SDN addresses, UK OFSI addresses
+**API providers:** OpenSanctions (address + entity), Chainalysis Oracle (address), Chainalysis Free API (address)
+**Local providers:** OpenSanctions local dataset (download via `kontext sync`)
+
 ## Compliance Thresholds
 
 | Threshold | Amount | Trigger |
@@ -245,6 +278,7 @@ OFAC sanctions screening uses the built-in SDN list. No API key required.
 
 - Tamper-evident audit trail (patented digest chain)
 - OFAC sanctions screening (SDN list, no API key)
+- Pluggable multi-provider screening (OFAC, UK OFSI, OpenSanctions, Chainalysis)
 - Compliance certificates with SHA-256 proof
 - Agent reasoning logs
 - Trust scoring and anomaly detection
