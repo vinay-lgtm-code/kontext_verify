@@ -1,6 +1,6 @@
 {
   "name": "kontext-sdk",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Proof of compliance SDK for AI agents making agentic stablecoin and fiat payments. Tamper-evident digest chains, OFAC screening, compliance certificates.",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -52,7 +52,13 @@
     "agent-to-agent",
     "provenance",
     "agent-provenance",
-    "agent-forensics"
+    "agent-forensics",
+    "screening",
+    "sanctions",
+    "ofac-screening",
+    "uk-ofsi",
+    "opensanctions",
+    "chainalysis"
   ],
   "author": "Legaci Labs Inc.",
   "license": "MIT",

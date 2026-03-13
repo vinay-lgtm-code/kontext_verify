@@ -81,6 +81,17 @@ with Kontext(api_key="sk_...", project_id="my-agent") as ctx:
 | `evaluate_anomalies(amount, agent_id, ...)` | Evaluate transaction for anomalies |
 | `health()` | Check API health |
 
+## TypeScript SDK Features (server-side)
+
+The Python client wraps the Kontext REST API. The full TypeScript SDK (`kontext-sdk` on npm) includes:
+
+- Pluggable multi-provider sanctions screening (OFAC, UK OFSI, OpenSanctions, Chainalysis)
+- Tamper-evident digest chains (patented)
+- Agent provenance and session tracking
+- Compliance certificates with SHA-256 proof
+- Trust scoring and anomaly detection
+- MCP server mode for AI coding tools
+
 ## License
 
 MIT
