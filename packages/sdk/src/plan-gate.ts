@@ -22,7 +22,9 @@ export type GatedFeature =
   | 'unified-screening'
   | 'blocklist-manager'
   | 'kya-identity'
-  | 'kya-behavioral';
+  | 'kya-behavioral'
+  | 'coinbase-wallets'
+  | 'metamask-wallets';
 
 const FEATURE_MIN_PLAN: Record<GatedFeature, PlanTier> = {
   'advanced-anomaly-rules': 'pro',
@@ -41,6 +43,8 @@ const FEATURE_MIN_PLAN: Record<GatedFeature, PlanTier> = {
   'blocklist-manager': 'pro',
   'kya-identity': 'pro',
   'kya-behavioral': 'enterprise',
+  'coinbase-wallets': 'enterprise',
+  'metamask-wallets': 'enterprise',
 };
 
 const PLAN_RANK: Record<PlanTier, number> = { free: 0, pro: 1, enterprise: 2 };
@@ -62,6 +66,8 @@ const FEATURE_LABELS: Record<GatedFeature, string> = {
   'blocklist-manager': 'Custom blocklist/allowlist manager',
   'kya-identity': 'KYA identity resolution (declared identity, wallet clustering)',
   'kya-behavioral': 'KYA behavioral fingerprinting (cross-session linking, confidence scoring)',
+  'coinbase-wallets': 'Coinbase Developer Platform Wallets',
+  'metamask-wallets': 'MetaMask Embedded Wallets',
 };
 
 /**

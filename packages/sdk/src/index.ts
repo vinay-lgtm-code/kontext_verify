@@ -84,6 +84,36 @@ export type {
 
   // Wallet Monitoring
   WalletMonitoringConfig,
+
+  // Wallet Provider Configuration
+  WalletProviderType,
+  WalletProviderConfig,
+  WalletProviderNone,
+  WalletProviderCircle,
+  WalletProviderCoinbase,
+  WalletProviderMetaMask,
+  SecretsStorageConfig,
+
+  // Circle Wallet Types
+  CircleWalletConfig,
+  CreateWalletSetInput,
+  CircleWalletSet,
+  CreateWalletInput,
+  CircleWallet,
+  CircleTransferInput,
+  CircleTransferResult,
+
+  // Coinbase CDP Wallet Types
+  CoinbaseWalletConfig,
+  CoinbaseAccount,
+  CoinbaseTransferInput,
+  CoinbaseTransferResult,
+
+  // MetaMask Wallet Types
+  MetaMaskWalletConfig,
+  MetaMaskAccount,
+  MetaMaskTransferInput,
+  MetaMaskTransferResult,
 } from './types.js';
 
 // Feature Flags
@@ -220,6 +250,11 @@ export { STABLECOIN_CONTRACTS, CHAIN_ID_MAP } from './integrations/data/stableco
 
 // Config Loading
 export { loadConfigFile } from './config-loader.js';
+
+// Wallet Provider Managers
+export { CircleWalletManager } from './integrations/circle-wallets.js';
+export { CoinbaseWalletManager } from './integrations/coinbase-wallets.js';
+export { MetaMaskWalletManager } from './integrations/metamask-wallets.js';
 
 // Agent Forensics (KYA)
 export {

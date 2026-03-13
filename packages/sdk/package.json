@@ -1,6 +1,6 @@
 {
   "name": "kontext-sdk",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "Proof of compliance SDK for AI agents making agentic stablecoin and fiat payments. Tamper-evident digest chains, OFAC screening, compliance certificates.",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
