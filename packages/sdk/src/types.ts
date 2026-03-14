@@ -234,6 +234,13 @@ export interface KontextConfig {
    * - 'both': pre-send screening + post-send full verify
    */
   interceptorMode?: 'post-send' | 'pre-send' | 'both';
+
+  /**
+   * Wallet provider configuration. When provided, SDK initializes the
+   * corresponding wallet manager (Circle, Coinbase, or MetaMask) for
+   * compliance-wrapped wallet operations.
+   */
+  walletProvider?: WalletProviderConfig;
 }
 
 /** Screening configuration for pluggable multi-provider sanctions screening */
@@ -281,6 +288,173 @@ export interface WalletMonitoringConfig {
   rpcEndpoints: Partial<Record<Chain, string>>;
   /** Polling interval in ms for HTTP transports (default: 12000) */
   pollingIntervalMs?: number;
+}
+
+// ============================================================================
+// Wallet Provider Configuration
+// ============================================================================
+
+export type WalletProviderType = 'none' | 'circle' | 'coinbase' | 'metamask';
+
+export type WalletProviderConfig =
+  | WalletProviderNone
+  | WalletProviderCircle
+  | WalletProviderCoinbase
+  | WalletProviderMetaMask;
+
+export interface WalletProviderNone {
+  type: 'none';
+}
+
+export interface WalletProviderCircle {
+  type: 'circle';
+  apiKeyEnvVar: string;
+  entitySecretEnvVar: string;
+  circleEnvironment: 'sandbox' | 'production';
+  walletSetName?: string;
+  secretsStorage: SecretsStorageConfig;
+}
+
+export interface WalletProviderCoinbase {
+  type: 'coinbase';
+  apiKeyIdEnvVar: string;
+  apiKeySecretEnvVar: string;
+  walletSecretEnvVar: string;
+  cdpEnvironment: 'testnet' | 'mainnet';
+  secretsStorage: SecretsStorageConfig;
+}
+
+export interface WalletProviderMetaMask {
+  type: 'metamask';
+  clientIdEnvVar: string;
+  authConnectionId: string;
+  web3AuthNetwork: 'sapphire_mainnet' | 'sapphire_devnet';
+  secretsStorage: SecretsStorageConfig;
+}
+
+export type SecretsStorageConfig =
+  | { type: 'dotenv'; path: string }
+  | { type: 'file'; path: string }
+  | { type: 'gcp-secret-manager'; project: string }
+  | { type: 'aws-secrets-manager'; region: string }
+  | { type: 'hashicorp-vault'; address: string };
+
+// ============================================================================
+// Circle Wallet Manager Types
+// ============================================================================
+
+export interface CircleWalletConfig {
+  apiKey: string;
+  entitySecret: string;
+  baseUrl?: string;
+}
+
+export interface CreateWalletSetInput {
+  name: string;
+  idempotencyKey?: string;
+}
+
+export interface CircleWalletSet {
+  id: string;
+  name: string;
+  custodyType: string;
+  createDate: string;
+  updateDate: string;
+}
+
+export interface CreateWalletInput {
+  walletSetId: string;
+  blockchains: Chain[];
+  count?: number;
+  accountType?: 'EOA' | 'SCA';
+  idempotencyKey?: string;
+}
+
+export interface CircleWallet {
+  id: string;
+  state: string;
+  address: string;
+  blockchain: string;
+  walletSetId: string;
+  createDate: string;
+}
+
+export interface CircleTransferInput {
+  walletId: string;
+  tokenAddress: string;
+  destinationAddress: string;
+  amount: string;
+  blockchain: Chain;
+  agentId?: string;
+  idempotencyKey?: string;
+}
+
+export interface CircleTransferResult {
+  id: string;
+  state: string;
+  txHash?: string;
+  complianceResult?: VerifyResult;
+}
+
+// ============================================================================
+// Coinbase CDP Wallet Manager Types
+// ============================================================================
+
+export interface CoinbaseWalletConfig {
+  apiKeyId: string;
+  apiKeySecret: string;
+  walletSecret: string;
+}
+
+export interface CoinbaseAccount {
+  address: string;
+  name?: string;
+  network: string;
+}
+
+export interface CoinbaseTransferInput {
+  fromAddress: string;
+  toAddress: string;
+  amount: string;
+  token: Token;
+  network: string;
+  agentId?: string;
+}
+
+export interface CoinbaseTransferResult {
+  transactionHash: string;
+  status: string;
+  complianceResult?: VerifyResult;
+}
+
+// ============================================================================
+// MetaMask Embedded Wallet Manager Types
+// ============================================================================
+
+export interface MetaMaskWalletConfig {
+  clientId: string;
+  authConnectionId: string;
+  web3AuthNetwork: 'sapphire_mainnet' | 'sapphire_devnet';
+}
+
+export interface MetaMaskAccount {
+  address: string;
+  publicKey: string;
+}
+
+export interface MetaMaskTransferInput {
+  toAddress: string;
+  amount: string;
+  token: Token;
+  chain: Chain;
+  agentId?: string;
+  idToken: string;
+}
+
+export interface MetaMaskTransferResult {
+  transactionHash: string;
+  status: string;
+  complianceResult?: VerifyResult;
 }
 
 /**

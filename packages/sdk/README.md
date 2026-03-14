@@ -92,6 +92,32 @@ await ctx.logReasoning({
 });
 ```
 
+## On-chain anchoring
+
+Anchor your terminal digest on Base for tamper-evident proof that lives on-chain:
+
+```typescript
+import { anchorDigest, verifyAnchor } from 'kontext-sdk';
+
+const KONTEXT_ANCHOR_ADDRESS = '0x89725bc547c5e38f0c2a56758723514acf411a86';
+
+// Write digest on-chain (requires viem as peer dep)
+const result = await anchorDigest(
+  { rpcUrl: 'https://mainnet.base.org', contractAddress: KONTEXT_ANCHOR_ADDRESS, privateKey },
+  terminalDigest,
+  'my-project',
+);
+// result.txHash -- on-chain transaction
+
+// Verify (zero dependencies, raw JSON-RPC)
+const check = await verifyAnchor('https://mainnet.base.org', KONTEXT_ANCHOR_ADDRESS, digest);
+// check.anchored -- true/false
+```
+
+**KontextAnchor contract (Base mainnet, verified):** [`0x89725bc547c5e38f0c2a56758723514acf411a86`](https://basescan.org/address/0x89725bc547c5e38f0c2a56758723514acf411a86#code)
+
+**KontextAnchor contract (Base Sepolia):** [`0xbc711590bca89bf944cdfb811129f74d8fb75b46`](https://sepolia.basescan.org/address/0xbc711590bca89bf944cdfb811129f74d8fb75b46)
+
 ## MCP server
 
 ```json

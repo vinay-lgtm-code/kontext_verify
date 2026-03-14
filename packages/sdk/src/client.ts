@@ -39,6 +39,21 @@ import type {
   CreateCheckpointInput,
   HumanAttestation,
   ProvenanceBundle,
+  CircleWalletConfig,
+  CreateWalletSetInput,
+  CircleWalletSet,
+  CreateWalletInput,
+  CircleWallet,
+  CircleTransferInput,
+  CircleTransferResult,
+  CoinbaseWalletConfig,
+  CoinbaseAccount,
+  CoinbaseTransferInput,
+  CoinbaseTransferResult,
+  MetaMaskWalletConfig,
+  MetaMaskAccount,
+  MetaMaskTransferInput,
+  MetaMaskTransferResult,
 } from './types.js';
 import { TrustScorer } from './trust.js';
 import { AnomalyDetector } from './anomaly.js';
@@ -71,6 +86,9 @@ import {
   CrossSessionLinker,
   KYAConfidenceScorer,
 } from './kya/index.js';
+import { CircleWalletManager } from './integrations/circle-wallets.js';
+import { CoinbaseWalletManager } from './integrations/coinbase-wallets.js';
+import { MetaMaskWalletManager } from './integrations/metamask-wallets.js';
 import type {
   AgentIdentity,
   RegisterIdentityInput,
@@ -136,6 +154,9 @@ export class Kontext {
   private behavioralFingerprinter: BehavioralFingerprinter | null = null;
   private crossSessionLinker: CrossSessionLinker | null = null;
   private confidenceScorer: KYAConfidenceScorer | null = null;
+  private circleWalletManager: CircleWalletManager | null = null;
+  private coinbaseWalletManager: CoinbaseWalletManager | null = null;
+  private metamaskWalletManager: MetaMaskWalletManager | null = null;
 
   private constructor(config: KontextConfig) {
     this.config = config;
@@ -265,6 +286,7 @@ export class Kontext {
         apiKey: fileConfig.apiKey,
         agentId: fileConfig.agentId,
         interceptorMode: fileConfig.mode,
+        walletProvider: fileConfig.walletProvider,
         policy: {
           allowedTokens: fileConfig.tokens,
           corridors: fileConfig.corridors?.from
@@ -526,6 +548,72 @@ export class Kontext {
       this.confidenceScorer = new KYAConfidenceScorer();
     }
     return this.confidenceScorer;
+  }
+
+  /** Lazy-init CircleWalletManager from config.walletProvider */
+  private getCircleManager(): CircleWalletManager {
+    if (!this.circleWalletManager) {
+      const wp = this.config.walletProvider;
+      if (!wp || wp.type !== 'circle') {
+        throw new KontextError(
+          KontextErrorCode.INITIALIZATION_ERROR,
+          'Circle wallet provider not configured. Set walletProvider.type to "circle" in your config.',
+        );
+      }
+      const apiKey = process.env[wp.apiKeyEnvVar] ?? '';
+      const entitySecret = process.env[wp.entitySecretEnvVar] ?? '';
+      this.circleWalletManager = new CircleWalletManager({
+        apiKey,
+        entitySecret,
+        baseUrl: wp.circleEnvironment === 'sandbox' ? 'https://api.circle.com' : undefined,
+      });
+      this.circleWalletManager.setKontext(this);
+    }
+    return this.circleWalletManager;
+  }
+
+  /** Lazy-init CoinbaseWalletManager from config.walletProvider */
+  private getCoinbaseManager(): CoinbaseWalletManager {
+    if (!this.coinbaseWalletManager) {
+      const wp = this.config.walletProvider;
+      if (!wp || wp.type !== 'coinbase') {
+        throw new KontextError(
+          KontextErrorCode.INITIALIZATION_ERROR,
+          'Coinbase wallet provider not configured. Set walletProvider.type to "coinbase" in your config.',
+        );
+      }
+      const apiKeyId = process.env[wp.apiKeyIdEnvVar] ?? '';
+      const apiKeySecret = process.env[wp.apiKeySecretEnvVar] ?? '';
+      const walletSecret = process.env[wp.walletSecretEnvVar] ?? '';
+      this.coinbaseWalletManager = new CoinbaseWalletManager({
+        apiKeyId,
+        apiKeySecret,
+        walletSecret,
+      });
+      this.coinbaseWalletManager.setKontext(this);
+    }
+    return this.coinbaseWalletManager;
+  }
+
+  /** Lazy-init MetaMaskWalletManager from config.walletProvider */
+  private getMetaMaskManager(): MetaMaskWalletManager {
+    if (!this.metamaskWalletManager) {
+      const wp = this.config.walletProvider;
+      if (!wp || wp.type !== 'metamask') {
+        throw new KontextError(
+          KontextErrorCode.INITIALIZATION_ERROR,
+          'MetaMask wallet provider not configured. Set walletProvider.type to "metamask" in your config.',
+        );
+      }
+      const clientId = process.env[wp.clientIdEnvVar] ?? '';
+      this.metamaskWalletManager = new MetaMaskWalletManager({
+        clientId,
+        authConnectionId: wp.authConnectionId,
+        web3AuthNetwork: wp.web3AuthNetwork,
+      });
+      this.metamaskWalletManager.setKontext(this);
+    }
+    return this.metamaskWalletManager;
   }
 
   // --------------------------------------------------------------------------
@@ -1653,6 +1741,66 @@ export class Kontext {
    */
   getFeatureFlagManager(): FeatureFlagManager | null {
     return this.featureFlagManager;
+  }
+
+  // --------------------------------------------------------------------------
+  // Circle Programmable Wallets (Enterprise)
+  // --------------------------------------------------------------------------
+
+  /** Create a Circle wallet set. Enterprise plan required. */
+  async createCircleWalletSet(input: CreateWalletSetInput): Promise<CircleWalletSet> {
+    requirePlan('circle-wallets', this.planManager.getTier());
+    return this.getCircleManager().createWalletSet(input);
+  }
+
+  /** Create Circle wallet(s) in a wallet set. Enterprise plan required. */
+  async createCircleWallet(input: CreateWalletInput): Promise<CircleWallet[]> {
+    requirePlan('circle-wallets', this.planManager.getTier());
+    return this.getCircleManager().createWallet(input);
+  }
+
+  /** Transfer via Circle with auto-compliance. Enterprise plan required. */
+  async circleTransferWithCompliance(input: CircleTransferInput): Promise<CircleTransferResult> {
+    requirePlan('circle-wallets', this.planManager.getTier());
+    return this.getCircleManager().transferWithCompliance(input);
+  }
+
+  // --------------------------------------------------------------------------
+  // Coinbase Developer Platform Wallets (Enterprise)
+  // --------------------------------------------------------------------------
+
+  /** Create a Coinbase CDP account. Enterprise plan required. */
+  async createCoinbaseAccount(opts?: { name?: string; network?: string }): Promise<CoinbaseAccount> {
+    requirePlan('coinbase-wallets', this.planManager.getTier());
+    return this.getCoinbaseManager().createAccount(opts);
+  }
+
+  /** List Coinbase CDP accounts. Enterprise plan required. */
+  async listCoinbaseAccounts(): Promise<CoinbaseAccount[]> {
+    requirePlan('coinbase-wallets', this.planManager.getTier());
+    return this.getCoinbaseManager().listAccounts();
+  }
+
+  /** Transfer via Coinbase CDP with auto-compliance. Enterprise plan required. */
+  async coinbaseTransferWithCompliance(input: CoinbaseTransferInput): Promise<CoinbaseTransferResult> {
+    requirePlan('coinbase-wallets', this.planManager.getTier());
+    return this.getCoinbaseManager().transferWithCompliance(input);
+  }
+
+  // --------------------------------------------------------------------------
+  // MetaMask Embedded Wallets (Enterprise)
+  // --------------------------------------------------------------------------
+
+  /** Connect to MetaMask Embedded Wallet for a user. Enterprise plan required. */
+  async metamaskConnect(idToken: string): Promise<MetaMaskAccount> {
+    requirePlan('metamask-wallets', this.planManager.getTier());
+    return this.getMetaMaskManager().connect(idToken);
+  }
+
+  /** Transfer via MetaMask with auto-compliance. Enterprise plan required. */
+  async metamaskTransferWithCompliance(input: MetaMaskTransferInput): Promise<MetaMaskTransferResult> {
+    requirePlan('metamask-wallets', this.planManager.getTier());
+    return this.getMetaMaskManager().transferWithCompliance(input);
   }
 
   // --------------------------------------------------------------------------

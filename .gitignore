@@ -59,6 +59,8 @@ packages/sdk/src/webhooks.ts
 # packages/sdk/src/kya/ — un-ignored: needed for public SDK
 packages/sdk/src/integrations/cctp.ts
 packages/sdk/src/integrations/circle-wallets.ts
+packages/sdk/src/integrations/coinbase-wallets.ts
+packages/sdk/src/integrations/metamask-wallets.ts
 packages/sdk/src/integrations/circle-compliance.ts
 packages/sdk/src/integrations/gas-station.ts
 packages/sdk/src/integrations/cftc-compliance.ts
@@ -72,6 +74,8 @@ packages/sdk/tests/cctp.test.ts
 packages/sdk/tests/cftc-compliance.test.ts
 packages/sdk/tests/circle-compliance.test.ts
 packages/sdk/tests/circle-wallets.test.ts
+packages/sdk/tests/coinbase-wallets.test.ts
+packages/sdk/tests/metamask-wallets.test.ts
 packages/sdk/tests/e2e-vercel-ai.test.ts
 packages/sdk/tests/gas-station.test.ts
 packages/sdk/tests/integrations.test.ts

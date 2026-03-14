@@ -5,7 +5,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import type { Chain, Token, Environment } from './types.js';
+import type { Chain, Token, Environment, WalletProviderConfig } from './types.js';
 
 const CONFIG_FILENAME = 'kontext.config.json';
 
@@ -29,6 +29,7 @@ export interface KontextConfigFile {
     ctrAmount?: string;
   };
   apiKey?: string;
+  walletProvider?: WalletProviderConfig;
 }
 
 /**

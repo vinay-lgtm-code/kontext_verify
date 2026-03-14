@@ -1,0 +1,18 @@
+{
+  "$schema": "https://getkontext.com/schema/config.json",
+  "projectId": "usdc from legaci labs",
+  "agentId": "usdc test",
+  "environment": "development",
+  "wallets": [],
+  "tokens": [
+    "USDC"
+  ],
+  "chains": [
+    "base"
+  ],
+  "mode": "pre-send",
+  "corridors": {
+    "from": "usa",
+    "to": "argentina"
+  }
+}

@@ -1,12 +1,11 @@
 // ============================================================================
-// Deploy KontextAnchor to Base Sepolia (TESTNET ONLY)
-// Usage: npx tsx contracts/deploy.ts
-// Requires PRIVATE_KEY env var (0x-prefixed)
-// For mainnet: use contracts/deploy-mainnet.ts
+// Deploy KontextAnchor to Base Mainnet
+// Usage: npx tsx contracts/deploy-mainnet.ts
+// Requires PRIVATE_KEY env var (0x-prefixed) with Base mainnet ETH
 // ============================================================================
 
 import { createWalletClient, createPublicClient, http } from 'viem';
-import { baseSepolia } from 'viem/chains';
+import { base } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 
 const BYTECODE = '0x6080604052348015600e575f5ffd5b5061033b8061001c5f395ff3fe608060405234801561000f575f5ffd5b506004361061004a575f3560e01c806375e366161461004e5780637feb51d914610088578063a21f3c6a146100c0578063b01b6d53146100d5575b5f5ffd5b61007361005c3660046102ce565b5f9081526020819052604090206003015460ff1690565b60405190151581526020015b60405180910390f35b61009b6100963660046102ce565b610142565b604080516001600160a01b03909416845260208401929092529082015260600161007f565b6100d36100ce3660046102e5565b6101c5565b005b6101166100e33660046102ce565b5f6020819052908152604090208054600182015460028301546003909301546001600160a01b0390921692909160ff1684565b604080516001600160a01b0390951685526020850193909352918301521515606082015260800161007f565b5f818152602081905260408120600301548190819060ff1661019a5760405162461bcd60e51b815260206004820152600c60248201526b1b9bdd08185b98da1bdc995960a21b60448201526064015b60405180910390fd5b5050505f908152602081905260409020805460018201546002909201546001600160a01b0390911692565b5f8281526020819052604090206003015460ff16156102265760405162461bcd60e51b815260206004820152601760248201527f64696765737420616c726561647920616e63686f7265640000000000000000006044820152606401610191565b60408051608081018252338082526020808301858152428486018181526001606087018181525f8b8152808752899020975188546001600160a01b0319166001600160a01b0390911617885593519087015551600286015590516003909401805460ff191694151594909417909355925191825291839185917f45a364e8085dcccc0574a7261914db6b16b5faf6dfbf8917acdff9a5164f5943910160405180910390a45050565b5f602082840312156102de575f5ffd5b5035919050565b5f5f604083850312156102f6575f5ffd5b5050803592602090910135915056fea2646970667358221220bff92cf9b470fd65ef6bfbae18c37388b9f7352911c3da416a833d70be48b3e964736f6c63430008220033' as const;
@@ -60,16 +59,17 @@ async function main() {
   }
 
   const account = privateKeyToAccount(privateKey as `0x${string}`);
-  console.log(`Deploying from: ${account.address}`);
+  console.log(`Deploying KontextAnchor to Base Mainnet`);
+  console.log(`Deployer: ${account.address}`);
 
   const publicClient = createPublicClient({
-    chain: baseSepolia,
+    chain: base,
     transport: http(),
   });
 
   const walletClient = createWalletClient({
     account,
-    chain: baseSepolia,
+    chain: base,
     transport: http(),
   });
 
@@ -78,12 +78,12 @@ async function main() {
   console.log(`Balance: ${Number(balance) / 1e18} ETH`);
 
   if (balance === 0n) {
-    console.error('No ETH on Base Sepolia. Get some from https://www.alchemy.com/faucets/base-sepolia');
+    console.error('No ETH on Base mainnet. Bridge ETH from Ethereum via https://bridge.base.org');
     process.exit(1);
   }
 
   // Deploy
-  console.log('Deploying KontextAnchor to Base Sepolia...');
+  console.log('\nDeploying...');
   const hash = await walletClient.deployContract({
     abi: ABI,
     bytecode: BYTECODE,
@@ -99,7 +99,11 @@ async function main() {
   console.log(`Block:    ${receipt.blockNumber}`);
   console.log(`Gas used: ${receipt.gasUsed}`);
   console.log(`\nVerify on Basescan:`);
-  console.log(`https://sepolia.basescan.org/address/${receipt.contractAddress}`);
+  console.log(`https://basescan.org/address/${receipt.contractAddress}`);
+  console.log(`\nNext steps:`);
+  console.log(`  1. Update packages/sdk/README.md with the contract address`);
+  console.log(`  2. Update apps/web/src/app/docs/page.tsx onChainAnchoringCode`);
+  console.log(`  3. Verify source on Basescan`);
 }
 
 main().catch((err) => {
