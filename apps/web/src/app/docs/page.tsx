@@ -300,8 +300,8 @@ const result = await ctx.verify({
   to: '0xrecipient...',
   agentId: 'payment-agent-v2',
   anchor: {
-    rpcUrl: 'https://base-mainnet.g.alchemy.com/v2/YOUR_KEY',
-    contractAddress: '0xYourAnchorContract',
+    rpcUrl: 'https://mainnet.base.org',
+    contractAddress: process.env.KONTEXT_ANCHOR_ADDRESS,
     privateKey: process.env.ANCHOR_PRIVATE_KEY,
   },
 });
@@ -743,8 +743,11 @@ kontext cert --agent payment-agent-v2 --format json
 # Export audit trail
 kontext audit --format json --output ./audit-trail.json
 
-# Anchor digest on-chain
-kontext anchor --rpc https://mainnet.base.org --contract 0xbc71...b46
+# Anchor digest on-chain (Base mainnet)
+kontext anchor --rpc https://mainnet.base.org --contract 0x8972...a86
+
+# Anchor digest on-chain (Base Sepolia testnet)
+kontext anchor --rpc https://sepolia.base.org --contract 0xbc71...b46
 
 # Exchange A2A attestation
 kontext attest --endpoint https://counterparty.example.com
@@ -832,6 +835,7 @@ const sidebarSections = [
     items: [
       { id: "cli-install", label: "Installation" },
       { id: "cli-commands", label: "Commands" },
+      { id: "cli-init", label: "Interactive Setup" },
       { id: "cli-mcp", label: "MCP Server" },
     ],
   },
@@ -1192,6 +1196,31 @@ export default function DocsPage() {
                 ABI-encoded RPC calls. The <code>anchorDigest()</code> write function
                 requires <code>viem</code> as a peer dependency.
               </p>
+              <h3 className="mt-6">Deployed contracts</h3>
+              <ul className="list-disc pl-6 space-y-1">
+                <li>
+                  <strong>Base mainnet (verified):</strong>{" "}
+                  <a
+                    href="https://basescan.org/address/0x89725bc547c5e38f0c2a56758723514acf411a86#code"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline font-mono text-sm"
+                  >
+                    0x89725bc547c5e38f0c2a56758723514acf411a86
+                  </a>
+                </li>
+                <li>
+                  <strong>Base Sepolia (testnet):</strong>{" "}
+                  <a
+                    href="https://sepolia.basescan.org/address/0xbc711590bca89bf944cdfb811129f74d8fb75b46"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline font-mono text-sm"
+                  >
+                    0xbc711590bca89bf944cdfb811129f74d8fb75b46
+                  </a>
+                </li>
+              </ul>
             </section>
 
             <Separator className="my-12" />
@@ -1487,6 +1516,49 @@ npx kontext-sdk checkpoint list --session <sessionId>`}
                 language="bash"
                 filename="Terminal"
               />
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* CLI Interactive Setup */}
+            <section id="cli-init">
+              <h2>Interactive Setup</h2>
+              <p>
+                The <code>kontext init</code> wizard requires an interactive terminal.
+                It walks you through project configuration, wallet provider credentials,
+                API key scope guidance, credential validation, and secret storage —
+                decisions that involve security settings requiring human review.
+              </p>
+              <h3>What the wizard configures</h3>
+              <ul className="list-disc pl-6 space-y-1">
+                <li>Project name and agent ID</li>
+                <li>Chain selection (Base, Ethereum, Polygon, Arbitrum, Optimism, Avalanche)</li>
+                <li>Token selection (USDC, USDT, DAI, EURC)</li>
+                <li>Compliance mode (post-send, pre-send, both)</li>
+                <li>Wallet provider (Circle, Coinbase CDP, MetaMask) with credential guidance</li>
+                <li>Secret storage (.env, GCP Secret Manager, AWS Secrets Manager, Vault)</li>
+              </ul>
+              <h3 className="mt-6">Config template</h3>
+              <p>
+                To preview the config schema without running the wizard, use{" "}
+                <code>--json</code>. This prints a starter template to stdout
+                without writing to disk:
+              </p>
+              <CodeBlock
+                code={`kontext init --json`}
+                language="bash"
+                filename="Terminal"
+              />
+              <h3 className="mt-6">For AI agents</h3>
+              <p>
+                Agents interacting with Kontext use the{" "}
+                <a href="#cli-mcp" className="underline">MCP server</a> (<code>kontext mcp</code>),
+                which exposes compliance tools (verify, check, reason, cert, audit,
+                trust, anchor). The MCP server assumes <code>kontext init</code> has
+                already been run by a human in an interactive terminal. If an agent
+                detects that initialization is needed, it should instruct the developer
+                to run <code>kontext init</code> in their terminal.
+              </p>
             </section>
 
             <Separator className="my-12" />

@@ -331,8 +331,8 @@ const result = await ctx.verify({
   to: '0xSupplier...789',
   agentId: 'procurement-agent-v1',
   anchor: {
-    rpcUrl: 'https://mainnet.base.org',
-    contractAddress: '0xbc711590bca89bf944cdfb811129f74d8fb75b46',
+    rpcUrl: process.env.BASE_RPC_URL,
+    contractAddress: process.env.KONTEXT_ANCHOR_ADDRESS,
   },
 });
 
@@ -341,8 +341,8 @@ console.log(result.anchorProof?.blockNumber); // block number
 
 // Anyone can verify -- read-only, no Kontext account needed
 const verified = await verifyAnchor(
-  'https://mainnet.base.org',
-  '0xbc71...b46',
+  process.env.BASE_RPC_URL,
+  process.env.KONTEXT_ANCHOR_ADDRESS,
   result.digestProof.terminalDigest
 );
 console.log(verified); // true`}

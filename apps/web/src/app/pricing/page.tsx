@@ -41,14 +41,14 @@ const plans = [
       "Base + Arc chain support",
       "Agent reasoning logs",
       "Compliance certificates",
-      "On-chain anchoring",
+      "On-chain anchoring (verified Base mainnet contract)",
       "A2A attestation",
       "Kontext CLI (12 commands)",
       "Community support via GitHub",
     ],
   },
   {
-    name: "Pro",
+    name: "Pay as you go",
     price: "$0.002",
     priceDetail: "per event above 20K",
     description:
@@ -136,7 +136,8 @@ export default function PricingPage() {
               PRICING
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
-              The core SDK is open-source and free for up to 20K events a month.
+              The core SDK is open-source and free for up to 20K events a month —
+              including on-chain anchoring on Base mainnet.
               Pay only for what you use beyond that.
             </p>
           </div>

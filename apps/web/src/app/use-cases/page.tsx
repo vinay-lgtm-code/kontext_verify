@@ -199,7 +199,7 @@ const result = await ctx.verify({
   reasoning: 'Monthly vendor payment, pre-approved in budget cycle',
   anchor: {
     rpcUrl: process.env.BASE_RPC_URL,
-    contractAddress: '0xKontextAnchor...abc',
+    contractAddress: process.env.KONTEXT_ANCHOR_ADDRESS,
     privateKey: process.env.ANCHOR_SIGNER_KEY,
   },
 });
@@ -217,7 +217,7 @@ if (result.anchorProof) {
 import { verifyAnchor } from 'kontext-sdk';
 const verification = await verifyAnchor(
   process.env.BASE_RPC_URL,
-  '0xKontextAnchor...abc',
+  process.env.KONTEXT_ANCHOR_ADDRESS,
   result.anchorProof.digest,
 );
 console.log('Anchor verified:', verification.anchored); // true`;

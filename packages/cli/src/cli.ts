@@ -91,6 +91,11 @@ Usage: kontext <command> [options]
 
 Commands:
   init                Interactive project setup wizard
+                        Configures: project, chains, tokens, compliance mode,
+                        wallet provider (Circle/Coinbase/MetaMask), secrets storage
+                        Requires an interactive terminal (TTY)
+                        --force                   Re-run wizard on existing config
+                        --json                    Print starter config template
   check <addr> [<to>]  Stateless OFAC + threshold compliance check
   verify              Log transaction + compliance check + digest proof
   reason <text>       Log agent reasoning into digest chain
@@ -153,7 +158,7 @@ async function main(): Promise<void> {
   switch (command) {
     case 'init': {
       const { runInit } = await import('./commands/init.js');
-      await runInit({ json });
+      await runInit({ json, force: boolFlag(flags, 'force') });
       break;
     }
 

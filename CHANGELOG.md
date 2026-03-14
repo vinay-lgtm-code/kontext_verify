@@ -2,6 +2,74 @@
 
 All notable public changes to the Kontext SDK and platform are documented here.
 
+## [0.11.0] - 2026-03-12
+
+### Added
+- Wallet provider configuration for Circle Programmable Wallets, Coinbase Developer Platform (CDP), and MetaMask Embedded Wallets
+- `CircleWalletManager`, `CoinbaseWalletManager`, `MetaMaskWalletManager` classes (enterprise-gated)
+- CLI wizard prompts for wallet provider setup with API key scope guidance, credential validation, and secrets storage (`.env`, GCP Secret Manager, AWS Secrets Manager, HashiCorp Vault)
+- Plan gating for `coinbase-wallets` and `metamask-wallets` features
+
+## [0.10.0] - 2026-03-08
+
+### Added
+- CLI-first onboarding via `npx kontext init` interactive wizard
+- `kontext.config.json` configuration file for zero-arg `Kontext.init()`
+- Hybrid viem auto-instrumentation: `withKontextCompliance()` wraps `sendTransaction`/`writeContract`
+- On-chain wallet monitoring via `WalletMonitor` for ERC-20 Transfer events
+- `ConfigLoader` for walking directory tree to find config files
+
+### Changed
+- README rewritten with trust layer positioning and CLI-first onboarding flow
+
+## [0.9.0] - 2026-03-04
+
+### Added
+- Pluggable sanctions screening architecture with `ScreeningProvider` interface
+- `ScreeningAggregator` for multi-provider consensus screening
+- `OFACAddressProvider` (built-in, free), `OpenSanctionsProvider`, `ChainalysisFreeAPIProvider`
+- `TreasurySDNProvider` for Treasury SDN list sync
+- `ScreeningNotificationManager` for webhook/SMTP alerts on flagged addresses
+- Website redesign: split-view hero, interactive playground, airport flipboard currency effect
+
+## [0.8.0] - 2026-03-01
+
+### Added
+- ERC-8021 transaction attribution integration for builder identification
+- Agent forensics SDK wiring: identity registry, wallet clustering, behavioral fingerprint, cross-session linker, confidence scorer
+- Terminal Noir website redesign with unified dark aesthetic
+
+## [0.7.0] - 2026-02-27
+
+### Added
+- On-chain digest anchoring on Base via `anchorDigest()`, `verifyAnchor()`, `getAnchor()`
+- `KontextAnchor` Solidity contract deployed to Base Sepolia
+- `OnChainExporter` for automatic digest anchoring at batch boundaries
+- A2A compliance attestation exchange via `exchangeAttestation()`
+- Agent provenance with delegated sessions and checkpoints
+- CLI extracted into standalone `@kontext-sdk/cli` package
+- Python thin client wrapping Kontext REST API
+
+## [0.6.0] - 2026-02-24
+
+### Added
+- KYA module: agent identity registry, wallet clustering, behavioral fingerprint, cross-session linking, confidence scoring (enterprise-gated, feature-flagged)
+- `TreasurySDNProvider` for built-in OFAC SDN screening
+- Screening notification manager for compliance alerts
+
+### Fixed
+- CI pipeline fixes: public repo sync, server/SDK builds for free-tier CI, TypeScript alignment
+
+## [0.5.0] - 2026-02-20
+
+### Added
+- Standalone `@kontext-sdk/cli` package with `check`, `verify`, `reason`, `cert`, `audit`, `sync`, `mcp` commands
+- MCP server exposing compliance tools for AI coding assistants (Claude Code, Cursor, Windsurf)
+- Custom blocklist/allowlist manager (pro-gated)
+
+### Fixed
+- CI/CD: npm provenance, CodeQL workflow, sync-public credential handling
+
 ## [0.4.0] - 2026-02-18
 
 ### Added

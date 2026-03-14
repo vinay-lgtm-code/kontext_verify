@@ -129,25 +129,15 @@ function writeEnvFile(envPath: string, secrets: Record<string, string>): void {
 // Main
 // ---------------------------------------------------------------------------
 
-export async function runInit(opts: { json: boolean }): Promise<void> {
+export async function runInit(opts: { json: boolean; force?: boolean }): Promise<void> {
   const configPath = path.join(process.cwd(), 'kontext.config.json');
 
-  if (fs.existsSync(configPath)) {
-    if (!opts.json) {
-      process.stdout.write('\n  kontext.config.json already exists in this directory.\n');
-      process.stdout.write('  Delete it first to re-initialize.\n\n');
-    } else {
-      process.stdout.write(JSON.stringify({ error: 'kontext.config.json already exists' }) + '\n');
-    }
-    return;
-  }
-
+  // --json: print starter config template to stdout (works from any context)
   if (opts.json) {
-    // Non-interactive mode: output a template
     const template = {
       $schema: 'https://getkontext.com/schema/config.json',
       projectId: 'my-project',
-      agentId: 'my-agent',
+      agentId: 'my-project-agent',
       environment: 'production',
       wallets: [],
       tokens: ['USDC'],
@@ -156,8 +146,36 @@ export async function runInit(opts: { json: boolean }): Promise<void> {
       mode: 'post-send',
       walletProvider: { type: 'none' },
     };
-    fs.writeFileSync(configPath, JSON.stringify(template, null, 2) + '\n');
-    process.stdout.write(JSON.stringify({ created: configPath, config: template }) + '\n');
+    process.stdout.write(JSON.stringify({ template }, null, 2) + '\n');
+    return;
+  }
+
+  // Existing config check
+  if (fs.existsSync(configPath)) {
+    if (opts.force) {
+      fs.unlinkSync(configPath);
+    } else {
+      process.stdout.write('\n  kontext.config.json already exists in this directory.\n');
+      process.stdout.write('  Delete it first or use --force to re-initialize.\n\n');
+      return;
+    }
+  }
+
+  // Interactive terminal required
+  if (!process.stdin.isTTY) {
+    process.stdout.write('\n');
+    process.stdout.write('  Kontext requires interactive mode for project initialization.\n\n');
+    process.stdout.write('  The setup wizard walks you through:\n');
+    process.stdout.write('    - Project name and agent ID\n');
+    process.stdout.write('    - Chain and token selection\n');
+    process.stdout.write('    - Compliance mode (post-send / pre-send / both)\n');
+    process.stdout.write('    - Wallet provider setup (Circle, Coinbase, MetaMask)\n');
+    process.stdout.write('    - API key scope guidance and credential validation\n');
+    process.stdout.write('    - Secret storage location (.env, GCP, AWS, Vault)\n\n');
+    process.stdout.write('  These decisions involve credentials and security settings\n');
+    process.stdout.write('  that require human review.\n\n');
+    process.stdout.write('  To start:  run `kontext init` in an interactive terminal.\n');
+    process.stdout.write('  To preview config schema:  run `kontext init --json`.\n\n');
     return;
   }
 

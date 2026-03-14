@@ -58,6 +58,19 @@ export default function HomePage() {
               OFAC screening, audit trail, and trust score — automatically.
             </p>
 
+            <p className="mt-3 text-xs text-[var(--term-text-3)]">
+              Tamper-evident digests anchored on{" "}
+              <a
+                href="https://basescan.org/address/0x89725bc547c5e38f0c2a56758723514acf411a86#code"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline text-[var(--term-text-2)] hover:text-[var(--term-text)]"
+              >
+                verified Base mainnet contract
+              </a>
+              {" "}— view source and verify anchors live on Basescan.
+            </p>
+
             {/* Split: code + playground */}
             <div className="mt-8 grid gap-6 lg:grid-cols-12">
               {/* Left: Code snippet + install */}
@@ -373,6 +386,7 @@ fetchAgentCard()
                 <li>No credit card required</li>
                 <li>OFAC screening</li>
                 <li>Digest chain</li>
+                <li>On-chain anchoring (Base mainnet)</li>
                 <li>Trust scoring</li>
                 <li>JSON audit export</li>
                 <li>Human-in-the-loop tasks</li>
