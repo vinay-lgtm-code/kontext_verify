@@ -206,6 +206,10 @@ export { UKOFSIProvider } from './integrations/provider-uk-ofsi.js';
 export { OpenSanctionsLocalProvider } from './integrations/provider-opensanctions-local.js';
 export { OpenSanctionsProvider, ChainalysisFreeAPIProvider } from './integrations/provider-apis.js';
 export { ChainalysisOracleProvider } from './integrations/provider-ofac.js';
+export { KontextCloudScreeningProvider } from './integrations/provider-kontext-cloud.js';
+export type { KontextCloudScreeningConfig } from './integrations/provider-kontext-cloud.js';
+export { TRMLabsProvider } from './integrations/provider-trm.js';
+export type { TRMLabsConfig } from './integrations/provider-trm.js';
 
 // Screening Aggregator
 export { ScreeningAggregator } from './integrations/screening-aggregator.js';
