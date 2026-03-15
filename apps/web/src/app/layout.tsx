@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import { Fira_Code } from "next/font/google";
-import { Navbar } from "@/components/navbar";
-import { Footer } from "@/components/footer";
 import "./globals.css";
 
 const firaCode = Fira_Code({
@@ -157,9 +155,7 @@ export default function RootLayout({
         ))}
       </head>
       <body className="min-h-screen bg-background font-mono antialiased">
-        <Navbar />
-        <main>{children}</main>
-        <Footer />
+        {children}
       </body>
     </html>
   );

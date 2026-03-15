@@ -1,0 +1,3024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kontext — Compliance Infrastructure for AI Agent Payments</title>
+<meta name="description" content="Kontext provides tamper-evident audit trails, OFAC screening, and cryptographic proof of authorization for every autonomous stablecoin payment. GENIUS Act ready.">
+<meta property="og:title" content="Kontext — Compliance Infrastructure for AI Agent Payments">
+<meta property="og:description" content="Tamper-evident audit trails and cryptographic proof for every AI agent payment. GENIUS Act compliance deadline: November 2026.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://getkontext.com">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%233b6ef8'/><text x='16' y='22' text-anchor='middle' fill='white' font-family='Georgia' font-size='18' font-style='italic'>K</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Root ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:          #07080b;
+  --surface:     #0d1018;
+  --surface-2:   #131825;
+  --surface-3:   #1a2030;
+  --border:      #1c2540;
+  --border-dim:  #131a30;
+  --text:        #dde4f5;
+  --text-muted:  #5a6885;
+  --text-dim:    #4a5572;
+  --accent:      #3b6ef8;
+  --accent-dim:  rgba(59,110,248,0.1);
+  --accent-glow: rgba(59,110,248,0.22);
+  --green:       #22c55e;
+  --green-dim:   rgba(34,197,94,0.1);
+  --amber:       #f59e0b;
+  --red:         #ef4444;
+  --serif:       'Instrument Serif', Georgia, serif;
+  --mono:        'IBM Plex Mono', monospace;
+  --sans:        'DM Sans', system-ui, sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Grid Background ──────────────────────────────────────────────────────── */
+.grid-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(var(--border-dim) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border-dim) 1px, transparent 1px);
+  background-size: 60px 60px;
+  opacity: 0.4;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 0%, black 30%, transparent 100%);
+}
+
+/* ── Navigation ──────────────────────────────────────────────────────────── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 48px;
+  height: 60px;
+  background: rgba(7,8,11,0.6);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.3s;
+}
+
+nav.scrolled { border-bottom-color: var(--border); }
+
+.nav-logo {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 22px;
+  color: var(--accent);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.15s;
+  letter-spacing: 0.01em;
+}
+
+.nav-links a:hover { color: var(--text); }
+
+.nav-cta {
+  background: var(--accent);
+  color: #fff !important;
+  padding: 7px 18px;
+  border-radius: 5px;
+  font-weight: 500;
+  font-size: 13px !important;
+  transition: background 0.15s !important;
+}
+
+.nav-cta:hover { background: #2d5ee8 !important; }
+
+/* Hamburger */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 4px;
+}
+
+.hamburger span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: var(--text-muted);
+  transition: all 0.2s;
+}
+
+.mobile-menu {
+  display: none;
+  position: fixed;
+  top: 60px; left: 0; right: 0;
+  background: rgba(7,8,11,0.95);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 24px;
+  z-index: 999;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mobile-menu.open { display: flex; }
+
+.mobile-menu a {
+  font-size: 15px;
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 8px 0;
+  transition: color 0.15s;
+}
+
+.mobile-menu a:hover { color: var(--text); }
+
+/* ── Hero ─────────────────────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120px 48px 80px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.hero-glow {
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 800px; height: 400px;
+  background: radial-gradient(ellipse at top, rgba(59,110,248,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-deadline {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--red);
+  margin-bottom: 28px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: fadeUp 0.6s ease both;
+  padding: 6px 16px;
+  border: 1px solid rgba(239,68,68,0.25);
+  border-radius: 20px;
+  background: rgba(239,68,68,0.06);
+}
+
+.hero-deadline-dot {
+  width: 6px; height: 6px;
+  background: var(--red);
+  border-radius: 50%;
+  animation: pulse-red 2s ease-in-out infinite;
+}
+
+@keyframes pulse-red {
+  0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+  50%      { box-shadow: 0 0 0 5px rgba(239,68,68,0); }
+}
+
+.hero-headline {
+  font-family: var(--serif);
+  font-size: clamp(40px, 5.5vw, 72px);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: var(--text);
+  max-width: 820px;
+  margin-bottom: 28px;
+  animation: fadeUp 0.6s 0.1s ease both;
+}
+
+.hero-headline em {
+  font-style: italic;
+  color: var(--accent);
+  background: linear-gradient(135deg, #3b6ef8, #7b9fff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-sub {
+  font-size: 18px;
+  line-height: 1.65;
+  color: var(--text-muted);
+  max-width: 580px;
+  margin-bottom: 40px;
+  font-weight: 400;
+  animation: fadeUp 0.6s 0.2s ease both;
+}
+
+.hero-ctas {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 48px;
+  animation: fadeUp 0.6s 0.3s ease both;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  padding: 13px 28px;
+  border-radius: 6px;
+  font-size: 14.5px;
+  font-weight: 500;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.01em;
+}
+
+.btn-primary:hover {
+  background: #2d5ee8;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(59,110,248,0.3);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  padding: 13px 28px;
+  border-radius: 6px;
+  font-size: 14.5px;
+  font-weight: 400;
+  text-decoration: none;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-ghost:hover {
+  border-color: var(--text-muted);
+  color: var(--text);
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Trust Strip ──────────────────────────────────────────────────────────── */
+.trust-strip {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  padding: 40px 48px;
+  border-top: 1px solid var(--border-dim);
+  border-bottom: 1px solid var(--border-dim);
+  flex-wrap: wrap;
+}
+
+.trust-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.trust-icon {
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+.trust-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+}
+
+/* ── Section Base ─────────────────────────────────────────────────────────── */
+.section {
+  position: relative;
+  z-index: 1;
+  padding: 120px 48px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 20px;
+}
+
+.section-headline {
+  font-family: var(--serif);
+  font-size: clamp(30px, 3.5vw, 48px);
+  font-weight: 400;
+  line-height: 1.15;
+  color: var(--text);
+  margin-bottom: 16px;
+  letter-spacing: -0.02em;
+  max-width: 700px;
+}
+
+.section-sub {
+  font-size: 17px;
+  color: var(--text-muted);
+  max-width: 540px;
+  margin-bottom: 60px;
+  font-weight: 400;
+  line-height: 1.65;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid var(--border-dim);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ── Before/After Scenario ─────────────────────────────────────────────────── */
+.scenario-section {
+  position: relative;
+  z-index: 1;
+  padding: 120px 48px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.scenario-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 60px;
+}
+
+.scenario-card {
+  border-radius: 10px;
+  padding: 36px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.scenario-card.before {
+  background: rgba(239,68,68,0.04);
+  border: 1px solid rgba(239,68,68,0.15);
+}
+
+.scenario-card.after {
+  background: rgba(34,197,94,0.04);
+  border: 1px solid rgba(34,197,94,0.15);
+}
+
+.scenario-card-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.scenario-card.before .scenario-card-label { color: var(--red); }
+.scenario-card.after .scenario-card-label { color: var(--green); }
+
+.scenario-card-title {
+  font-family: var(--serif);
+  font-size: 22px;
+  color: var(--text);
+}
+
+.scenario-card-body {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.75;
+  font-weight: 400;
+}
+
+.scenario-card-body strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.scenario-step {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.scenario-step-num {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.scenario-result {
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-top: 8px;
+}
+
+.scenario-card.before .scenario-result {
+  background: rgba(239,68,68,0.06);
+  color: var(--red);
+  border: 1px solid rgba(239,68,68,0.12);
+}
+
+.scenario-card.after .scenario-result {
+  background: rgba(34,197,94,0.06);
+  color: var(--green);
+  border: 1px solid rgba(34,197,94,0.12);
+}
+
+/* ── Demo Animation (With Kontext) ────────────────────────────────────────── */
+.demo-anim {
+  background: var(--surface);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  margin-top: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.demo-anim-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border-dim);
+}
+
+.demo-anim-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+.demo-anim-url {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.demo-anim-feed {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-dim);
+}
+
+.demo-anim-row {
+  display: grid;
+  grid-template-columns: 1.2fr 0.6fr 0.7fr 0.6fr;
+  gap: 8px;
+  padding: 6px 0;
+  color: var(--text-muted);
+  font-size: 10px;
+  border-radius: 4px;
+  transition: background 0.4s, box-shadow 0.4s;
+}
+
+.demo-anim-row.highlight {
+  background: rgba(245,158,11,0.08);
+  box-shadow: inset 0 0 0 1px rgba(245,158,11,0.2);
+  padding: 6px 8px;
+}
+
+.demo-anim-status {
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.demo-anim-status.warning {
+  background: rgba(245,158,11,0.12);
+  color: var(--amber);
+}
+
+.demo-anim-status.exported {
+  background: rgba(34,197,94,0.12);
+  color: var(--green);
+}
+
+.demo-anim-drawer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s ease;
+  background: var(--surface-2);
+}
+
+.demo-anim-drawer.open {
+  max-height: 300px;
+}
+
+.demo-anim-drawer-inner {
+  padding: 12px;
+}
+
+.demo-anim-drawer-title {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 10px;
+}
+
+.demo-anim-evidence {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--text-muted);
+  padding: 4px 0;
+  opacity: 0;
+  transform: translateX(10px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.demo-anim-evidence.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.demo-anim-evidence .check {
+  color: var(--green);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.demo-anim-export-btn {
+  margin-top: 10px;
+  font-size: 10px;
+  padding: 5px 14px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 4px;
+  transition: background 0.3s, color 0.3s, border-color 0.3s;
+  cursor: default;
+}
+
+.demo-anim-export-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* ── Examiner Cards ───────────────────────────────────────────────────────── */
+.examiner-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 60px;
+}
+
+.examiner-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0;
+  overflow: hidden;
+  transition: border-color 0.2s;
+  opacity: 0;
+}
+
+.examiner-card:hover { border-color: rgba(59,110,248,0.3); }
+.examiner-card.visible { animation: fadeUp 0.5s ease both; }
+
+.examiner-question {
+  background: var(--surface-2);
+  padding: 24px 24px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.examiner-question-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+
+.examiner-question-text {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.examiner-answer {
+  padding: 20px 24px 24px;
+}
+
+.examiner-answer-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 10px;
+  opacity: 0.7;
+}
+
+/* ── Examiner Card Animations ─────────────────────────────────────────── */
+.ex-anim {
+  background: var(--surface-2);
+  border-radius: 6px;
+  padding: 14px;
+  font-family: var(--mono);
+  font-size: 10px;
+  overflow: hidden;
+  min-height: 160px;
+}
+
+/* Card 1: OFAC Screening */
+.ex-screen-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  color: var(--text-dim);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.ex-screen-row.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.ex-screen-addr {
+  color: var(--text-muted);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ex-screen-provider {
+  color: var(--text-dim);
+  font-size: 9px;
+}
+
+.ex-screen-check {
+  width: 16px;
+  text-align: center;
+  font-size: 11px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.ex-screen-check.pass { color: var(--green); opacity: 1; }
+.ex-screen-check.fail { color: var(--red); opacity: 1; }
+.ex-screen-check.pending { color: var(--text-dim); opacity: 1; }
+
+.ex-screen-label {
+  font-size: 9px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+}
+
+.ex-screen-summary {
+  margin-top: 10px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 9px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.ex-screen-summary.show {
+  opacity: 1;
+}
+
+.ex-screen-summary.clear {
+  background: rgba(34,197,94,0.08);
+  border: 1px solid rgba(34,197,94,0.15);
+  color: var(--green);
+}
+
+/* Card 2: Intent Hash */
+.ex-hash-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.ex-hash-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+  opacity: 0;
+  transform: translateX(8px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.ex-hash-field.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.ex-hash-key {
+  color: var(--text-dim);
+  min-width: 60px;
+}
+
+.ex-hash-val {
+  color: var(--text-muted);
+}
+
+.ex-hash-arrow {
+  text-align: center;
+  color: var(--text-dim);
+  padding: 4px 0;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.ex-hash-arrow.show { opacity: 1; }
+
+.ex-hash-result {
+  padding: 6px 10px;
+  background: rgba(59,110,248,0.08);
+  border: 1px solid rgba(59,110,248,0.15);
+  border-radius: 4px;
+  color: var(--accent);
+  font-size: 9px;
+  word-break: break-all;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.ex-hash-result.show { opacity: 1; }
+
+/* Card 3: Digest Chain */
+.ex-chain-links {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ex-chain-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 3px;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.3s ease, transform 0.3s ease, background 0.4s, border-color 0.4s;
+  border: 1px solid transparent;
+}
+
+.ex-chain-link.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.ex-chain-num {
+  color: var(--text-dim);
+  min-width: 50px;
+  font-size: 9px;
+}
+
+.ex-chain-hash {
+  color: var(--text-muted);
+  font-size: 9px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.ex-chain-link.tampered {
+  background: rgba(239,68,68,0.06);
+  border-color: rgba(239,68,68,0.2);
+}
+
+.ex-chain-link.tampered .ex-chain-hash {
+  color: var(--red);
+  text-decoration: line-through;
+}
+
+.ex-chain-link.broken {
+  opacity: 0.4 !important;
+}
+
+.ex-chain-msg {
+  margin-top: 8px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 9px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.ex-chain-msg.show { opacity: 1; }
+
+.ex-chain-msg.detected {
+  background: rgba(34,197,94,0.08);
+  border: 1px solid rgba(34,197,94,0.15);
+  color: var(--green);
+}
+
+/* ── Risk Quantification Strip ────────────────────────────────────────────── */
+.risk-strip {
+  position: relative;
+  z-index: 1;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 60px 48px;
+}
+
+.risk-strip-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.risk-strip-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.risk-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.risk-stat {
+  text-align: center;
+}
+
+.risk-stat-value {
+  font-family: var(--mono);
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.risk-stat-value.red { color: var(--red); }
+.risk-stat-value.green { color: var(--green); }
+.risk-stat-value.amber { color: var(--amber); }
+
+.risk-stat-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+/* ── What to Expect ───────────────────────────────────────────────────────── */
+.expect-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 24px;
+  padding: 24px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-dim);
+  border-radius: 8px;
+}
+
+.expect-step {
+  text-align: center;
+  padding: 12px 8px;
+}
+
+.expect-step-num {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--accent);
+  margin-bottom: 8px;
+  opacity: 0.6;
+}
+
+.expect-step-text {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* ── Architecture Section ─────────────────────────────────────────────────── */
+.arch-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 48px;
+  overflow: hidden;
+}
+
+.arch-diagram {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 36px;
+}
+
+.arch-box {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px 20px;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+
+.arch-box:hover {
+  border-color: rgba(59,110,248,0.3);
+}
+
+.arch-box.highlight {
+  border-color: var(--accent);
+  background: rgba(59,110,248,0.06);
+  box-shadow: 0 0 24px rgba(59,110,248,0.08);
+}
+
+.arch-box-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.arch-box-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.arch-box-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.arch-arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+}
+
+.arch-arrow-line {
+  width: 40px;
+  height: 2px;
+  background: var(--border);
+  position: relative;
+}
+
+.arch-arrow-line::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  top: -3px;
+  border: 4px solid transparent;
+  border-left-color: var(--border);
+}
+
+.arch-arrow-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.arch-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.15);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.arch-note-icon {
+  color: var(--green);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* ── Pillars (How It Works) ───────────────────────────────────────────────── */
+.pillars-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 60px;
+}
+
+.pillar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.2s;
+  opacity: 0;
+}
+
+.pillar:hover {
+  border-color: rgba(59,110,248,0.3);
+  background: var(--surface-2);
+  transform: translateY(-2px);
+}
+
+.pillar.visible { animation: fadeUp 0.5s ease both; }
+
+.pillar-num {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--accent);
+  opacity: 0.6;
+}
+
+.pillar-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.pillar-body {
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--text-muted);
+  font-weight: 400;
+  flex: 1;
+}
+
+/* ── Pull Quote ───────────────────────────────────────────────────────────── */
+.pull-quote {
+  text-align: center;
+  padding: 60px 48px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.pull-quote-text {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(20px, 2.5vw, 30px);
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.pull-quote-text strong {
+  color: var(--text);
+  font-style: normal;
+  font-weight: 400;
+}
+
+/* ── Dashboard Showcase ───────────────────────────────────────────────────── */
+.dashboard-section {
+  position: relative;
+  z-index: 1;
+  padding: 0 0 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+}
+
+.dashboard-section-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+}
+
+.dashboard-section-headline {
+  font-family: var(--serif);
+  font-size: clamp(30px, 3.5vw, 48px);
+  font-weight: 400;
+  line-height: 1.15;
+  text-align: center;
+  color: var(--text);
+  margin-bottom: 14px;
+  letter-spacing: -0.02em;
+}
+
+.dashboard-section-sub {
+  font-size: 16px;
+  color: var(--text-muted);
+  text-align: center;
+  max-width: 500px;
+  margin-bottom: 60px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+/* Static Dashboard Mockup */
+.dashboard-mockup {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  padding: 0 32px;
+}
+
+.dashboard-mockup-frame {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow:
+    0 40px 100px -20px rgba(0,0,0,0.6),
+    0 0 60px rgba(59,110,248,0.06);
+}
+
+/* Chrome bar */
+.mock-chrome {
+  background: #0c1020;
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.mock-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.mock-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+}
+
+.mock-dot.red   { background: #ff5f57; }
+.mock-dot.amber { background: #ffbd2e; }
+.mock-dot.green { background: #28c841; }
+
+.mock-url {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.mock-url-pill {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 3px 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 260px;
+  width: 100%;
+}
+
+.mock-lock { color: var(--green); font-size: 10px; }
+
+/* Dashboard body */
+.mock-body {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  min-height: 480px;
+}
+
+.mock-sidebar {
+  background: var(--bg);
+  border-right: 1px solid var(--border-dim);
+  padding: 20px 0;
+}
+
+.mock-sidebar-brand {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--accent);
+  padding: 0 16px 16px;
+  border-bottom: 1px solid var(--border-dim);
+  margin-bottom: 12px;
+}
+
+.mock-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: var(--sans);
+}
+
+.mock-sidebar-item.active {
+  color: var(--text);
+  background: var(--surface-2);
+  border-left: 2px solid var(--accent);
+}
+
+.mock-sidebar-icon {
+  font-size: 14px;
+  width: 18px;
+  text-align: center;
+  opacity: 0.6;
+}
+
+.mock-content {
+  padding: 24px;
+  background: var(--bg);
+}
+
+/* KPI strip in dashboard mockup */
+.mock-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.mock-kpi {
+  background: var(--surface);
+  border: 1px solid var(--border-dim);
+  border-radius: 6px;
+  padding: 14px 16px;
+}
+
+.mock-kpi-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+
+.mock-kpi-value {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.mock-kpi-value.green { color: var(--green); }
+.mock-kpi-value.amber { color: var(--amber); }
+
+.mock-kpi-delta {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+/* Feed table in mockup */
+.mock-feed {
+  background: var(--surface);
+  border: 1px solid var(--border-dim);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.mock-feed-header {
+  display: grid;
+  grid-template-columns: 70px 120px 100px 100px 60px 80px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.mock-feed-row {
+  display: grid;
+  grid-template-columns: 70px 120px 100px 100px 60px 80px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-dim);
+  font-size: 12px;
+  align-items: center;
+  transition: background 0.1s;
+}
+
+.mock-feed-row:last-child { border-bottom: none; }
+.mock-feed-row:hover { background: var(--surface-2); }
+
+.mock-time { font-family: var(--mono); font-size: 11px; color: var(--text-muted); }
+.mock-agent { color: var(--text); font-weight: 500; }
+.mock-route { color: var(--text-muted); }
+.mock-amount { font-family: var(--mono); font-weight: 600; color: var(--text); text-align: right; }
+.mock-trust { font-family: var(--mono); font-size: 11px; text-align: center; }
+.mock-status {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border-radius: 3px;
+  text-align: center;
+}
+
+.mock-status.verified { color: var(--green); background: var(--green-dim); }
+.mock-status.warning { color: var(--amber); background: rgba(245,158,11,0.1); }
+.mock-status.blocked { color: var(--red); background: rgba(239,68,68,0.1); }
+
+.mock-sample-badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 12px;
+  letter-spacing: 0.06em;
+}
+
+.dashboard-cta-row {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 40px;
+}
+
+/* ── Regulation Section ───────────────────────────────────────────────────── */
+.reg-section {
+  position: relative;
+  z-index: 1;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 100px 48px;
+}
+
+.reg-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Timeline */
+.timeline {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin: 56px 0;
+  padding: 0 40px;
+}
+
+.timeline-line {
+  flex: 1;
+  height: 2px;
+  background: var(--border);
+  position: relative;
+}
+
+.timeline-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 55%;
+  background: linear-gradient(90deg, var(--accent) 0%, rgba(59,110,248,0.3) 100%);
+}
+
+.timeline-node {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.timeline-dot {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--border);
+  border: 2px solid var(--surface);
+  z-index: 1;
+}
+
+.timeline-dot.done { background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+.timeline-dot.now  {
+  background: var(--text);
+  box-shadow: 0 0 0 4px rgba(255,255,255,0.1);
+  animation: pulse-now 2s infinite;
+}
+.timeline-dot.future { background: transparent; border-color: var(--red); }
+
+@keyframes pulse-now {
+  0%,100% { box-shadow: 0 0 0 4px rgba(255,255,255,0.1); }
+  50%      { box-shadow: 0 0 0 8px rgba(255,255,255,0.04); }
+}
+
+.timeline-date {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  position: absolute;
+  top: 26px;
+}
+
+.timeline-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  position: absolute;
+  bottom: 26px;
+  text-align: center;
+  width: 120px;
+}
+
+.timeline-label.urgent { color: var(--red); font-weight: 600; }
+.timeline-label.you    { color: var(--text); }
+
+/* Requirement tiles */
+.req-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 40px;
+}
+
+.req-card {
+  background: var(--surface-2);
+  padding: 28px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.req-title { font-size: 14px; font-weight: 600; color: var(--text); }
+.req-desc  { font-size: 13px; color: var(--text-muted); line-height: 1.6; font-weight: 400; }
+.req-how   { font-family: var(--mono); font-size: 11px; color: var(--accent); margin-top: 4px; }
+
+/* ── Security & Compliance Section ────────────────────────────────────────── */
+.security-section {
+  position: relative;
+  z-index: 1;
+  padding: 100px 48px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.security-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.security-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 28px 24px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  transition: border-color 0.2s;
+}
+
+.security-card:hover {
+  border-color: rgba(59,110,248,0.2);
+}
+
+.security-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
+  border-radius: 8px;
+  border: 1px solid var(--border-dim);
+}
+
+.security-content { flex: 1; }
+
+.security-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.security-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+.security-tag {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid rgba(59,110,248,0.15);
+  padding: 2px 8px;
+  border-radius: 3px;
+  margin-top: 8px;
+}
+
+/* ── Pilot Section ────────────────────────────────────────────────────────── */
+.pilot-section {
+  position: relative;
+  z-index: 1;
+  padding: 120px 48px;
+  overflow: hidden;
+}
+
+.pilot-glow {
+  position: absolute;
+  bottom: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 300px;
+  background: radial-gradient(ellipse at bottom, rgba(59,110,248,0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.pilot-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.pilot-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: start;
+}
+
+.pilot-headline {
+  font-family: var(--serif);
+  font-size: clamp(30px, 4vw, 48px);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  margin-bottom: 20px;
+}
+
+.pilot-sub {
+  font-size: 16px;
+  color: var(--text-muted);
+  margin-bottom: 36px;
+  font-weight: 400;
+  line-height: 1.65;
+}
+
+/* Pilot timeline steps */
+.pilot-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.pilot-step {
+  display: flex;
+  gap: 16px;
+  position: relative;
+}
+
+.pilot-step-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.pilot-step-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  z-index: 1;
+}
+
+.pilot-step-line {
+  width: 2px;
+  flex: 1;
+  background: var(--border);
+  min-height: 32px;
+}
+
+.pilot-step:last-child .pilot-step-line { display: none; }
+
+.pilot-step-content {
+  padding-bottom: 28px;
+}
+
+.pilot-step-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.pilot-step-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* Pilot form */
+.pilot-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 32px;
+}
+
+.pilot-form-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 24px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  transition: border-color 0.15s;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.form-input::placeholder {
+  color: var(--text-dim);
+}
+
+.form-submit {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.pilot-trust-note {
+  margin-top: 16px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  line-height: 1.8;
+  letter-spacing: 0.04em;
+}
+
+/* ── FAQ ─────────────────────────────────────────────────────────────────── */
+.faq-section {
+  position: relative; z-index: 1;
+  padding: 100px 48px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.faq-item {
+  border-bottom: 1px solid var(--border-dim);
+  padding: 22px 0;
+  cursor: pointer;
+}
+
+.faq-question {
+  font-size: 15.5px;
+  font-weight: 500;
+  color: var(--text);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  user-select: none;
+}
+
+.faq-chevron {
+  flex-shrink: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  transition: transform 0.2s;
+}
+
+.faq-item.open .faq-chevron { transform: rotate(180deg); }
+
+.faq-answer {
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--text-muted);
+  font-weight: 400;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding-top 0.3s ease;
+}
+
+.faq-item.open .faq-answer {
+  max-height: 300px;
+  padding-top: 14px;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+footer {
+  position: relative; z-index: 1;
+  border-top: 1px solid var(--border-dim);
+  padding: 48px 48px 36px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.footer-cols {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 40px;
+  margin-bottom: 48px;
+}
+
+.footer-brand {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 20px;
+  color: var(--accent);
+  margin-bottom: 10px;
+  display: block;
+}
+
+.footer-tagline {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  font-weight: 400;
+  max-width: 260px;
+}
+
+.footer-col-title {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 14px;
+}
+
+.footer-links { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.footer-links a {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.footer-links a:hover { color: var(--text); }
+
+.footer-bottom {
+  border-top: 1px solid var(--border-dim);
+  padding-top: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.footer-copy {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  line-height: 1.7;
+}
+
+.footer-disclaimer {
+  font-size: 11px;
+  color: var(--text-dim);
+  max-width: 460px;
+  line-height: 1.6;
+  text-align: right;
+}
+
+/* ── Scroll animation ─────────────────────────────────────────────────────── */
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.reveal.visible { opacity: 1; transform: none; }
+.reveal-d1 { transition-delay: 0.1s; }
+.reveal-d2 { transition-delay: 0.2s; }
+.reveal-d3 { transition-delay: 0.3s; }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  nav { padding: 0 24px; }
+  .nav-links { display: none; }
+  .hamburger { display: flex; }
+  .hero { padding: 100px 24px 80px; }
+  .hero-ctas { flex-direction: column; align-items: center; }
+  .trust-strip { gap: 16px; padding: 24px; }
+  .trust-sep { display: none; }
+  .section { padding: 80px 24px; }
+  .scenario-grid { grid-template-columns: 1fr; }
+  .scenario-section { padding: 80px 24px; }
+  .examiner-grid { grid-template-columns: 1fr; }
+  .risk-grid { grid-template-columns: repeat(2, 1fr); }
+  .risk-strip { padding: 40px 24px; }
+  .expect-steps { grid-template-columns: 1fr 1fr; }
+  .pillars-grid { grid-template-columns: 1fr; }
+  .arch-diagram { grid-template-columns: 1fr; gap: 12px; }
+  .arch-arrow { transform: rotate(90deg); padding: 4px 0; }
+  .req-grid { grid-template-columns: 1fr; }
+  .reg-section { padding: 80px 24px; }
+  .security-grid { grid-template-columns: 1fr; }
+  .pilot-section { padding: 80px 24px; }
+  .pilot-two-col { grid-template-columns: 1fr; gap: 40px; }
+  .footer-cols { grid-template-columns: 1fr 1fr; }
+  .footer-bottom { flex-direction: column; }
+  .footer-disclaimer { text-align: left; }
+  .dashboard-mockup { padding: 0 16px; }
+  .mock-body { grid-template-columns: 1fr; }
+  .mock-sidebar { display: none; }
+  .mock-kpis { grid-template-columns: repeat(2, 1fr); }
+  .mock-feed-header, .mock-feed-row { grid-template-columns: 60px 1fr 80px 60px; }
+  .mock-feed-header > :nth-child(3),
+  .mock-feed-row > :nth-child(3),
+  .mock-feed-header > :nth-child(5),
+  .mock-feed-row > :nth-child(5) { display: none; }
+  .timeline { flex-direction: column; padding: 0; gap: 24px; }
+  .timeline-line { width: 2px; height: 40px; }
+  .timeline-fill { width: 100%; height: 55%; }
+  .timeline-date { position: static; }
+  .timeline-label { position: static; width: auto; }
+}
+
+@media (max-width: 480px) {
+  .mock-kpis { grid-template-columns: 1fr 1fr; }
+  .mock-feed-header, .mock-feed-row { grid-template-columns: 1fr 80px 60px; }
+  .mock-feed-header > :first-child,
+  .mock-feed-row > :first-child { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+
+<!-- NAV -->
+<nav id="nav">
+  <a href="#" class="nav-logo">Kontext</a>
+  <ul class="nav-links">
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="/use-cases">Use Cases</a></li>
+    <li><a href="#regulation">GENIUS Act</a></li>
+    <li><a href="/docs">Docs</a></li>
+    <li><a href="https://github.com/Legaci-Labs/kontext">GitHub</a></li>
+    <li><a href="#pilot" class="nav-cta">Request Demo</a></li>
+  </ul>
+  <button class="hamburger" onclick="toggleMobileMenu()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- Mobile menu -->
+<div class="mobile-menu" id="mobile-menu">
+  <a href="#architecture" onclick="closeMobileMenu()">Architecture</a>
+  <a href="/use-cases">Use Cases</a>
+  <a href="#regulation" onclick="closeMobileMenu()">GENIUS Act</a>
+  <a href="/docs">Docs</a>
+  <a href="https://github.com/Legaci-Labs/kontext">GitHub</a>
+  <a href="#pilot" class="btn-primary" style="text-align:center" onclick="closeMobileMenu()">Request Demo</a>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow"></div>
+
+  <div class="hero-deadline">
+    <div class="hero-deadline-dot"></div>
+    GENIUS Act mandatory compliance: November 2026
+  </div>
+
+  <h1 class="hero-headline">
+    Your AI agents move money.<br>
+    Can you <em>prove</em> every payment<br>was authorized?
+  </h1>
+
+  <p class="hero-sub">
+    Kontext gives compliance teams a real-time audit trail for every
+    autonomous stablecoin transfer — with cryptographic proof that
+    screening ran and the agent acted within authorized scope.
+  </p>
+
+  <div class="hero-ctas">
+    <a href="#pilot" class="btn-primary">Request Demo</a>
+    <a href="/docs" class="btn-ghost">View Documentation</a>
+  </div>
+</section>
+
+<!-- TRUST STRIP -->
+<div class="trust-strip reveal">
+  <div class="trust-item">
+    <span class="trust-icon">&#9670;</span>
+    GENIUS Act ready
+  </div>
+  <div class="trust-sep"></div>
+  <div class="trust-item">
+    <span class="trust-icon">&#9671;</span>
+    Base mainnet deployed
+  </div>
+  <div class="trust-sep"></div>
+  <div class="trust-item">
+    <span class="trust-icon">&#11042;</span>
+    MIT open-source SDK
+  </div>
+  <div class="trust-sep"></div>
+  <div class="trust-item">
+    <span class="trust-icon">&#9724;</span>
+    Built for Circle + CCTP
+  </div>
+  <div class="trust-sep"></div>
+  <div class="trust-item">
+    <span class="trust-icon">&#9733;</span>
+    Deployed on Base mainnet
+  </div>
+</div>
+
+<!-- BEFORE/AFTER SCENARIO -->
+<section class="scenario-section" id="scenario">
+  <p class="section-label reveal">The Compliance Gap</p>
+  <h2 class="section-headline reveal reveal-d1">
+    A regulator asks about payment #47,291.<br>What happens next?
+  </h2>
+  <p class="section-sub reveal reveal-d2">
+    Your settlement agent sent $28,000 USDC to a wallet in Lagos.
+    The examiner wants proof it was authorized, screened, and compliant.
+  </p>
+
+  <div class="scenario-grid reveal">
+    <div class="scenario-card before">
+      <div class="scenario-card-label">Without Kontext</div>
+      <div class="scenario-card-title">3-5 days. Manual. Unverifiable.</div>
+      <div class="scenario-card-body">
+        <div class="scenario-step">
+          <span class="scenario-step-num">01</span>
+          <span>Engineering pulls transaction logs from the payment service. Takes a day because the agent's decision context is in a separate system.</span>
+        </div>
+        <div class="scenario-step">
+          <span class="scenario-step-num">02</span>
+          <span>Compliance manually checks if the wallet was screened. No record of which sanctions list was used or when the check ran.</span>
+        </div>
+        <div class="scenario-step">
+          <span class="scenario-step-num">03</span>
+          <span>The team assembles a spreadsheet combining data from 4 systems. No way to prove it hasn't been modified.</span>
+        </div>
+        <div class="scenario-step">
+          <span class="scenario-step-num">04</span>
+          <span>The examiner asks: <strong>"Can you prove this record existed at the time of the transaction and hasn't been altered?"</strong></span>
+        </div>
+      </div>
+      <div class="scenario-result">Outcome: you cannot.</div>
+    </div>
+
+    <div class="scenario-card after" style="padding-bottom:16px">
+      <div class="scenario-card-label">With Kontext</div>
+      <div class="demo-anim" id="demo-anim">
+        <div class="demo-anim-header">
+          <span class="demo-anim-dot"></span>
+          <span class="demo-anim-url">app.getkontext.com</span>
+        </div>
+        <div class="demo-anim-feed">
+          <div class="demo-anim-row" style="color:var(--text-dim);font-size:9px;opacity:0.5">
+            <span>Agent</span><span>Route</span><span>Amount</span><span>Status</span>
+          </div>
+          <div class="demo-anim-row" style="opacity:0.4">
+            <span>treasury-bot</span><span>US &#8594; MX</span><span>$8,200</span><span class="demo-anim-status" style="background:rgba(34,197,94,0.1);color:var(--green)">verified</span>
+          </div>
+          <div class="demo-anim-row" id="demo-target-row">
+            <span>settlement-agent</span><span>GB &#8594; NG</span><span>$28,000</span><span class="demo-anim-status warning" id="demo-status-badge">warning</span>
+          </div>
+          <div class="demo-anim-row" style="opacity:0.4">
+            <span>payroll-v2</span><span>US &#8594; PH</span><span>$3,400</span><span class="demo-anim-status" style="background:rgba(34,197,94,0.1);color:var(--green)">verified</span>
+          </div>
+        </div>
+        <div class="demo-anim-drawer" id="demo-drawer">
+          <div class="demo-anim-drawer-inner">
+            <div class="demo-anim-drawer-title">Evidence &mdash; payment #47,291</div>
+            <div class="demo-anim-evidence" id="ev-0"><span class="check">&#10003;</span> OFAC screening: clear (SDN + OpenSanctions)</div>
+            <div class="demo-anim-evidence" id="ev-1"><span class="check">&#10003;</span> Policy: GENIUS threshold flagged, authorized</div>
+            <div class="demo-anim-evidence" id="ev-2"><span class="check">&#10003;</span> Intent hash: agent + amount + purpose bound</div>
+            <div class="demo-anim-evidence" id="ev-3"><span class="check">&#10003;</span> Digest chain link #47,291 — tamper-evident</div>
+            <div style="margin-top:10px">
+              <span class="demo-anim-export-btn" id="demo-export-btn">Export evidence bundle</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ARCHITECTURE -->
+<section class="section" id="architecture">
+  <p class="section-label reveal">Where Kontext Fits</p>
+  <h2 class="section-headline reveal reveal-d1">
+    Meets your agents wherever<br>they initiate payments.
+  </h2>
+  <p class="section-sub reveal reveal-d2">
+    Kontext connects at the point of transaction — regardless of how your agents
+    move money. One compliance layer across every payment rail.
+  </p>
+
+  <div class="arch-container reveal">
+    <!-- Payment initiation points -->
+    <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:0;align-items:center;margin-bottom:32px">
+      <div>
+        <div class="arch-box-label" style="margin-bottom:16px;text-align:center">Your agents initiate payments via</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="arch-box" style="padding:16px 14px">
+            <div class="arch-box-title" style="font-size:13px">Programmable Wallets</div>
+            <div class="arch-box-desc" style="font-size:11px">Circle, company-sanctioned wallets</div>
+          </div>
+          <div class="arch-box" style="padding:16px 14px">
+            <div class="arch-box-title" style="font-size:13px">Cross-Chain (CCTP)</div>
+            <div class="arch-box-desc" style="font-size:11px">Base, Ethereum, Polygon, Arbitrum</div>
+          </div>
+          <div class="arch-box" style="padding:16px 14px">
+            <div class="arch-box-title" style="font-size:13px">Virtual Cards</div>
+            <div class="arch-box-desc" style="font-size:11px">Agent-initiated card payments</div>
+          </div>
+          <div class="arch-box" style="padding:16px 14px">
+            <div class="arch-box-title" style="font-size:13px">Payment Tokens</div>
+            <div class="arch-box-desc" style="font-size:11px">USDC, USDT, EURC micropayments</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="arch-arrow">
+        <div class="arch-arrow-label">every txn</div>
+        <div class="arch-arrow-line"></div>
+      </div>
+
+      <div class="arch-box highlight" style="min-height:180px;display:flex;flex-direction:column;justify-content:center">
+        <div class="arch-box-label">Compliance Layer</div>
+        <div class="arch-box-title">Kontext</div>
+        <div class="arch-box-desc" style="margin-top:8px">
+          OFAC screen + audit log + digest chain + evidence bundle<br>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:6px;display:block">
+            One integration. Every rail. Every chain.
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-note">
+      <span class="arch-note-icon">&#10003;</span>
+      <span>Kontext never blocks or delays a payment. If our API is unreachable, the SDK queues events locally and retries on reconnect. Your payment flow is never disrupted.</span>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- WHAT YOUR EXAMINER WILL ASK -->
+<section class="section" id="how-it-works">
+  <p class="section-label reveal">What Your Examiner Will Ask</p>
+  <h2 class="section-headline reveal reveal-d1">Three questions. Kontext answers all of them.</h2>
+  <p class="section-sub reveal reveal-d2">
+    Kontext connects to your existing payment infrastructure and begins building
+    your compliance record from the first transaction. Your engineering team
+    integrates it once; your compliance team uses it every day.
+  </p>
+
+  <div class="examiner-grid">
+    <div class="examiner-card reveal">
+      <div class="examiner-question">
+        <div class="examiner-question-label">Examiner asks</div>
+        <div class="examiner-question-text">"Was this wallet screened before the transfer?"</div>
+      </div>
+      <div class="examiner-answer">
+        <div class="examiner-answer-label">Kontext shows</div>
+        <div class="ex-anim" id="ex-screen-anim">
+          <div class="ex-screen-label">Screening &mdash; 0x7a3b...f29e</div>
+          <div class="ex-screen-row" id="scr-0">
+            <span class="ex-screen-check" id="scr-chk-0">&#9679;</span>
+            <span class="ex-screen-addr">OFAC SDN</span>
+            <span class="ex-screen-provider">treasury.gov</span>
+          </div>
+          <div class="ex-screen-row" id="scr-1">
+            <span class="ex-screen-check" id="scr-chk-1">&#9679;</span>
+            <span class="ex-screen-addr">OpenSanctions</span>
+            <span class="ex-screen-provider">opensanctions.org</span>
+          </div>
+          <div class="ex-screen-row" id="scr-2">
+            <span class="ex-screen-check" id="scr-chk-2">&#9679;</span>
+            <span class="ex-screen-addr">UK OFSI</span>
+            <span class="ex-screen-provider">gov.uk</span>
+          </div>
+          <div class="ex-screen-row" id="scr-3">
+            <span class="ex-screen-check" id="scr-chk-3">&#9679;</span>
+            <span class="ex-screen-addr">Recipient: 0x4c1d...a83b</span>
+            <span class="ex-screen-provider">all providers</span>
+          </div>
+          <div class="ex-screen-summary clear" id="scr-summary">&#10003; All clear &mdash; proof recorded at 18:41:18 UTC</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="examiner-card reveal reveal-d1">
+      <div class="examiner-question">
+        <div class="examiner-question-label">Examiner asks</div>
+        <div class="examiner-question-text">"Did this agent have authorization to move $28,000?"</div>
+      </div>
+      <div class="examiner-answer">
+        <div class="examiner-answer-label">Kontext shows</div>
+        <div class="ex-anim" id="ex-hash-anim">
+          <div class="ex-hash-fields">
+            <div class="ex-hash-field" id="hf-0"><span class="ex-hash-key">agent</span><span class="ex-hash-val">settlement-agent</span></div>
+            <div class="ex-hash-field" id="hf-1"><span class="ex-hash-key">scope</span><span class="ex-hash-val">invoice-payment</span></div>
+            <div class="ex-hash-field" id="hf-2"><span class="ex-hash-key">amount</span><span class="ex-hash-val">$28,000 USDC</span></div>
+            <div class="ex-hash-field" id="hf-3"><span class="ex-hash-key">limit</span><span class="ex-hash-val">$50,000 (authorized)</span></div>
+            <div class="ex-hash-field" id="hf-4"><span class="ex-hash-key">purpose</span><span class="ex-hash-val">supplier-invoice-9847</span></div>
+          </div>
+          <div class="ex-hash-arrow" id="hash-arrow">&#8595; SHA-256</div>
+          <div class="ex-hash-result" id="hash-result">0x8f2a...d41c &mdash; intent bound cryptographically</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="examiner-card reveal reveal-d2">
+      <div class="examiner-question">
+        <div class="examiner-question-label">Examiner asks</div>
+        <div class="examiner-question-text">"Has this audit record been modified since the transaction?"</div>
+      </div>
+      <div class="examiner-answer">
+        <div class="examiner-answer-label">Kontext shows</div>
+        <div class="ex-anim" id="ex-chain-anim">
+          <div class="ex-chain-links">
+            <div class="ex-chain-link" id="cl-0"><span class="ex-chain-num">#47,289</span><span class="ex-chain-hash">a7f3c...1b2e</span></div>
+            <div class="ex-chain-link" id="cl-1"><span class="ex-chain-num">#47,290</span><span class="ex-chain-hash">d92e1...8c4f</span></div>
+            <div class="ex-chain-link" id="cl-2"><span class="ex-chain-num">#47,291</span><span class="ex-chain-hash">8f2ad...41c7</span></div>
+            <div class="ex-chain-link" id="cl-3"><span class="ex-chain-num">#47,292</span><span class="ex-chain-hash">3b71f...e9a2</span></div>
+            <div class="ex-chain-link" id="cl-4"><span class="ex-chain-num">#47,293</span><span class="ex-chain-hash">c4d8a...5f31</span></div>
+          </div>
+          <div class="ex-chain-msg detected" id="chain-msg">&#10003; Chain intact &mdash; tamper on #47,291 would break all subsequent hashes</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PULL QUOTE -->
+<div class="pull-quote">
+  <p class="pull-quote-text">
+    <strong>"If a regulator asks you to prove that a specific payment
+    was authorized, screened, and compliant —</strong>
+    how long does that take today?"
+  </p>
+</div>
+
+<hr class="divider">
+
+<!-- DASHBOARD SHOWCASE -->
+<div class="dashboard-section" id="dashboard">
+  <p class="dashboard-section-label reveal">The Compliance Command Center</p>
+  <h2 class="dashboard-section-headline reveal reveal-d1">
+    Answer any regulator question<br>in under 10 seconds.
+  </h2>
+  <p class="dashboard-section-sub reveal reveal-d2">
+    Live KPIs, evidence drawers for every payment,
+    one-click audit export. Built for compliance and risk teams, with extensive support and documentation for developers to integrate quickly.
+  </p>
+
+  <div class="dashboard-mockup reveal">
+    <div class="dashboard-mockup-frame">
+      <div class="mock-chrome">
+        <div class="mock-dots">
+          <div class="mock-dot red"></div>
+          <div class="mock-dot amber"></div>
+          <div class="mock-dot green"></div>
+        </div>
+        <div class="mock-url">
+          <div class="mock-url-pill">
+            <span class="mock-lock">&#128274;</span>
+            <span>app.getkontext.com</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mock-body">
+        <div class="mock-sidebar">
+          <div class="mock-sidebar-brand">Kontext</div>
+          <div class="mock-sidebar-item active">
+            <span class="mock-sidebar-icon">&#9632;</span> Overview
+          </div>
+          <div class="mock-sidebar-item">
+            <span class="mock-sidebar-icon">&#9654;</span> Payments
+          </div>
+          <div class="mock-sidebar-item">
+            <span class="mock-sidebar-icon">&#9679;</span> Agents
+          </div>
+          <div class="mock-sidebar-item">
+            <span class="mock-sidebar-icon">&#9670;</span> Policies
+          </div>
+          <div class="mock-sidebar-item">
+            <span class="mock-sidebar-icon">&#9649;</span> Audit Export
+          </div>
+        </div>
+
+        <div class="mock-content">
+          <div class="mock-kpis">
+            <div class="mock-kpi">
+              <div class="mock-kpi-label">Verified today</div>
+              <div class="mock-kpi-value green">1,247</div>
+              <div class="mock-kpi-delta">+12% vs yesterday</div>
+            </div>
+            <div class="mock-kpi">
+              <div class="mock-kpi-label">Sanctions alerts</div>
+              <div class="mock-kpi-value green">0</div>
+              <div class="mock-kpi-delta">OFAC + OFSI + OpenSanctions</div>
+            </div>
+            <div class="mock-kpi">
+              <div class="mock-kpi-label">Policy warnings</div>
+              <div class="mock-kpi-value amber">3</div>
+              <div class="mock-kpi-delta">2 GENIUS Act threshold</div>
+            </div>
+            <div class="mock-kpi">
+              <div class="mock-kpi-label">Chain coverage</div>
+              <div class="mock-kpi-value">98.7%</div>
+              <div class="mock-kpi-delta">42 wallets monitored</div>
+            </div>
+          </div>
+
+          <div class="mock-feed">
+            <div class="mock-feed-header">
+              <span>Time</span>
+              <span>Agent</span>
+              <span>Route</span>
+              <span>Amount</span>
+              <span>Trust</span>
+              <span>Status</span>
+            </div>
+            <div class="mock-feed-row">
+              <span class="mock-time">18:42:03</span>
+              <span class="mock-agent">treasury-bot</span>
+              <span class="mock-route">US &#8594; MX</span>
+              <span class="mock-amount">$8,200</span>
+              <span class="mock-trust" style="color:var(--green)">94</span>
+              <span class="mock-status verified">verified</span>
+            </div>
+            <div class="mock-feed-row">
+              <span class="mock-time">18:41:18</span>
+              <span class="mock-agent">settlement-agent</span>
+              <span class="mock-route">GB &#8594; NG</span>
+              <span class="mock-amount">$28,000</span>
+              <span class="mock-trust" style="color:var(--amber)">76</span>
+              <span class="mock-status warning">warning</span>
+            </div>
+            <div class="mock-feed-row">
+              <span class="mock-time">18:40:55</span>
+              <span class="mock-agent">payroll-v2</span>
+              <span class="mock-route">US &#8594; PH</span>
+              <span class="mock-amount">$3,400</span>
+              <span class="mock-trust" style="color:var(--green)">91</span>
+              <span class="mock-status verified">verified</span>
+            </div>
+            <div class="mock-feed-row">
+              <span class="mock-time">18:39:42</span>
+              <span class="mock-agent">supplier-bot</span>
+              <span class="mock-route">EU &#8594; LT</span>
+              <span class="mock-amount">$14,500</span>
+              <span class="mock-trust" style="color:var(--amber)">82</span>
+              <span class="mock-status blocked">blocked</span>
+            </div>
+            <div class="mock-feed-row">
+              <span class="mock-time">18:38:11</span>
+              <span class="mock-agent">fx-router-v2</span>
+              <span class="mock-route">US &#8594; SG</span>
+              <span class="mock-amount">$5,100</span>
+              <span class="mock-trust" style="color:var(--green)">88</span>
+              <span class="mock-status verified">verified</span>
+            </div>
+          </div>
+
+          <div class="mock-sample-badge">
+            Sample data shown for illustration. Your dashboard displays your real payment data.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard narration -->
+  <div class="reveal" style="max-width:800px;margin:40px auto 0;padding:0 24px">
+    <p style="font-family:var(--mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:16px;text-align:center">What the compliance officer does</p>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;text-align:center">
+      <div style="padding:16px;background:var(--surface-2);border:1px solid var(--border-dim);border-radius:8px">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--accent);margin-bottom:8px">1. SPOT</div>
+        <p style="font-size:13px;color:var(--text-muted);line-height:1.5">See the <span style="color:var(--amber)">warning</span> row — settlement-agent sent $28,000 GB&#8594;NG with a trust score drop to 76</p>
+      </div>
+      <div style="padding:16px;background:var(--surface-2);border:1px solid var(--border-dim);border-radius:8px">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--accent);margin-bottom:8px">2. CLICK</div>
+        <p style="font-size:13px;color:var(--text-muted);line-height:1.5">Open the evidence drawer: OFAC screening result, policy evaluation trace, intent hash, digest chain link #47,291</p>
+      </div>
+      <div style="padding:16px;background:var(--surface-2);border:1px solid var(--border-dim);border-radius:8px">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--accent);margin-bottom:8px">3. EXPORT</div>
+        <p style="font-size:13px;color:var(--text-muted);line-height:1.5">One click: signed evidence bundle as JSON or CSV. Tamper-evident. Ready for the examiner.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="dashboard-cta-row">
+    <a href="#pilot" class="btn-primary">See it with your data</a>
+    <a href="/docs" class="btn-ghost">Read the docs</a>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- REGULATION SECTION -->
+<section class="reg-section" id="regulation">
+  <div class="reg-inner">
+    <p class="section-label reveal">GENIUS Act — Signed July 18, 2025</p>
+    <h2 class="section-headline reveal reveal-d1">Eight months to mandatory compliance.</h2>
+
+    <!-- Timeline -->
+    <div class="timeline reveal reveal-d2">
+      <div class="timeline-node">
+        <div class="timeline-dot done"></div>
+        <div class="timeline-date" style="top:26px">Jul 2025</div>
+        <div class="timeline-label" style="bottom:26px">GENIUS Act signed</div>
+      </div>
+      <div class="timeline-line">
+        <div class="timeline-fill"></div>
+      </div>
+      <div class="timeline-node">
+        <div class="timeline-dot now"></div>
+        <div class="timeline-date" style="top:26px">Mar 2026</div>
+        <div class="timeline-label you" style="bottom:26px">You are here</div>
+      </div>
+      <div class="timeline-line" style="background:var(--border-dim)">
+        <div style="position:absolute;inset:0;background:transparent"></div>
+      </div>
+      <div class="timeline-node">
+        <div class="timeline-dot future"></div>
+        <div class="timeline-date" style="top:26px">Nov 2026</div>
+        <div class="timeline-label urgent" style="bottom:26px">Prohibitions effective</div>
+      </div>
+    </div>
+
+    <div class="req-grid reveal">
+      <div class="req-card">
+        <div class="req-title">OFAC screening</div>
+        <div class="req-desc">Every transaction must be screened against sanctions lists before execution or at time of logging.</div>
+        <div class="req-how">&#8627; verify() screens every payment automatically</div>
+      </div>
+      <div class="req-card">
+        <div class="req-title">Audit trails</div>
+        <div class="req-desc">Transaction records must be maintained with BSA-grade evidence of authorization and intent.</div>
+        <div class="req-how">&#8627; Tamper-evident digest chain, exportable on demand</div>
+      </div>
+      <div class="req-card">
+        <div class="req-title">SAR / CTR thresholds</div>
+        <div class="req-desc">$3K+ triggers enhanced due diligence. $10K+ requires Currency Transaction Report preparation.</div>
+        <div class="req-how">&#8627; Automatic threshold flagging with evidence bundle</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECURITY & COMPLIANCE -->
+<section class="security-section" id="security">
+  <p class="section-label reveal">Security & Compliance</p>
+  <h2 class="section-headline reveal reveal-d1">
+    Built for vendor security reviews.
+  </h2>
+  <p class="section-sub reveal reveal-d2">
+    We know the questions your security team will ask.
+    Here are the answers.
+  </p>
+
+  <div class="security-grid reveal">
+    <div class="security-card">
+      <div class="security-icon">&#128274;</div>
+      <div class="security-content">
+        <div class="security-title">SOC 2 Type I</div>
+        <div class="security-desc">Controls in implementation. Security questionnaire available on request. Target certification: Q3 2026.</div>
+        <div class="security-tag">In progress</div>
+      </div>
+    </div>
+
+    <div class="security-card">
+      <div class="security-icon">&#9635;</div>
+      <div class="security-content">
+        <div class="security-title">US data residency</div>
+        <div class="security-desc">All data stored in US infrastructure (Postgres, us-east-1). No PII stored — only wallet addresses, amounts, chains, and cryptographic proofs.</div>
+        <div class="security-tag">US-east-1</div>
+      </div>
+    </div>
+
+    <div class="security-card">
+      <div class="security-icon">&#128196;</div>
+      <div class="security-content">
+        <div class="security-title">Data Processing Agreement</div>
+        <div class="security-desc">DPA available before any pilot begins. Mutual NDA signed before day one. Data deletion available on request at any time.</div>
+        <div class="security-tag">Available on request</div>
+      </div>
+    </div>
+
+    <div class="security-card">
+      <div class="security-icon">&#9638;</div>
+      <div class="security-content">
+        <div class="security-title">Portable audit format</div>
+        <div class="security-desc">The audit export format is publicly documented. Any third party can verify your compliance data independently, without Kontext's involvement. Your records don't depend on us.</div>
+        <div class="security-tag">Open format + MIT SDK</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RISK QUANTIFICATION STRIP -->
+<section class="risk-strip reveal">
+  <div class="risk-strip-inner">
+    <p class="risk-strip-label">The cost of manual compliance</p>
+    <div class="risk-grid">
+      <div class="risk-stat">
+        <div class="risk-stat-value amber">3–5 days</div>
+        <div class="risk-stat-label">Average time to fulfill a BSA examiner data request manually</div>
+      </div>
+      <div class="risk-stat">
+        <div class="risk-stat-value red">$50K–$500K</div>
+        <div class="risk-stat-label">Range of BSA enforcement actions for inadequate record-keeping</div>
+      </div>
+      <div class="risk-stat">
+        <div class="risk-stat-value green">10 seconds</div>
+        <div class="risk-stat-label">Time for Kontext to produce a signed, tamper-evident evidence bundle</div>
+      </div>
+      <div class="risk-stat">
+        <div class="risk-stat-value" style="color:var(--accent)">8 months</div>
+        <div class="risk-stat-label">Until GENIUS Act prohibitions take effect (November 2026)</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- PILOT SECTION -->
+<section class="pilot-section" id="pilot">
+  <div class="pilot-glow"></div>
+  <div class="pilot-inner">
+    <p class="section-label reveal" style="margin-bottom:20px">Enterprise Pilot Program</p>
+
+    <div class="pilot-two-col">
+      <div>
+        <h2 class="pilot-headline reveal">
+          See your real payment data<br>
+          in a compliance dashboard<br>
+          <em style="font-style:italic;color:var(--accent)">within 24 hours.</em>
+        </h2>
+        <p class="pilot-sub reveal reveal-d1">
+          We integrate with your stack, populate your dashboard with real
+          transaction data, and deliver a working audit export — before
+          you commit to anything.
+        </p>
+
+        <div class="pilot-steps reveal reveal-d2">
+          <div class="pilot-step">
+            <div class="pilot-step-marker">
+              <div class="pilot-step-dot"></div>
+              <div class="pilot-step-line"></div>
+            </div>
+            <div class="pilot-step-content">
+              <div class="pilot-step-title">Day 1 — Integration</div>
+              <div class="pilot-step-desc">Two lines of code wrap your payment client. SDK starts logging events to your Kontext dashboard.</div>
+            </div>
+          </div>
+          <div class="pilot-step">
+            <div class="pilot-step-marker">
+              <div class="pilot-step-dot"></div>
+              <div class="pilot-step-line"></div>
+            </div>
+            <div class="pilot-step-content">
+              <div class="pilot-step-title">Week 1 — Evidence</div>
+              <div class="pilot-step-desc">Your compliance officer can click any payment and see the full evidence bundle: OFAC screening, policy evaluation, cryptographic proof.</div>
+            </div>
+          </div>
+          <div class="pilot-step">
+            <div class="pilot-step-marker">
+              <div class="pilot-step-dot"></div>
+              <div class="pilot-step-line"></div>
+            </div>
+            <div class="pilot-step-content">
+              <div class="pilot-step-title">Day 90 — Decision</div>
+              <div class="pilot-step-desc">Export your full audit trail. Keep it regardless of whether you continue. No lock-in — the format is open and independently verifiable.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="pilot-form reveal">
+          <div class="pilot-form-title">Request a demo</div>
+
+          <form action="https://api.web3forms.com/submit" method="POST" id="pilot-form">
+            <!-- Replace with your Web3Forms access key -->
+            <input type="hidden" name="access_key" value="dbbd7bc0-cd4d-4fd6-9fdf-dbe6b2132a2c">
+            <input type="hidden" name="subject" value="Kontext Enterprise Pilot Request">
+            <input type="hidden" name="from_name" value="Kontext Pilot Form">
+            <!-- Honeypot spam protection -->
+            <input type="checkbox" name="botcheck" style="display:none">
+
+            <div class="form-group">
+              <label class="form-label" for="email">Work email</label>
+              <input type="email" name="email" id="email" class="form-input" placeholder="you@company.com" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="company">Company</label>
+              <input type="text" name="company" id="company" class="form-input" placeholder="Company name" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="volume">Monthly payment volume (approx)</label>
+              <input type="text" name="volume" id="volume" class="form-input" placeholder="e.g. $500K, $2M">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="infrastructure">Payment infrastructure</label>
+              <input type="text" name="infrastructure" id="infrastructure" class="form-input" placeholder="e.g. Circle Wallets, CCTP, custom">
+            </div>
+
+            <button type="submit" class="btn-primary form-submit" id="pilot-submit-btn">
+              Request Demo
+            </button>
+          </form>
+
+          <div id="pilot-form-result" style="display:none; padding:16px 0; text-align:center;"></div>
+
+          <div class="pilot-trust-note">
+            90 days, $0 pilot period, one payment workflow<br>
+            Mutual NDA before day 1 &middot; DPA available on request &middot; Legaci Labs Inc.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- What to Expect -->
+    <div class="reveal reveal-d2" style="margin-top:56px">
+      <p class="section-label" style="margin-bottom:16px;text-align:center">What to expect after you submit</p>
+      <div class="expect-steps">
+        <div class="expect-step">
+          <div class="expect-step-num">01</div>
+          <div class="expect-step-text">We respond within 24 hours to schedule a kickoff</div>
+        </div>
+        <div class="expect-step">
+          <div class="expect-step-num">02</div>
+          <div class="expect-step-text">30-minute call with your engineering + compliance leads</div>
+        </div>
+        <div class="expect-step">
+          <div class="expect-step-num">03</div>
+          <div class="expect-step-text">Your engineering team integrates the SDK (typically 1–2 hours)</div>
+        </div>
+        <div class="expect-step">
+          <div class="expect-step-num">04</div>
+          <div class="expect-step-text">Your compliance officer sees the first evidence bundles in the dashboard</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- FAQ -->
+<section class="faq-section">
+  <p class="section-label" style="margin-bottom:32px">Common Questions</p>
+
+  <div class="faq-item" onclick="toggleFaq(this)">
+    <div class="faq-question">
+      What happens if your API goes down during a live payment run?
+      <span class="faq-chevron">&#9662;</span>
+    </div>
+    <div class="faq-answer">
+      Kontext is a compliance observability layer — it never sits in your payment execution path. Your payments execute regardless of our API status. The SDK queues events locally and retries on reconnect. You cannot be blocked from transacting because of us.
+    </div>
+  </div>
+
+  <div class="faq-item" onclick="toggleFaq(this)">
+    <div class="faq-question">
+      Can we export all our data and leave?
+      <span class="faq-chevron">&#9662;</span>
+    </div>
+    <div class="faq-answer">
+      Yes. The audit export endpoint returns complete JSON including all cryptographic proofs in a portable format. The digest chain format is publicly documented. Any third party can verify your audit data independently without Kontext's involvement.
+    </div>
+  </div>
+
+  <div class="faq-item" onclick="toggleFaq(this)">
+    <div class="faq-question">
+      How does Kontext handle GDPR right-to-erasure with immutable audit chains?
+      <span class="faq-chevron">&#9662;</span>
+    </div>
+    <div class="faq-answer">
+      The digest chain stores no PII — only hashed wallet addresses, amounts, and transaction metadata. The erasure tension exists for any immutable audit system. We're working with counsel on the right approach and can provide detailed documentation for your DPO during the pilot.
+    </div>
+  </div>
+
+  <div class="faq-item" onclick="toggleFaq(this)">
+    <div class="faq-question">
+      You're a startup. What's the continuity risk?
+      <span class="faq-chevron">&#9662;</span>
+    </div>
+    <div class="faq-answer">
+      The SDK is open-source (MIT) and the audit format is fully documented. If Legaci Labs ceases to exist, your audit data remains valid and independently verifiable by any third party using the published format. Your compliance record doesn't depend on our continued operation.
+    </div>
+  </div>
+
+  <div class="faq-item" onclick="toggleFaq(this)">
+    <div class="faq-question">
+      How is Kontext different from ecosystem protocols like Visa Commerce Protocol or Mastercard Crypto Credential?
+      <span class="faq-chevron">&#9662;</span>
+    </div>
+    <div class="faq-answer">
+      Visa Commerce Protocol and Mastercard Crypto Credential are network-specific compliance layers — they work within their respective card and credential ecosystems. Kontext is infrastructure-agnostic. It sits at the application layer and works wherever your AI agents initiate payments: programmable wallets, cross-chain bridges, virtual cards, payment tokens, or direct on-chain transfers. If your agents use multiple payment rails (and they will), Kontext provides a single, unified compliance record across all of them — not just the ones that run through a specific network's protocol.
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-cols">
+    <div>
+      <span class="footer-brand">Kontext</span>
+      <p class="footer-tagline">Cryptographic compliance infrastructure for AI-native finance. GENIUS Act ready.</p>
+    </div>
+    <div>
+      <div class="footer-col-title">Product</div>
+      <ul class="footer-links">
+        <li><a href="/docs">Documentation</a></li>
+        <li><a href="/pricing">Pricing</a></li>
+        <li><a href="/changelog">Changelog</a></li>
+        <li><a href="https://github.com/Legaci-Labs/kontext">GitHub</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Company</div>
+      <ul class="footer-links">
+        <li><a href="/about">About</a></li>
+        <li><a href="/blog">Blog</a></li>
+        <li><a href="mailto:vinay@getlegaci.com">Contact</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Legal</div>
+      <ul class="footer-links">
+        <li><a href="/privacy">Privacy Policy</a></li>
+        <li><a href="/terms">Terms of Service</a></li>
+        <li><a href="mailto:vinay@getlegaci.com?subject=DPA%20Request">DPA Request</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-copy">
+      &copy; 2026 Legaci Labs Inc. &nbsp;&middot;&nbsp; Kontext v0.11.1
+    </div>
+    <div class="footer-disclaimer">
+      Kontext provides developer tools that generate cryptographic proof of compliance for agentic payments.
+      This does not constitute legal advice or guarantee regulatory compliance.
+      Consult qualified legal counsel for compliance certification.
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── Mobile menu ───────────────────────────────────────────────────────────
+function toggleMobileMenu() {
+  document.getElementById('mobile-menu').classList.toggle('open');
+}
+function closeMobileMenu() {
+  document.getElementById('mobile-menu').classList.remove('open');
+}
+
+// ── Nav scroll effect ─────────────────────────────────────────────────────
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 40);
+}, { passive: true });
+
+// ── Scroll reveal ─────────────────────────────────────────────────────────
+const revealEls = document.querySelectorAll('.reveal');
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      revealObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+revealEls.forEach(el => revealObserver.observe(el));
+
+// ── FAQ accordion ─────────────────────────────────────────────────────────
+function toggleFaq(el) {
+  const isOpen = el.classList.contains('open');
+  document.querySelectorAll('.faq-item.open').forEach(item => {
+    item.classList.remove('open');
+  });
+  if (!isOpen) el.classList.add('open');
+}
+
+// ── Pilot form (Web3Forms) ────────────────────────────────────────────────
+const pilotForm = document.getElementById('pilot-form');
+const resultDiv = document.getElementById('pilot-form-result');
+const submitBtn = document.getElementById('pilot-submit-btn');
+
+pilotForm.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Submitting...';
+
+  const formData = new FormData(pilotForm);
+  const object = Object.fromEntries(formData);
+  const json = JSON.stringify(object);
+
+  try {
+    const response = await fetch('https://api.web3forms.com/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: json
+    });
+    const data = await response.json();
+
+    if (data.success) {
+      pilotForm.style.display = 'none';
+      resultDiv.style.display = 'block';
+      const heading = document.createElement('div');
+      heading.style.cssText = 'color:var(--green);font-size:16px;font-weight:600;margin-bottom:8px';
+      heading.textContent = 'Received.';
+      const detail = document.createElement('div');
+      detail.style.cssText = 'color:var(--text-muted);font-size:14px';
+      detail.textContent = "We'll be in touch within 24 hours to schedule your pilot kickoff.";
+      resultDiv.replaceChildren(heading, detail);
+    } else {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Request Demo';
+      resultDiv.style.display = 'block';
+      resultDiv.textContent = 'Something went wrong. Please email vinay@getlegaci.com directly.';
+      resultDiv.style.color = 'var(--red)';
+      resultDiv.style.fontSize = '13px';
+    }
+  } catch (err) {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Request Demo';
+    resultDiv.style.display = 'block';
+    resultDiv.textContent = 'Network error. Please email vinay@getlegaci.com directly.';
+    resultDiv.style.color = 'var(--red)';
+    resultDiv.style.fontSize = '13px';
+  }
+});
+
+// ── Demo animation loop ──────────────────────────────────────────────────
+(function() {
+  const row = document.getElementById('demo-target-row');
+  const drawer = document.getElementById('demo-drawer');
+  const badge = document.getElementById('demo-status-badge');
+  const exportBtn = document.getElementById('demo-export-btn');
+  const evidenceEls = [
+    document.getElementById('ev-0'),
+    document.getElementById('ev-1'),
+    document.getElementById('ev-2'),
+    document.getElementById('ev-3')
+  ];
+  if (!row || !drawer) return;
+
+  function resetDemo() {
+    row.classList.remove('highlight');
+    drawer.classList.remove('open');
+    exportBtn.classList.remove('active');
+    badge.textContent = 'warning';
+    badge.className = 'demo-anim-status warning';
+    evidenceEls.forEach(function(el) { el.classList.remove('show'); });
+  }
+
+  function runCycle() {
+    resetDemo();
+    // Step 1: highlight row
+    setTimeout(function() { row.classList.add('highlight'); }, 500);
+    // Step 2: open drawer
+    setTimeout(function() { drawer.classList.add('open'); }, 1500);
+    // Step 3: reveal evidence items
+    evidenceEls.forEach(function(el, i) {
+      setTimeout(function() { el.classList.add('show'); }, 2200 + i * 400);
+    });
+    // Step 4: export button activates
+    setTimeout(function() { exportBtn.classList.add('active'); }, 4200);
+    // Step 5: status changes to exported
+    setTimeout(function() {
+      badge.textContent = 'exported';
+      badge.className = 'demo-anim-status exported';
+    }, 5000);
+    // Step 6: reset and loop
+    setTimeout(function() { resetDemo(); }, 8000);
+  }
+
+  // Start loop when visible
+  var animObs = new IntersectionObserver(function(entries) {
+    if (entries[0].isIntersecting) {
+      runCycle();
+      setInterval(runCycle, 9000);
+      animObs.disconnect();
+    }
+  }, { threshold: 0.3 });
+  animObs.observe(document.getElementById('demo-anim'));
+})();
+
+// ── Examiner card animations ─────────────────────────────────────────────
+(function() {
+  // Card 1: OFAC Screening
+  function runScreening() {
+    var rows = [document.getElementById('scr-0'), document.getElementById('scr-1'), document.getElementById('scr-2'), document.getElementById('scr-3')];
+    var checks = [document.getElementById('scr-chk-0'), document.getElementById('scr-chk-1'), document.getElementById('scr-chk-2'), document.getElementById('scr-chk-3')];
+    var summary = document.getElementById('scr-summary');
+    if (!rows[0]) return;
+
+    function reset() {
+      rows.forEach(function(r) { r.classList.remove('show'); });
+      checks.forEach(function(c) { c.className = 'ex-screen-check'; c.innerHTML = '&#9679;'; });
+      summary.classList.remove('show');
+    }
+
+    function cycle() {
+      reset();
+      rows.forEach(function(r, i) {
+        setTimeout(function() {
+          r.classList.add('show');
+          checks[i].className = 'ex-screen-check pending';
+        }, i * 500);
+        setTimeout(function() {
+          checks[i].innerHTML = '&#10003;';
+          checks[i].className = 'ex-screen-check pass';
+        }, i * 500 + 400);
+      });
+      setTimeout(function() { summary.classList.add('show'); }, 2600);
+      setTimeout(reset, 7000);
+    }
+
+    var obs = new IntersectionObserver(function(entries) {
+      if (entries[0].isIntersecting) { cycle(); setInterval(cycle, 8000); obs.disconnect(); }
+    }, { threshold: 0.3 });
+    obs.observe(document.getElementById('ex-screen-anim'));
+  }
+
+  // Card 2: Intent Hash
+  function runHash() {
+    var fields = [document.getElementById('hf-0'), document.getElementById('hf-1'), document.getElementById('hf-2'), document.getElementById('hf-3'), document.getElementById('hf-4')];
+    var arrow = document.getElementById('hash-arrow');
+    var result = document.getElementById('hash-result');
+    if (!fields[0]) return;
+
+    function reset() {
+      fields.forEach(function(f) { f.classList.remove('show'); });
+      arrow.classList.remove('show');
+      result.classList.remove('show');
+    }
+
+    function cycle() {
+      reset();
+      fields.forEach(function(f, i) {
+        setTimeout(function() { f.classList.add('show'); }, i * 400);
+      });
+      setTimeout(function() { arrow.classList.add('show'); }, 2200);
+      setTimeout(function() { result.classList.add('show'); }, 2800);
+      setTimeout(reset, 7000);
+    }
+
+    var obs = new IntersectionObserver(function(entries) {
+      if (entries[0].isIntersecting) { cycle(); setInterval(cycle, 8000); obs.disconnect(); }
+    }, { threshold: 0.3 });
+    obs.observe(document.getElementById('ex-hash-anim'));
+  }
+
+  // Card 3: Digest Chain
+  function runChain() {
+    var links = [document.getElementById('cl-0'), document.getElementById('cl-1'), document.getElementById('cl-2'), document.getElementById('cl-3'), document.getElementById('cl-4')];
+    var msg = document.getElementById('chain-msg');
+    if (!links[0]) return;
+
+    function reset() {
+      links.forEach(function(l) { l.classList.remove('show', 'tampered', 'broken'); });
+      msg.classList.remove('show');
+    }
+
+    function cycle() {
+      reset();
+      // Build chain
+      links.forEach(function(l, i) {
+        setTimeout(function() { l.classList.add('show'); }, i * 350);
+      });
+      // Simulate tamper attempt on #47,291, then show it's detected
+      setTimeout(function() { links[2].classList.add('tampered'); }, 2800);
+      setTimeout(function() { links[3].classList.add('broken'); links[4].classList.add('broken'); }, 3200);
+      setTimeout(function() {
+        // Restore — tamper detected
+        links[2].classList.remove('tampered');
+        links[3].classList.remove('broken');
+        links[4].classList.remove('broken');
+        msg.classList.add('show');
+      }, 4800);
+      setTimeout(reset, 7500);
+    }
+
+    var obs = new IntersectionObserver(function(entries) {
+      if (entries[0].isIntersecting) { cycle(); setInterval(cycle, 8500); obs.disconnect(); }
+    }, { threshold: 0.3 });
+    obs.observe(document.getElementById('ex-chain-anim'));
+  }
+
+  runScreening();
+  runHash();
+  runChain();
+})();
+</script>
+</body>
+</html>

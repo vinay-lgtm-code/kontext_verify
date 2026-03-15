@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Use Cases — Kontext</title>
+<meta name="description" content="How Kontext helps when AI agents drive cross-border invoicing, global payroll, and vendor payments. Compliance logging, screening, and audit export for every transaction.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%233b6ef8'/><text x='16' y='22' text-anchor='middle' fill='white' font-family='Georgia' font-size='18' font-style='italic'>K</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:          #07080b;
+  --surface:     #0d1018;
+  --surface-2:   #131825;
+  --surface-3:   #1a2030;
+  --border:      #1c2540;
+  --border-dim:  #131a30;
+  --text:        #dde4f5;
+  --text-muted:  #5a6885;
+  --text-dim:    #4a5572;
+  --accent:      #3b6ef8;
+  --accent-dim:  rgba(59,110,248,0.1);
+  --green:       #22c55e;
+  --green-dim:   rgba(34,197,94,0.1);
+  --amber:       #f59e0b;
+  --red:         #ef4444;
+  --serif:       'Instrument Serif', Georgia, serif;
+  --mono:        'IBM Plex Mono', monospace;
+  --sans:        'DM Sans', system-ui, sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  font-weight: 400;
+}
+
+/* ── Grid Background ─────────────────────────────────────────────────── */
+.grid-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(var(--border-dim) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border-dim) 1px, transparent 1px);
+  background-size: 60px 60px;
+  opacity: 0.4;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 0%, black 30%, transparent 100%);
+}
+
+/* ── Navigation ─────────────────────────────────────────────────────── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 48px;
+  height: 60px;
+  background: rgba(7,8,11,0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 22px;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  transition: color 0.2s;
+}
+
+.nav-links a:hover { color: var(--text); }
+.nav-links a.active { color: var(--text); }
+
+.hamburger {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.hamburger span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: var(--text-muted);
+  margin: 4px 0;
+  transition: 0.3s;
+}
+
+/* ── Layout ──────────────────────────────────────────────────────────── */
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 48px;
+  position: relative;
+  z-index: 1;
+}
+
+.section-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* ── Hero ─────────────────────────────────────────────────────────── */
+.hero {
+  padding: 140px 48px 80px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.hero h1 {
+  font-family: var(--serif);
+  font-size: clamp(36px, 5vw, 60px);
+  font-weight: 400;
+  line-height: 1.1;
+  color: var(--text);
+  margin-bottom: 24px;
+}
+
+.hero-sub {
+  font-size: 17px;
+  color: var(--text-muted);
+  max-width: 640px;
+  margin: 0 auto 40px;
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+/* ── Use Case Cards ──────────────────────────────────────────────── */
+.use-case {
+  position: relative;
+  z-index: 1;
+  padding: 80px 48px;
+  border-top: 1px solid var(--border);
+}
+
+.use-case-num {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+  opacity: 0.6;
+}
+
+.use-case-title {
+  font-family: var(--serif);
+  font-size: clamp(28px, 3.5vw, 40px);
+  font-weight: 400;
+  line-height: 1.15;
+  color: var(--text);
+  margin-bottom: 40px;
+}
+
+.use-case-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.use-case-block {
+  padding: 0;
+}
+
+.use-case-block-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+
+.use-case-block p {
+  font-size: 15px;
+  color: var(--text-muted);
+  line-height: 1.65;
+  font-weight: 400;
+}
+
+.use-case-block p strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* Examiner Scenario Box */
+.examiner-box {
+  margin-top: 48px;
+  max-width: 960px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 32px;
+}
+
+.examiner-box-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 16px;
+}
+
+.examiner-question {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 18px;
+  color: var(--text);
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.examiner-answer {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+
+.examiner-answer code {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: var(--surface-3);
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: var(--accent);
+}
+
+/* ── Divider ─────────────────────────────────────────────────────── */
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0;
+}
+
+/* ── CTA Strip ───────────────────────────────────────────────────── */
+.cta-strip {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 80px 48px;
+  border-top: 1px solid var(--border);
+}
+
+.cta-strip h2 {
+  font-family: var(--serif);
+  font-size: clamp(28px, 3vw, 40px);
+  font-weight: 400;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.cta-strip p {
+  font-size: 15px;
+  color: var(--text-muted);
+  margin-bottom: 32px;
+  line-height: 1.5;
+}
+
+.btn-primary {
+  display: inline-block;
+  padding: 14px 36px;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.btn-primary:hover {
+  background: #2d5ce0;
+  transform: translateY(-1px);
+}
+
+/* ── Footer ──────────────────────────────────────────────────────── */
+footer {
+  position: relative;
+  z-index: 1;
+  padding: 40px 48px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-brand {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 18px;
+  color: var(--accent);
+}
+
+.footer-links {
+  display: flex;
+  gap: 24px;
+}
+
+.footer-links a {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+}
+
+.footer-links a:hover { color: var(--text-muted); }
+
+.footer-legal {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 8px;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .nav-links { display: none; }
+  .hamburger { display: block; }
+  nav.mobile-open .nav-links {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 60px; left: 0; right: 0;
+    background: rgba(7,8,11,0.95);
+    padding: 24px 48px;
+    gap: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+@media (max-width: 768px) {
+  .hero { padding: 120px 24px 60px; }
+  .use-case { padding: 60px 24px; }
+  .use-case-grid { grid-template-columns: 1fr; gap: 32px; }
+  .examiner-box { padding: 24px; }
+  .cta-strip { padding: 60px 24px; }
+  footer { flex-direction: column; gap: 16px; text-align: center; padding: 32px 24px; }
+  nav { padding: 0 24px; }
+}
+
+/* ── Scroll Reveal ───────────────────────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-d1 { transition-delay: 0.1s; }
+.reveal-d2 { transition-delay: 0.2s; }
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="/" class="nav-logo">Kontext</a>
+  <ul class="nav-links">
+    <li><a href="/#architecture">Architecture</a></li>
+    <li><a href="/#dashboard">Dashboard</a></li>
+    <li><a href="/use-cases" class="active">Use Cases</a></li>
+    <li><a href="/#pilot">Request Demo</a></li>
+  </ul>
+  <button class="hamburger" onclick="this.closest('nav').classList.toggle('mobile-open')" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <p class="section-label reveal" style="margin-bottom:16px">Use Cases</p>
+  <h1 class="reveal reveal-d1">Where AI agents move money,<br>Kontext builds the audit trail.</h1>
+  <p class="hero-sub reveal reveal-d2">
+    Three scenarios. Each shows the compliance exposure when agents drive transactions autonomously — and what changes when every payment is logged, screened, and exportable.
+  </p>
+</section>
+
+<!-- USE CASE 1: Cross-Border Invoicing -->
+<section class="use-case" id="cross-border">
+  <div class="container">
+    <div class="use-case-num reveal">Use Case 01</div>
+    <h2 class="use-case-title reveal reveal-d1">Cross-border money movement<br>for invoicing</h2>
+
+    <div class="use-case-grid">
+      <div class="use-case-block reveal">
+        <div class="use-case-block-label">The situation</div>
+        <p>AI agents process supplier invoices and initiate USDC transfers across jurisdictions — US to Mexico, EU to Philippines, UK to Nigeria. Agents match invoices to purchase orders, validate amounts, and execute payment autonomously. Hundreds of transfers per week. No human reviews individual payments.</p>
+      </div>
+
+      <div class="use-case-block reveal reveal-d1">
+        <div class="use-case-block-label">The compliance exposure</div>
+        <p><strong>Travel Rule triggers at $3,000.</strong> There is no proof the agent verified the counterparty before the transfer. No record ties the invoice to the payment. If an examiner asks "why did your system send $28,000 to a wallet in Lagos?" — the answer is buried across four systems and three time zones. Reconstructing the decision path takes days.</p>
+      </div>
+    </div>
+
+    <div class="use-case-grid" style="margin-top:32px">
+      <div class="use-case-block reveal">
+        <div class="use-case-block-label">What Kontext does</div>
+        <p>Each transfer runs through <code>verify()</code>. Kontext logs the transfer with agent ID, workflow context (<code>invoice-payment</code>), route (GB&#8594;NG), and screens both wallets against OFAC, OFSI, and OpenSanctions. The intent hash binds the invoice reference to the payment cryptographically. The evidence bundle is exportable in one click.</p>
+      </div>
+
+      <div class="use-case-block reveal reveal-d1">
+        <div class="use-case-block-label">What changes</div>
+        <p>The compliance officer doesn't need to reconstruct anything. Every cross-border payment has a complete evidence trail: who sent it, what triggered it, which invoice it fulfills, whether both wallets were screened, and a digest chain link that proves the record hasn't been modified after the fact.</p>
+      </div>
+    </div>
+
+    <div class="examiner-box reveal reveal-d2">
+      <div class="examiner-box-label">The examiner scenario</div>
+      <div class="examiner-question">"Show me the authorization chain for this cross-border payment."</div>
+      <div class="examiner-answer">
+        Click the payment in the dashboard. Evidence drawer shows: invoice ID in metadata, agent authorization scope, OFAC clear on both wallets, policy evaluation (GENIUS Act threshold flagged — agent had documented approval to proceed), digest chain link <code>#47,291</code>. Export as signed JSON. The examiner has everything in 10 seconds.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- USE CASE 2: Global Payroll -->
+<section class="use-case" id="payroll">
+  <div class="container">
+    <div class="use-case-num reveal">Use Case 02</div>
+    <h2 class="use-case-title reveal reveal-d1">Payroll transfers to a global<br>contractor workforce</h2>
+
+    <div class="use-case-grid">
+      <div class="use-case-block reveal">
+        <div class="use-case-block-label">The situation</div>
+        <p>A platform uses AI agents to calculate and disburse contractor payments across 12 countries. Agents handle FX conversion timing, split payments, and route optimization. Hundreds of transfers per pay cycle. Each contractor has a wallet address, not a bank account.</p>
+      </div>
+
+      <div class="use-case-block reveal reveal-d1">
+        <div class="use-case-block-label">The compliance exposure</div>
+        <p><strong>CTR threshold at $10,000 for aggregate payments.</strong> There is no way to prove each contractor wallet was screened before payment. No audit trail connects the payroll calculation to the actual disbursement. If a contractor wallet appears on a sanctions list after the fact — can you prove it was clean at the time of payment?</p>
+      </div>
+    </div>
+
+    <div class="use-case-grid" style="margin-top:32px">
+      <div class="use-case-block reveal">
+        <div class="use-case-block-label">What Kontext does</div>
+        <p>Each disbursement goes through <code>verify()</code> — screening the contractor wallet, logging the payroll-run ID, flagging CTR thresholds. The digest chain proves the screening result was recorded <em>before</em> the transfer, not retroactively. Batch audit export covers the entire pay cycle in a single file.</p>
+      </div>
+
+      <div class="use-case-block reveal reveal-d1">
+        <div class="use-case-block-label">What changes</div>
+        <p>The compliance officer can answer "were all contractor wallets screened before the March 15 payroll run?" in seconds, not days. Every transfer has a timestamp-proven screening result. The digest chain makes retroactive record insertion mathematically detectable.</p>
+      </div>
+    </div>
+
+    <div class="examiner-box reveal reveal-d2">
+      <div class="examiner-box-label">The examiner scenario</div>
+      <div class="examiner-question">"Were all contractor wallets screened before the March 15 payroll run?"</div>
+      <div class="examiner-answer">
+        Export the audit trail filtered by <code>workflow=payroll-disbursement</code> and date range. Every transfer shows screening timestamp, result, and provider. Digest chain proves no records were inserted or modified after the fact. The export is self-verifying — any third party can validate it independently without Kontext.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- USE CASE 3: Vendor Payments -->
+<section class="use-case" id="vendor-payments">
+  <div class="container">
+    <div class="use-case-num reveal">Use Case 03</div>
+    <h2 class="use-case-title reveal reveal-d1">Risk control for<br>vendor payments</h2>
+
+    <div class="use-case-grid">
+      <div class="use-case-block reveal">
+        <div class="use-case-block-label">The situation</div>
+        <p>AI agents manage vendor relationships — approving purchase orders, releasing milestone payments, handling early-payment discounts. Agents operate within policy limits but make autonomous decisions about timing and routing. The finance team sees the results, not the decisions.</p>
+      </div>
+
+      <div class="use-case-block reveal reveal-d1">
+        <div class="use-case-block-label">The compliance exposure</div>
+        <p><strong>An agent pays a vendor $14,500 that exceeds the org's per-transaction limit.</strong> Another agent routes through an unfamiliar chain. A third pays a wallet that was added to the SDN list 6 hours ago. Without a compliance layer, the risk team finds out from the examiner, not from the system.</p>
+      </div>
+    </div>
+
+    <div class="use-case-grid" style="margin-top:32px">
+      <div class="use-case-block reveal">
+        <div class="use-case-block-label">What Kontext does</div>
+        <p>Policy evaluation runs on every payment — payout limits, allowed chains, blocked countries. Violations are logged with the specific rule that fired. Trust scoring drops when agents hit policy boundaries. Anomaly detection flags unusual patterns: new destination, off-hours activity, rapid succession. The compliance officer sees warnings <em>before</em> the examiner does.</p>
+      </div>
+
+      <div class="use-case-block reveal reveal-d1">
+        <div class="use-case-block-label">What changes</div>
+        <p>The risk team moves from reactive to proactive. Policy violations are documented in real-time with the exact rule, threshold, and agent scope. When an examiner asks about a violation, the answer includes what happened, what control fired, and what action was taken — all cryptographically linked in the digest chain.</p>
+      </div>
+    </div>
+
+    <div class="examiner-box reveal reveal-d2">
+      <div class="examiner-box-label">The examiner scenario</div>
+      <div class="examiner-question">"Your agent exceeded the payout limit on March 12. What controls were in place?"</div>
+      <div class="examiner-answer">
+        Dashboard shows the policy violation was logged at 17:48. The payment was blocked (not just warned). The agent's trust score dropped from 88 to 76. The compliance officer was notified via the dashboard alert. Full evidence bundle: policy rule ID, threshold (<code>$10,000</code>), agent authorization scope, and digest chain proof that the block was enforced before the transfer could execute.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-strip">
+  <h2>See it with your payment data.</h2>
+  <p>90-day pilot. No commitment. Your audit trail is yours to keep.</p>
+  <a href="/#pilot" class="btn-primary">Request a demo</a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div>
+    <div class="footer-brand">Kontext</div>
+    <div class="footer-legal">Legaci Labs Inc.</div>
+  </div>
+  <div class="footer-links">
+    <a href="https://github.com/Legaci-Labs/kontext">GitHub</a>
+    <a href="https://www.npmjs.com/package/kontext-sdk">npm</a>
+    <a href="/docs">Docs</a>
+  </div>
+</footer>
+
+<script>
+// Scroll reveal
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
