@@ -3,7 +3,6 @@ import Link from "next/link";
 const footerLinks = {
   Product: [
     { href: "/docs", label: "Documentation" },
-    { href: "/pricing", label: "Pricing" },
     { href: "/use-cases", label: "Use Cases" },
     { href: "/integrations", label: "Integrations" },
     { href: "/changelog", label: "Changelog" },
@@ -20,6 +19,7 @@ const footerLinks = {
   ],
   Company: [
     { href: "/about", label: "About" },
+    { href: "/team", label: "Founder" },
     { href: "/privacy", label: "Privacy" },
     { href: "/terms", label: "Terms" },
   ],
@@ -33,7 +33,7 @@ export function Footer() {
         <div className="mx-auto max-w-7xl">
           <p className="text-xs text-[var(--term-text-3)] font-light tracking-wide">
             <span className="text-[var(--term-green)]">$</span>{" "}
-            kontext v0.8.0{" "}
+            kontext v0.11.1{" "}
             <span className="text-[var(--term-surface-3)]">·</span> USDC + x402{" "}
             <span className="text-[var(--term-surface-3)]">·</span> Base + Arc{" "}
             <span className="text-[var(--term-surface-3)]">·</span>{" "}
