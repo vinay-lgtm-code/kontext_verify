@@ -297,42 +297,6 @@ nav.scrolled { border-bottom-color: var(--border); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Trust Strip ──────────────────────────────────────────────────────────── */
-.trust-strip {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 40px;
-  padding: 40px 48px;
-  border-top: 1px solid var(--border-dim);
-  border-bottom: 1px solid var(--border-dim);
-  flex-wrap: wrap;
-}
-
-.trust-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text-dim);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.trust-icon {
-  font-size: 14px;
-  opacity: 0.6;
-}
-
-.trust-sep {
-  width: 1px;
-  height: 20px;
-  background: var(--border);
-}
-
 /* ── Section Base ─────────────────────────────────────────────────────────── */
 .section {
   position: relative;
@@ -1895,8 +1859,6 @@ footer {
   .hamburger { display: flex; }
   .hero { padding: 100px 24px 80px; }
   .hero-ctas { flex-direction: column; align-items: center; }
-  .trust-strip { gap: 16px; padding: 24px; }
-  .trust-sep { display: none; }
   .section { padding: 80px 24px; }
   .scenario-grid { grid-template-columns: 1fr; }
   .scenario-section { padding: 80px 24px; }
@@ -1994,34 +1956,6 @@ footer {
     <a href="/docs" class="btn-ghost">View Documentation</a>
   </div>
 </section>
-
-<!-- TRUST STRIP -->
-<div class="trust-strip reveal">
-  <div class="trust-item">
-    <span class="trust-icon">&#9670;</span>
-    GENIUS Act ready
-  </div>
-  <div class="trust-sep"></div>
-  <div class="trust-item">
-    <span class="trust-icon">&#9671;</span>
-    Base mainnet deployed
-  </div>
-  <div class="trust-sep"></div>
-  <div class="trust-item">
-    <span class="trust-icon">&#11042;</span>
-    MIT open-source SDK
-  </div>
-  <div class="trust-sep"></div>
-  <div class="trust-item">
-    <span class="trust-icon">&#9724;</span>
-    Built for Circle + CCTP
-  </div>
-  <div class="trust-sep"></div>
-  <div class="trust-item">
-    <span class="trust-icon">&#9733;</span>
-    Deployed on Base mainnet
-  </div>
-</div>
 
 <!-- BEFORE/AFTER SCENARIO -->
 <section class="scenario-section" id="scenario">
