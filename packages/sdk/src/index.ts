@@ -75,6 +75,10 @@ export type {
   GenerateComplianceCertificateInput,
   ComplianceCertificate,
 
+  // Payment Instruments
+  PaymentInstrument,
+  InstrumentScope,
+
   // USDC Integration
   UsdcComplianceCheck,
   ComplianceCheckResult,
@@ -148,8 +152,14 @@ export type { SanctionsCheckResult } from './integrations/usdc.js';
 // General Payment Compliance (for direct use)
 export { PaymentCompliance } from './integrations/payment-compliance.js';
 
+// Card Payment Compliance (for direct use)
+export { CardCompliance } from './integrations/card-compliance.js';
+
+// Known Payment Instrument Issuers
+export { KNOWN_ISSUERS } from './integrations/known-issuers.js';
+
 // Type guards
-export { isCryptoTransaction } from './types.js';
+export { isCryptoTransaction, isCardTransaction, isBankTransaction } from './types.js';
 
 // On-Chain Anchoring
 export { verifyAnchor, getAnchor, anchorDigest, OnChainExporter } from './onchain.js';

@@ -10,6 +10,9 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { ServerStore } from './store.js';
 import { ServerFeatureFlags } from './feature-flags.js';
+import { getPool } from './db.js';
+import { handleIngest, ValidationError } from './ingest.js';
+import { createDashboardRoutes } from './dashboard-routes.js';
 
 const app = new Hono();
 const store = new ServerStore();
@@ -63,7 +66,10 @@ const apiKeyUsage = new Map<string, ApiKeyUsage>();
 /** API key -> plan tier + seats mapping (configurable via env or registration) */
 const apiKeyPlans = new Map<string, { plan: PlanTier; seats: number }>();
 
-// Load plan configuration from environment (format: KONTEXT_API_KEY_PLANS="sk_live_abc:pro:3,sk_live_def:enterprise")
+// Load plan configuration from environment
+// Format: KONTEXT_API_KEY_PLANS="sk_live_abc:pro:3:org_legaci_demo,sk_live_def:enterprise"
+// Fields: key:plan:seats:org_id (org_id is optional)
+const apiKeyOrgMap = new Map<string, string>();
 const planConfig = process.env['KONTEXT_API_KEY_PLANS'];
 if (planConfig) {
   for (const entry of planConfig.split(',').map((e) => e.trim())) {
@@ -71,8 +77,12 @@ if (planConfig) {
     const key = parts[0];
     const plan = parts[1];
     const seats = parts[2] ? parseInt(parts[2], 10) : 1;
+    const orgId = parts[3];
     if (key && plan && (plan === 'free' || plan === 'pro' || plan === 'enterprise')) {
       apiKeyPlans.set(key, { plan: plan as PlanTier, seats: Math.max(1, seats || 1) });
+    }
+    if (key && orgId) {
+      apiKeyOrgMap.set(key, orgId);
     }
   }
 }
@@ -806,6 +816,86 @@ app.get('/v1/sdn/status', authMiddleware, (c) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// ============================================================================
+// Dashboard API Routes (Postgres-backed — additive, does not affect existing routes)
+// ============================================================================
+
+/**
+ * Auth middleware for dashboard routes: resolves org_id from API key.
+ * Uses X-Api-Key header (dashboard) or Authorization Bearer (SDK).
+ */
+function dashboardAuthMiddleware(c: Parameters<Parameters<typeof app.use>[1]>[0], next: () => Promise<void>): Promise<Response | void> {
+  // Accept both X-Api-Key (dashboard) and Authorization Bearer (SDK)
+  const apiKey = c.req.header('X-Api-Key') ?? c.req.header('Authorization')?.slice(7);
+
+  if (!apiKey || !VALID_API_KEYS.has(apiKey)) {
+    return Promise.resolve(c.json({ error: 'Invalid API key' }, 401));
+  }
+
+  const orgId = apiKeyOrgMap.get(apiKey);
+  if (!orgId) {
+    return Promise.resolve(c.json({ error: 'API key not mapped to an organization' }, 403));
+  }
+
+  c.set('orgId' as never, orgId as never);
+  return next();
+}
+
+// POST /v1/verification-events — Ingestion endpoint (auth via app.use middleware)
+app.post('/v1/verification-events', async (c) => {
+  const orgId = c.get('orgId' as never) as string;
+  const pool = getPool();
+  if (!pool) {
+    return c.json({ error: 'Database not configured' }, 503);
+  }
+
+  let body: unknown;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: 'Invalid JSON body' }, 400);
+  }
+
+  try {
+    const result = await handleIngest(pool, orgId, body);
+    return c.json(result, 201);
+  } catch (err) {
+    if (err instanceof ValidationError) {
+      const statusMap: Record<string, number> = {
+        MISSING_REQUIRED_FIELD: 400,
+        INVALID_BODY: 400,
+        INVALID_CHAIN: 400,
+        INVALID_TOKEN: 400,
+        AMOUNT_PARSE_ERROR: 400,
+        INVALID_COUNTRY_CODE: 400,
+        DUPLICATE_TX_HASH: 409,
+        COUNTRY_HASH_CONFLICT: 422,
+      };
+      const status = statusMap[err.code] ?? 400;
+      return c.json({ error: err.message, code: err.code }, status as 400);
+    }
+    const e = err as Error & { code?: string };
+    if (e.code === 'CHAIN_STATE_ERROR') {
+      return c.json({ error: e.message, code: 'CHAIN_STATE_ERROR' }, 500);
+    }
+    throw err;
+  }
+});
+
+// Mount dashboard query routes under /v1
+// Apply dashboard auth to dashboard-specific paths (GETs handled by dashboardRouter)
+app.use('/v1/kpis', dashboardAuthMiddleware);
+app.use('/v1/agents', dashboardAuthMiddleware);
+app.use('/v1/policies', dashboardAuthMiddleware);
+app.use('/v1/policies/*', dashboardAuthMiddleware);
+app.use('/v1/audit-exports', dashboardAuthMiddleware);
+app.use('/v1/audit-exports/*', dashboardAuthMiddleware);
+app.use('/v1/verification-events', dashboardAuthMiddleware);
+app.use('/v1/verification-events/*', dashboardAuthMiddleware);
+
+const dashboardRouter = createDashboardRoutes(getPool);
+app.route('/v1', dashboardRouter);
 
 // ============================================================================
 // Stripe Checkout + Billing Routes (no auth required — public checkout flow)
