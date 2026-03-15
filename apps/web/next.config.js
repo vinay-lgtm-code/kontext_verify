@@ -24,6 +24,18 @@ const nextConfig = {
   env: {
     CHANGELOG_CONTENT: readChangelogSync(),
   },
+  async rewrites() {
+    return [
+      {
+        source: "/",
+        destination: "/enterprise.html",
+      },
+      {
+        source: "/use-cases",
+        destination: "/enterprise-use-cases.html",
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;

@@ -7,11 +7,10 @@ import { Menu, X, ChevronDown } from "lucide-react";
 
 const mainLinks = [
   { href: "/docs", label: "Docs" },
-  { href: "/playground", label: "Playground" },
-  { href: "/pricing", label: "Pricing" },
 ];
 
 const resourceLinks = [
+  { href: "/playground", label: "Playground" },
   { href: "/use-cases", label: "Use Cases" },
   { href: "/integrations", label: "Integrations" },
   { href: "/faqs", label: "FAQs" },
