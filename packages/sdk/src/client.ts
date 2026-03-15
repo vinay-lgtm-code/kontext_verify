@@ -67,7 +67,8 @@ import { TaskManager } from './tasks.js';
 import { AuditExporter } from './audit.js';
 import { UsdcCompliance } from './integrations/usdc.js';
 import { PaymentCompliance } from './integrations/payment-compliance.js';
-import { isCryptoTransaction } from './types.js';
+import { CardCompliance } from './integrations/card-compliance.js';
+import { isCryptoTransaction, isCardTransaction } from './types.js';
 import { ScreeningAggregator } from './integrations/screening-aggregator.js';
 import type { AggregatedScreeningResult } from './integrations/screening-aggregator.js';
 import { PlanManager } from './plans.js';
@@ -1075,6 +1076,8 @@ export class Kontext {
       compliance = this.buildComplianceFromScreening(input, fromResult, toResult);
     } else if (isCryptoTransaction(input)) {
       compliance = UsdcCompliance.checkTransaction(input);
+    } else if (isCardTransaction(input)) {
+      compliance = CardCompliance.checkPayment(input);
     } else {
       compliance = PaymentCompliance.checkPayment(input);
     }

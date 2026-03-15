@@ -512,6 +512,44 @@ export interface LogActionInput {
   metadata?: Record<string, unknown>;
 }
 
+// ============================================================================
+// Payment Instruments — Unified Token Model
+// ============================================================================
+
+/** Authorization scope defining what a payment instrument is allowed to do */
+export interface InstrumentScope {
+  /** Maximum per-transaction amount */
+  maxTransactionAmount?: string;
+  /** Periodic spend limit */
+  spendLimit?: string;
+  /** Period for the spend limit */
+  spendLimitPeriod?: 'daily' | 'weekly' | 'monthly';
+  /** Allowed currencies or tokens (e.g., ['USD'], ['USDC', 'EURC']) */
+  allowedCurrencies?: string[];
+  /** Allowed networks (chain IDs or card networks) */
+  allowedNetworks?: string[];
+  /** Blocked merchant category codes (ISO 18245) */
+  blockedMerchantCategories?: string[];
+  /** Allowed countries (ISO 3166-1 alpha-2) */
+  allowedCountries?: string[];
+  /** Instrument expiry (ISO 8601) */
+  expiresAt?: string;
+}
+
+/** A payment instrument is any tokenized value holder an agent can spend from */
+export interface PaymentInstrument {
+  /** Token identifier: blockchain address, tokenized PAN, account token */
+  instrumentId: string;
+  /** What kind of instrument */
+  instrumentType: 'blockchain_wallet' | 'virtual_card' | 'bank_account' | 'payment_token';
+  /** Settlement network: blockchain name OR card network OR banking network */
+  instrumentNetwork: string;
+  /** Who issued/minted the token (free-form: 'circle', 'marqeta', 'ramp', 'lithic', etc.) */
+  instrumentIssuer?: string;
+  /** Authorization scope: what this instrument is allowed to do */
+  instrumentScope?: InstrumentScope;
+}
+
 /** Input for logging a transaction (crypto or general payment) */
 export interface LogTransactionInput {
   /** On-chain transaction hash (required for crypto, optional for general payments) */
@@ -540,6 +578,28 @@ export interface LogTransactionInput {
   paymentMethod?: string;
   /** External payment reference (invoice ID, wire reference, etc.) */
   paymentReference?: string;
+
+  /** The payment instrument used for this transaction (unified token model) */
+  instrument?: PaymentInstrument;
+
+  /** Card network: visa, mastercard, amex, discover */
+  cardNetwork?: string;
+  /** Last 4 digits of virtual card number */
+  cardLast4?: string;
+  /** Merchant Category Code (ISO 18245) */
+  merchantCategoryCode?: string;
+  /** Merchant name */
+  merchantName?: string;
+  /** Merchant country (ISO 3166-1 alpha-2) */
+  merchantCountry?: string;
+  /** 3D Secure verification status */
+  threeDSecureStatus?: 'authenticated' | 'attempted' | 'failed' | 'not_enrolled' | 'none';
+  /** Card issuing platform (e.g., 'ramp', 'crossmint', 'lithic', 'marqeta') */
+  cardPlatform?: string;
+  /** Spending limit on this virtual card (string for precision) */
+  cardSpendLimit?: string;
+  /** Authorization ID from card network */
+  cardAuthorizationId?: string;
 }
 
 /** Stored transaction record */
@@ -554,11 +614,34 @@ export interface TransactionRecord extends ActionLog {
   currency?: string;
   paymentMethod?: string;
   paymentReference?: string;
+  instrument?: PaymentInstrument;
+  cardNetwork?: string;
+  cardLast4?: string;
+  merchantCategoryCode?: string;
+  merchantName?: string;
+  merchantCountry?: string;
+  threeDSecureStatus?: string;
+  cardPlatform?: string;
+  cardAuthorizationId?: string;
 }
 
 /** Check whether a transaction input has all crypto-specific fields */
 export function isCryptoTransaction(input: LogTransactionInput): boolean {
   return !!input.txHash && !!input.chain && !!input.token;
+}
+
+/** Check whether a transaction input is a card payment */
+export function isCardTransaction(input: LogTransactionInput): boolean {
+  return input.paymentMethod === 'card'
+    || input.instrument?.instrumentType === 'virtual_card'
+    || !!input.cardNetwork
+    || !!input.cardLast4;
+}
+
+/** Check whether a transaction input is a bank transfer */
+export function isBankTransaction(input: LogTransactionInput): boolean {
+  return input.paymentMethod === 'bank'
+    || input.instrument?.instrumentType === 'bank_account';
 }
 
 // ============================================================================
