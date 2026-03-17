@@ -2,6 +2,25 @@
 
 All notable public changes to the Kontext SDK and platform are documented here.
 
+## [0.11.1] - 2026-03-17
+
+### Added
+- PostgreSQL persistence with migration runner (auto-runs on startup)
+- Multi-rail billing: Stripe (fiat), Circle Programmable Wallets (USDC/EURC/USDT), direct Base wallet transfers
+- Subscriptions and API key management tables (migration 004)
+- Billing status endpoint (`GET /v1/billing/status`)
+- Circle/Base wallet payment verification endpoint (`POST /v1/billing/verify-payment`)
+- Server version centralized in `version.ts` (single source of truth)
+- Startup banner shows storage mode (PostgreSQL vs In-memory)
+- Cloud SQL instance attachment in CI/CD deploy pipeline
+- GCP Cloud Monitoring uptime check and alerting
+
+### Changed
+- Pricing updated: Pro ($449/mo) → Startup ($2,000/mo, invite-only)
+- Server version bumped to 0.11.1
+- npm publish auth fixed in release workflow (was deleting auth token)
+- `pg` added to tsup externals for proper bundling
+
 ## [0.11.0] - 2026-03-12
 
 ### Added
