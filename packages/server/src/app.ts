@@ -13,6 +13,8 @@ import { ServerFeatureFlags } from './feature-flags.js';
 import { getPool } from './db.js';
 import { handleIngest, ValidationError } from './ingest.js';
 import { createDashboardRoutes } from './dashboard-routes.js';
+import { createBillingRoutes } from './billing-circle.js';
+import { SERVER_VERSION } from './version.js';
 
 const app = new Hono();
 const store = new ServerStore();
@@ -231,7 +233,7 @@ function authMiddleware(c: Parameters<Parameters<typeof app.use>[1]>[0], next: (
 app.get('/', (c) => {
   return c.json({
     service: 'kontext-api',
-    version: '0.2.0',
+    version: SERVER_VERSION,
     status: 'healthy',
     timestamp: new Date().toISOString(),
   });
@@ -896,6 +898,10 @@ app.use('/v1/verification-events/*', dashboardAuthMiddleware);
 
 const dashboardRouter = createDashboardRoutes(getPool);
 app.route('/v1', dashboardRouter);
+
+// Mount billing routes (Circle/Base wallet payment verification)
+const billingRouter = createBillingRoutes();
+app.route('/v1', billingRouter);
 
 // ============================================================================
 // Stripe Checkout + Billing Routes (no auth required — public checkout flow)

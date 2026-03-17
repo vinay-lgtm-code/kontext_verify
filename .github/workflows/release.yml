@@ -143,11 +143,13 @@ jobs:
           git tag "v${{ steps.check.outputs.next_version }}"
           git push origin release --tags
 
+      - name: Setup npm auth
+        if: steps.check.outputs.should_release == 'true'
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" >> ~/.npmrc
+
       - name: Publish SDK to npm
         if: steps.check.outputs.should_release == 'true'
         run: |
-          npm install -g npm@latest
-          npm config delete //registry.npmjs.org/:_authToken 2>/dev/null || true
           cd packages/sdk
           npm publish --no-provenance --access public
 
@@ -234,10 +236,11 @@ jobs:
           git tag "v${{ inputs.version }}"
           git push origin release --tags
 
+      - name: Setup npm auth
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" >> ~/.npmrc
+
       - name: Publish SDK to npm
         run: |
-          npm install -g npm@latest
-          npm config delete //registry.npmjs.org/:_authToken 2>/dev/null || true
           cd packages/sdk
           npm publish --no-provenance --access public
 
