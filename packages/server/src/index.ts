@@ -5,16 +5,31 @@
 
 import { serve } from '@hono/node-server';
 import app from './app.js';
+import { SERVER_VERSION } from './version.js';
+import { runMigrations } from './migrate.js';
+import { getPool } from './db.js';
 
 const port = parseInt(process.env['PORT'] ?? '8080', 10);
+const storageMode = getPool() ? 'PostgreSQL' : 'In-memory';
 
-console.log(`
+async function start() {
+  // Run migrations if database is configured
+  if (getPool()) {
+    try {
+      await runMigrations();
+    } catch (err) {
+      console.error('[startup] Migration failed:', err);
+      // Continue startup — server can still serve in-memory routes
+    }
+  }
+
+  console.log(`
   ╔══════════════════════════════════════════╗
-  ║         Kontext API Server v0.2.0        ║
+  ║     Kontext API Server v${SERVER_VERSION.padEnd(16)}║
   ║──────────────────────────────────────────║
   ║  Status:  Running                        ║
   ║  Port:    ${String(port).padEnd(33)}║
-  ║  Storage: In-memory (MVP)                ║
+  ║  Storage: ${storageMode.padEnd(33)}║
   ║                                          ║
   ║  Endpoints:                              ║
   ║    POST /v1/actions                      ║
@@ -24,12 +39,17 @@ console.log(`
   ║    GET  /v1/audit/export                 ║
   ║    GET  /v1/trust/:agentId               ║
   ║    POST /v1/anomalies/evaluate           ║
+  ║    POST /v1/verification-events          ║
+  ║    GET  /v1/billing/status               ║
   ╚══════════════════════════════════════════╝
 `);
 
-serve({
-  fetch: app.fetch,
-  port,
-});
+  serve({
+    fetch: app.fetch,
+    port,
+  });
+}
+
+start();
 
 export default app;

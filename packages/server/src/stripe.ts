@@ -2,7 +2,7 @@
 // Kontext Server - Stripe Checkout + Billing Integration
 // ============================================================================
 // Handles Stripe Checkout sessions, Customer Portal, and webhook processing
-// for the Pro plan ($449/user/mo, 100K events).
+// for the Startup plan ($2,000/mo, invite-only).
 
 import Stripe from 'stripe';
 
@@ -35,23 +35,23 @@ function getStripeClient(): Stripe {
 }
 
 // ---------------------------------------------------------------------------
-// Pro Plan Configuration
+// Startup Plan Configuration (private/invite-only — $2,000/mo)
 // ---------------------------------------------------------------------------
 
-export const PRO_PLAN_CONFIG = {
+export const STARTUP_PLAN_CONFIG = {
   product: {
-    name: 'Kontext Pro',
-    description: 'Cloud compliance dashboard, advanced anomaly detection, trust scoring, compliance templates, multi-chain support, webhooks, team controls. 100K events/user/mo.',
+    name: 'Kontext Startup',
+    description: 'Full compliance dashboard, screening, audit exports, multi-chain, webhooks, approval policies. Invite-only.',
   },
   price: {
-    amount: 44900, // $449.00 in cents
+    amount: 200000, // $2,000.00 in cents
     currency: 'usd',
     interval: 'month' as const,
-    perSeat: true,
+    perSeat: false,
   },
   metadata: {
-    tier: 'pro',
-    events_limit: '100000',
+    tier: 'startup',
+    events_limit: 'unlimited',
   },
 } as const;
 
@@ -96,12 +96,12 @@ export async function createCheckoutSession(
     success_url: successUrl.replace('{CHECKOUT_SESSION_ID}', '{CHECKOUT_SESSION_ID}'),
     cancel_url: cancelUrl,
     metadata: {
-      ...PRO_PLAN_CONFIG.metadata,
+      ...STARTUP_PLAN_CONFIG.metadata,
       seats: String(seats),
     },
     subscription_data: {
       metadata: {
-        ...PRO_PLAN_CONFIG.metadata,
+        ...STARTUP_PLAN_CONFIG.metadata,
         seats: String(seats),
       },
     },
@@ -210,7 +210,7 @@ export async function handleWebhookEvent(
         type: event.type,
         handled: true,
         data: {
-          action: 'activate_pro',
+          action: 'activate_startup',
           customerId: session.customer,
           customerEmail: session.customer_email,
           subscriptionId: session.subscription,
@@ -241,7 +241,7 @@ export async function handleWebhookEvent(
         type: event.type,
         handled: true,
         data: {
-          action: 'downgrade_to_free',
+          action: 'downgrade_to_pilot',
           customerId: subscription.customer,
           subscriptionId: subscription.id,
         },
