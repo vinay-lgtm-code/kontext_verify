@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { CookieSettingsButton } from "./cookie-consent";
 
 const footerLinks = {
   Product: [
@@ -22,6 +25,7 @@ const footerLinks = {
     { href: "/team", label: "Founder" },
     { href: "/privacy", label: "Privacy" },
     { href: "/terms", label: "Terms" },
+    { href: "#cookie-settings", label: "Cookie Settings", cookieSettings: true },
   ],
 };
 
@@ -56,7 +60,9 @@ export function Footer() {
               <ul className="mt-4 space-y-2.5">
                 {links.map((link) => (
                   <li key={link.href}>
-                    {"external" in link && link.external ? (
+                    {"cookieSettings" in link && link.cookieSettings ? (
+                      <CookieSettingsButton />
+                    ) : "external" in link && link.external ? (
                       <a
                         href={link.href}
                         target="_blank"
