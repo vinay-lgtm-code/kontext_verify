@@ -8,6 +8,7 @@ import { TrustBar } from './trust-bar';
 interface ActivityFeedProps {
   events: VerificationEvent[];
   onSelectEvent: (event: VerificationEvent) => void;
+  onAssignEvent?: (eventId: string) => void;
 }
 
 const FILTERS = ['All', 'Verified', 'Warnings', 'Blocked'] as const;
@@ -39,7 +40,7 @@ function getRailLabel(rail: string): { text: string; color: string } {
   }
 }
 
-export function ActivityFeed({ events, onSelectEvent }: ActivityFeedProps) {
+export function ActivityFeed({ events, onSelectEvent, onAssignEvent }: ActivityFeedProps) {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>('All');
 
   const filtered =
@@ -66,7 +67,7 @@ export function ActivityFeed({ events, onSelectEvent }: ActivityFeedProps) {
       </div>
 
       <div className="dash-table">
-        <div className="dash-table-header dash-cols-7">
+        <div className={`dash-table-header ${onAssignEvent ? 'dash-cols-8' : 'dash-cols-7'}`}>
           <span>Time</span>
           <span>Agent</span>
           <span>Route</span>
@@ -74,6 +75,7 @@ export function ActivityFeed({ events, onSelectEvent }: ActivityFeedProps) {
           <span>Trust</span>
           <span>Network</span>
           <span>Status</span>
+          {onAssignEvent && <span>Assign</span>}
         </div>
 
         {filtered.length === 0 ? (
@@ -92,7 +94,7 @@ export function ActivityFeed({ events, onSelectEvent }: ActivityFeedProps) {
           filtered.map((event) => (
             <div
               key={event.event_id}
-              className="dash-table-row dash-cols-7"
+              className={`dash-table-row ${onAssignEvent ? 'dash-cols-8' : 'dash-cols-7'}`}
               onClick={() => onSelectEvent(event)}
             >
               <span style={{ fontFamily: 'var(--font-plex-mono), monospace', fontSize: 12, color: 'var(--dash-text-2)' }}>
@@ -123,6 +125,15 @@ export function ActivityFeed({ events, onSelectEvent }: ActivityFeedProps) {
                 </span>
               </span>
               <StatusPill status={event.status} />
+              {onAssignEvent && (
+                <button
+                  className="dash-btn dash-btn-secondary"
+                  style={{ fontSize: 11, padding: '2px 8px', height: 'auto' }}
+                  onClick={(e) => { e.stopPropagation(); onAssignEvent(event.event_id); }}
+                >
+                  Assign
+                </button>
+              )}
             </div>
           ))
         )}

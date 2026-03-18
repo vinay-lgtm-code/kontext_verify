@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { PolicyData, PolicyViolation } from '@/lib/dashboard-api';
-import { getPolicies, getPolicyViolations } from '@/lib/dashboard-api';
+import { getPolicies, getPolicyViolations, getRole } from '@/lib/dashboard-api';
 import { StatusPill } from '@/components/dashboard/status-pill';
 
 function formatTime(iso: string): string {
@@ -19,8 +19,11 @@ export default function PoliciesPage() {
   const [violations, setViolations] = useState<PolicyViolation[]>([]);
   const [totalEvents, setTotalEvents] = useState(0);
   const [loading, setLoading] = useState(true);
+  const role = getRole();
+  const readOnly = role === 'staff-risk';
 
   useEffect(() => {
+    if (role === 'staff-dev') return;
     Promise.all([getPolicies(), getPolicyViolations()])
       .then(([polData, violData]) => {
         setPolicies(polData.policies);
@@ -29,7 +32,18 @@ export default function PoliciesPage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [role]);
+
+  // staff-dev cannot access policies page
+  if (role === 'staff-dev') {
+    return (
+      <div style={{ textAlign: 'center', padding: 60, color: 'var(--dash-text-3)', fontSize: 13, fontFamily: 'var(--font-dm-sans), sans-serif' }}>
+        <div style={{ fontSize: 24, marginBottom: 12 }}>⬢</div>
+        <div style={{ fontWeight: 600, marginBottom: 4, color: 'var(--dash-text-2)' }}>Policy access restricted</div>
+        <div>Policy management requires admin or risk role.</div>
+      </div>
+    );
+  }
 
   const activePolicies = policies.filter((p) => p.enabled).length;
   const totalViolations = policies.reduce((s, p) => s + p.violations_today, 0);
@@ -121,7 +135,7 @@ export default function PoliciesPage() {
                 </div>
 
                 <div>
-                  <ToggleSwitch on={policy.enabled} />
+                  <ToggleSwitch on={policy.enabled} readOnly={readOnly} />
                 </div>
               </div>
             ))}
@@ -166,9 +180,13 @@ export default function PoliciesPage() {
   );
 }
 
-function ToggleSwitch({ on }: { on: boolean }) {
+function ToggleSwitch({ on, readOnly = false }: { on: boolean; readOnly?: boolean }) {
   return (
-    <div className={`dash-toggle ${on ? 'on' : ''}`}>
+    <div
+      className={`dash-toggle ${on ? 'on' : ''}`}
+      style={readOnly ? { opacity: 0.5, cursor: 'not-allowed', pointerEvents: 'none' } : undefined}
+      title={readOnly ? 'Read-only — contact an admin to modify' : undefined}
+    >
       <div className="dash-toggle-knob" />
     </div>
   );

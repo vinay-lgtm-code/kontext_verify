@@ -11,10 +11,16 @@ import { logger } from 'hono/logger';
 import { ServerStore } from './store.js';
 import { ServerFeatureFlags } from './feature-flags.js';
 import { getPool } from './db.js';
+import { getRedis } from './cache.js';
 import { handleIngest, ValidationError } from './ingest.js';
 import { createDashboardRoutes } from './dashboard-routes.js';
 import { createBillingRoutes } from './billing-circle.js';
 import { SERVER_VERSION } from './version.js';
+import { lookupApiKey } from './auth/keystore.js';
+import { verifyToken } from './auth/jwt.js';
+import { requirePermission, type Role } from './auth/rbac.js';
+import { createAuthRoutes } from './routes/auth.js';
+import { createTeamRoutes } from './routes/team.js';
 
 const app = new Hono();
 const store = new ServerStore();
@@ -197,33 +203,60 @@ app.use('/v1/*', async (c, next) => {
 });
 
 /**
- * API key authentication middleware.
- * Extracts the API key from the Authorization header (Bearer token)
- * and validates it. Returns 401 for missing/invalid keys.
+ * Dual-track auth middleware: accepts API keys (→ keystore) or JWTs (→ verifyToken).
+ * Attaches { orgId, userId, role } to context. Falls back to VALID_API_KEYS env set
+ * for keys not yet in the DB (rolling migration safety net).
  */
-function authMiddleware(c: Parameters<Parameters<typeof app.use>[1]>[0], next: () => Promise<void>): Promise<Response | void> {
+async function authMiddleware(c: Parameters<Parameters<typeof app.use>[1]>[0], next: () => Promise<void>): Promise<Response | void> {
   const authHeader = c.req.header('Authorization');
 
   if (!authHeader?.startsWith('Bearer ')) {
-    return Promise.resolve(
-      c.json({ error: 'Missing or invalid Authorization header. Expected: Bearer <api_key>' }, 401),
-    );
+    return c.json({ error: 'Missing or invalid Authorization header. Expected: Bearer <token>' }, 401);
   }
 
-  const apiKey = authHeader.slice(7);
+  const token = authHeader.slice(7);
+  const pool = getPool();
 
-  if (!VALID_API_KEYS.has(apiKey)) {
-    return Promise.resolve(c.json({ error: 'Invalid API key' }, 401));
+  // JWT path (ey... prefix)
+  if (token.startsWith('ey')) {
+    const payload = await verifyToken(token);
+    if (!payload || payload.type !== 'access') {
+      return c.json({ error: 'Invalid or expired token' }, 401);
+    }
+    c.set('orgId' as never, payload.orgId as never);
+    c.set('userId' as never, payload.sub as never);
+    c.set('role' as never, payload.role as never);
+    c.set('jti' as never, payload.jti as never);
+    // projectId optional for JWT callers (dashboard/CLI)
+    const projectId = c.req.header('X-Project-Id');
+    if (projectId) c.set('projectId' as never, projectId as never);
+    return next();
   }
 
-  // Store project ID from header for use in handlers
-  const projectId = c.req.header('X-Project-Id');
-  if (!projectId) {
-    return Promise.resolve(c.json({ error: 'Missing X-Project-Id header' }, 400));
+  // API key path: keystore lookup (PostgreSQL + Redis cache)
+  if (pool) {
+    const record = await lookupApiKey(token, pool, getRedis());
+    if (record) {
+      c.set('orgId' as never, record.orgId as never);
+      c.set('userId' as never, (record.userId ?? record.keyId) as never);
+      c.set('role' as never, record.role as never);
+      const projectId = c.req.header('X-Project-Id');
+      if (projectId) c.set('projectId' as never, projectId as never);
+      return next();
+    }
   }
 
-  c.set('projectId' as never, projectId as never);
-  return next();
+  // Env-var fallback for keys not yet migrated to DB (rolling migration safety net)
+  if (VALID_API_KEYS.has(token)) {
+    const orgId = apiKeyOrgMap.get(token) ?? null;
+    c.set('role' as never, 'admin' as never);
+    if (orgId) c.set('orgId' as never, orgId as never);
+    const projectId = c.req.header('X-Project-Id');
+    if (projectId) c.set('projectId' as never, projectId as never);
+    return next();
+  }
+
+  return c.json({ error: 'Invalid or expired API key' }, 401);
 }
 
 // ============================================================================
@@ -372,8 +405,8 @@ app.post('/v1/tasks', authMiddleware, async (c) => {
   return c.json({ success: true, task }, 201);
 });
 
-// PUT /v1/tasks/:taskId/confirm - Confirm a task
-app.put('/v1/tasks/:taskId/confirm', authMiddleware, async (c) => {
+// PUT /v1/tasks/:taskId/confirm - Confirm a task (staff-risk + admin only)
+app.put('/v1/tasks/:taskId/confirm', authMiddleware, requirePermission('approve:tasks'), async (c) => {
   const taskId = c.req.param('taskId');
   const task = store.getTask(taskId);
 
@@ -537,22 +570,25 @@ app.get('/v1/trust/:agentId', authMiddleware, (c) => {
   });
 });
 
-// GET /v1/account - Validate API key and return account profile (used by CLI login/whoami)
-// Rate limited to 10 req/min/IP (handled by global rate limiter above)
+// GET /v1/account - Validate token and return account profile (CLI login/whoami)
 app.get('/v1/account', authMiddleware, (c) => {
+  const orgId = c.get('orgId' as never) as string | undefined;
+  const userId = c.get('userId' as never) as string | undefined;
+  const role = (c.get('role' as never) as Role | undefined) ?? 'admin';
   const apiKey = c.req.header('Authorization')?.slice(7) ?? '';
   const usage = getApiKeyUsage(apiKey);
-  const orgId = apiKeyOrgMap.get(apiKey) ?? null;
-  const planInfo = apiKeyPlans.get(apiKey);
-  // Show first 12 chars + last 4, mask middle
-  const keyPrefix = apiKey.length > 16
-    ? apiKey.slice(0, 12) + '••••' + apiKey.slice(-4)
-    : apiKey.slice(0, 8) + '••••';
+  const keyPrefix = apiKey.startsWith('ey')
+    ? null // JWT — no key prefix
+    : apiKey.length > 16
+      ? apiKey.slice(0, 12) + '••••' + apiKey.slice(-4)
+      : apiKey.slice(0, 8) + '••••';
 
   return c.json({
     authenticated: true,
-    plan: planInfo?.plan ?? usage.plan ?? 'startup',
-    orgId,
+    plan: usage.plan ?? 'startup',
+    orgId: orgId ?? null,
+    userId: userId ?? null,
+    role,
     keyPrefix,
     monthlyEventCount: usage.eventCount,
     billingPeriodStart: usage.billingPeriodStart,
@@ -710,12 +746,14 @@ export function requireFlag(flagName: string, environment?: 'development' | 'sta
   const env = environment ?? (process.env['NODE_ENV'] === 'production' ? 'production' : 'development') as 'development' | 'staging' | 'production';
 
   return async (c: Parameters<Parameters<typeof app.use>[1]>[0], next: () => Promise<void>): Promise<Response | void> => {
-    // Derive plan from API key config or default to 'free'
     const apiKey = c.req.header('Authorization')?.slice(7) ?? '';
     const planInfo = apiKeyPlans.get(apiKey);
     const plan = planInfo?.plan ?? 'free';
+    const role = c.get('role' as never) as Role | undefined;
+    // Admin and staff always get feature-flag access
+    const effectivePlan = role === 'admin' ? 'enterprise' : plan;
 
-    if (!featureFlags.isEnabled(flagName, env, plan)) {
+    if (!featureFlags.isEnabled(flagName, env, effectivePlan)) {
       return c.json({ error: 'Not found' }, 404);
     }
 
@@ -795,14 +833,7 @@ void initSyncServices()
   });
 
 // POST /v1/sdn/sync — Admin endpoint to trigger manual Treasury SDN sync
-app.post('/v1/sdn/sync', authMiddleware, async (c) => {
-  const apiKey = c.req.header('Authorization')?.slice(7) ?? '';
-  const planInfo = apiKeyPlans.get(apiKey);
-  const plan = planInfo?.plan ?? 'free';
-
-  if (plan !== 'enterprise') {
-    return c.json({ error: 'SDN sync requires Enterprise plan' }, 403);
-  }
+app.post('/v1/sdn/sync', authMiddleware, requirePermission('manage:team'), async (c) => {
 
   try {
     await initSyncServices();
@@ -847,24 +878,45 @@ app.get('/v1/sdn/status', authMiddleware, (c) => {
 // ============================================================================
 
 /**
- * Auth middleware for dashboard routes: resolves org_id from API key.
- * Uses X-Api-Key header (dashboard) or Authorization Bearer (SDK).
+ * Auth middleware for dashboard routes.
+ * Reuses authMiddleware (dual-track JWT + API key); additionally accepts X-Api-Key header.
+ * Requires orgId to be set — returns 403 if key is not org-mapped.
  */
-function dashboardAuthMiddleware(c: Parameters<Parameters<typeof app.use>[1]>[0], next: () => Promise<void>): Promise<Response | void> {
-  // Accept both X-Api-Key (dashboard) and Authorization Bearer (SDK)
-  const apiKey = c.req.header('X-Api-Key') ?? c.req.header('Authorization')?.slice(7);
-
-  if (!apiKey || !VALID_API_KEYS.has(apiKey)) {
-    return Promise.resolve(c.json({ error: 'Invalid API key' }, 401));
+async function dashboardAuthMiddleware(c: Parameters<Parameters<typeof app.use>[1]>[0], next: () => Promise<void>): Promise<Response | void> {
+  // Accept X-Api-Key header used by dashboard UI
+  const xApiKey = c.req.header('X-Api-Key');
+  if (xApiKey) {
+    // Temporarily patch Authorization header for authMiddleware reuse
+    const original = c.req.raw.headers.get('Authorization');
+    // Inject into context directly — call lookupApiKey ourselves
+    const pool = getPool();
+    if (pool) {
+      const record = await lookupApiKey(xApiKey, pool, getRedis());
+      if (record) {
+        c.set('orgId' as never, record.orgId as never);
+        c.set('userId' as never, (record.userId ?? record.keyId) as never);
+        c.set('role' as never, record.role as never);
+        return next();
+      }
+    }
+    // Env fallback
+    if (VALID_API_KEYS.has(xApiKey)) {
+      const orgId = apiKeyOrgMap.get(xApiKey);
+      if (!orgId) return c.json({ error: 'API key not mapped to an organization' }, 403);
+      c.set('orgId' as never, orgId as never);
+      c.set('role' as never, 'admin' as never);
+      void original; // suppress unused warning
+      return next();
+    }
+    return c.json({ error: 'Invalid API key' }, 401);
   }
 
-  const orgId = apiKeyOrgMap.get(apiKey);
-  if (!orgId) {
-    return Promise.resolve(c.json({ error: 'API key not mapped to an organization' }, 403));
-  }
-
-  c.set('orgId' as never, orgId as never);
-  return next();
+  // Fall through to standard authMiddleware
+  return authMiddleware(c, async () => {
+    const orgId = c.get('orgId' as never) as string | undefined;
+    if (!orgId) return c.json({ error: 'API key not mapped to an organization' }, 403);
+    return next();
+  });
 }
 
 // POST /v1/verification-events — Ingestion endpoint (auth via app.use middleware)
@@ -925,6 +977,40 @@ app.route('/v1', dashboardRouter);
 // Mount billing routes (Circle/Base wallet payment verification)
 const billingRouter = createBillingRoutes();
 app.route('/v1', billingRouter);
+
+// Mount RBAC auth + team routes
+const authRouter = createAuthRoutes(getPool, getRedis);
+app.route('/v1/auth', authRouter);
+
+const teamRouter = createTeamRoutes(getPool, getRedis);
+app.route('/v1/team', teamRouter);
+
+// Event assignment (admin only) — mounts alongside team routes
+app.post('/v1/events/:eventId/assign', authMiddleware, requirePermission('assign:events'), async (c) => {
+  let body: { userId?: string };
+  try { body = await c.req.json(); } catch { return c.json({ error: 'Invalid JSON body' }, 400); }
+  if (!body.userId) return c.json({ error: 'userId is required' }, 400);
+
+  const pool = getPool();
+  if (!pool) return c.json({ error: 'Database not configured' }, 503);
+
+  const orgId = c.get('orgId' as never) as string;
+  const eventId = c.req.param('eventId');
+
+  const { rows: userRows } = await pool.query<{ user_id: string }>(
+    `SELECT user_id FROM org_users WHERE user_id = $1 AND org_id = $2 AND status = 'active'`,
+    [body.userId, orgId],
+  );
+  if (!userRows[0]) return c.json({ error: 'User not found in organization' }, 404);
+
+  const result = await pool.query(
+    `UPDATE verification_events SET assigned_to = $1 WHERE event_id = $2 AND org_id = $3`,
+    [body.userId, eventId, orgId],
+  );
+  if (!result.rowCount) return c.json({ error: 'Event not found' }, 404);
+
+  return c.json({ assigned: true, eventId, assignedTo: body.userId });
+});
 
 // ============================================================================
 // Stripe Checkout + Billing Routes (no auth required — public checkout flow)
@@ -1130,19 +1216,8 @@ app.get('/v1/screening/status', authMiddleware, async (c) => {
   return c.json(screeningEngine.getStatus());
 });
 
-// POST /v1/screening/sync — Manual sync trigger (enterprise or admin)
-app.post('/v1/screening/sync', authMiddleware, async (c) => {
-  const apiKey = c.req.header('Authorization')?.slice(7) ?? '';
-  const planInfo = apiKeyPlans.get(apiKey);
-  const plan = planInfo?.plan ?? 'free';
-
-  // Only enterprise plan or admin key can trigger manual sync
-  const adminKey = process.env['SCREENING_ADMIN_KEY'];
-  const isAdmin = adminKey && apiKey === adminKey;
-
-  if (plan !== 'enterprise' && !isAdmin) {
-    return c.json({ error: 'Manual sync requires Enterprise plan' }, 403);
-  }
+// POST /v1/screening/sync — Manual sync trigger (admin role only)
+app.post('/v1/screening/sync', authMiddleware, requirePermission('manage:team'), async (c) => {
 
   await screeningInitPromise;
   if (!screeningEngine) {
