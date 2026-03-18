@@ -7,12 +7,13 @@ from .models import (
     AnomalyResult,
     AuditExport,
     HealthResponse,
+    ReserveSnapshot,
     Task,
     TrustScore,
     UsageInfo,
 )
 
-__version__ = "0.8.0"
+__version__ = "0.12.0"
 __all__ = [
     "Kontext",
     "AsyncKontext",
@@ -25,6 +26,7 @@ __all__ = [
     "AnomalyResult",
     "AuditExport",
     "HealthResponse",
+    "ReserveSnapshot",
     "Task",
     "TrustScore",
     "UsageInfo",

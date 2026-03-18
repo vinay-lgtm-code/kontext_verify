@@ -127,6 +127,32 @@ export class AnomalyDetector {
   }
 
   /**
+   * Report a custom anomaly event. Used by integrations (e.g., reserve
+   * reconciliation) to fire anomalies outside the standard rule engine.
+   * Stores the anomaly and notifies all registered callbacks.
+   */
+  reportAnomaly(input: {
+    type: AnomalyRuleType;
+    severity: AnomalySeverity;
+    description: string;
+    agentId: string;
+    actionId?: string;
+    data?: Record<string, unknown>;
+  }): AnomalyEvent {
+    const anomaly = this.createAnomaly(
+      input.type,
+      input.severity,
+      input.description,
+      input.agentId,
+      input.actionId ?? '',
+      input.data ?? {},
+    );
+    this.store.addAnomaly(anomaly);
+    this.notifyCallbacks(anomaly);
+    return anomaly;
+  }
+
+  /**
    * Evaluate a transaction against all enabled detection rules.
    * Called automatically when transactions are logged (via the client).
    *
