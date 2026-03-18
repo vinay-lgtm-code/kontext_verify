@@ -2016,6 +2016,32 @@ footer {
   .mock-feed-header > :first-child,
   .mock-feed-row > :first-child { display: none; }
 }
+
+/* Reserve Monitoring Section */
+.reserve-demo { display: flex; gap: 32px; max-width: 1100px; margin: 0 auto; padding: 0 24px; align-items: start; }
+.reserve-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 28px 24px; width: 480px; flex-shrink: 0; }
+.reserve-panel-title { font-family: var(--sans); font-size: 14px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+.reserve-status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); flex-shrink: 0; }
+.reserve-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border-dim); }
+.reserve-row:last-child { border-bottom: none; }
+.reserve-row-label { font-family: var(--sans); font-size: 12px; color: var(--text-muted); }
+.reserve-row-value { font-family: var(--sans); font-size: 13px; color: var(--text); }
+.reserve-row-value.mono { font-family: var(--mono); font-size: 12px; }
+.reserve-row-value.green { color: var(--green); }
+.reserve-hash { margin-top: 16px; }
+.reserve-hash-label { font-family: var(--sans); font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+.reserve-hash-value { font-family: var(--mono); font-size: 11px; color: var(--text-muted); word-break: break-all; line-height: 1.5; }
+.reserve-code-block { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 24px; overflow-x: auto; }
+.reserve-code-block pre { margin: 0; font-family: var(--mono); font-size: 13px; line-height: 1.7; color: var(--text-muted); white-space: pre; }
+.reserve-code-block .kw { color: var(--accent); }
+.reserve-code-block .str { color: var(--green); }
+.reserve-code-block .cmt { color: var(--text-dim); font-style: italic; }
+.reserve-code-block .fn { color: #dde4f5; }
+
+@media (max-width: 768px) {
+  .reserve-demo { flex-direction: column; }
+  .reserve-panel { width: 100%; }
+}
 </style>
 <!-- Microsoft Clarity -->
 <script type="text/javascript">(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window, document, "clarity", "script", "qi6iav4al4");</script>
@@ -2587,6 +2613,87 @@ footer {
     <a href="/docs" class="btn-ghost">Read the docs</a>
   </div>
 </div>
+
+<hr class="divider">
+
+<!-- RESERVE MONITORING SECTION -->
+<section class="section" id="reserve-monitoring">
+  <p class="section-label reveal">Reserve Monitoring</p>
+  <h2 class="section-headline reveal reveal-d1">Verify stablecoin reserves at the block level.</h2>
+  <p class="section-sub reveal reveal-d2">
+    Query on-chain totalSupply() for USDC, USDT, DAI, and EURC. Compare against published reserve figures.
+    Get reconciliation status with block-level proof &mdash; all from one SDK call.
+  </p>
+
+  <div class="reserve-demo reveal reveal-d3">
+    <!-- Left: Reserve Evidence Panel -->
+    <div class="reserve-panel">
+      <div class="reserve-panel-title">
+        Reserve State at Time of Payment
+        <span class="reserve-status-dot"></span>
+      </div>
+      <div class="reserve-row">
+        <span class="reserve-row-label">Token</span>
+        <span class="reserve-row-value">USDC</span>
+      </div>
+      <div class="reserve-row">
+        <span class="reserve-row-label">Chain</span>
+        <span class="reserve-row-value">Base</span>
+      </div>
+      <div class="reserve-row">
+        <span class="reserve-row-label">On-Chain Supply</span>
+        <span class="reserve-row-value mono">36,241,847,291</span>
+      </div>
+      <div class="reserve-row">
+        <span class="reserve-row-label">Published Reserves</span>
+        <span class="reserve-row-value mono">36,241,612,000</span>
+      </div>
+      <div class="reserve-row">
+        <span class="reserve-row-label">Delta</span>
+        <span class="reserve-row-value mono">0.0006%</span>
+      </div>
+      <div class="reserve-row">
+        <span class="reserve-row-label">Status</span>
+        <span class="reserve-row-value green">Within tolerance</span>
+      </div>
+      <div class="reserve-row">
+        <span class="reserve-row-label">Block</span>
+        <span class="reserve-row-value mono">#28,419,032</span>
+      </div>
+      <div class="reserve-hash">
+        <div class="reserve-hash-label">Block Hash Proof</div>
+        <div class="reserve-hash-value">0x8f2ad41c7e9b3f6a2c1d5e8b4a7f3c9d2e6b1a8f5c3d7e4b2a9f6c1d8e5b3a</div>
+      </div>
+      <div class="reserve-hash" style="margin-top:12px">
+        <div class="reserve-hash-label">Digest Chain Index</div>
+        <div class="reserve-hash-value" style="font-size:13px;color:var(--text)">#47,291</div>
+      </div>
+    </div>
+
+    <!-- Right: Code Snippet -->
+    <div class="reserve-code-block">
+      <pre><span class="kw">const</span> <span class="fn">snapshot</span> = <span class="kw">await</span> ReserveReconciler.<span class="fn">querySupply</span>({
+  token: <span class="str">'USDC'</span>,
+  chain: <span class="str">'base'</span>,
+  rpcUrl: process.env.<span class="fn">BASE_RPC_URL</span>,
+  publishedReserves: <span class="str">'36241612000'</span>,
+  tolerance: <span class="str">0.001</span>,
+});
+
+<span class="cmt">// snapshot.reconciliationStatus</span>
+<span class="cmt">//   &rarr; 'delta_within_tolerance'</span>
+
+<span class="cmt">// snapshot.onChainSupply</span>
+<span class="cmt">//   &rarr; '36241847291'</span>
+
+<span class="cmt">// snapshot.snapshotBlockHash</span>
+<span class="cmt">//   &rarr; '0x8f2a...d41c'</span>
+
+<span class="cmt">// snapshot.snapshotBlockNumber</span>
+<span class="cmt">//   &rarr; 28419032</span></pre>
+    </div>
+  </div>
+</section>
 
 <hr class="divider">
 
