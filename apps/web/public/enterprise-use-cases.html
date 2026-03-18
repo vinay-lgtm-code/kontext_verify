@@ -540,6 +540,123 @@ footer {
   </div>
 </section>
 
+<section class="use-case" id="agent-networks">
+  <div class="container">
+    <div class="use-case-num reveal">Use Case 04</div>
+    <h2 class="use-case-title reveal reveal-d1">AI agent<br>payment networks</h2>
+
+    <div class="use-case-grid">
+      <div class="use-case-block reveal">
+        <div class="use-case-block-label">The situation</div>
+        <p>Agent-to-agent payment networks like Skyfire and Payman let AI agents autonomously send USDC to other agents and services. An LLM decides to procure data, pay for an API call, or settle an invoice &mdash; all without a human clicking "approve." The agents move fast because that's the point.</p>
+      </div>
+
+      <div class="use-case-block reveal reveal-d1">
+        <div class="use-case-block-label">The compliance exposure</div>
+        <p><strong>Nobody authorized <em>this specific</em> payment.</strong> Someone authorized the agent to make payments <em>like this</em>. When an examiner asks "who approved the $8,200 transfer at 3:14 AM?", the honest answer is "a policy file written by a developer six months ago, interpreted by a model." That's a fundamentally different compliance posture &mdash; and most companies haven't thought through what it means for their BSA program.</p>
+      </div>
+    </div>
+
+    <div class="use-case-grid" style="margin-top:32px">
+      <div class="use-case-block reveal">
+        <div class="use-case-block-label">What Kontext does</div>
+        <p>Every agent-initiated payment gets an authorization binding: which policy authorized it, what the agent's reasoning was, and the trust score at the moment of execution. The digest chain captures agent decision context that would otherwise be lost when the model's weights update. A2A attestation lets receiving agents verify the sender's compliance status before accepting payment.</p>
+      </div>
+
+      <div class="use-case-block reveal reveal-d1">
+        <div class="use-case-block-label">What changes</div>
+        <p>The company can answer "who authorized this?" with specifics: policy ID, authorization scope, agent reasoning captured at transaction time, and a tamper-evident record that proves the compliance check ran before the transfer executed. The first enforcement action in agentic payments will set the precedent &mdash; companies using Kontext will have the evidence trail that others won't.</p>
+      </div>
+    </div>
+
+    <div class="examiner-box reveal reveal-d2">
+      <div class="examiner-box-label">The examiner scenario</div>
+      <div class="examiner-question">"Your AI agent sent $8,200 USDC to an unknown wallet at 3:14 AM. Who authorized this transaction?"</div>
+      <div class="examiner-answer">
+        Dashboard shows the agent operated under policy <code>treasury-ops-v3</code> with a $10,000 per-transaction limit. OFAC screening cleared at 3:14:02 AM. Agent reasoning log: "Invoice #4471 from verified vendor, amount within policy scope, destination wallet matched vendor registry." Trust score: 91/100. Full authorization chain &mdash; from policy creation to agent deployment to this specific execution &mdash; captured in digest chain link #12,847.
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="use-case" id="white-label">
+  <div class="container">
+    <div class="use-case-num reveal">Use Case 05</div>
+    <h2 class="use-case-title reveal reveal-d1">White-label stablecoin<br>infrastructure</h2>
+
+    <div class="use-case-grid">
+      <div class="use-case-block reveal">
+        <div class="use-case-block-label">The situation</div>
+        <p>Platforms like SoFi and BVNK provide stablecoin infrastructure to downstream partners &mdash; banks, fintechs, and enterprise clients issue white-label stablecoins or integrate USDC into their settlement flows. The platform holds the license and carries the BSA obligations. The partners initiate the transactions and own the customer relationships.</p>
+      </div>
+
+      <div class="use-case-block reveal reveal-d1">
+        <div class="use-case-block-label">The compliance exposure</div>
+        <p><strong>Your partner gets the customer relationship and the revenue share. You get the examiner's letter.</strong> When a partner's end user sends $50,000 USDC to a sanctioned wallet through your infrastructure, you can't reverse it &mdash; stablecoin rails don't have ACH returns. The GENIUS Act requires all permitted stablecoin issuers to annually certify BSA compliance. That certification is <em>yours</em>, not your partner's.</p>
+      </div>
+    </div>
+
+    <div class="use-case-grid" style="margin-top:32px">
+      <div class="use-case-block reveal">
+        <div class="use-case-block-label">What Kontext does</div>
+        <p>Multi-tenant compliance monitoring with per-partner audit isolation. Aggregate screening detects structuring across tenants &mdash; a user sending $3,200 through Partner A and $3,100 through Partner B within 4 hours triggers a unified alert, not two unremarkable line items. Per-partner compliance exports let each partner's regulator independently verify their activity.</p>
+      </div>
+
+      <div class="use-case-block reveal reveal-d1">
+        <div class="use-case-block-label">What changes</div>
+        <p>The platform produces independently verifiable compliance artifacts &mdash; records your partner can validate without your involvement. When your partner's regulator asks for compliance evidence, you produce a signed export that includes the screening results, policy evaluations, and digest chain proofs for every transaction on their tenant. "Trust us, we're compliant" becomes "here's the cryptographic proof."</p>
+      </div>
+    </div>
+
+    <div class="examiner-box reveal reveal-d2">
+      <div class="examiner-box-label">The examiner scenario</div>
+      <div class="examiner-question">"A user split $9,600 across three of your partners in 4 hours. Did your monitoring detect this?"</div>
+      <div class="examiner-answer">
+        Aggregate monitoring flagged the cross-tenant pattern at 14:22 UTC. Dashboard shows: Partner A ($3,200 at 12:08), Partner B ($3,100 at 13:41), Partner C ($3,300 at 15:52) &mdash; total $9,600, below CTR but consistent with structuring. Alert generated, SAR workflow initiated. Per-partner exports show each transaction with the aggregate flag attached. Digest chain proves the alert was generated in real-time, not retroactively.
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="use-case" id="cpn-settlement">
+  <div class="container">
+    <div class="use-case-num reveal">Use Case 06</div>
+    <h2 class="use-case-title reveal reveal-d1">CPN cross-border<br>settlement</h2>
+
+    <div class="use-case-grid">
+      <div class="use-case-block reveal">
+        <div class="use-case-block-label">The situation</div>
+        <p>Circle's Comprehensive Payments Network connects stablecoin rails to traditional payment corridors &mdash; enabling USDC settlement for cross-border transfers that previously relied on correspondent banking. Partners like Thunes and Flutterwave use CPN to reach emerging markets where traditional rails are slow, expensive, or unavailable.</p>
+      </div>
+
+      <div class="use-case-block reveal reveal-d1">
+        <div class="use-case-block-label">The compliance exposure</div>
+        <p><strong>Cross-border stablecoin settlement triggers Travel Rule, OFAC, and multi-jurisdiction BSA obligations simultaneously.</strong> A $15,000 USDC transfer from the US to Nigeria crosses the Travel Rule threshold ($3K), requires OFAC screening on both endpoints, and creates record-keeping obligations in at least two jurisdictions. CPN handles the settlement. Nobody handles the compliance evidence.</p>
+      </div>
+    </div>
+
+    <div class="use-case-grid" style="margin-top:32px">
+      <div class="use-case-block reveal">
+        <div class="use-case-block-label">What Kontext does</div>
+        <p>Every CPN settlement gets a compliance envelope: dual-endpoint OFAC screening, Travel Rule data capture, amount threshold evaluation, and jurisdiction-specific checks. The audit trail links the originating fiat instruction to the on-chain USDC transfer to the destination corridor &mdash; a single evidence chain across the entire settlement lifecycle.</p>
+      </div>
+
+      <div class="use-case-block reveal reveal-d1">
+        <div class="use-case-block-label">What changes</div>
+        <p>The compliance team has a unified view across corridors, not siloed logs per payment rail. When regulators in different jurisdictions ask about the same transfer, both get the same cryptographically verified evidence bundle. The digest chain proves that screening ran before settlement, not after &mdash; which matters when the transaction is irreversible.</p>
+      </div>
+    </div>
+
+    <div class="examiner-box reveal reveal-d2">
+      <div class="examiner-box-label">The examiner scenario</div>
+      <div class="examiner-question">"Show me the compliance evidence for the $15,000 USDC transfer from your US entity to Flutterwave's Nigerian corridor on March 8."</div>
+      <div class="examiner-answer">
+        Evidence bundle contains: originator KYC reference, OFAC screening (clear, both endpoints), Travel Rule data package (originator name, account, address + beneficiary details), amount threshold evaluation ($15,000 &gt; $3K EDD, &lt; $10K CTR), CPN corridor confirmation, and on-chain settlement hash. All linked in digest chain link #31,204. Screening timestamp precedes settlement timestamp by 1.2 seconds. Tamper-evident.
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- CTA -->
 <section class="cta-strip">
   <h2>See it with your payment data.</h2>

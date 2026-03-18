@@ -33,7 +33,7 @@ export function Footer() {
         <div className="mx-auto max-w-7xl">
           <p className="text-xs text-[var(--term-text-3)] font-light tracking-wide">
             <span className="text-[var(--term-green)]">$</span>{" "}
-            kontext v0.11.1{" "}
+            kontext v0.12.0{" "}
             <span className="text-[var(--term-surface-3)]">·</span> USDC + x402{" "}
             <span className="text-[var(--term-surface-3)]">·</span> Base + Arc{" "}
             <span className="text-[var(--term-surface-3)]">·</span>{" "}
@@ -84,7 +84,7 @@ export function Footer() {
           <div className="flex items-center gap-1.5 text-xs text-[var(--term-text-3)]">
             <span className="text-[var(--term-green)]">$</span>
             <span className="font-medium text-[var(--term-text-2)]">kontext</span>
-            <span>v0.8.0</span>
+            <span>v0.12.0</span>
             <span className="text-[var(--term-surface-3)]">·</span>
             <span>Legaci Labs Inc.</span>
             <span className="text-[var(--term-surface-3)]">·</span>

@@ -85,7 +85,7 @@ const softwareJsonLd = {
   applicationCategory: "DeveloperApplication",
   operatingSystem: "Cross-platform (Node.js 18+)",
   programmingLanguage: "TypeScript",
-  softwareVersion: "0.8.0",
+  softwareVersion: "0.12.0",
   license: "https://opensource.org/licenses/MIT",
   url: "https://getkontext.com",
   downloadUrl: "https://www.npmjs.com/package/kontext-sdk",
