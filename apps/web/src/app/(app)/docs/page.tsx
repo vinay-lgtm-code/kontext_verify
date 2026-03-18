@@ -720,7 +720,7 @@ npm install -g @kontext-sdk/cli
 npx @kontext-sdk/cli verify --chain base --amount 0.50
 
 # Verify installation
-kontext --version  # 0.11.0`;
+kontext --version  # 0.12.0`;
 
 const cliCommandsCode = `# Initialize project — interactive wizard
 kontext init
@@ -757,7 +757,114 @@ kontext sync --list ofac
 
 # Manage agent sessions and checkpoints
 kontext session create --agent treasury-agent --scope transfer,approve
-kontext checkpoint create --session <sessionId> --summary "Reviewed batch"`;
+kontext checkpoint create --session <sessionId> --summary "Reviewed batch"
+
+# Reserve reconciliation — query on-chain supply
+kontext reconcile --token USDC --chain base --rpc https://mainnet.base.org \\
+  --published 36241612000 --tolerance 0.001 --agent treasury-bot
+
+# Authenticate CLI (stores API key in OS keychain)
+kontext login`;
+
+const reserveReconciliationCode = `import { ReserveReconciler } from 'kontext-sdk';
+
+const snapshot = await ReserveReconciler.querySupply({
+  token: 'USDC',
+  chain: 'base',
+  rpcUrl: process.env.BASE_RPC_URL!,
+  publishedReserves: '36241612000',  // from issuer report
+  tolerance: 0.001,                   // 0.1%
+});
+
+// snapshot.reconciliationStatus
+//   → 'matched' | 'delta_within_tolerance' | 'discrepancy' | 'unverified'
+// snapshot.onChainSupply      → '36241847291'
+// snapshot.snapshotBlockNumber → 28419032
+// snapshot.snapshotBlockHash  → '0x8f2a...d41c'
+// snapshot.delta              → '0.0000064...' (raw ratio)`;
+
+const reserveReconciliationClientCode = `// Via the Kontext client (logs to digest chain automatically)
+const snapshot = await kontext.logReserveSnapshot({
+  token: 'USDC',
+  chain: 'base',
+  rpcUrl: process.env.BASE_RPC_URL!,
+  publishedReserves: '36241612000',
+  agentId: 'treasury-agent',
+});
+
+// The snapshot is now part of your tamper-evident digest chain
+const chain = kontext.exportDigestChain();
+console.log('Digest chain length:', chain.links.length);`;
+
+const screeningProvidersCode = `import {
+  ScreeningAggregator,
+  OFACAddressProvider,
+  OFACEntityProvider,
+  UKOFSIProvider,
+  TRMLabsProvider,
+} from 'kontext-sdk';
+
+const aggregator = new ScreeningAggregator({
+  providers: [
+    new OFACAddressProvider(),          // built-in, no API key
+    new OFACEntityProvider(),           // built-in, no API key
+    new UKOFSIProvider(),               // built-in, no API key
+    new TRMLabsProvider({               // requires API key
+      apiKey: process.env.TRM_API_KEY!,
+    }),
+  ],
+  consensus: 'ANY_MATCH',              // flag if ANY provider matches
+  blocklist: ['0xbad...'],             // always flag these
+  allowlist: ['0xsafe...'],            // never flag these
+});
+
+const result = await aggregator.screen('0xSuspectAddress');
+// result.hit        → true/false (per consensus strategy)
+// result.hitCount   → number of providers that matched
+// result.matches    → detailed match info per provider
+// result.errors     → any provider errors (non-fatal)`;
+
+const paymentComplianceCode = `import { PaymentCompliance, CardCompliance } from 'kontext-sdk';
+
+// General payment compliance (wire, ACH, any fiat flow)
+const check = PaymentCompliance.checkPayment({
+  amount: '15000',
+  currency: 'USD',
+  from: 'Acme Corporation',
+  to: 'Global Payments Inc',
+  agentId: 'ap-system',
+  paymentMethod: 'wire',
+});
+// check.compliant → true/false
+// check.checks    → OFAC entity screening + BSA thresholds
+
+// Card payment compliance (agent virtual cards)
+const cardCheck = CardCompliance.checkCardPayment({
+  amount: '2500',
+  currency: 'USD',
+  from: 'agent-card-v1',
+  to: 'merchant-name',
+  agentId: 'purchasing-agent',
+  mcc: '5411',              // Grocery Stores
+  merchantCountry: 'US',
+});
+// cardCheck includes MCC risk classification + country screening`;
+
+const walletMonitorCode = `import { Kontext, WalletMonitor } from 'kontext-sdk';
+
+const kontext = Kontext.init({ projectId: 'my-app' });
+
+const monitor = new WalletMonitor(kontext, {
+  addresses: [
+    { address: '0xMyWallet...', chain: 'base' },
+  ],
+  rpcUrls: { base: process.env.BASE_RPC_URL! },
+  pollingIntervalMs: 4000,
+}, { agentId: 'wallet-watcher', tokens: ['USDC', 'USDT'] });
+
+await monitor.start();
+// Now watching for all outgoing stablecoin transfers
+// Each transfer auto-runs verify() and logs to digest chain`;
 
 const cliMcpCode = `# Start the MCP server
 kontext mcp
@@ -799,6 +906,7 @@ const sidebarSections = [
       { id: "audit-export", label: "Audit Export" },
       { id: "trust-scoring", label: "Trust Scoring" },
       { id: "anomaly-detection", label: "Anomaly Detection" },
+      { id: "reserve-reconciliation", label: "Reserve Reconciliation" },
     ],
   },
   {
@@ -821,6 +929,8 @@ const sidebarSections = [
     title: "Integrations",
     items: [
       { id: "wallet-providers", label: "Wallet Providers" },
+      { id: "screening-providers", label: "Screening Providers" },
+      { id: "payment-compliance", label: "Payment Compliance" },
     ],
   },
   {
@@ -1175,6 +1285,57 @@ export default function DocsPage() {
 
             <Separator className="my-12" />
 
+            {/* Reserve Reconciliation */}
+            <section id="reserve-reconciliation">
+              <h2>Reserve Reconciliation</h2>
+              <p>
+                Query on-chain <code>totalSupply()</code> for USDC, USDT, DAI, and EURC.
+                Compare against published reserve figures from the issuer. Get reconciliation
+                status with block-level proof — all from one SDK call. Read-only, zero
+                dependencies, uses native <code>fetch()</code> with JSON-RPC.
+              </p>
+              <CodeBlock
+                code={reserveReconciliationCode}
+                language="typescript"
+                filename="reserve.ts"
+              />
+              <h3 className="mt-8 text-lg font-semibold">With Digest Chain Logging</h3>
+              <p>
+                Use the Kontext client method to automatically log each reserve snapshot
+                into your tamper-evident digest chain:
+              </p>
+              <CodeBlock
+                code={reserveReconciliationClientCode}
+                language="typescript"
+                filename="reserve-logged.ts"
+              />
+              <h3 className="mt-8 text-lg font-semibold">Reconciliation Status</h3>
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[var(--term-surface-2)]">
+                      <th className="text-left py-2 pr-4 text-[var(--term-text-2)]">Status</th>
+                      <th className="text-left py-2 text-[var(--term-text-2)]">Meaning</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-[var(--term-text-3)]">
+                    <tr className="border-b border-[var(--term-surface-2)]"><td className="py-1.5 pr-4"><code>matched</code></td><td>On-chain supply exactly matches published reserves</td></tr>
+                    <tr className="border-b border-[var(--term-surface-2)]"><td className="py-1.5 pr-4"><code>delta_within_tolerance</code></td><td>Delta exists but within the configured tolerance (default 0.1%)</td></tr>
+                    <tr className="border-b border-[var(--term-surface-2)]"><td className="py-1.5 pr-4"><code>discrepancy</code></td><td>Delta exceeds tolerance — investigate</td></tr>
+                    <tr className="border-b border-[var(--term-surface-2)]"><td className="py-1.5 pr-4"><code>unverified</code></td><td>No published reserves supplied — supply-only snapshot</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-4">
+                Supported tokens: USDC, USDT, DAI, EURC across all 8 chains.
+                Use <code>ReserveReconciler.getSupportedChains(token)</code> to list
+                available chains for a token, and <code>ReserveReconciler.getContractAddress(token, chain)</code> to
+                look up the contract address.
+              </p>
+            </section>
+
+            <Separator className="my-12" />
+
             {/* On-Chain Anchoring */}
             <section id="on-chain-anchoring">
               <h2>On-Chain Anchoring</h2>
@@ -1420,6 +1581,83 @@ npx kontext-sdk checkpoint list --session <sessionId>`}
                 code={walletProviderMetaMaskCode}
                 language="typescript"
                 filename="metamask-wallets.ts"
+              />
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* Screening Providers */}
+            <section id="screening-providers">
+              <h2>Screening Providers</h2>
+              <p>
+                The <code>ScreeningAggregator</code> orchestrates multiple sanctions screening
+                providers with configurable consensus strategies. Route queries to compatible
+                providers, apply blocklist/allowlist overrides, and get aggregated results
+                with per-provider detail.
+              </p>
+              <CodeBlock
+                code={screeningProvidersCode}
+                language="typescript"
+                filename="screening.ts"
+              />
+              <h3 className="mt-8 text-lg font-semibold">Available Providers</h3>
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[var(--term-surface-2)]">
+                      <th className="text-left py-2 pr-4 text-[var(--term-text-2)]">Provider</th>
+                      <th className="text-left py-2 pr-4 text-[var(--term-text-2)]">Lists</th>
+                      <th className="text-left py-2 text-[var(--term-text-2)]">API Key</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-[var(--term-text-3)]">
+                    <tr className="border-b border-[var(--term-surface-2)]"><td className="py-1.5 pr-4"><code>OFACAddressProvider</code></td><td className="pr-4">OFAC SDN (addresses)</td><td>No — built-in</td></tr>
+                    <tr className="border-b border-[var(--term-surface-2)]"><td className="py-1.5 pr-4"><code>OFACEntityProvider</code></td><td className="pr-4">OFAC SDN (entity names)</td><td>No — built-in</td></tr>
+                    <tr className="border-b border-[var(--term-surface-2)]"><td className="py-1.5 pr-4"><code>UKOFSIProvider</code></td><td className="pr-4">UK OFSI sanctions</td><td>No — built-in</td></tr>
+                    <tr className="border-b border-[var(--term-surface-2)]"><td className="py-1.5 pr-4"><code>OpenSanctionsLocalProvider</code></td><td className="pr-4">OpenSanctions (local)</td><td>No — synced via CLI</td></tr>
+                    <tr className="border-b border-[var(--term-surface-2)]"><td className="py-1.5 pr-4"><code>OpenSanctionsProvider</code></td><td className="pr-4">OpenSanctions (API)</td><td>Yes</td></tr>
+                    <tr className="border-b border-[var(--term-surface-2)]"><td className="py-1.5 pr-4"><code>ChainalysisOracleProvider</code></td><td className="pr-4">Chainalysis on-chain oracle</td><td>Yes</td></tr>
+                    <tr className="border-b border-[var(--term-surface-2)]"><td className="py-1.5 pr-4"><code>ChainalysisFreeAPIProvider</code></td><td className="pr-4">Chainalysis free API</td><td>Yes</td></tr>
+                    <tr className="border-b border-[var(--term-surface-2)]"><td className="py-1.5 pr-4"><code>TRMLabsProvider</code></td><td className="pr-4">TRM Labs screening</td><td>Yes</td></tr>
+                    <tr className="border-b border-[var(--term-surface-2)]"><td className="py-1.5 pr-4"><code>KontextCloudScreeningProvider</code></td><td className="pr-4">Kontext Cloud (hosted)</td><td>Yes — Kontext API key</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <h3 className="mt-8 text-lg font-semibold">Consensus Strategies</h3>
+              <ul className="list-disc pl-6 space-y-1 mt-2">
+                <li><code>ANY_MATCH</code> — flag if any provider reports a hit (most conservative)</li>
+                <li><code>MAJORITY</code> — flag if more than half of providers report a hit</li>
+                <li><code>ALL_MATCH</code> — flag only if all providers agree (fewest false positives)</li>
+              </ul>
+            </section>
+
+            <Separator className="my-12" />
+
+            {/* Payment Compliance */}
+            <section id="payment-compliance">
+              <h2>Payment Compliance</h2>
+              <p>
+                Compliance checks for non-crypto payment rails: wire transfers, ACH, card
+                payments. Performs name-based OFAC entity screening and BSA threshold checks
+                ($3K Travel Rule, $10K CTR, $50K large transaction). Returns the same
+                check format as <code>UsdcCompliance</code> for consistency across all rails.
+              </p>
+              <CodeBlock
+                code={paymentComplianceCode}
+                language="typescript"
+                filename="payment-compliance.ts"
+              />
+              <h3 className="mt-8 text-lg font-semibold">Wallet Monitor</h3>
+              <p>
+                Watch monitored wallet addresses on-chain for stablecoin Transfer events.
+                Catches all outgoing transfers regardless of origin and auto-runs{" "}
+                <code>verify()</code> on each one. Uses viem&#39;s <code>watchEvent</code> with
+                HTTP polling — works with any RPC endpoint.
+              </p>
+              <CodeBlock
+                code={walletMonitorCode}
+                language="typescript"
+                filename="wallet-monitor.ts"
               />
             </section>
 
