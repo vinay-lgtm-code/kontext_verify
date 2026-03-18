@@ -537,6 +537,29 @@ app.get('/v1/trust/:agentId', authMiddleware, (c) => {
   });
 });
 
+// GET /v1/account - Validate API key and return account profile (used by CLI login/whoami)
+// Rate limited to 10 req/min/IP (handled by global rate limiter above)
+app.get('/v1/account', authMiddleware, (c) => {
+  const apiKey = c.req.header('Authorization')?.slice(7) ?? '';
+  const usage = getApiKeyUsage(apiKey);
+  const orgId = apiKeyOrgMap.get(apiKey) ?? null;
+  const planInfo = apiKeyPlans.get(apiKey);
+  // Show first 12 chars + last 4, mask middle
+  const keyPrefix = apiKey.length > 16
+    ? apiKey.slice(0, 12) + '••••' + apiKey.slice(-4)
+    : apiKey.slice(0, 8) + '••••';
+
+  return c.json({
+    authenticated: true,
+    plan: planInfo?.plan ?? usage.plan ?? 'startup',
+    orgId,
+    keyPrefix,
+    monthlyEventCount: usage.eventCount,
+    billingPeriodStart: usage.billingPeriodStart,
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // GET /v1/usage - Get current usage stats for the API key
 app.get('/v1/usage', authMiddleware, (c) => {
   const apiKey = c.req.header('Authorization')?.slice(7) ?? '';

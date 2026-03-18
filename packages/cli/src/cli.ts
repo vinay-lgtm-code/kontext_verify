@@ -1,9 +1,15 @@
 // ============================================================================
-// kontext CLI — compliance audit trail for AI agent stablecoin payments
+// kontext CLI — The verification layer for agents and humans that move money
 // ============================================================================
 
 import type { Token } from 'kontext-sdk';
 import { createRequire } from 'module';
+import { keychainLoad } from './commands/login.js';
+
+/** Load API key: KONTEXT_API_KEY env → OS keychain → null */
+function loadApiKey(): string | null {
+  return keychainLoad();
+}
 
 const require = createRequire(import.meta.url);
 const pkg = require('../package.json') as { version: string };
@@ -85,7 +91,7 @@ function boolFlag(flags: Record<string, string | boolean>, key: string): boolean
 // ---------------------------------------------------------------------------
 
 function printHelp(): void {
-  process.stdout.write(`kontext v${VERSION} — compliance audit trail for AI agent stablecoin payments
+  process.stdout.write(`kontext v${VERSION} — The verification layer for agents and humans that move money
 
 Usage: kontext <command> [options]
 
@@ -114,6 +120,12 @@ Commands:
   sync [--full]       Fetch latest OFAC SDN list from U.S. Treasury
                         --full  One-time: download entire SDN XML, parse ALL
                                 sanctioned entities + digital currency addresses
+  login               Authenticate with your Kontext account
+                        Validates API key against api.getkontext.com
+                        Stores key securely in OS keychain
+  logout              Remove stored credentials from OS keychain
+  whoami              Show current account and usage
+
   mcp                 Start MCP server for Claude Code / Cursor / Windsurf
 
 Global flags:
@@ -264,6 +276,24 @@ async function main(): Promise<void> {
       const full = boolFlag(flags, 'full');
       const { runSync } = await import('./commands/sync.js');
       await runSync({ json, full });
+      break;
+    }
+
+    case 'login': {
+      const { runLogin } = await import('./commands/login.js');
+      await runLogin({ json });
+      break;
+    }
+
+    case 'logout': {
+      const { runLogout } = await import('./commands/login.js');
+      await runLogout({ json });
+      break;
+    }
+
+    case 'whoami': {
+      const { runWhoami } = await import('./commands/login.js');
+      await runWhoami({ json });
       break;
     }
 
