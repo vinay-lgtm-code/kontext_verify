@@ -14,6 +14,7 @@ from .models import (
     AnomalyResult,
     AuditExport,
     HealthResponse,
+    ReserveSnapshot,
     Task,
     TaskResponse,
     TrustScore,
@@ -251,6 +252,54 @@ class Kontext:
         _handle_error(resp)
         return UsageInfo(**_camel_to_snake(resp.json()))
 
+    # --- Reserve Reconciliation ---
+
+    def log_reserve_snapshot(
+        self,
+        token: str,
+        chain: str,
+        rpc_url: str,
+        published_reserves: str | None = None,
+        tolerance: float | None = None,
+        agent_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> ReserveSnapshot:
+        """Query on-chain totalSupply() and log a reserve reconciliation snapshot.
+
+        Buffers a reserve_snapshot action and immediately flushes it to the server.
+        The server delegates to the SDK's logReserveSnapshot() which performs the
+        on-chain RPC query and logs into the tamper-evident digest chain.
+
+        Args:
+            token: Stablecoin token symbol (USDC, USDT, DAI, EURC).
+            chain: Chain to query (base, ethereum, polygon, ...).
+            rpc_url: JSON-RPC endpoint URL for on-chain supply query.
+            published_reserves: Published reserve figure from issuer report (caller-supplied).
+            tolerance: Acceptable delta fraction (default: 0.001 = 0.1%).
+            agent_id: Agent ID for logging.
+            metadata: Additional metadata to attach to the snapshot action.
+
+        Returns:
+            ReserveSnapshot with on-chain supply, delta, and reconciliation status.
+        """
+        body: dict[str, Any] = {
+            "token": token,
+            "chain": chain,
+            "rpcUrl": rpc_url,
+        }
+        if published_reserves is not None:
+            body["publishedReserves"] = published_reserves
+        if tolerance is not None:
+            body["tolerance"] = tolerance
+        if agent_id is not None:
+            body["agentId"] = agent_id
+        if metadata:
+            body["metadata"] = metadata
+
+        resp = self._client.post("/v1/reserve/snapshot", json=body)
+        _handle_error(resp)
+        return ReserveSnapshot(**_camel_to_snake(resp.json()))
+
     # --- Anomalies ---
 
     def evaluate_anomalies(
@@ -456,6 +505,50 @@ class AsyncKontext:
         resp = await self._client.get("/v1/usage")
         _handle_error(resp)
         return UsageInfo(**_camel_to_snake(resp.json()))
+
+    # --- Reserve Reconciliation ---
+
+    async def log_reserve_snapshot(
+        self,
+        token: str,
+        chain: str,
+        rpc_url: str,
+        published_reserves: str | None = None,
+        tolerance: float | None = None,
+        agent_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> ReserveSnapshot:
+        """Query on-chain totalSupply() and log a reserve reconciliation snapshot.
+
+        Args:
+            token: Stablecoin token symbol (USDC, USDT, DAI, EURC).
+            chain: Chain to query (base, ethereum, polygon, ...).
+            rpc_url: JSON-RPC endpoint URL for on-chain supply query.
+            published_reserves: Published reserve figure from issuer report (caller-supplied).
+            tolerance: Acceptable delta fraction (default: 0.001 = 0.1%).
+            agent_id: Agent ID for logging.
+            metadata: Additional metadata.
+
+        Returns:
+            ReserveSnapshot with on-chain supply, delta, and reconciliation status.
+        """
+        body: dict[str, Any] = {
+            "token": token,
+            "chain": chain,
+            "rpcUrl": rpc_url,
+        }
+        if published_reserves is not None:
+            body["publishedReserves"] = published_reserves
+        if tolerance is not None:
+            body["tolerance"] = tolerance
+        if agent_id is not None:
+            body["agentId"] = agent_id
+        if metadata:
+            body["metadata"] = metadata
+
+        resp = await self._client.post("/v1/reserve/snapshot", json=body)
+        _handle_error(resp)
+        return ReserveSnapshot(**_camel_to_snake(resp.json()))
 
     # --- Anomalies ---
 

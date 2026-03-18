@@ -139,6 +139,17 @@ export interface EvidenceBundle {
   card_3ds_status: string | null;
   merchant_screened_name: string | null;
   scope_evaluation: { within_scope: boolean; violations: string[] } | null;
+  reserve_snapshot?: {
+    token: string;
+    chain: string;
+    onChainSupply: string;
+    publishedReserves?: string;
+    delta?: string;
+    reconciliationStatus: 'matched' | 'delta_within_tolerance' | 'discrepancy' | 'unverified';
+    snapshotBlockNumber: number;
+    snapshotBlockHash: string;
+    timestamp: string;
+  };
   created_at: string;
 }
 

@@ -2,6 +2,24 @@
 
 All notable public changes to the Kontext SDK and platform are documented here.
 
+## [0.12.0] - 2026-03-17
+
+### Added
+- **Reserve reconciliation logging**: `logReserveSnapshot()` queries on-chain `totalSupply()` via raw JSON-RPC and logs a tamper-evident snapshot (supply, block number, block hash) into the digest chain
+- `ReserveReconciler` static utility class for on-chain supply verification — zero dependencies, same pattern as `UsdcCompliance`
+- `verify()` integration: optional `reserveSnapshot` flag auto-captures stablecoin supply alongside every payment
+- Tolerance alerting: `reserveDiscrepancy` anomaly fires on `onAnomaly()` callbacks when supply/reserve delta exceeds threshold
+- `generateComplianceCertificate()` now includes a `reserveReconciliation` section summarizing snapshot history, discrepancy count, and latest status
+- Dashboard "Reserve State at Time of Payment" evidence drawer panel — LED indicator, block hash proof, delta display
+- CLI `kontext reconcile` command — queries on-chain supply and prints human-readable reconciliation output
+- Python client `log_reserve_snapshot()` (sync + async) and `ReserveSnapshot` Pydantic model
+- Landing page "Reserve reconciliation" section with code example and live evidence card
+- All 8 chains available from day one — no plan gate, no cumulative spend requirement
+
+### Changed
+- `AnomalyRuleType` union extended with `'reserveDiscrepancy'`
+- `AnomalyDetector` gains public `reportAnomaly()` method for integration-driven anomaly events
+
 ## [0.11.1] - 2026-03-17
 
 ### Added

@@ -327,6 +327,102 @@ fetchAgentCard()
         </div>
       </section>
 
+      {/* Reserve Reconciliation */}
+      <section className="border-t border-[var(--term-surface-2)]">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+          <div className="mb-10">
+            <h2 className="text-xl sm:text-2xl font-bold">
+              <span className="text-[var(--term-green)]">$</span> Reserve reconciliation
+            </h2>
+            <p className="mt-2 text-sm text-[var(--term-text-2)] max-w-2xl">
+              Cryptographic proof that on-chain supply was consistent with published reserves
+              at the moment your agent executed a transfer. Read-only. Zero dependencies.
+              All 8 chains from day one.
+            </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Code snippet */}
+            <div className="border border-[var(--term-surface-2)] bg-[var(--term-surface)]">
+              <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-[var(--term-surface-2)]">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
+                <span className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
+                <span className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
+                <span className="ml-2 text-[11px] text-[var(--term-text-3)] font-mono">agent.ts</span>
+              </div>
+              <pre className="p-5 text-[12px] font-mono leading-relaxed overflow-x-auto">
+<code><span className="text-[var(--term-text-3)]">// Alongside every payment — one flag</span>
+<span className="text-[var(--term-green)]">const</span> result = <span className="text-[var(--term-text-2)]">await</span> ctx.<span className="text-[var(--term-text)]">verify</span>&#40;&#123;
+  txHash, chain: <span className="text-[var(--term-text-3)]">&apos;base&apos;</span>,
+  amount, token: <span className="text-[var(--term-text-3)]">&apos;USDC&apos;</span>,
+  from, to,
+  <span className="text-[var(--term-green)]">reserveSnapshot</span>: &#123;
+    rpcUrl: <span className="text-[var(--term-text-3)]">&apos;https://mainnet.base.org&apos;</span>,
+    publishedReserves: <span className="text-[var(--term-text-3)]">&apos;31400000000&apos;</span>,
+  &#125;,
+&#125;&#41;;
+
+<span className="text-[var(--term-text-3)]">// result.reserveSnapshot.reconciliationStatus</span>
+<span className="text-[var(--term-text-3)]">// &apos;matched&apos; | &apos;delta_within_tolerance&apos; | &apos;discrepancy&apos;</span>
+
+<span className="text-[var(--term-text-3)]">// Or standalone</span>
+<span className="text-[var(--term-green)]">const</span> snap = <span className="text-[var(--term-text-2)]">await</span> ctx.<span className="text-[var(--term-text)]">logReserveSnapshot</span>&#40;&#123;
+  token: <span className="text-[var(--term-text-3)]">&apos;USDC&apos;</span>, chain: <span className="text-[var(--term-text-3)]">&apos;ethereum&apos;</span>,
+  rpcUrl: process.env.<span className="text-[var(--term-text)]">ETH_RPC</span>,
+&#125;&#41;;</code>
+              </pre>
+            </div>
+
+            {/* Evidence card */}
+            <div className="border border-[var(--term-green)] bg-[var(--term-surface)] p-5 flex flex-col gap-4">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[var(--term-green)] shadow-[0_0_6px_var(--term-green)]" />
+                <span className="text-[11px] text-[var(--term-green)] uppercase tracking-wider font-medium">Supply Verified</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[12px] font-mono">
+                <span className="text-[var(--term-text-3)]">token</span>
+                <span className="text-[var(--term-text)]">USDC</span>
+                <span className="text-[var(--term-text-3)]">chain</span>
+                <span className="text-[var(--term-text)]">base</span>
+                <span className="text-[var(--term-text-3)]">block</span>
+                <span className="text-[var(--term-text)]">#19,842,771</span>
+                <span className="text-[var(--term-text-3)]">supply</span>
+                <span className="text-[var(--term-text)]">31,420,000,000</span>
+                <span className="text-[var(--term-text-3)]">published</span>
+                <span className="text-[var(--term-text)]">31,400,000,000</span>
+                <span className="text-[var(--term-text-3)]">delta</span>
+                <span className="text-[var(--term-green)]">+0.064%</span>
+                <span className="text-[var(--term-text-3)]">status</span>
+                <span className="text-[var(--term-green)]">within tolerance</span>
+              </div>
+
+              <div className="border-t border-[var(--term-surface-2)] pt-3 mt-auto">
+                <div className="text-[10px] text-[var(--term-text-3)] uppercase tracking-wider mb-1">Block Hash Proof</div>
+                <div className="text-[11px] font-mono text-[var(--term-text-2)] truncate">
+                  0x3f9a1b2c3d4e5f6a7b8c9d0e1f2a3b4c...
+                </div>
+                <div className="text-[10px] text-[var(--term-text-3)] mt-1">Logged at digest chain index #44,281</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Three properties */}
+          <div className="mt-6 grid grid-cols-3 gap-3">
+            {[
+              ['Read-only', 'Queries totalSupply() via JSON-RPC. Never touches funds.'],
+              ['Zero deps', 'Raw fetch() + JSON-RPC. No ethers, no web3, no viem.'],
+              ['Tamper-evident', 'Block hash + digest chain index prove state at payment time.'],
+            ].map(([title, desc]) => (
+              <div key={title} className="border border-[var(--term-surface-2)] bg-[var(--term-surface)] p-4">
+                <div className="text-[11px] text-[var(--term-green)] uppercase tracking-wider mb-1">{title}</div>
+                <div className="text-[11px] text-[var(--term-text-2)] leading-relaxed">{desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Regulatory Context */}
       <section className="border-t border-[var(--term-surface-2)]">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">

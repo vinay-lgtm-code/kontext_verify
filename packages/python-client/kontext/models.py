@@ -106,3 +106,19 @@ class AnomalyResult(BaseModel):
     anomaly_count: int = 0
     anomalies: list[Anomaly] = []
     timestamp: str | None = None
+
+
+class ReserveSnapshot(BaseModel):
+    """On-chain reserve supply snapshot with reconciliation status."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    token: str
+    chain: str
+    on_chain_supply: str
+    published_reserves: str | None = None
+    delta: str | None = None
+    snapshot_block_number: int
+    snapshot_block_hash: str
+    reconciliation_status: str  # matched | delta_within_tolerance | discrepancy | unverified
+    timestamp: str
