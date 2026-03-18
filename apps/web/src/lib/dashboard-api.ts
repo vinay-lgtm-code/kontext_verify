@@ -4,26 +4,35 @@
 
 const API_BASE = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:8080';
 
-function getApiKey(): string | null {
+function getToken(): string | null {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem('kontext_api_key');
 }
 
+/** Read the stored role from localStorage. Set during login via /v1/account. */
+export function getRole(): 'admin' | 'staff-dev' | 'staff-risk' | null {
+  if (typeof window === 'undefined') return null;
+  const role = localStorage.getItem('kontext_user_role');
+  if (role === 'admin' || role === 'staff-dev' || role === 'staff-risk') return role;
+  return null;
+}
+
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const apiKey = getApiKey();
-  if (!apiKey) throw new Error('Not authenticated');
+  const token = getToken();
+  if (!token) throw new Error('Not authenticated');
 
   const res = await fetch(`${API_BASE}/v1${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      'X-Api-Key': apiKey,
+      'Authorization': `Bearer ${token}`,
       ...options?.headers,
     },
   });
 
   if (res.status === 401) {
     localStorage.removeItem('kontext_api_key');
+    localStorage.removeItem('kontext_user_role');
     if (typeof window !== 'undefined') {
       window.location.href = '/dashboard/login';
     }
@@ -244,5 +253,26 @@ export async function createAuditExport(options: {
   return apiFetch('/audit-exports', {
     method: 'POST',
     body: JSON.stringify(options),
+  });
+}
+
+export interface TeamMember {
+  user_id: string;
+  email: string;
+  role: string;
+  status: string;
+}
+
+export async function getTeamMembers(): Promise<{ members: TeamMember[]; count: number }> {
+  return apiFetch('/team/members');
+}
+
+export async function assignEvent(
+  eventId: string,
+  userId: string,
+): Promise<{ assigned: boolean; eventId: string; assignedTo: string }> {
+  return apiFetch(`/events/${eventId}/assign`, {
+    method: 'POST',
+    body: JSON.stringify({ userId }),
   });
 }

@@ -341,6 +341,11 @@
   grid-template-columns: 100px 130px 1fr 120px 110px 80px 90px;
 }
 
+/* 8-column layout for activity feed with assign button (admin) */
+.dash-cols-8 {
+  grid-template-columns: 100px 130px 1fr 120px 110px 80px 90px 70px;
+}
+
 /* 6-column layout for policy table */
 .dash-cols-6 {
   grid-template-columns: 1fr 80px 1fr 100px 120px 60px;
@@ -844,5 +849,8 @@
   }
   .dash-cols-7 {
     grid-template-columns: 80px 100px 1fr 90px 80px;
+  }
+  .dash-cols-8 {
+    grid-template-columns: 80px 100px 1fr 90px 80px 60px;
   }
 }

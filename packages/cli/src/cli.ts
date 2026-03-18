@@ -122,9 +122,13 @@ Commands:
                                 sanctioned entities + digital currency addresses
   login               Authenticate with your Kontext account
                         Validates API key against api.getkontext.com
-                        Stores key securely in OS keychain
+                        Stores credentials securely in OS keychain
   logout              Remove stored credentials from OS keychain
-  whoami              Show current account and usage
+  whoami              Show current account, role, and usage
+  team                Team management (admin role required)
+    invite <email>      Invite a team member  --role admin|staff-dev|staff-risk
+    list                List all team members
+    revoke <userId>     Revoke a member's access and all their API keys
 
   mcp                 Start MCP server for Claude Code / Cursor / Windsurf
 
@@ -294,6 +298,39 @@ async function main(): Promise<void> {
     case 'whoami': {
       const { runWhoami } = await import('./commands/login.js');
       await runWhoami({ json });
+      break;
+    }
+
+    case 'team': {
+      const subcommand = positional[0];
+      if (!subcommand || subcommand === 'help') {
+        process.stdout.write('Usage:\n  kontext team invite <email> --role admin|staff-dev|staff-risk\n  kontext team list\n  kontext team revoke <userId>\n');
+        break;
+      }
+      if (subcommand === 'invite') {
+        const email = positional[1];
+        const role = flag(flags, 'role') ?? 'staff-dev';
+        if (!email) {
+          process.stderr.write('Usage: kontext team invite <email> --role admin|staff-dev|staff-risk\n');
+          process.exit(2);
+        }
+        const { runTeamInvite } = await import('./commands/login.js');
+        await runTeamInvite(email, role, { json });
+      } else if (subcommand === 'list') {
+        const { runTeamList } = await import('./commands/login.js');
+        await runTeamList({ json });
+      } else if (subcommand === 'revoke') {
+        const userId = positional[1];
+        if (!userId) {
+          process.stderr.write('Usage: kontext team revoke <userId>\n');
+          process.exit(2);
+        }
+        const { runTeamRevoke } = await import('./commands/login.js');
+        await runTeamRevoke(userId, { json });
+      } else {
+        process.stderr.write(`Unknown team subcommand: ${subcommand}\n`);
+        process.exit(2);
+      }
       break;
     }
 

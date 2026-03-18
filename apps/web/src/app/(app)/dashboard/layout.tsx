@@ -4,6 +4,7 @@ import { IBM_Plex_Mono, DM_Sans } from 'next/font/google';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { getRole } from '@/lib/dashboard-api';
 import './dashboard.css';
 
 const plexMono = IBM_Plex_Mono({
@@ -18,26 +19,34 @@ const dmSans = DM_Sans({
   variable: '--font-dm-sans',
 });
 
-const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Overview', icon: '◎' },
-  { href: '/dashboard/payments', label: 'Payments', icon: '⬡' },
-  { href: '/dashboard/agents', label: 'Agents', icon: '◈' },
-  { href: '/dashboard/policies', label: 'Policies', icon: '⬢' },
-  { href: '#', label: 'Wallet Coverage', icon: '◑', disabled: true },
-  { href: '/dashboard/export', label: 'Audit Export', icon: '⎋' },
+const ALL_NAV_ITEMS = [
+  { href: '/dashboard', label: 'Overview', icon: '◎', roles: ['admin', 'staff-dev', 'staff-risk'] },
+  { href: '/dashboard/payments', label: 'Payments', icon: '⬡', roles: ['admin', 'staff-dev', 'staff-risk'] },
+  { href: '/dashboard/agents', label: 'Agents', icon: '◈', roles: ['admin', 'staff-dev', 'staff-risk'] },
+  { href: '/dashboard/policies', label: 'Policies', icon: '⬢', roles: ['admin', 'staff-risk'] },
+  { href: '#', label: 'Wallet Coverage', icon: '◑', disabled: true, roles: ['admin', 'staff-dev', 'staff-risk'] },
+  { href: '/dashboard/export', label: 'Audit Export', icon: '⎋', roles: ['admin', 'staff-dev', 'staff-risk'] },
 ];
+
+const ROLE_LABELS: Record<string, string> = {
+  admin: 'Admin',
+  'staff-dev': 'Developer',
+  'staff-risk': 'Risk',
+};
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [clock, setClock] = useState('');
+  const [role, setRole] = useState<string | null>(null);
 
-  // Check auth
+  // Check auth + load role
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const key = localStorage.getItem('kontext_api_key');
     if (!key && pathname !== '/dashboard/login') {
       window.location.href = '/dashboard/login';
     }
+    setRole(getRole());
   }, [pathname]);
 
   // Live clock
@@ -66,8 +75,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
+  const visibleNavItems = ALL_NAV_ITEMS.filter(
+    (item) => !role || item.roles.includes(role),
+  );
+
   const pageTitle =
-    NAV_ITEMS.find((n) => n.href === pathname)?.label ?? 'Dashboard';
+    visibleNavItems.find((n) => n.href === pathname)?.label ?? 'Dashboard';
 
   return (
     <div className={`dashboard ${plexMono.variable} ${dmSans.variable}`}>
@@ -77,7 +90,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <span style={{ color: 'var(--dash-accent)' }}>$</span> kontext
         </div>
         <nav className="dash-sidebar-nav">
-          {NAV_ITEMS.map((item) => (
+          {visibleNavItems.map((item) => (
             <Link
               key={item.href}
               href={item.disabled ? '#' : item.href}
@@ -102,6 +115,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             />
             org_legaci_demo
           </div>
+          {role && (
+            <div style={{
+              fontSize: 11,
+              fontFamily: 'var(--font-plex-mono), monospace',
+              color: 'var(--dash-text-3)',
+              marginTop: 6,
+              paddingLeft: 2,
+            }}>
+              {ROLE_LABELS[role] ?? role}
+            </div>
+          )}
         </div>
       </aside>
 

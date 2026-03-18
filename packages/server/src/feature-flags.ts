@@ -1,6 +1,9 @@
 // ============================================================================
-// Kontext Server - Feature Flag Service (Firestore + GCP Metadata Auth)
+// Kontext Server - Feature Flag Service (PostgreSQL primary, Firestore fallback)
 // ============================================================================
+// Migration 005 adds a `feature_flags` PostgreSQL table.
+// init() tries PostgreSQL first (if DATABASE_URL is set), falls back to Firestore.
+// isEnabled() call site is unchanged.
 
 /** Plan-based targeting for a single environment */
 interface FlagPlanTargeting {
@@ -79,9 +82,44 @@ export class ServerFeatureFlags {
   // Public API
   // --------------------------------------------------------------------------
 
-  /** Warm the cache at startup */
-  async init(): Promise<void> {
+  /** Warm the cache at startup. Tries PostgreSQL first, falls back to Firestore. */
+  async init(pool?: import('pg').Pool | null): Promise<void> {
+    if (pool) {
+      try {
+        await this.loadFromPostgres(pool);
+        return;
+      } catch {
+        // Fall through to Firestore
+      }
+    }
     await this.refresh();
+  }
+
+  /** Load flags from PostgreSQL feature_flags table */
+  async loadFromPostgres(pool: import('pg').Pool): Promise<void> {
+    const { rows } = await pool.query<{
+      flag_name: string;
+      description: string;
+      scope: string;
+      targeting: Record<string, unknown>;
+      created_at: string;
+      updated_at: string;
+      created_by: string;
+    }>(`SELECT flag_name, description, scope, targeting, created_at, updated_at, created_by FROM feature_flags`);
+
+    const now = Date.now();
+    for (const row of rows) {
+      const flag: FeatureFlag = {
+        name: row.flag_name,
+        description: row.description,
+        scope: row.scope as FlagScope,
+        targeting: row.targeting as unknown as FlagTargeting,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        createdBy: row.created_by,
+      };
+      this.cache.set(flag.name, { flag, expiresAt: now + this.cacheTtlMs });
+    }
   }
 
   /**
