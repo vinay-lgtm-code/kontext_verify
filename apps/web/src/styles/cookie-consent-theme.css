@@ -1,0 +1,50 @@
+/* Terminal Noir theme overrides for vanilla-cookieconsent */
+
+#cc-main {
+  --cc-font-family: var(--font-fira-code), ui-monospace, monospace;
+  --cc-bg: #18181b;
+  --cc-primary-color: #fafafa;
+  --cc-secondary-color: #a1a1aa;
+
+  --cc-btn-primary-bg: #4ade80;
+  --cc-btn-primary-color: #09090b;
+  --cc-btn-primary-border-color: #4ade80;
+  --cc-btn-primary-hover-bg: #22c55e;
+  --cc-btn-primary-hover-color: #09090b;
+  --cc-btn-primary-hover-border-color: #22c55e;
+
+  --cc-btn-secondary-bg: transparent;
+  --cc-btn-secondary-color: #a1a1aa;
+  --cc-btn-secondary-border-color: #3f3f46;
+  --cc-btn-secondary-hover-bg: #27272a;
+  --cc-btn-secondary-hover-color: #fafafa;
+  --cc-btn-secondary-hover-border-color: #4ade80;
+
+  --cc-separator-border-color: #27272a;
+  --cc-cookie-category-block-bg: #09090b;
+  --cc-cookie-category-block-border: #27272a;
+  --cc-cookie-category-block-hover-bg: #18181b;
+  --cc-cookie-category-block-hover-border: #3f3f46;
+
+  --cc-overlay-bg: rgba(0, 0, 0, 0.65);
+
+  --cc-toggle-on-bg: #4ade80;
+  --cc-toggle-off-bg: #3f3f46;
+  --cc-toggle-readonly-bg: #27272a;
+  --cc-toggle-knob-bg: #fafafa;
+
+  --cc-modal-border-radius: 0px;
+  --cc-btn-border-radius: 0px;
+}
+
+/* Remove rounded corners from toggles */
+#cc-main .section__toggle,
+#cc-main .toggle__icon {
+  border-radius: 0px;
+}
+
+/* Sharper modal border */
+#cc-main .cm,
+#cc-main .pm {
+  border: 1px solid #3f3f46;
+}
