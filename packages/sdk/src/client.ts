@@ -87,6 +87,8 @@ import {
   CrossSessionLinker,
   KYAConfidenceScorer,
 } from './kya/index.js';
+import { ReserveReconciler } from './integrations/reserve-reconciliation.js';
+import type { ReserveSnapshotInput, ReserveSnapshot } from './integrations/reserve-reconciliation.js';
 import { CircleWalletManager } from './integrations/circle-wallets.js';
 import { CoinbaseWalletManager } from './integrations/coinbase-wallets.js';
 import { MetaMaskWalletManager } from './integrations/metamask-wallets.js';
@@ -681,6 +683,56 @@ export class Kontext {
   }
 
   /**
+   * Log a reserve reconciliation snapshot. Queries on-chain totalSupply()
+   * for a stablecoin, computes reconciliation status against caller-supplied
+   * published reserves, and logs the snapshot into the digest chain.
+   *
+   * Read-only — never touches funds. Uses raw JSON-RPC (zero dependencies).
+   *
+   * @param input - Token, chain, RPC URL, and optional published reserves
+   * @returns The computed ReserveSnapshot with on-chain supply and reconciliation status
+   */
+  async logReserveSnapshot(input: ReserveSnapshotInput): Promise<ReserveSnapshot> {
+    // All 8 chains unlocked from day one — no plan gate for reserve snapshots
+
+    if (input.metadata) this.validateMetadata(input.metadata);
+
+    // Query on-chain supply
+    const snapshot = await ReserveReconciler.querySupply(input);
+
+    // Log into digest chain as ActionLog with type 'reserve_snapshot'
+    const action = await this.logger.log({
+      type: 'reserve_snapshot',
+      description: `Reserve snapshot: ${input.token}/${input.chain} supply=${snapshot.onChainSupply} status=${snapshot.reconciliationStatus}`,
+      agentId: input.agentId ?? 'system',
+      metadata: {
+        ...snapshot,
+        ...(input.metadata ?? {}),
+      },
+    });
+
+    // Plan metering
+    this.planManager.recordEvent();
+
+    // Export (fire-and-forget)
+    this.exporter.export([action]).catch(() => {});
+
+    // Tolerance alerting: fire anomaly on discrepancy
+    if (snapshot.reconciliationStatus === 'discrepancy' && this.anomalyDetector.isEnabled()) {
+      this.anomalyDetector.reportAnomaly({
+        type: 'reserveDiscrepancy',
+        severity: 'high',
+        description: `Reserve discrepancy: ${snapshot.delta} delta for ${input.token} on ${input.chain}`,
+        agentId: input.agentId ?? 'system',
+        actionId: action.id,
+        data: { ...snapshot },
+      });
+    }
+
+    return snapshot;
+  }
+
+  /**
    * Flush any pending log batches.
    */
   async flushLogs(): Promise<void> {
@@ -1140,6 +1192,35 @@ export class Kontext {
       attribution = (await fetchTransactionAttribution(input.erc8021.rpcUrl, input.txHash)) ?? undefined;
     }
 
+    // 6e. Reserve snapshot (optional)
+    let reserveSnapshot: ReserveSnapshot | undefined;
+    if (input.reserveSnapshot && input.token && input.chain) {
+      // All 8 chains unlocked from day one — no plan gate for reserve snapshots
+      reserveSnapshot = await ReserveReconciler.querySupply({
+        token: input.token,
+        chain: input.chain,
+        rpcUrl: input.reserveSnapshot.rpcUrl,
+        publishedReserves: input.reserveSnapshot.publishedReserves,
+        tolerance: input.reserveSnapshot.tolerance,
+        agentId: input.agentId,
+      });
+      await this.logger.log({
+        type: 'reserve_snapshot',
+        agentId: input.agentId,
+        description: `Reserve snapshot: ${input.token}/${input.chain} supply=${reserveSnapshot.onChainSupply} status=${reserveSnapshot.reconciliationStatus}`,
+        metadata: { ...reserveSnapshot },
+      });
+      if (reserveSnapshot.reconciliationStatus === 'discrepancy' && this.anomalyDetector.isEnabled()) {
+        this.anomalyDetector.reportAnomaly({
+          type: 'reserveDiscrepancy',
+          severity: 'high',
+          description: `Reserve discrepancy: ${reserveSnapshot.delta} delta for ${input.token} on ${input.chain}`,
+          agentId: input.agentId,
+          data: { ...reserveSnapshot },
+        });
+      }
+    }
+
     // 7. Auto-create approval task if amount exceeds threshold
     let requiresApproval: boolean | undefined;
     let task: Task | undefined;
@@ -1189,6 +1270,7 @@ export class Kontext {
       ...(anchorProof ? { anchorProof } : {}),
       ...(counterpartyResult ? { counterparty: counterpartyResult } : {}),
       ...(attribution ? { attribution } : {}),
+      ...(reserveSnapshot ? { reserveSnapshot } : {}),
       ...(!this.screeningAggregator ? { coverageWarning: 'Built-in screening covers ~3% of OFAC crypto addresses. Configure external providers for comprehensive coverage.' } : {}),
     };
   }
@@ -1375,6 +1457,30 @@ export class Kontext {
       }));
     }
 
+    // Build reserve reconciliation section if snapshots exist
+    const reserveActions = agentActions.filter((a) => a.type === 'reserve_snapshot');
+    let reserveReconciliation: ComplianceCertificate['reserveReconciliation'];
+    if (reserveActions.length > 0) {
+      const snapshots = reserveActions.map((a) => ({
+        token: a.metadata['token'] as string as import('./types.js').Token,
+        chain: a.metadata['chain'] as string as import('./types.js').Chain,
+        onChainSupply: a.metadata['onChainSupply'] as string,
+        publishedReserves: a.metadata['publishedReserves'] as string | undefined,
+        delta: a.metadata['delta'] as string | undefined,
+        reconciliationStatus: a.metadata['reconciliationStatus'] as string,
+        snapshotBlockNumber: a.metadata['snapshotBlockNumber'] as number,
+        timestamp: a.timestamp,
+      }));
+      const discrepancyCount = snapshots.filter((s) => s.reconciliationStatus === 'discrepancy').length;
+      const latest = snapshots[snapshots.length - 1]!;
+      reserveReconciliation = {
+        snapshots,
+        snapshotCount: snapshots.length,
+        discrepancyCount,
+        latestStatus: latest.reconciliationStatus,
+      };
+    }
+
     const certificateId = generateId();
     const issuedAt = now();
 
@@ -1397,6 +1503,7 @@ export class Kontext {
       complianceStatus,
       actions: actionSummary,
       reasoning: reasoningEntries,
+      ...(reserveReconciliation ? { reserveReconciliation } : {}),
     };
 
     // Compute SHA-256 hash of the certificate content for integrity verification

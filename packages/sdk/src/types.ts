@@ -36,7 +36,8 @@ export type AnomalyRuleType =
   | 'newDestination'
   | 'offHoursActivity'
   | 'rapidSuccession'
-  | 'roundAmount';
+  | 'roundAmount'
+  | 'reserveDiscrepancy';
 
 // ============================================================================
 // Configuration
@@ -950,6 +951,22 @@ export interface ComplianceCertificate {
   actions: Array<{ type: string; count: number }>;
   /** Reasoning entries (if includeReasoning is true) */
   reasoning: ReasoningEntry[];
+  /** Reserve reconciliation history (present when reserve snapshots exist for this agent) */
+  reserveReconciliation?: {
+    snapshots: Array<{
+      token: Token;
+      chain: Chain;
+      onChainSupply: string;
+      publishedReserves?: string;
+      delta?: string;
+      reconciliationStatus: string;
+      snapshotBlockNumber: number;
+      timestamp: string;
+    }>;
+    snapshotCount: number;
+    discrepancyCount: number;
+    latestStatus: string;
+  };
   /** SHA-256 hash of the certificate content for integrity verification */
   contentHash: string;
 }
@@ -1050,6 +1067,15 @@ export interface VerifyInput extends LogTransactionInput {
   counterparty?: CounterpartyConfig;
   /** ERC-8021 config: fetch and parse builder attribution from transaction calldata */
   erc8021?: ERC8021Config;
+  /** Reserve snapshot config: auto-capture on-chain supply alongside payment */
+  reserveSnapshot?: {
+    /** JSON-RPC endpoint for on-chain supply query */
+    rpcUrl: string;
+    /** Published reserve figure from issuer's report (caller-supplied) */
+    publishedReserves?: string;
+    /** Acceptable delta percentage (default: 0.001 = 0.1%) */
+    tolerance?: number;
+  };
 }
 
 /** Result of the verify() convenience method */
@@ -1088,6 +1114,18 @@ export interface VerifyResult {
   attribution?: ERC8021Attribution;
   /** Coverage warning when using built-in screening only (no external providers configured) */
   coverageWarning?: string;
+  /** Reserve snapshot (present when reserveSnapshot config provided in input and token/chain available) */
+  reserveSnapshot?: {
+    token: Token;
+    chain: Chain;
+    onChainSupply: string;
+    publishedReserves?: string;
+    delta?: string;
+    snapshotBlockNumber: number;
+    snapshotBlockHash: string;
+    reconciliationStatus: 'matched' | 'delta_within_tolerance' | 'discrepancy' | 'unverified';
+    timestamp: string;
+  };
 }
 
 // ============================================================================

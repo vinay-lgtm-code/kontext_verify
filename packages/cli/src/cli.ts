@@ -117,6 +117,13 @@ Commands:
                       create  --session --actions --summary
                       attest  <checkpointId> --reviewer --decision
                       list    [--session <id>]
+  reconcile           Query on-chain stablecoin supply and reconcile
+                        --token <symbol>          Token (default: USDC)
+                        --chain <chain>           Chain (default: base)
+                        --rpc <url>               JSON-RPC endpoint (required)
+                        --published <amount>      Published reserve figure
+                        --tolerance <pct>         Delta tolerance (default: 0.001)
+                        --agent <id>              Agent ID (default: cli)
   sync [--full]       Fetch latest OFAC SDN list from U.S. Treasury
                         --full  One-time: download entire SDN XML, parse ALL
                                 sanctioned entities + digital currency addresses
@@ -146,6 +153,7 @@ Examples:
   npx @kontext-sdk/cli audit --verify
   npx @kontext-sdk/cli anchor --rpc https://sepolia.base.org --contract 0x... --key 0x...
   npx @kontext-sdk/cli attest --endpoint https://agent-b.app --agent my-bot
+  npx @kontext-sdk/cli reconcile --rpc https://mainnet.base.org --published 31400000000
   npx @kontext-sdk/cli sync
   npx @kontext-sdk/cli mcp
 
@@ -273,6 +281,26 @@ async function main(): Promise<void> {
       const counterpartyAgent = flag(flags, 'counterparty-agent');
       const { runAttest } = await import('./commands/attest.js');
       await runAttest({ endpoint, agent, counterpartyAgent, json });
+      break;
+    }
+
+    case 'reconcile': {
+      const rpc = flag(flags, 'rpc');
+      if (!rpc) {
+        process.stderr.write('Usage: kontext reconcile --rpc <url> [--token USDC] [--chain base] [--published <amount>] [--tolerance <pct>] [--agent <id>]\n');
+        process.exit(2);
+      }
+      const token = (flag(flags, 'token') ?? 'USDC').toUpperCase();
+      if (!VALID_TOKENS.includes(token)) {
+        process.stderr.write(`Invalid token: ${token}. Must be one of: ${VALID_TOKENS.join(', ')}\n`);
+        process.exit(2);
+      }
+      const chain = flag(flags, 'chain') ?? 'base';
+      const published = flag(flags, 'published');
+      const tolerance = flag(flags, 'tolerance');
+      const agent = flag(flags, 'agent') ?? 'cli';
+      const { runReconcile } = await import('./commands/reconcile.js');
+      await runReconcile({ token: token as Token, chain: chain as import('kontext-sdk').Chain, rpc, published, tolerance, agent, json });
       break;
     }
 

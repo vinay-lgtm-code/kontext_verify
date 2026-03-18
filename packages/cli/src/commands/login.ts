@@ -54,29 +54,25 @@ async function keychainStore(apiKey: string): Promise<'keychain' | 'file'> {
         '-w', apiKey,
       ], { stdio: 'pipe' });
       return 'keychain';
-    } catch { /* fall through */ }
+    } catch { /* fall through to file */ }
   }
 
   if (isLinux()) {
     try {
       execFileSync('secret-tool', [
         'store',
-        '--label=Kontext CLI',
+        '--label', `${SERVICE_NAME} API key`,
         'service', SERVICE_NAME,
         'username', ACCOUNT_NAME,
       ], { input: apiKey, stdio: ['pipe', 'pipe', 'pipe'] });
       return 'keychain';
-    } catch { /* secret-tool not installed */ }
+    } catch { /* fall through to file */ }
   }
 
-  return keychainStoreFallback(apiKey);
-}
-
-function keychainStoreFallback(apiKey: string): 'file' {
+  // Fallback: obfuscated file
   if (!fs.existsSync(FALLBACK_CRED_DIR)) {
-    fs.mkdirSync(FALLBACK_CRED_DIR, { recursive: true });
+    fs.mkdirSync(FALLBACK_CRED_DIR, { mode: 0o700 });
   }
-  // XOR-obfuscate with machine-derived key (prevents casual plaintext read)
   const machineId = crypto.createHash('sha256')
     .update(os.hostname() + os.userInfo().username)
     .digest('hex');

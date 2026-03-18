@@ -4,23 +4,26 @@ import { useEffect, useState } from 'react';
 import type { VerificationEvent, EvidenceBundle } from '@/lib/dashboard-api';
 import { getEvidence } from '@/lib/dashboard-api';
 import { StatusPill } from './status-pill';
+import { ReserveEvidence } from './reserve-evidence';
 
 interface EvidenceDrawerProps {
   event: VerificationEvent;
   onClose: () => void;
+  fetchEvidence?: (eventId: string) => Promise<EvidenceBundle>;
 }
 
-export function EvidenceDrawer({ event, onClose }: EvidenceDrawerProps) {
+export function EvidenceDrawer({ event, onClose, fetchEvidence }: EvidenceDrawerProps) {
   const [bundle, setBundle] = useState<EvidenceBundle | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
-    getEvidence(event.event_id)
+    const fetcher = fetchEvidence ?? getEvidence;
+    fetcher(event.event_id)
       .then(setBundle)
       .catch(() => setBundle(null))
       .finally(() => setLoading(false));
-  }, [event.event_id]);
+  }, [event.event_id, fetchEvidence]);
 
   return (
     <>
@@ -199,6 +202,14 @@ export function EvidenceDrawer({ event, onClose }: EvidenceDrawerProps) {
             )}
           </>
         )}
+
+            {/* Reserve State at Time of Payment */}
+            {bundle?.reserve_snapshot && (
+              <ReserveEvidence
+                snapshot={bundle.reserve_snapshot}
+                chainIndex={bundle.chain_index}
+              />
+            )}
 
         {/* Footer */}
         <div className="dash-drawer-footer">

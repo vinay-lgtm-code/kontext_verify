@@ -149,6 +149,10 @@ export type { DigestLink, DigestVerification, PrecisionTimestamp } from './diges
 export { UsdcCompliance } from './integrations/usdc.js';
 export type { SanctionsCheckResult } from './integrations/usdc.js';
 
+// Reserve Reconciliation (for direct use)
+export { ReserveReconciler } from './integrations/reserve-reconciliation.js';
+export type { ReserveSnapshotInput, ReserveSnapshot } from './integrations/reserve-reconciliation.js';
+
 // General Payment Compliance (for direct use)
 export { PaymentCompliance } from './integrations/payment-compliance.js';
 
