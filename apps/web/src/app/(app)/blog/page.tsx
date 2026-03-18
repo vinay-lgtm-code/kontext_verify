@@ -9,6 +9,33 @@ export const metadata: Metadata = {
 
 const posts = [
   {
+    slug: "regulated-entity-partner-problem",
+    title: "You're the Regulated Entity. Your Partner Initiated the Transaction. Now What?",
+    description:
+      "The BaaS compliance tension amplifies with stablecoins. Irreversible transactions, 24/7 settlement, multi-chain monitoring, and the GENIUS Act overlay mean platform providers need fundamentally different compliance architecture.",
+    date: "2026-03-20",
+    readTime: "13 min",
+    tags: ["BaaS", "Stablecoin Infrastructure", "Risk"],
+  },
+  {
+    slug: "who-authorized-this",
+    title: "The Examiner Question That Will Define Agentic Payments: 'Who Authorized This?'",
+    description:
+      "Compliance frameworks assume human agency. When AI agents autonomously send USDC, concepts like 'authorized' and 'intentional' become ambiguous. The first enforcement action will set the precedent.",
+    date: "2026-03-18",
+    readTime: "14 min",
+    tags: ["Agentic Payments", "Compliance", "Risk"],
+  },
+  {
+    slug: "bsa-always-on-settlement",
+    title: "Your BSA Program Wasn't Built for 24/7 Settlement. Here's What Breaks.",
+    description:
+      "The GENIUS Act doesn't just add stablecoins to the BSA framework. It exposes fundamental architectural assumptions in how most institutions run their compliance programs.",
+    date: "2026-03-15",
+    readTime: "12 min",
+    tags: ["BSA", "Stablecoins", "Compliance"],
+  },
+  {
     slug: "introducing-kontext",
     title: "Introducing Kontext: Trust Layer for Agentic Stablecoin Transactions",
     description:
