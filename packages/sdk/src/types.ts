@@ -229,6 +229,12 @@ export interface KontextConfig {
   walletMonitoring?: WalletMonitoringConfig;
 
   /**
+   * ACH monitoring configuration. When provided, SDK can process ACH webhooks
+   * and optionally poll for ACH transfers via banking provider APIs.
+   */
+  achMonitoring?: AchMonitorConfig;
+
+  /**
    * Viem interceptor mode for withKontextCompliance() (default: 'post-send').
    * - 'post-send': verify() runs after tx succeeds, never blocks
    * - 'pre-send': verify() runs before tx, throws if non-compliant
@@ -289,6 +295,67 @@ export interface WalletMonitoringConfig {
   rpcEndpoints: Partial<Record<Chain, string>>;
   /** Polling interval in ms for HTTP transports (default: 12000) */
   pollingIntervalMs?: number;
+}
+
+// ============================================================================
+// ACH Monitoring
+// ============================================================================
+
+/** Supported ACH banking provider names */
+export type AchProvider = 'plaid' | 'moov' | 'stripe_treasury' | 'modern_treasury' | 'column';
+
+/** Normalized ACH transfer event (provider-agnostic) */
+export interface AchTransferEvent {
+  /** Provider-assigned transfer ID */
+  transferId: string;
+  /** Amount in decimal string */
+  amount: string;
+  /** Currency code (default: 'USD') */
+  currency?: string;
+  /** Direction */
+  direction: 'credit' | 'debit';
+  /** Transfer status */
+  status: 'pending' | 'posted' | 'settled' | 'returned' | 'failed';
+  /** Originator name */
+  originatorName?: string;
+  /** Originator company ID (EIN/DUNS) */
+  originatorId?: string;
+  /** ODFI routing number */
+  odfiRoutingNumber?: string;
+  /** RDFI routing number */
+  rdfiRoutingNumber?: string;
+  /** SEC code */
+  secCode?: string;
+  /** Entry description */
+  entryDescription?: string;
+  /** Trace number */
+  traceNumber?: string;
+  /** Same-day ACH flag */
+  sameDay?: boolean;
+  /** Counterparty name (sender for credits, receiver for debits) */
+  counterpartyName?: string;
+  /** Counterparty account identifier (masked or tokenized) */
+  counterpartyAccount?: string;
+  /** Provider name */
+  provider: AchProvider;
+  /** Raw provider payload (for audit trail) */
+  raw?: Record<string, unknown>;
+  /** ISO 8601 timestamp */
+  timestamp: string;
+}
+
+/** ACH monitoring configuration */
+export interface AchMonitorConfig {
+  /** Which provider to listen to */
+  provider: AchProvider;
+  /** Provider-specific configuration (API keys, webhook secrets, account IDs) */
+  providerConfig: Record<string, string>;
+  /** Polling interval in ms (for polling-based providers, default: 60000) */
+  pollingIntervalMs?: number;
+  /** Only monitor transfers above this amount */
+  minimumAmount?: string;
+  /** Auto-verify all incoming events (default: true) */
+  autoVerify?: boolean;
 }
 
 // ============================================================================
@@ -601,6 +668,32 @@ export interface LogTransactionInput {
   cardSpendLimit?: string;
   /** Authorization ID from card network */
   cardAuthorizationId?: string;
+
+  // ACH-specific fields (NACHA Operating Rules)
+  /** ACH Standard Entry Class code (e.g., 'PPD', 'CCD', 'WEB', 'TEL', 'IAT') */
+  achSecCode?: string;
+  /** Originator company name (NACHA: Company Name field, 16 chars) */
+  achOriginatorName?: string;
+  /** Originator company identification (NACHA: Company Identification, 10 chars — typically EIN or DUNS) */
+  achOriginatorId?: string;
+  /** Originating Depository Financial Institution routing number (9 digits) */
+  achOdfiRoutingNumber?: string;
+  /** Receiving Depository Financial Institution routing number (9 digits) */
+  achRdfiRoutingNumber?: string;
+  /** Company Entry Description (NACHA: 10-char field, e.g., 'PAYROLL', 'VENDOR PMT') */
+  achEntryDescription?: string;
+  /** ACH batch number for grouping entries */
+  achBatchNumber?: string;
+  /** ACH trace number (unique per entry, 15 digits) */
+  achTraceNumber?: string;
+  /** Whether this is a same-day ACH entry */
+  achSameDay?: boolean;
+  /** ACH transaction type */
+  achTransactionType?: 'credit' | 'debit';
+  /** Originator's prefunding account balance at time of batch submission (string for precision) */
+  achPrefundingBalance?: string;
+  /** Settlement date (ISO 8601) */
+  achSettlementDate?: string;
 }
 
 /** Stored transaction record */
@@ -624,6 +717,18 @@ export interface TransactionRecord extends ActionLog {
   threeDSecureStatus?: string;
   cardPlatform?: string;
   cardAuthorizationId?: string;
+  achSecCode?: string;
+  achOriginatorName?: string;
+  achOriginatorId?: string;
+  achOdfiRoutingNumber?: string;
+  achRdfiRoutingNumber?: string;
+  achEntryDescription?: string;
+  achBatchNumber?: string;
+  achTraceNumber?: string;
+  achSameDay?: boolean;
+  achTransactionType?: 'credit' | 'debit';
+  achPrefundingBalance?: string;
+  achSettlementDate?: string;
 }
 
 /** Check whether a transaction input has all crypto-specific fields */
@@ -642,7 +747,16 @@ export function isCardTransaction(input: LogTransactionInput): boolean {
 /** Check whether a transaction input is a bank transfer */
 export function isBankTransaction(input: LogTransactionInput): boolean {
   return input.paymentMethod === 'bank'
+    || input.paymentMethod === 'ach'
     || input.instrument?.instrumentType === 'bank_account';
+}
+
+/** Check whether a transaction input is an ACH payment */
+export function isAchTransaction(input: LogTransactionInput): boolean {
+  return input.paymentMethod === 'ach'
+    || !!input.achSecCode
+    || !!input.achOriginatorId
+    || !!input.achOdfiRoutingNumber;
 }
 
 // ============================================================================

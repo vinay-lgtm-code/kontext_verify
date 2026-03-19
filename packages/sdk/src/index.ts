@@ -89,6 +89,11 @@ export type {
   // Wallet Monitoring
   WalletMonitoringConfig,
 
+  // ACH Monitoring
+  AchProvider,
+  AchTransferEvent,
+  AchMonitorConfig,
+
   // Wallet Provider Configuration
   WalletProviderType,
   WalletProviderConfig,
@@ -159,11 +164,25 @@ export { PaymentCompliance } from './integrations/payment-compliance.js';
 // Card Payment Compliance (for direct use)
 export { CardCompliance } from './integrations/card-compliance.js';
 
+// ACH Payment Compliance (for direct use)
+export { AchCompliance } from './integrations/ach-compliance.js';
+
+// ACH Monitor + Provider Adapters
+export { AchMonitor } from './integrations/ach-monitor.js';
+export {
+  PlaidAchAdapter,
+  MoovAchAdapter,
+  StripeTreasuryAchAdapter,
+  ModernTreasuryAchAdapter,
+  ColumnAchAdapter,
+} from './integrations/ach-adapters/index.js';
+export type { AchProviderAdapter } from './integrations/ach-adapters/types.js';
+
 // Known Payment Instrument Issuers
 export { KNOWN_ISSUERS } from './integrations/known-issuers.js';
 
 // Type guards
-export { isCryptoTransaction, isCardTransaction, isBankTransaction } from './types.js';
+export { isCryptoTransaction, isCardTransaction, isBankTransaction, isAchTransaction } from './types.js';
 
 // On-Chain Anchoring
 export { verifyAnchor, getAnchor, anchorDigest, OnChainExporter } from './onchain.js';

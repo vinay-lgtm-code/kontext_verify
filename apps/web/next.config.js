@@ -31,6 +31,10 @@ const nextConfig = {
         destination: "/enterprise.html",
       },
       {
+        source: "/products",
+        destination: "/enterprise-products.html",
+      },
+      {
         source: "/use-cases",
         destination: "/enterprise-use-cases.html",
       },

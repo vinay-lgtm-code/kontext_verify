@@ -138,9 +138,17 @@ export class ActionLogger {
 
     const correlationId = input.correlationId ?? generateId();
 
-    const description = input.token && input.chain
-      ? `${input.token} transfer of ${input.amount} on ${input.chain}`
-      : `${input.currency ?? 'USD'} payment of ${input.amount}${input.paymentMethod ? ` via ${input.paymentMethod}` : ''}`;
+    const currency = input.currency ?? 'USD';
+    let description: string;
+    if (input.token && input.chain) {
+      description = `${input.token} transfer of ${input.amount} on ${input.chain}`;
+    } else if (input.achSecCode) {
+      description = `${currency} ACH ${input.achTransactionType ?? 'payment'} of ${input.amount} (${input.achSecCode})`;
+    } else if (input.paymentMethod === 'ach') {
+      description = `${currency} ACH payment of ${input.amount}`;
+    } else {
+      description = `${currency} payment of ${input.amount}${input.paymentMethod ? ` via ${input.paymentMethod}` : ''}`;
+    }
 
     const record: TransactionRecord = {
       id: generateId(),
@@ -163,6 +171,18 @@ export class ActionLogger {
       ...(input.currency ? { currency: input.currency } : {}),
       ...(input.paymentMethod ? { paymentMethod: input.paymentMethod } : {}),
       ...(input.paymentReference ? { paymentReference: input.paymentReference } : {}),
+      ...(input.achSecCode ? { achSecCode: input.achSecCode } : {}),
+      ...(input.achOriginatorName ? { achOriginatorName: input.achOriginatorName } : {}),
+      ...(input.achOriginatorId ? { achOriginatorId: input.achOriginatorId } : {}),
+      ...(input.achOdfiRoutingNumber ? { achOdfiRoutingNumber: input.achOdfiRoutingNumber } : {}),
+      ...(input.achRdfiRoutingNumber ? { achRdfiRoutingNumber: input.achRdfiRoutingNumber } : {}),
+      ...(input.achEntryDescription ? { achEntryDescription: input.achEntryDescription } : {}),
+      ...(input.achBatchNumber ? { achBatchNumber: input.achBatchNumber } : {}),
+      ...(input.achTraceNumber ? { achTraceNumber: input.achTraceNumber } : {}),
+      ...(input.achSameDay !== undefined ? { achSameDay: input.achSameDay } : {}),
+      ...(input.achTransactionType ? { achTransactionType: input.achTransactionType } : {}),
+      ...(input.achPrefundingBalance ? { achPrefundingBalance: input.achPrefundingBalance } : {}),
+      ...(input.achSettlementDate ? { achSettlementDate: input.achSettlementDate } : {}),
     };
 
     // Compute rolling SHA-256 digest

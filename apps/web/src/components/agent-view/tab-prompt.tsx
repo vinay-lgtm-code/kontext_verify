@@ -50,7 +50,7 @@ Steps:
 
 Docs: https://getkontext.com/docs
 Free: 20,000 events/month on Base and Arc. No API key needed.
-Open source. Zero dependencies.`;
+Zero runtime dependencies.`;
 
 export function TabPrompt() {
   const [copied, setCopied] = useState(false);

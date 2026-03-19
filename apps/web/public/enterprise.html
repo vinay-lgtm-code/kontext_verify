@@ -120,6 +120,48 @@ nav.scrolled { border-bottom-color: var(--border); }
 
 .nav-cta:hover { background: #2d5ee8 !important; }
 
+/* Products dropdown */
+.nav-dropdown { position: relative; }
+.nav-dropdown > a { cursor: pointer; }
+
+.nav-dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: -16px;
+  padding: 12px 0;
+  min-width: 280px;
+  background: rgba(13,16,24,0.97);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  z-index: 1001;
+  margin-top: 8px;
+}
+
+.nav-dropdown:hover .nav-dropdown-menu { display: block; }
+
+.nav-dropdown-menu a {
+  display: block;
+  padding: 10px 20px;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.15s, background 0.15s;
+}
+
+.nav-dropdown-menu a:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.nav-dropdown-menu a span {
+  display: block;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
 /* Hamburger */
 .hamburger {
   display: none;
@@ -2037,11 +2079,21 @@ footer {
 <nav id="nav">
   <a href="#" class="nav-logo">Kontext</a>
   <ul class="nav-links">
+    <li class="nav-dropdown">
+      <a href="/products">Products &#9662;</a>
+      <div class="nav-dropdown-menu">
+        <a href="/products#verification">Verification<span>OFAC + threshold checks in one call</span></a>
+        <a href="/products#compliance-logging">Compliance Logging<span>Digest chain + certificates</span></a>
+        <a href="/products#reserve-reconciliation">Reserve Reconciliation<span>On-chain supply vs. published reserves</span></a>
+        <a href="/products#ofac-screening">OFAC Screening<span>Built-in SDN + pluggable providers</span></a>
+        <a href="/products#anomaly-detection">Anomaly Detection<span>Six pattern-based detection rules</span></a>
+        <a href="/products#trust-scoring">Trust Scoring<span>Real-time 0&ndash;100 agent score</span></a>
+      </div>
+    </li>
     <li><a href="#architecture">Architecture</a></li>
     <li><a href="/use-cases">Use Cases</a></li>
     <li><a href="#regulation">GENIUS Act</a></li>
     <li><a href="/docs">Docs</a></li>
-    <li><a href="https://github.com/Legaci-Labs/kontext">GitHub</a></li>
     <li><a href="#pilot" class="nav-cta">Request Demo</a></li>
   </ul>
   <button class="hamburger" onclick="toggleMobileMenu()" aria-label="Menu">
@@ -2051,11 +2103,18 @@ footer {
 
 <!-- Mobile menu -->
 <div class="mobile-menu" id="mobile-menu">
+  <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim);padding:4px 0">Products</div>
+  <a href="/products#verification" onclick="closeMobileMenu()" style="padding-left:12px">Verification</a>
+  <a href="/products#compliance-logging" onclick="closeMobileMenu()" style="padding-left:12px">Compliance Logging</a>
+  <a href="/products#reserve-reconciliation" onclick="closeMobileMenu()" style="padding-left:12px">Reserve Reconciliation</a>
+  <a href="/products#ofac-screening" onclick="closeMobileMenu()" style="padding-left:12px">OFAC Screening</a>
+  <a href="/products#anomaly-detection" onclick="closeMobileMenu()" style="padding-left:12px">Anomaly Detection</a>
+  <a href="/products#trust-scoring" onclick="closeMobileMenu()" style="padding-left:12px">Trust Scoring</a>
+  <div style="border-top:1px solid var(--border);margin:8px 0"></div>
   <a href="#architecture" onclick="closeMobileMenu()">Architecture</a>
   <a href="/use-cases">Use Cases</a>
   <a href="#regulation" onclick="closeMobileMenu()">GENIUS Act</a>
   <a href="/docs">Docs</a>
-  <a href="https://github.com/Legaci-Labs/kontext">GitHub</a>
   <a href="#pilot" class="btn-primary" style="text-align:center" onclick="closeMobileMenu()">Request Demo</a>
 </div>
 

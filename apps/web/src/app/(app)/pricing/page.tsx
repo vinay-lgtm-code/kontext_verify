@@ -44,7 +44,7 @@ const plans = [
       "On-chain anchoring (verified Base mainnet contract)",
       "A2A attestation",
       "Kontext CLI (12 commands)",
-      "Community support via GitHub",
+      "Community support via docs + GitHub",
     ],
   },
   {
@@ -76,7 +76,7 @@ const faqs = [
   {
     question: "Is the free tier really free?",
     answer:
-      "Yes. The core Kontext SDK is MIT-licensed and genuinely free — 20,000 events per month, no credit card required, no time limit. It includes verify(), action logging, trust scoring, basic anomaly detection, digest chain verification, on-chain anchoring, A2A attestation, and JSON export. You can run it entirely on your own infrastructure.",
+      "Yes. The Kontext SDK is genuinely free — 20,000 events per month, no credit card required, no time limit. It includes verify(), action logging, trust scoring, basic anomaly detection, digest chain verification, on-chain anchoring, A2A attestation, and JSON export.",
   },
   {
     question: "What counts as an event?",
@@ -116,7 +116,7 @@ const faqs = [
   {
     question: "What kind of support do I get?",
     answer:
-      "Free tier gets community support through GitHub Issues and Discussions. Pro includes email support.",
+      "Free tier includes documentation and community support. Pro includes email support.",
   },
 ];
 
@@ -136,9 +136,8 @@ export default function PricingPage() {
               PRICING
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
-              The core SDK is open-source and free for up to 20K events a month —
-              including on-chain anchoring on Base mainnet.
-              Pay only for what you use beyond that.
+              Free for up to 20K events a month — including on-chain anchoring
+              on Base mainnet. Pay only for what you use beyond that.
             </p>
           </div>
         </div>
@@ -263,15 +262,20 @@ const result = await ctx.verify({
               FAQ
             </h2>
             <p className="mt-4 text-muted-foreground">
-              Can&apos;t find what you&apos;re looking for? Reach out on{" "}
-              <a
-                href="https://github.com/Legaci-Labs/kontext"
-                target="_blank"
-                rel="noopener noreferrer"
+              Can&apos;t find what you&apos;re looking for? Check the{" "}
+              <Link
+                href="/docs"
                 className="text-primary hover:underline"
               >
-                GitHub Discussions
-              </a>
+                docs
+              </Link>{" "}
+              or{" "}
+              <Link
+                href="/contact"
+                className="text-primary hover:underline"
+              >
+                get in touch
+              </Link>
               .
             </p>
           </div>
@@ -310,13 +314,9 @@ const result = await ctx.verify({
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <a
-                  href="https://github.com/Legaci-Labs/kontext"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  View on GitHub
-                </a>
+                <Link href="/contact">
+                  Contact Us
+                </Link>
               </Button>
             </div>
           </div>

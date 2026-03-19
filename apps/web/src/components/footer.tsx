@@ -41,11 +41,7 @@ export function Footer() {
             <span className="text-[var(--term-surface-3)]">·</span> USDC + x402{" "}
             <span className="text-[var(--term-surface-3)]">·</span> Base + Arc{" "}
             <span className="text-[var(--term-surface-3)]">·</span>{" "}
-            <span className="inline-flex items-center gap-1">
-              <span className="led-green" />
-              Open Source
-            </span>{" "}
-            <span className="text-[var(--term-surface-3)]">·</span> Zero Dependencies
+            Zero Dependencies
           </p>
         </div>
       </div>
@@ -93,8 +89,6 @@ export function Footer() {
             <span>v0.12.0</span>
             <span className="text-[var(--term-surface-3)]">·</span>
             <span>Legaci Labs Inc.</span>
-            <span className="text-[var(--term-surface-3)]">·</span>
-            <span>MIT</span>
           </div>
           <p className="text-[10px] text-[var(--term-text-3)]">
             &copy; {new Date().getFullYear()} Legaci Labs Inc. All rights reserved.

@@ -467,13 +467,9 @@ export default function PlaygroundPage() {
               <Link href="/docs">Get Started</Link>
             </Button>
             <Button variant="outline" size="sm" asChild>
-              <a
-                href="https://github.com/Legaci-Labs/kontext"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                View on GitHub
-              </a>
+              <Link href="/docs">
+                View Docs
+              </Link>
             </Button>
           </div>
         </div>

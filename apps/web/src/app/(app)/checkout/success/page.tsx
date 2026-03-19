@@ -83,7 +83,7 @@ export default function CheckoutSuccessPage() {
     {
       title: "Install the SDK",
       description: "npm install kontext-sdk -- works with any Node.js or edge runtime.",
-      href: "https://github.com/Legaci-Labs/kontext",
+      href: "/docs",
     },
     {
       title: "Read the docs",
