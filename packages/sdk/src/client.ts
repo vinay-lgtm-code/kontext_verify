@@ -68,7 +68,8 @@ import { AuditExporter } from './audit.js';
 import { UsdcCompliance } from './integrations/usdc.js';
 import { PaymentCompliance } from './integrations/payment-compliance.js';
 import { CardCompliance } from './integrations/card-compliance.js';
-import { isCryptoTransaction, isCardTransaction } from './types.js';
+import { AchCompliance } from './integrations/ach-compliance.js';
+import { isCryptoTransaction, isCardTransaction, isAchTransaction } from './types.js';
 import { ScreeningAggregator } from './integrations/screening-aggregator.js';
 import type { AggregatedScreeningResult } from './integrations/screening-aggregator.js';
 import { PlanManager } from './plans.js';
@@ -79,6 +80,7 @@ import { FeatureFlagManager } from './feature-flags.js';
 import { generateId, now, parseAmount } from './utils.js';
 import { loadConfigFile } from './config-loader.js';
 import { WalletMonitor } from './integrations/wallet-monitor.js';
+import { AchMonitor } from './integrations/ach-monitor.js';
 import { ProvenanceManager } from './provenance.js';
 import {
   AgentIdentityRegistry,
@@ -151,6 +153,7 @@ export class Kontext {
   private readonly anomalyDetector: AnomalyDetector;
   private readonly screeningAggregator: ScreeningAggregator | null;
   private walletMonitor: WalletMonitor | null = null;
+  private achMonitor: AchMonitor | null = null;
   private provenanceManager: ProvenanceManager | null = null;
   private identityRegistry: AgentIdentityRegistry | null = null;
   private walletClusterer: WalletClusterer | null = null;
@@ -241,6 +244,28 @@ export class Kontext {
           console.debug(`[Kontext] Wallet monitor failed to start: ${err}`);
         }
       });
+    }
+
+    // Start ACH monitoring if configured
+    if (config.achMonitoring) {
+      const { PlaidAchAdapter, MoovAchAdapter, StripeTreasuryAchAdapter, ModernTreasuryAchAdapter, ColumnAchAdapter } = require('./integrations/ach-adapters/index.js');
+      const adapterMap: Record<string, new () => import('./integrations/ach-adapters/types.js').AchProviderAdapter> = {
+        plaid: PlaidAchAdapter,
+        moov: MoovAchAdapter,
+        stripe_treasury: StripeTreasuryAchAdapter,
+        modern_treasury: ModernTreasuryAchAdapter,
+        column: ColumnAchAdapter,
+      };
+      const AdapterClass = adapterMap[config.achMonitoring.provider];
+      if (AdapterClass) {
+        const adapter = new AdapterClass();
+        this.achMonitor = new AchMonitor(
+          this,
+          config.achMonitoring,
+          adapter,
+          { agentId: config.agentId },
+        );
+      }
     }
   }
 
@@ -1130,6 +1155,8 @@ export class Kontext {
       compliance = UsdcCompliance.checkTransaction(input);
     } else if (isCardTransaction(input)) {
       compliance = CardCompliance.checkPayment(input);
+    } else if (isAchTransaction(input)) {
+      compliance = AchCompliance.checkPayment(input);
     } else {
       compliance = PaymentCompliance.checkPayment(input);
     }
@@ -1926,12 +1953,24 @@ export class Kontext {
   }
 
   /**
+   * Get the ACH monitor instance (or null if not configured).
+   * Use this to process ACH webhooks or start polling.
+   */
+  getAchMonitor(): AchMonitor | null {
+    return this.achMonitor;
+  }
+
+  /**
    * Gracefully shut down the SDK, flushing any pending data and stopping watchers.
    */
   async destroy(): Promise<void> {
     if (this.walletMonitor) {
       this.walletMonitor.stop();
       this.walletMonitor = null;
+    }
+    if (this.achMonitor) {
+      this.achMonitor.stop();
+      this.achMonitor = null;
     }
     await this.logger.destroy();
     await this.exporter.shutdown();

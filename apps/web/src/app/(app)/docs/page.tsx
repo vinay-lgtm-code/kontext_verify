@@ -1047,7 +1047,7 @@ export default function DocsPage() {
                   icon: BookOpen,
                   title: "Examples",
                   description: "Real-world code examples",
-                  href: "https://github.com/Legaci-Labs/kontext",
+                  href: "#quickstart",
                 },
               ].map((link) => (
                 <a

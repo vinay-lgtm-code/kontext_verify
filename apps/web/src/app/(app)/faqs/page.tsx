@@ -36,14 +36,14 @@ const faqCategories = [
           "Verifiable intent means cryptographic proof that a payment was authorized, screened for sanctions, and logged before it happened. Kontext's patented digest chain links each action to the full history before it, creating tamper-evident evidence that compliance checks actually ran — not just a promise that they did.",
       },
       {
-        question: "Is Kontext open source?",
+        question: "Can I inspect the source code?",
         answer:
-          "Yes. The core SDK is fully open source under the MIT license with 20,000 events/month on the free tier. You can self-host the entire stack. Pay as you go ($2/1K events above 20K free) adds all anomaly detection rules, unified screening, CSV export, multi-chain support, webhooks, and cloud persistence.",
+          "Yes. The SDK source code is available on GitHub under the MIT license. You can audit the implementation, verify the digest chain logic, and run it on your own infrastructure. The free tier includes 20,000 events/month. Pay as you go ($2/1K events above 20K free) adds all anomaly detection rules, unified screening, CSV export, multi-chain support, webhooks, and cloud persistence.",
       },
       {
         question: "What license does Kontext use?",
         answer:
-          "Kontext is released under the MIT License. You can use it freely in commercial and non-commercial projects without restrictions. Contributions are welcome via GitHub pull requests.",
+          "Kontext is released under the MIT License. You can use it freely in commercial and non-commercial projects without restrictions.",
       },
     ],
   },
@@ -78,7 +78,7 @@ const faqCategories = [
       {
         question: "How is audit data stored?",
         answer:
-          "With the open-source SDK, all data stays on your infrastructure — you control storage entirely. On Pro, audit data is encrypted at rest (AES-256) and in transit (TLS 1.3), stored in cloud infrastructure following SOC 2-aligned practices. You retain full ownership and can export or delete data at any time.",
+          "With the free tier SDK, all data stays on your infrastructure — you control storage entirely. On Pro, audit data is encrypted at rest (AES-256) and in transit (TLS 1.3), stored in cloud infrastructure following SOC 2-aligned practices. You retain full ownership and can export or delete data at any time.",
       },
       {
         question: "What are the performance characteristics?",
@@ -193,7 +193,7 @@ const faqCategories = [
       {
         question: "What is included in the free tier?",
         answer:
-          "The free tier includes auto-instrumentation (npx kontext init + withKontextCompliance), wallet monitoring, the full SDK with 20,000 events/month, action logging, JSON export, basic anomaly detection (2 rules), trust scoring, digest chain verification, on-chain anchoring, A2A attestation, compliance certificates, and Base + Arc chain support. MIT-licensed, free forever.",
+          "The free tier includes auto-instrumentation (npx kontext init + withKontextCompliance), wallet monitoring, the full SDK with 20,000 events/month, action logging, JSON export, basic anomaly detection (2 rules), trust scoring, digest chain verification, on-chain anchoring, A2A attestation, compliance certificates, and Base + Arc chain support. Free forever, no credit card required.",
       },
       {
         question: "What does Pay as you go include?",
@@ -203,7 +203,7 @@ const faqCategories = [
       {
         question: "Can I self-host the entire stack?",
         answer:
-          "Yes. The open-source SDK is designed for self-hosting with zero external dependencies. You control where data is stored and how it is processed.",
+          "Yes. The SDK runs entirely on your infrastructure with zero external dependencies. You control where data is stored and how it is processed.",
       },
     ],
   },
@@ -263,15 +263,13 @@ export default function FAQsPage() {
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
               Technical answers for developers building with Kontext. Can&apos;t
-              find what you need? Reach out on{" "}
-              <a
-                href="https://github.com/Legaci-Labs/kontext"
-                target="_blank"
-                rel="noopener noreferrer"
+              find what you need? Reach out via our{" "}
+              <Link
+                href="/contact"
                 className="text-[var(--term-blue)] hover:underline"
               >
-                GitHub Discussions
-              </a>
+                contact page
+              </Link>
               .
             </p>
           </div>
@@ -335,8 +333,8 @@ export default function FAQsPage() {
               Still have questions?
             </h2>
             <p className="mt-4 max-w-md text-muted-foreground">
-              Check the docs for detailed guides and API reference, or open an
-              issue on GitHub.
+              Check the docs for detailed guides and API reference, or get
+              in touch.
             </p>
             <div className="mt-6 flex flex-col gap-4 sm:flex-row">
               <Button size="lg" asChild>
@@ -346,13 +344,9 @@ export default function FAQsPage() {
                 </Link>
               </Button>
               <Button variant="outline" size="lg" asChild>
-                <a
-                  href="https://github.com/Legaci-Labs/kontext"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  GitHub Discussions
-                </a>
+                <Link href="/contact">
+                  Contact Us
+                </Link>
               </Button>
             </div>
           </div>

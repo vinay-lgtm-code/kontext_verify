@@ -20,6 +20,10 @@ const CHAINS = ['base', 'ethereum', 'polygon', 'arbitrum', 'optimism', 'avalanch
 const MODES = ['post-send', 'pre-send', 'both'] as const;
 const ENVIRONMENTS = ['production', 'staging', 'development'] as const;
 const WALLET_PROVIDERS = ['none', 'circle', 'coinbase', 'metamask'] as const;
+const FUNDING_SOURCES = ['crypto', 'cards', 'ach', 'treasury'] as const;
+const ACH_PROVIDERS = ['plaid', 'moov', 'stripe_treasury', 'modern_treasury', 'column'] as const;
+const CARD_ISSUERS = ['ramp', 'lithic', 'marqeta', 'stripe_issuing', 'crossmint', 'other'] as const;
+const TREASURY_PROVIDERS = ['stripe_treasury', 'modern_treasury', 'column', 'other'] as const;
 
 const SCREENING_PROVIDERS = ['built-in', 'chainalysis', 'trm', 'opensanctions'] as const;
 
@@ -165,6 +169,14 @@ function writeEnvFile(envPath: string, secrets: Record<string, string>): void {
 // Setup file generation
 // ---------------------------------------------------------------------------
 
+const ACH_ADAPTER_MAP: Record<string, string> = {
+  plaid: 'PlaidAchAdapter',
+  moov: 'MoovAchAdapter',
+  stripe_treasury: 'StripeTreasuryAchAdapter',
+  modern_treasury: 'ModernTreasuryAchAdapter',
+  column: 'ColumnAchAdapter',
+};
+
 function generateSetupFile(
   mode: string,
   screeningProviders: string[],
@@ -176,6 +188,10 @@ function generateSetupFile(
     approvalThreshold?: string;
     anomalyRules?: string[];
     anomalyThresholds?: Record<string, unknown>;
+    fundingSources?: string[];
+    achProvider?: string;
+    cardIssuer?: string;
+    treasuryProvider?: string;
   } = {},
 ): string {
   const ext = isTypeScript ? 'ts' : 'js';
@@ -194,6 +210,13 @@ function generateSetupFile(
   if (byokProviders.includes('chainalysis')) imports.push('ChainalysisFreeAPIProvider');
   if (byokProviders.includes('trm')) imports.push('TRMLabsProvider');
   if (byokProviders.includes('opensanctions')) imports.push('OpenSanctionsProvider');
+
+  // ACH monitoring imports
+  const achAdapterName = opts.achProvider ? ACH_ADAPTER_MAP[opts.achProvider] : undefined;
+  if (achAdapterName) {
+    imports.push('AchMonitor');
+    imports.push(achAdapterName);
+  }
 
   if (isPreSend) {
     lines.push(`// Import this file in your entry point to start compliance monitoring.`);
@@ -267,6 +290,37 @@ function generateSetupFile(
     lines.push(`// kontext.verify({ ..., paymentReference: '${opts.paymentReference}', metadata: { agentName: '${opts.agentName ?? ''}' } })`);
   }
 
+  // ACH monitoring setup
+  if (achAdapterName && opts.achProvider) {
+    lines.push('');
+    lines.push('// ACH monitoring — forward provider webhooks to verify()');
+    lines.push(`const achAdapter = new ${achAdapterName}();`);
+    lines.push(`const achMonitor = new AchMonitor(kontext, {`);
+    lines.push(`  provider: '${opts.achProvider}',`);
+    lines.push(`  providerConfig: {},`);
+    lines.push(`}, achAdapter);`);
+    lines.push('');
+    lines.push('// In your webhook handler:');
+    lines.push('// const results = await achMonitor.handleWebhook(req.body, req.headers);');
+    lines.push('export { achMonitor };');
+  }
+
+  // Virtual card usage hint
+  if (opts.cardIssuer) {
+    lines.push('');
+    lines.push('// Virtual card compliance — use verify() with paymentMethod: "card"');
+    lines.push('// kontext.verify({ amount, from, to, agentId, paymentMethod: "card",');
+    lines.push(`//   instrument: { instrumentId: "...", instrumentType: "virtual_card", instrumentNetwork: "visa", instrumentIssuer: "${opts.cardIssuer}" }`);
+    lines.push('// });');
+  }
+
+  // Treasury usage hint
+  if (opts.treasuryProvider) {
+    lines.push('');
+    lines.push('// Treasury operations — use verify() with paymentMethod: "ach" or "bank"');
+    lines.push('// kontext.verify({ amount, from, to, agentId, paymentMethod: "ach", achSecCode: "CCD" });');
+  }
+
   lines.push('');
   return lines.join('\n');
 }
@@ -290,7 +344,11 @@ export async function runInit(opts: { json: boolean; force?: boolean }): Promise
       chains: ['base'],
       rpcEndpoints: { base: DEFAULT_RPC['base'] },
       mode: 'post-send',
+      fundingSources: ['crypto'],
       walletProvider: { type: 'none' },
+      cardIssuer: null,
+      achProvider: null,
+      treasuryProvider: null,
     };
     process.stdout.write(JSON.stringify({ template }, null, 2) + '\n');
     return;
@@ -315,7 +373,7 @@ export async function runInit(opts: { json: boolean; force?: boolean }): Promise
     process.stdout.write('    - Project name and agent ID\n');
     process.stdout.write('    - Chain and token selection\n');
     process.stdout.write('    - Compliance mode (post-send / pre-send / both)\n');
-    process.stdout.write('    - Wallet provider setup (Circle, Coinbase, MetaMask)\n');
+    process.stdout.write('    - Funding sources (crypto wallets, virtual cards, ACH, treasury)\n');
     process.stdout.write('    - API key scope guidance and credential validation\n');
     process.stdout.write('    - Secret storage location (.env, GCP, AWS, Vault)\n\n');
     process.stdout.write('  These decisions involve credentials and security settings\n');
@@ -500,158 +558,335 @@ export async function runInit(opts: { json: boolean; force?: boolean }): Promise
     const environment = (ENVIRONMENTS as readonly string[]).includes(envRaw) ? envRaw : 'production';
 
     // -----------------------------------------------------------------------
-    // Wallet Provider
+    // Funding Sources
     // -----------------------------------------------------------------------
 
-    process.stdout.write('\n  ? Wallet provider:\n');
-    process.stdout.write('    none     — manual wallet management (viem, ethers, etc.)\n');
-    process.stdout.write('    circle   — Circle Programmable Wallets\n');
-    process.stdout.write('    coinbase — Coinbase Developer Platform (CDP) Wallets\n');
-    process.stdout.write('    metamask — MetaMask Embedded Wallets (Node.js)\n');
-    const providerRaw = (await ask('    (default: none): ')) || 'none';
-    const provider = (WALLET_PROVIDERS as readonly string[]).includes(providerRaw)
-      ? providerRaw
-      : 'none';
+    process.stdout.write('\n  ─── Funding Sources ────────────────────────────────────────────────\n\n');
+    process.stdout.write('  ? Which funding sources does your agent use? (comma-separated, or skip)\n');
+    process.stdout.write('      crypto     — crypto wallets (Circle, Coinbase, MetaMask)\n');
+    process.stdout.write('      cards      — virtual cards (Ramp Agent Cards, Lithic, Marqeta, Stripe Issuing)\n');
+    process.stdout.write('      ach        — ACH transfers (Plaid, Moov, Column, Modern Treasury, Stripe Treasury)\n');
+    process.stdout.write('      treasury   — treasury/cash management (Stripe Treasury, Modern Treasury, Column)\n');
+    const fundingRaw = (await ask('    (default: crypto): ')) || 'crypto';
+    const fundingSources: string[] = fundingRaw === 'skip'
+      ? []
+      : fundingRaw
+          .split(',')
+          .map((s) => s.trim().toLowerCase())
+          .filter((s) => (FUNDING_SOURCES as readonly string[]).includes(s));
 
-    let walletProvider: Record<string, unknown> = { type: 'none' };
     const secretsToStore: Record<string, string> = {};
 
-    if (provider === 'circle') {
-      // ----- Circle Programmable Wallets -----
-      process.stdout.write('\n  Circle Programmable Wallets setup:\n');
-      process.stdout.write('  Create a restricted API key at developer.circle.com with these scopes:\n');
-      process.stdout.write('    - wallets:read\n');
-      process.stdout.write('    - wallets:execute\n');
-      process.stdout.write('    - transactions:read\n\n');
+    // ----- Crypto Wallets -----
+    let walletProvider: Record<string, unknown> = { type: 'none' };
+    let provider = 'none';
 
-      const circleApiKey = await ask('  ? Circle API Key (restricted key): ');
+    if (fundingSources.includes('crypto')) {
+      process.stdout.write('\n  ? Wallet provider:\n');
+      process.stdout.write('    none     — manual wallet management (viem, ethers, etc.)\n');
+      process.stdout.write('    circle   — Circle Programmable Wallets\n');
+      process.stdout.write('    coinbase — Coinbase Developer Platform (CDP) Wallets\n');
+      process.stdout.write('    metamask — MetaMask Embedded Wallets (Node.js)\n');
+      const providerRaw = (await ask('    (default: none): ')) || 'none';
+      provider = (WALLET_PROVIDERS as readonly string[]).includes(providerRaw)
+        ? providerRaw
+        : 'none';
 
-      // Entity Secret
-      process.stdout.write('  ? Entity Secret (32-byte hex):\n');
-      process.stdout.write('    1) Enter an existing entity secret\n');
-      process.stdout.write('    2) Generate a new one\n');
-      const entityChoice = (await ask('    (default: 2 — generate): ')) || '2';
-      let entitySecret: string;
-      if (entityChoice === '1') {
-        entitySecret = await ask('  ? Entity Secret: ');
-      } else {
-        entitySecret = crypto.randomBytes(32).toString('hex');
-        process.stdout.write(`  Generated entity secret: ${entitySecret}\n`);
-        process.stdout.write('  Save this entity secret securely. You cannot recover it later.\n');
-      }
+      if (provider === 'circle') {
+        // ----- Circle Programmable Wallets -----
+        process.stdout.write('\n  Circle Programmable Wallets setup:\n');
+        process.stdout.write('  Create a restricted API key at developer.circle.com with these scopes:\n');
+        process.stdout.write('    - wallets:read\n');
+        process.stdout.write('    - wallets:execute\n');
+        process.stdout.write('    - transactions:read\n\n');
 
-      // Circle environment
-      const circleEnvRaw = (await ask('  ? Circle environment [sandbox/production] (default: production): ')) || 'production';
-      const circleEnvironment = circleEnvRaw === 'sandbox' ? 'sandbox' : 'production';
+        const circleApiKey = await ask('  ? Circle API Key (restricted key): ');
 
-      // Validate credentials (best-effort)
-      if (circleApiKey) {
-        process.stdout.write('  Validating Circle credentials...\n');
-        const valid = await validateCircleCredentials(circleApiKey, entitySecret);
-        if (valid) {
-          process.stdout.write('  ✓ Circle credentials validated\n');
+        // Entity Secret
+        process.stdout.write('  ? Entity Secret (32-byte hex):\n');
+        process.stdout.write('    1) Enter an existing entity secret\n');
+        process.stdout.write('    2) Generate a new one\n');
+        const entityChoice = (await ask('    (default: 2 — generate): ')) || '2';
+        let entitySecret: string;
+        if (entityChoice === '1') {
+          entitySecret = await ask('  ? Entity Secret: ');
         } else {
-          process.stdout.write('  ⚠ Could not validate Circle credentials (will save config anyway)\n');
+          entitySecret = crypto.randomBytes(32).toString('hex');
+          process.stdout.write(`  Generated entity secret: ${entitySecret}\n`);
+          process.stdout.write('  Save this entity secret securely. You cannot recover it later.\n');
         }
-      }
 
-      // Wallet set name (optional)
-      const walletSetName = await ask('  ? Wallet Set name (optional): ');
+        // Circle environment
+        const circleEnvRaw = (await ask('  ? Circle environment [sandbox/production] (default: production): ')) || 'production';
+        const circleEnvironment = circleEnvRaw === 'sandbox' ? 'sandbox' : 'production';
 
-      secretsToStore['CIRCLE_API_KEY'] = circleApiKey;
-      secretsToStore['CIRCLE_ENTITY_SECRET'] = entitySecret;
-
-      walletProvider = {
-        type: 'circle',
-        apiKeyEnvVar: 'CIRCLE_API_KEY',
-        entitySecretEnvVar: 'CIRCLE_ENTITY_SECRET',
-        circleEnvironment,
-        ...(walletSetName ? { walletSetName } : {}),
-      };
-    } else if (provider === 'coinbase') {
-      // ----- Coinbase Developer Platform -----
-      process.stdout.write('\n  Coinbase Developer Platform (CDP) setup:\n');
-      process.stdout.write('  Create a Secret API Key at portal.cdp.coinbase.com:\n');
-      process.stdout.write('    - Use Ed25519 signature algorithm (recommended)\n');
-      process.stdout.write('    - Save API Key ID + API Key Secret\n');
-      process.stdout.write('  Then generate a Wallet Secret in the Server Wallet dashboard.\n\n');
-
-      const cdpApiKeyId = await ask('  ? CDP API Key ID: ');
-      const cdpApiKeySecret = await ask('  ? CDP API Key Secret: ');
-      const cdpWalletSecret = await ask('  ? CDP Wallet Secret: ');
-
-      // CDP environment
-      const cdpEnvRaw = (await ask('  ? CDP environment [testnet/mainnet] (default: testnet): ')) || 'testnet';
-      const cdpEnvironment = cdpEnvRaw === 'mainnet' ? 'mainnet' : 'testnet';
-
-      // Validate credentials (best-effort)
-      if (cdpApiKeyId && cdpApiKeySecret) {
-        process.stdout.write('  Validating CDP credentials...\n');
-        const valid = await validateCdpCredentials(cdpApiKeyId, cdpApiKeySecret);
-        if (valid) {
-          process.stdout.write('  ✓ CDP credentials validated\n');
-        } else {
-          process.stdout.write('  ⚠ Could not validate CDP credentials (will save config anyway)\n');
+        // Validate credentials (best-effort)
+        if (circleApiKey) {
+          process.stdout.write('  Validating Circle credentials...\n');
+          const valid = await validateCircleCredentials(circleApiKey, entitySecret);
+          if (valid) {
+            process.stdout.write('  ✓ Circle credentials validated\n');
+          } else {
+            process.stdout.write('  ⚠ Could not validate Circle credentials (will save config anyway)\n');
+          }
         }
+
+        // Wallet set name (optional)
+        const walletSetName = await ask('  ? Wallet Set name (optional): ');
+
+        secretsToStore['CIRCLE_API_KEY'] = circleApiKey;
+        secretsToStore['CIRCLE_ENTITY_SECRET'] = entitySecret;
+
+        walletProvider = {
+          type: 'circle',
+          apiKeyEnvVar: 'CIRCLE_API_KEY',
+          entitySecretEnvVar: 'CIRCLE_ENTITY_SECRET',
+          circleEnvironment,
+          ...(walletSetName ? { walletSetName } : {}),
+        };
+      } else if (provider === 'coinbase') {
+        // ----- Coinbase Developer Platform -----
+        process.stdout.write('\n  Coinbase Developer Platform (CDP) setup:\n');
+        process.stdout.write('  Create a Secret API Key at portal.cdp.coinbase.com:\n');
+        process.stdout.write('    - Use Ed25519 signature algorithm (recommended)\n');
+        process.stdout.write('    - Save API Key ID + API Key Secret\n');
+        process.stdout.write('  Then generate a Wallet Secret in the Server Wallet dashboard.\n\n');
+
+        const cdpApiKeyId = await ask('  ? CDP API Key ID: ');
+        const cdpApiKeySecret = await ask('  ? CDP API Key Secret: ');
+        const cdpWalletSecret = await ask('  ? CDP Wallet Secret: ');
+
+        // CDP environment
+        const cdpEnvRaw = (await ask('  ? CDP environment [testnet/mainnet] (default: testnet): ')) || 'testnet';
+        const cdpEnvironment = cdpEnvRaw === 'mainnet' ? 'mainnet' : 'testnet';
+
+        // Validate credentials (best-effort)
+        if (cdpApiKeyId && cdpApiKeySecret) {
+          process.stdout.write('  Validating CDP credentials...\n');
+          const valid = await validateCdpCredentials(cdpApiKeyId, cdpApiKeySecret);
+          if (valid) {
+            process.stdout.write('  ✓ CDP credentials validated\n');
+          } else {
+            process.stdout.write('  ⚠ Could not validate CDP credentials (will save config anyway)\n');
+          }
+        }
+
+        secretsToStore['CDP_API_KEY_ID'] = cdpApiKeyId;
+        secretsToStore['CDP_API_KEY_SECRET'] = cdpApiKeySecret;
+        secretsToStore['CDP_WALLET_SECRET'] = cdpWalletSecret;
+
+        walletProvider = {
+          type: 'coinbase',
+          apiKeyIdEnvVar: 'CDP_API_KEY_ID',
+          apiKeySecretEnvVar: 'CDP_API_KEY_SECRET',
+          walletSecretEnvVar: 'CDP_WALLET_SECRET',
+          cdpEnvironment,
+        };
+      } else if (provider === 'metamask') {
+        // ----- MetaMask Embedded Wallets -----
+        process.stdout.write('\n  MetaMask Embedded Wallets setup:\n');
+        process.stdout.write('  Set up MetaMask Embedded Wallets at dashboard.web3auth.io:\n');
+        process.stdout.write('    - Create a project and get your Client ID\n');
+        process.stdout.write('    - Configure a Custom auth connection (save the Connection ID)\n');
+        process.stdout.write('    - Network: sapphire_mainnet (production) or sapphire_devnet (testing)\n');
+        process.stdout.write('  Infura RPC access is pre-integrated — no separate key needed.\n\n');
+
+        const metamaskClientId = await ask('  ? Client ID: ');
+        const authConnectionId = await ask('  ? Auth Connection ID: ');
+
+        // Web3Auth network
+        const networkRaw = (await ask('  ? Web3Auth network [sapphire_mainnet/sapphire_devnet] (default: sapphire_mainnet): ')) || 'sapphire_mainnet';
+        const web3AuthNetwork = networkRaw === 'sapphire_devnet' ? 'sapphire_devnet' : 'sapphire_mainnet';
+
+        // Validate credentials (best-effort — requires @web3auth/node-sdk)
+        process.stdout.write('  Validating MetaMask credentials...\n');
+        try {
+          // @ts-expect-error -- optional dependency, may not be installed
+          const mod = await import('@web3auth/node-sdk');
+          const Web3Auth = mod.default ?? mod.Web3Auth ?? mod;
+          const w3a = new Web3Auth({ clientId: metamaskClientId, web3AuthNetwork });
+          await w3a.init();
+          process.stdout.write('  ✓ MetaMask credentials validated\n');
+        } catch {
+          process.stdout.write('  ⚠ Could not validate (@web3auth/node-sdk not installed or invalid credentials)\n');
+        }
+
+        secretsToStore['METAMASK_CLIENT_ID'] = metamaskClientId;
+
+        walletProvider = {
+          type: 'metamask',
+          clientIdEnvVar: 'METAMASK_CLIENT_ID',
+          authConnectionId,
+          web3AuthNetwork,
+        };
+      }
+    }
+
+    // ----- Virtual Cards -----
+    let cardIssuerConfig: Record<string, unknown> | undefined;
+
+    if (fundingSources.includes('cards')) {
+      process.stdout.write('\n  ? Card issuer:\n');
+      process.stdout.write('    ramp             — Ramp Agent Cards (Visa Intelligent Commerce)\n');
+      process.stdout.write('    lithic           — Lithic developer card issuing\n');
+      process.stdout.write('    marqeta          — Marqeta card issuing platform\n');
+      process.stdout.write('    stripe_issuing   — Stripe Issuing\n');
+      process.stdout.write('    crossmint        — Crossmint / Lobster.cash scoped cards\n');
+      process.stdout.write('    other            — other card issuer\n');
+      const issuerRaw = (await ask('    (default: other): ')) || 'other';
+      const issuer = (CARD_ISSUERS as readonly string[]).includes(issuerRaw) ? issuerRaw : 'other';
+
+      const issuerApiKey = await ask('  ? Card issuer API key (optional, for webhook validation): ');
+      if (issuerApiKey) {
+        secretsToStore['CARD_ISSUER_API_KEY'] = issuerApiKey;
       }
 
-      secretsToStore['CDP_API_KEY_ID'] = cdpApiKeyId;
-      secretsToStore['CDP_API_KEY_SECRET'] = cdpApiKeySecret;
-      secretsToStore['CDP_WALLET_SECRET'] = cdpWalletSecret;
-
-      walletProvider = {
-        type: 'coinbase',
-        apiKeyIdEnvVar: 'CDP_API_KEY_ID',
-        apiKeySecretEnvVar: 'CDP_API_KEY_SECRET',
-        walletSecretEnvVar: 'CDP_WALLET_SECRET',
-        cdpEnvironment,
-      };
-    } else if (provider === 'metamask') {
-      // ----- MetaMask Embedded Wallets -----
-      process.stdout.write('\n  MetaMask Embedded Wallets setup:\n');
-      process.stdout.write('  Set up MetaMask Embedded Wallets at dashboard.web3auth.io:\n');
-      process.stdout.write('    - Create a project and get your Client ID\n');
-      process.stdout.write('    - Configure a Custom auth connection (save the Connection ID)\n');
-      process.stdout.write('    - Network: sapphire_mainnet (production) or sapphire_devnet (testing)\n');
-      process.stdout.write('  Infura RPC access is pre-integrated — no separate key needed.\n\n');
-
-      const metamaskClientId = await ask('  ? Client ID: ');
-      const authConnectionId = await ask('  ? Auth Connection ID: ');
-
-      // Web3Auth network
-      const networkRaw = (await ask('  ? Web3Auth network [sapphire_mainnet/sapphire_devnet] (default: sapphire_mainnet): ')) || 'sapphire_mainnet';
-      const web3AuthNetwork = networkRaw === 'sapphire_devnet' ? 'sapphire_devnet' : 'sapphire_mainnet';
-
-      // Validate credentials (best-effort — requires @web3auth/node-sdk)
-      process.stdout.write('  Validating MetaMask credentials...\n');
-      try {
-        // @ts-expect-error -- optional dependency, may not be installed
-        const mod = await import('@web3auth/node-sdk');
-        const Web3Auth = mod.default ?? mod.Web3Auth ?? mod;
-        const w3a = new Web3Auth({ clientId: metamaskClientId, web3AuthNetwork });
-        await w3a.init();
-        process.stdout.write('  ✓ MetaMask credentials validated\n');
-      } catch {
-        process.stdout.write('  ⚠ Could not validate (@web3auth/node-sdk not installed or invalid credentials)\n');
-      }
-
-      secretsToStore['METAMASK_CLIENT_ID'] = metamaskClientId;
-
-      walletProvider = {
-        type: 'metamask',
-        clientIdEnvVar: 'METAMASK_CLIENT_ID',
-        authConnectionId,
-        web3AuthNetwork,
+      cardIssuerConfig = {
+        issuer,
+        ...(issuerApiKey ? { apiKeyEnvVar: 'CARD_ISSUER_API_KEY' } : {}),
       };
     }
 
+    // ----- ACH Banking Provider -----
+    let achProviderConfig: Record<string, unknown> | undefined;
+
+    if (fundingSources.includes('ach')) {
+      process.stdout.write('\n  ? ACH banking provider:\n');
+      process.stdout.write('    plaid            — Plaid Transfer webhooks\n');
+      process.stdout.write('    moov             — Moov transfer webhooks\n');
+      process.stdout.write('    stripe_treasury  — Stripe Treasury ACH events\n');
+      process.stdout.write('    modern_treasury  — Modern Treasury payment orders\n');
+      process.stdout.write('    column           — Column bank ACH transfers\n');
+      const achRaw = (await ask('    (default: plaid): ')) || 'plaid';
+      const achProvider = (ACH_PROVIDERS as readonly string[]).includes(achRaw) ? achRaw : 'plaid';
+
+      if (achProvider === 'plaid') {
+        process.stdout.write('\n  Plaid Transfer setup:\n');
+        process.stdout.write('  Create API keys at dashboard.plaid.com:\n');
+        process.stdout.write('    - Client ID + Secret (Sandbox or Production)\n');
+        process.stdout.write('    - Configure Transfer webhook URL\n\n');
+        const plaidClientId = await ask('  ? Plaid Client ID: ');
+        const plaidSecret = await ask('  ? Plaid Secret: ');
+        const plaidWebhookSecret = await ask('  ? Plaid Webhook Secret (optional): ');
+        if (plaidClientId) secretsToStore['PLAID_CLIENT_ID'] = plaidClientId;
+        if (plaidSecret) secretsToStore['PLAID_SECRET'] = plaidSecret;
+        if (plaidWebhookSecret) secretsToStore['PLAID_WEBHOOK_SECRET'] = plaidWebhookSecret;
+        achProviderConfig = {
+          provider: 'plaid',
+          clientIdEnvVar: 'PLAID_CLIENT_ID',
+          secretEnvVar: 'PLAID_SECRET',
+          ...(plaidWebhookSecret ? { webhookSecretEnvVar: 'PLAID_WEBHOOK_SECRET' } : {}),
+        };
+      } else if (achProvider === 'moov') {
+        process.stdout.write('\n  Moov setup:\n');
+        process.stdout.write('  Create API credentials at dashboard.moov.io\n\n');
+        const moovAccountId = await ask('  ? Moov Account ID: ');
+        const moovApiKey = await ask('  ? Moov API Key: ');
+        const moovWebhookSecret = await ask('  ? Moov Webhook Secret (optional): ');
+        if (moovAccountId) secretsToStore['MOOV_ACCOUNT_ID'] = moovAccountId;
+        if (moovApiKey) secretsToStore['MOOV_API_KEY'] = moovApiKey;
+        if (moovWebhookSecret) secretsToStore['MOOV_WEBHOOK_SECRET'] = moovWebhookSecret;
+        achProviderConfig = {
+          provider: 'moov',
+          accountIdEnvVar: 'MOOV_ACCOUNT_ID',
+          apiKeyEnvVar: 'MOOV_API_KEY',
+          ...(moovWebhookSecret ? { webhookSecretEnvVar: 'MOOV_WEBHOOK_SECRET' } : {}),
+        };
+      } else if (achProvider === 'stripe_treasury') {
+        process.stdout.write('\n  Stripe Treasury ACH setup:\n');
+        process.stdout.write('  Use your Stripe secret key from dashboard.stripe.com/apikeys\n\n');
+        const stripeKey = await ask('  ? Stripe Secret Key (sk_live_... or sk_test_...): ');
+        const stripeWebhookSecret = await ask('  ? Stripe Webhook Secret (whsec_...): ');
+        if (stripeKey) secretsToStore['STRIPE_SECRET_KEY'] = stripeKey;
+        if (stripeWebhookSecret) secretsToStore['STRIPE_WEBHOOK_SECRET'] = stripeWebhookSecret;
+        achProviderConfig = {
+          provider: 'stripe_treasury',
+          apiKeyEnvVar: 'STRIPE_SECRET_KEY',
+          ...(stripeWebhookSecret ? { webhookSecretEnvVar: 'STRIPE_WEBHOOK_SECRET' } : {}),
+        };
+      } else if (achProvider === 'modern_treasury') {
+        process.stdout.write('\n  Modern Treasury setup:\n');
+        process.stdout.write('  Create API keys at app.moderntreasury.com/developers\n\n');
+        const mtApiKey = await ask('  ? Modern Treasury API Key: ');
+        const mtOrgId = await ask('  ? Modern Treasury Organization ID: ');
+        const mtWebhookKey = await ask('  ? Modern Treasury Webhook Key (optional): ');
+        if (mtApiKey) secretsToStore['MT_API_KEY'] = mtApiKey;
+        if (mtOrgId) secretsToStore['MT_ORG_ID'] = mtOrgId;
+        if (mtWebhookKey) secretsToStore['MT_WEBHOOK_KEY'] = mtWebhookKey;
+        achProviderConfig = {
+          provider: 'modern_treasury',
+          apiKeyEnvVar: 'MT_API_KEY',
+          orgIdEnvVar: 'MT_ORG_ID',
+          ...(mtWebhookKey ? { webhookKeyEnvVar: 'MT_WEBHOOK_KEY' } : {}),
+        };
+      } else if (achProvider === 'column') {
+        process.stdout.write('\n  Column bank setup:\n');
+        process.stdout.write('  Create API keys at dashboard.column.com\n\n');
+        const columnApiKey = await ask('  ? Column API Key: ');
+        const columnWebhookSecret = await ask('  ? Column Webhook Secret (optional): ');
+        if (columnApiKey) secretsToStore['COLUMN_API_KEY'] = columnApiKey;
+        if (columnWebhookSecret) secretsToStore['COLUMN_WEBHOOK_SECRET'] = columnWebhookSecret;
+        achProviderConfig = {
+          provider: 'column',
+          apiKeyEnvVar: 'COLUMN_API_KEY',
+          ...(columnWebhookSecret ? { webhookSecretEnvVar: 'COLUMN_WEBHOOK_SECRET' } : {}),
+        };
+      }
+    }
+
+    // ----- Treasury / Cash Management -----
+    let treasuryProviderConfig: Record<string, unknown> | undefined;
+
+    if (fundingSources.includes('treasury')) {
+      process.stdout.write('\n  ? Treasury provider:\n');
+      process.stdout.write('    stripe_treasury  — Stripe Treasury (financial accounts, flows)\n');
+      process.stdout.write('    modern_treasury  — Modern Treasury (ledger, payment orders)\n');
+      process.stdout.write('    column           — Column (bank accounts, book transfers)\n');
+      process.stdout.write('    other            — other treasury provider\n');
+      const treasuryRaw = (await ask('    (default: stripe_treasury): ')) || 'stripe_treasury';
+      const treasuryProvider = (TREASURY_PROVIDERS as readonly string[]).includes(treasuryRaw)
+        ? treasuryRaw : 'stripe_treasury';
+
+      if (achProviderConfig && achProviderConfig['provider'] === treasuryProvider) {
+        process.stdout.write(`  ✓ Reusing ${treasuryProvider} credentials from ACH setup\n`);
+        treasuryProviderConfig = { provider: treasuryProvider, sharedWithAch: true };
+      } else if (treasuryProvider === 'stripe_treasury') {
+        // Only prompt if not already collected via ACH
+        if (!secretsToStore['STRIPE_SECRET_KEY']) {
+          process.stdout.write('\n  Stripe Treasury setup:\n');
+          const stripeKey = await ask('  ? Stripe Secret Key (sk_live_... or sk_test_...): ');
+          if (stripeKey) secretsToStore['STRIPE_SECRET_KEY'] = stripeKey;
+        }
+        treasuryProviderConfig = { provider: 'stripe_treasury', apiKeyEnvVar: 'STRIPE_SECRET_KEY' };
+      } else if (treasuryProvider === 'modern_treasury') {
+        if (!secretsToStore['MT_API_KEY']) {
+          process.stdout.write('\n  Modern Treasury setup:\n');
+          const mtApiKey = await ask('  ? Modern Treasury API Key: ');
+          const mtOrgId = await ask('  ? Modern Treasury Organization ID: ');
+          if (mtApiKey) secretsToStore['MT_API_KEY'] = mtApiKey;
+          if (mtOrgId) secretsToStore['MT_ORG_ID'] = mtOrgId;
+        }
+        treasuryProviderConfig = { provider: 'modern_treasury', apiKeyEnvVar: 'MT_API_KEY', orgIdEnvVar: 'MT_ORG_ID' };
+      } else if (treasuryProvider === 'column') {
+        if (!secretsToStore['COLUMN_API_KEY']) {
+          process.stdout.write('\n  Column bank setup:\n');
+          const columnApiKey = await ask('  ? Column API Key: ');
+          if (columnApiKey) secretsToStore['COLUMN_API_KEY'] = columnApiKey;
+        }
+        treasuryProviderConfig = { provider: 'column', apiKeyEnvVar: 'COLUMN_API_KEY' };
+      } else {
+        const otherName = await ask('  ? Treasury provider name: ');
+        treasuryProviderConfig = { provider: otherName || 'other' };
+      }
+    }
+
     // -----------------------------------------------------------------------
-    // Secrets Storage (only if a provider was selected)
+    // Secrets Storage (only if any provider has secrets)
     // -----------------------------------------------------------------------
 
     let secretsStorageConfig: Record<string, string> | undefined;
 
-    if (provider !== 'none' && Object.keys(secretsToStore).length > 0) {
+    if (Object.keys(secretsToStore).length > 0) {
       process.stdout.write('\n  ? Where should secrets be stored?\n');
       process.stdout.write('    1) .env file (default — local, gitignored)\n');
       process.stdout.write('    2) Custom file path\n');
@@ -709,8 +944,8 @@ export async function runInit(opts: { json: boolean; force?: boolean }): Promise
         }
       }
 
-      // Attach secretsStorage to walletProvider config
-      if (secretsStorageConfig) {
+      // Attach secretsStorage to walletProvider config (for backwards compatibility)
+      if (secretsStorageConfig && provider !== 'none') {
         walletProvider['secretsStorage'] = secretsStorageConfig;
       }
     }
@@ -840,8 +1075,16 @@ export async function runInit(opts: { json: boolean; force?: boolean }): Promise
       tokens,
       chains,
       mode,
+      ...(fundingSources.length > 0 ? { fundingSources } : {}),
       walletProvider,
+      ...(cardIssuerConfig ? { cardIssuer: cardIssuerConfig } : {}),
+      ...(achProviderConfig ? { achProvider: achProviderConfig } : {}),
+      ...(treasuryProviderConfig ? { treasuryProvider: treasuryProviderConfig } : {}),
     };
+
+    if (secretsStorageConfig) {
+      config['secretsStorage'] = secretsStorageConfig;
+    }
 
     if (Object.keys(rpcEndpoints).length > 0) {
       config['rpcEndpoints'] = rpcEndpoints;
@@ -885,6 +1128,10 @@ export async function runInit(opts: { json: boolean; force?: boolean }): Promise
       approvalThreshold,
       anomalyRules: anomalyRules.length > 0 ? anomalyRules : undefined,
       anomalyThresholds: anomalyRules.length > 0 ? anomalyThresholds : undefined,
+      fundingSources: fundingSources.length > 0 ? fundingSources : undefined,
+      achProvider: achProviderConfig ? String(achProviderConfig['provider']) : undefined,
+      cardIssuer: cardIssuerConfig ? String(cardIssuerConfig['issuer']) : undefined,
+      treasuryProvider: treasuryProviderConfig ? String(treasuryProviderConfig['provider']) : undefined,
     });
     fs.writeFileSync(setupPath, setupContent);
 
@@ -914,6 +1161,9 @@ export async function runInit(opts: { json: boolean; force?: boolean }): Promise
     if (anomalyRules.length > 0) {
       process.stdout.write(`  ✓ Anomaly rules: ${anomalyRules.join(', ')}\n`);
     }
+    if (fundingSources.length > 0) {
+      process.stdout.write(`  ✓ Funding sources: ${fundingSources.join(', ')}\n`);
+    }
     if (provider !== 'none') {
       const envLabel = provider === 'circle'
         ? (walletProvider as Record<string, unknown>)['circleEnvironment']
@@ -921,6 +1171,15 @@ export async function runInit(opts: { json: boolean; force?: boolean }): Promise
           ? (walletProvider as Record<string, unknown>)['cdpEnvironment']
           : (walletProvider as Record<string, unknown>)['web3AuthNetwork'];
       process.stdout.write(`  ✓ Wallet provider: ${provider} (${envLabel})\n`);
+    }
+    if (cardIssuerConfig) {
+      process.stdout.write(`  ✓ Card issuer: ${cardIssuerConfig['issuer']}\n`);
+    }
+    if (achProviderConfig) {
+      process.stdout.write(`  ✓ ACH provider: ${achProviderConfig['provider']}\n`);
+    }
+    if (treasuryProviderConfig) {
+      process.stdout.write(`  ✓ Treasury provider: ${treasuryProviderConfig['provider']}\n`);
     }
     if (screeningSelections.length > 0) {
       process.stdout.write(`  ✓ Screening: ${screeningSelections.join(', ')}\n`);

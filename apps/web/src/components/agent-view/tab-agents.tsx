@@ -177,9 +177,9 @@ const result = await ctx.verify({
             <span className="text-[var(--term-blue)]">https://npmjs.com/package/kontext-sdk</span>
           </p>
           <p>
-            <span className="text-[var(--term-text-3)]">GitHub</span>
-            <span className="text-[var(--term-text-3)]"> ······· </span>
-            <span className="text-[var(--term-blue)]">https://github.com/Legaci-Labs/kontext</span>
+            <span className="text-[var(--term-text-3)]">Docs</span>
+            <span className="text-[var(--term-text-3)]"> ········· </span>
+            <span className="text-[var(--term-blue)]">https://getkontext.com/docs</span>
           </p>
         </div>
       </Section>

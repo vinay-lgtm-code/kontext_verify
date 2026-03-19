@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Products — Kontext</title>
+<meta name="description" content="Six compliance capabilities for AI agent payments: verification, compliance logging, reserve reconciliation, OFAC screening, anomaly detection, and trust scoring.">
+<meta property="og:title" content="Products — Kontext">
+<meta property="og:description" content="Six compliance capabilities for AI agent payments: verification, compliance logging, reserve reconciliation, OFAC screening, anomaly detection, and trust scoring.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://getkontext.com/products">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%233b6ef8'/><text x='16' y='22' text-anchor='middle' fill='white' font-family='Georgia' font-size='18' font-style='italic'>K</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Root ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:          #07080b;
+  --surface:     #0d1018;
+  --surface-2:   #131825;
+  --surface-3:   #1a2030;
+  --border:      #1c2540;
+  --border-dim:  #131a30;
+  --text:        #dde4f5;
+  --text-muted:  #5a6885;
+  --text-dim:    #4a5572;
+  --accent:      #3b6ef8;
+  --accent-dim:  rgba(59,110,248,0.1);
+  --accent-glow: rgba(59,110,248,0.22);
+  --green:       #22c55e;
+  --green-dim:   rgba(34,197,94,0.1);
+  --amber:       #f59e0b;
+  --red:         #ef4444;
+  --serif:       'Instrument Serif', Georgia, serif;
+  --mono:        'IBM Plex Mono', monospace;
+  --sans:        'DM Sans', system-ui, sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Grid Background ──────────────────────────────────────────────────────── */
+.grid-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(var(--border-dim) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border-dim) 1px, transparent 1px);
+  background-size: 60px 60px;
+  opacity: 0.4;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 0%, black 30%, transparent 100%);
+}
+
+/* ── Navigation ──────────────────────────────────────────────────────────── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 48px;
+  height: 60px;
+  background: rgba(7,8,11,0.6);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.3s;
+}
+
+nav.scrolled { border-bottom-color: var(--border); }
+
+.nav-logo {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 22px;
+  color: var(--accent);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.15s;
+  letter-spacing: 0.01em;
+}
+
+.nav-links a:hover { color: var(--text); }
+
+.nav-cta {
+  background: var(--accent);
+  color: #fff !important;
+  padding: 7px 18px;
+  border-radius: 5px;
+  font-weight: 500;
+  font-size: 13px !important;
+  transition: background 0.15s !important;
+}
+
+.nav-cta:hover { background: #2d5ee8 !important; }
+
+/* Products dropdown */
+.nav-dropdown { position: relative; }
+.nav-dropdown > a { cursor: pointer; }
+
+.nav-dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: -16px;
+  padding: 12px 0;
+  min-width: 280px;
+  background: rgba(13,16,24,0.97);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  z-index: 1001;
+  margin-top: 8px;
+}
+
+.nav-dropdown:hover .nav-dropdown-menu { display: block; }
+
+.nav-dropdown-menu a {
+  display: block;
+  padding: 10px 20px;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.15s, background 0.15s;
+}
+
+.nav-dropdown-menu a:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.nav-dropdown-menu a span {
+  display: block;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+/* Hamburger */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 4px;
+}
+
+.hamburger span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: var(--text-muted);
+  transition: all 0.2s;
+}
+
+.mobile-menu {
+  display: none;
+  position: fixed;
+  top: 60px; left: 0; right: 0;
+  background: rgba(7,8,11,0.95);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 24px;
+  z-index: 999;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mobile-menu.open { display: flex; }
+
+.mobile-menu a {
+  font-size: 15px;
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 8px 0;
+  transition: color 0.15s;
+}
+
+.mobile-menu a:hover { color: var(--text); }
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  padding: 13px 28px;
+  border-radius: 6px;
+  font-size: 14.5px;
+  font-weight: 500;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.01em;
+  display: inline-block;
+}
+
+.btn-primary:hover {
+  background: #2d5ee8;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(59,110,248,0.3);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  padding: 13px 28px;
+  border-radius: 6px;
+  font-size: 14.5px;
+  font-weight: 400;
+  text-decoration: none;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: inline-block;
+}
+
+.btn-ghost:hover {
+  border-color: var(--text-muted);
+  color: var(--text);
+}
+
+/* ── Section Base ─────────────────────────────────────────────────────────── */
+.section-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 20px;
+}
+
+.section-headline {
+  font-family: var(--serif);
+  font-size: clamp(30px, 3.5vw, 48px);
+  font-weight: 400;
+  line-height: 1.15;
+  color: var(--text);
+  margin-bottom: 16px;
+  letter-spacing: -0.02em;
+  max-width: 700px;
+}
+
+.section-sub {
+  font-size: 17px;
+  color: var(--text-muted);
+  max-width: 540px;
+  margin-bottom: 60px;
+  font-weight: 400;
+  line-height: 1.65;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid var(--border-dim);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ── Hero ─────────────────────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  z-index: 1;
+  padding: 160px 48px 100px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.hero-glow {
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 800px; height: 400px;
+  background: radial-gradient(ellipse at top, rgba(59,110,248,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero h1 {
+  font-family: var(--serif);
+  font-size: clamp(40px, 5.5vw, 68px);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: var(--text);
+  max-width: 820px;
+  margin: 0 auto 24px;
+  animation: fadeUp 0.6s 0.1s ease both;
+}
+
+.hero h1 em {
+  font-style: italic;
+  background: linear-gradient(135deg, #3b6ef8, #7b9fff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-sub {
+  font-size: 18px;
+  line-height: 1.65;
+  color: var(--text-muted);
+  max-width: 600px;
+  margin: 0 auto 48px;
+  font-weight: 400;
+  animation: fadeUp 0.6s 0.2s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Product Section ─────────────────────────────────────────────────────── */
+.product-section {
+  position: relative;
+  z-index: 1;
+  padding: 100px 48px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.product-section + .product-section {
+  padding-top: 0;
+}
+
+.product-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: start;
+}
+
+.product-layout.reverse {
+  direction: rtl;
+}
+
+.product-layout.reverse > * {
+  direction: ltr;
+}
+
+.product-text .section-label { margin-bottom: 16px; }
+.product-text .section-headline { margin-bottom: 16px; }
+
+.product-text .section-sub {
+  margin-bottom: 32px;
+}
+
+.product-features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.product-features li {
+  font-size: 14px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  line-height: 1.5;
+}
+
+.product-features li::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+  margin-top: 7px;
+}
+
+.product-visual {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.product-visual-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-dim);
+}
+
+.product-visual-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--surface-3);
+}
+
+.product-visual-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-left: 8px;
+}
+
+.product-visual pre {
+  padding: 20px;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-muted);
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.product-visual .kw { color: var(--accent); }
+.product-visual .str { color: var(--green); }
+.product-visual .cmt { color: var(--text-dim); font-style: italic; }
+.product-visual .fn { color: #dde4f5; }
+.product-visual .num { color: var(--amber); }
+
+/* Feature grid (for non-code sections) */
+.feature-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.feature-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.feature-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.feature-card-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.feature-card-value {
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.feature-card-value.green { color: var(--green); }
+.feature-card-value.accent { color: var(--accent); }
+.feature-card-value.amber { color: var(--amber); }
+.feature-card-value.red { color: var(--red); }
+
+/* ── CTA Section ─────────────────────────────────────────────────────────── */
+.cta-section {
+  position: relative;
+  z-index: 1;
+  padding: 100px 48px;
+  text-align: center;
+}
+
+.cta-section .section-headline {
+  margin: 0 auto 16px;
+  max-width: 600px;
+  text-align: center;
+}
+
+.cta-section .section-sub {
+  margin: 0 auto 40px;
+  max-width: 500px;
+  text-align: center;
+}
+
+.cta-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+footer {
+  position: relative; z-index: 1;
+  border-top: 1px solid var(--border-dim);
+  padding: 48px 48px 36px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.footer-cols {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 40px;
+  margin-bottom: 48px;
+}
+
+.footer-brand {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 20px;
+  color: var(--accent);
+  margin-bottom: 10px;
+  display: block;
+}
+
+.footer-tagline {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  font-weight: 400;
+  max-width: 260px;
+}
+
+.footer-col-title {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 14px;
+}
+
+.footer-links { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.footer-links a {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.footer-links a:hover { color: var(--text); }
+
+.footer-bottom {
+  border-top: 1px solid var(--border-dim);
+  padding-top: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.footer-copy {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  line-height: 1.7;
+}
+
+.footer-disclaimer {
+  font-size: 11px;
+  color: var(--text-dim);
+  max-width: 460px;
+  line-height: 1.6;
+  text-align: right;
+}
+
+/* ── Scroll animation ─────────────────────────────────────────────────────── */
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.reveal.visible { opacity: 1; transform: none; }
+.reveal-d1 { transition-delay: 0.1s; }
+.reveal-d2 { transition-delay: 0.2s; }
+.reveal-d3 { transition-delay: 0.3s; }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  nav { padding: 0 24px; }
+  .nav-links { display: none; }
+  .hamburger { display: flex; }
+  .hero { padding: 140px 24px 80px; }
+  .product-section { padding: 80px 24px; }
+  .product-layout { grid-template-columns: 1fr; gap: 40px; }
+  .product-layout.reverse { direction: ltr; }
+  .cta-section { padding: 80px 24px; }
+  .footer-cols { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 600px) {
+  .hero h1 { font-size: 32px; }
+  .feature-grid { grid-template-columns: 1fr; }
+  .cta-buttons { flex-direction: column; align-items: center; }
+  .footer-cols { grid-template-columns: 1fr; }
+  .footer-bottom { flex-direction: column; }
+  .footer-disclaimer { text-align: left; }
+}
+</style>
+<!-- Microsoft Clarity -->
+<script type="text/javascript">(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window, document, "clarity", "script", "qi6iav4al4");</script>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+
+<!-- NAV -->
+<nav id="nav">
+  <a href="/" class="nav-logo">Kontext</a>
+  <ul class="nav-links">
+    <li class="nav-dropdown">
+      <a href="/products">Products &#9662;</a>
+      <div class="nav-dropdown-menu">
+        <a href="#verification">Verification<span>OFAC + threshold checks in one call</span></a>
+        <a href="#compliance-logging">Compliance Logging<span>Digest chain + certificates</span></a>
+        <a href="#reserve-reconciliation">Reserve Reconciliation<span>On-chain supply vs. published reserves</span></a>
+        <a href="#ofac-screening">OFAC Screening<span>Built-in SDN + pluggable providers</span></a>
+        <a href="#anomaly-detection">Anomaly Detection<span>Six pattern-based detection rules</span></a>
+        <a href="#trust-scoring">Trust Scoring<span>Real-time 0&ndash;100 agent score</span></a>
+      </div>
+    </li>
+    <li><a href="/#architecture">Architecture</a></li>
+    <li><a href="/use-cases">Use Cases</a></li>
+    <li><a href="/#regulation">GENIUS Act</a></li>
+    <li><a href="/docs">Docs</a></li>
+    <li><a href="/#pilot" class="nav-cta">Request Demo</a></li>
+  </ul>
+  <button class="hamburger" onclick="toggleMobileMenu()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- Mobile menu -->
+<div class="mobile-menu" id="mobile-menu">
+  <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim);padding:4px 0">Products</div>
+  <a href="#verification" onclick="closeMobileMenu()" style="padding-left:12px">Verification</a>
+  <a href="#compliance-logging" onclick="closeMobileMenu()" style="padding-left:12px">Compliance Logging</a>
+  <a href="#reserve-reconciliation" onclick="closeMobileMenu()" style="padding-left:12px">Reserve Reconciliation</a>
+  <a href="#ofac-screening" onclick="closeMobileMenu()" style="padding-left:12px">OFAC Screening</a>
+  <a href="#anomaly-detection" onclick="closeMobileMenu()" style="padding-left:12px">Anomaly Detection</a>
+  <a href="#trust-scoring" onclick="closeMobileMenu()" style="padding-left:12px">Trust Scoring</a>
+  <div style="border-top:1px solid var(--border);margin:8px 0"></div>
+  <a href="/#architecture" onclick="closeMobileMenu()">Architecture</a>
+  <a href="/use-cases" onclick="closeMobileMenu()">Use Cases</a>
+  <a href="/#regulation" onclick="closeMobileMenu()">GENIUS Act</a>
+  <a href="/docs" onclick="closeMobileMenu()">Docs</a>
+  <a href="/#pilot" class="btn-primary" style="text-align:center" onclick="closeMobileMenu()">Request Demo</a>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <p class="section-label" style="animation:fadeUp 0.6s ease both">Products</p>
+  <h1>Six capabilities.<br>One compliance layer <em>for agents.</em></h1>
+  <p class="hero-sub">
+    Every feature works standalone or together. Add compliance to any agent workflow
+    with a single SDK &mdash; no infrastructure to manage.
+  </p>
+</section>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- 1. VERIFICATION -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<section class="product-section" id="verification">
+  <div class="product-layout reveal">
+    <div class="product-text">
+      <p class="section-label">01 &mdash; Verification</p>
+      <h2 class="section-headline">One call. Full compliance check.</h2>
+      <p class="section-sub">
+        Wrap every agent payment in a single <code style="font-family:var(--mono);color:var(--accent)">verify()</code> call.
+        OFAC screening, threshold checks, and compliance status returned in one response.
+        The transaction is logged to your tamper-evident digest chain automatically.
+      </p>
+      <ul class="product-features">
+        <li>OFAC sanctions screening on every address</li>
+        <li>Travel Rule ($3K), CTR ($10K), and large transaction ($50K) thresholds</li>
+        <li>Compliance status, risk level, and recommendations in the response</li>
+        <li>Transaction automatically logged to digest chain with full context</li>
+      </ul>
+    </div>
+    <div class="product-visual">
+      <div class="product-visual-header">
+        <div class="product-visual-dot"></div>
+        <div class="product-visual-dot"></div>
+        <div class="product-visual-dot"></div>
+        <span class="product-visual-title">agent.ts</span>
+      </div>
+<pre><span class="kw">const</span> result = <span class="kw">await</span> ctx.<span class="fn">verify</span>({
+  txHash: <span class="str">'0xabc...def'</span>,
+  chain:  <span class="str">'base'</span>,
+  amount: <span class="str">'5000'</span>,
+  token:  <span class="str">'USDC'</span>,
+  from:   <span class="str">'0xAgentWallet'</span>,
+  to:     <span class="str">'0xRecipient'</span>,
+  agentId: <span class="str">'payment-agent-v2'</span>,
+});
+
+<span class="cmt">// result.compliant        &rarr; true</span>
+<span class="cmt">// result.riskLevel        &rarr; 'low'</span>
+<span class="cmt">// result.checks           &rarr; [{name, passed}]</span>
+<span class="cmt">// result.digestProof.valid &rarr; true</span></pre>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- 2. COMPLIANCE LOGGING & CERTIFICATES -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<section class="product-section" id="compliance-logging">
+  <div class="product-layout reverse reveal">
+    <div class="product-text">
+      <p class="section-label">02 &mdash; Compliance Logging</p>
+      <h2 class="section-headline">Tamper-evident records. Certificates on demand.</h2>
+      <p class="section-sub">
+        Every agent action is captured in a SHA-256 linked digest chain. Each record
+        includes the previous hash &mdash; altering one entry breaks every link after it.
+        Generate compliance certificates with cryptographic proof at any time.
+      </p>
+      <ul class="product-features">
+        <li>SHA-256 digest chain &mdash; each record links to the previous hash</li>
+        <li>Full context: agent ID, reasoning, metadata, timestamps</li>
+        <li>Compliance certificates with digest proof and trust score</li>
+        <li>Export as JSON or CSV for auditors and regulators</li>
+      </ul>
+    </div>
+    <div class="product-visual">
+      <div class="product-visual-header">
+        <div class="product-visual-dot"></div>
+        <div class="product-visual-dot"></div>
+        <div class="product-visual-dot"></div>
+        <span class="product-visual-title">certificate.ts</span>
+      </div>
+<pre><span class="kw">const</span> cert = <span class="kw">await</span> ctx.<span class="fn">generateComplianceCertificate</span>({
+  agentId: <span class="str">'treasury-agent-v2'</span>,
+  timeRange: { from: startOfMonth, to: now },
+  includeReasoning: <span class="num">true</span>,
+});
+
+<span class="cmt">// cert.complianceStatus   &rarr; 'compliant'</span>
+<span class="cmt">// cert.digestChain.verified &rarr; true</span>
+<span class="cmt">// cert.contentHash        &rarr; SHA-256</span>
+<span class="cmt">// cert.trustScore.score   &rarr; 92</span>
+
+<span class="kw">const</span> valid = ctx.<span class="fn">verifyDigestChain</span>();
+<span class="cmt">// valid.intact &rarr; true (no tampering)</span></pre>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- 3. RESERVE RECONCILIATION -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<section class="product-section" id="reserve-reconciliation">
+  <div class="product-layout reveal">
+    <div class="product-text">
+      <p class="section-label">03 &mdash; Reserve Reconciliation</p>
+      <h2 class="section-headline">On-chain supply vs. published reserves. Proven at transfer time.</h2>
+      <p class="section-sub">
+        Cryptographic proof that on-chain stablecoin supply was consistent with
+        published reserves at the moment your agent executed a transfer.
+        The GENIUS Act requires reserve transparency &mdash; Kontext records the evidence.
+      </p>
+      <ul class="product-features">
+        <li>Snapshot of circulating supply at transaction time</li>
+        <li>Comparison against published reserve attestations</li>
+        <li>Reserve ratio logged to digest chain as evidence</li>
+        <li>Historical reserve data queryable for audit periods</li>
+      </ul>
+    </div>
+    <div class="product-visual">
+      <div class="product-visual-header">
+        <div class="product-visual-dot"></div>
+        <div class="product-visual-dot"></div>
+        <div class="product-visual-dot"></div>
+        <span class="product-visual-title">reserve-check.json</span>
+      </div>
+<pre>{
+  <span class="str">"chain"</span>:           <span class="str">"base"</span>,
+  <span class="str">"token"</span>:           <span class="str">"USDC"</span>,
+  <span class="str">"circulatingSupply"</span>: <span class="str">"42,891,203,847.42"</span>,
+  <span class="str">"publishedReserves"</span>: <span class="str">"43,012,000,000.00"</span>,
+  <span class="str">"reserveRatio"</span>:     <span class="num">1.0028</span>,
+  <span class="str">"status"</span>:           <span class="str">"<span style="color:var(--green)">fully_backed</span>"</span>,
+  <span class="str">"snapshotBlock"</span>:    <span class="num">28491037</span>,
+  <span class="str">"digestLink"</span>:       <span class="str">"sha256:9f3a..."</span>
+}</pre>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- 4. OFAC SCREENING -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<section class="product-section" id="ofac-screening">
+  <div class="product-layout reverse reveal">
+    <div class="product-text">
+      <p class="section-label">04 &mdash; OFAC Screening</p>
+      <h2 class="section-headline">Built-in SDN list. Pluggable providers.</h2>
+      <p class="section-sub">
+        Every transaction is screened against the Treasury Department's SDN list
+        out of the box &mdash; no API key required. Need Chainalysis or OpenSanctions?
+        Plug them in with one line. Results are logged to your audit trail automatically.
+      </p>
+      <ul class="product-features">
+        <li>Built-in Treasury SDN list screening &mdash; zero config</li>
+        <li>Pluggable ScreeningProvider architecture</li>
+        <li>Chainalysis, OpenSanctions, or your own provider</li>
+        <li>Multi-provider aggregation with configurable consensus</li>
+        <li>Webhook and SMTP alerts on flagged addresses</li>
+      </ul>
+    </div>
+    <div class="product-visual">
+      <div class="product-visual-header">
+        <div class="product-visual-dot"></div>
+        <div class="product-visual-dot"></div>
+        <div class="product-visual-dot"></div>
+        <span class="product-visual-title">screening.ts</span>
+      </div>
+<pre><span class="cmt">// Built-in &mdash; no API key needed</span>
+<span class="kw">const</span> check = UsdcCompliance.<span class="fn">checkTransaction</span>({
+  from: <span class="str">'0xSender'</span>,
+  to:   <span class="str">'0xRecipient'</span>,
+  amount: <span class="str">'25000'</span>,
+  chain: <span class="str">'base'</span>,
+});
+
+<span class="cmt">// Or plug in Chainalysis:</span>
+<span class="kw">const</span> aggregator = <span class="kw">new</span> <span class="fn">ScreeningAggregator</span>({
+  providers: [
+    <span class="kw">new</span> <span class="fn">TreasurySDNProvider</span>(),
+    <span class="kw">new</span> <span class="fn">ChainalysisOracleProvider</span>({
+      apiKey: process.env.CHAINALYSIS_KEY
+    }),
+  ],
+});</pre>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- 5. ANOMALY DETECTION -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<section class="product-section" id="anomaly-detection">
+  <div class="product-layout reveal">
+    <div class="product-text">
+      <p class="section-label">05 &mdash; Anomaly Detection</p>
+      <h2 class="section-headline">Six patterns. Real-time alerts.</h2>
+      <p class="section-sub">
+        Rule-based detection across six behavioral patterns. Configure thresholds
+        per agent, get callbacks when anomalies fire, and route alerts to your
+        compliance team via webhooks.
+      </p>
+      <ul class="product-features">
+        <li>Unusual amounts &mdash; transactions outside normal range</li>
+        <li>Frequency spikes &mdash; sudden increase in transaction volume</li>
+        <li>New destinations &mdash; payments to previously unseen addresses</li>
+        <li>Off-hours activity &mdash; transactions outside business hours</li>
+        <li>Rapid succession &mdash; multiple transfers in short windows</li>
+        <li>Round amounts &mdash; suspiciously round payment values</li>
+      </ul>
+    </div>
+    <div>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-card-value amber">$47,500</div>
+          <div class="feature-card-title">Unusual Amount</div>
+          <div class="feature-card-desc">3.2x above 30-day average for this agent</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-card-value red">12 tx/hr</div>
+          <div class="feature-card-title">Frequency Spike</div>
+          <div class="feature-card-desc">Normal rate: 2 tx/hr. Threshold: 8 tx/hr</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-card-value accent">0x7f2a...</div>
+          <div class="feature-card-title">New Destination</div>
+          <div class="feature-card-desc">First transaction to this address</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-card-value green">02:41 UTC</div>
+          <div class="feature-card-title">Off-Hours</div>
+          <div class="feature-card-desc">Outside configured business hours window</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- 6. TRUST SCORING -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<section class="product-section" id="trust-scoring">
+  <div class="product-layout reverse reveal">
+    <div class="product-text">
+      <p class="section-label">06 &mdash; Trust Scoring</p>
+      <h2 class="section-headline">Real-time 0&ndash;100 score. Five weighted factors.</h2>
+      <p class="section-sub">
+        Every agent gets a trust score computed from its history, transaction patterns,
+        and context. Use it to gate high-value operations, set dynamic approval
+        thresholds, or feed into your own risk models.
+      </p>
+      <ul class="product-features">
+        <li>Agent history &mdash; track record across all logged actions</li>
+        <li>Amount normality &mdash; deviation from typical transaction sizes</li>
+        <li>Transaction velocity &mdash; frequency relative to baseline</li>
+        <li>Recipient trust &mdash; history with destination addresses</li>
+        <li>Contextual patterns &mdash; time of day, chain, token consistency</li>
+      </ul>
+    </div>
+    <div class="product-visual">
+      <div class="product-visual-header">
+        <div class="product-visual-dot"></div>
+        <div class="product-visual-dot"></div>
+        <div class="product-visual-dot"></div>
+        <span class="product-visual-title">trust-score.json</span>
+      </div>
+<pre>{
+  <span class="str">"agentId"</span>:  <span class="str">"treasury-agent-v2"</span>,
+  <span class="str">"score"</span>:    <span class="num">87</span>,
+  <span class="str">"level"</span>:    <span class="str">"<span style="color:var(--green)">high</span>"</span>,
+  <span class="str">"factors"</span>: {
+    <span class="str">"history"</span>:     <span class="num">0.92</span>,
+    <span class="str">"amountNorm"</span>:  <span class="num">0.85</span>,
+    <span class="str">"velocity"</span>:    <span class="num">0.88</span>,
+    <span class="str">"recipientTrust"</span>: <span class="num">0.80</span>,
+    <span class="str">"contextual"</span>:  <span class="num">0.90</span>
+  },
+  <span class="str">"recommendation"</span>: <span class="str">"Approve"</span>
+}</pre>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- CTA -->
+<section class="cta-section reveal">
+  <p class="section-label" style="text-align:center">Get Started</p>
+  <h2 class="section-headline">Add compliance to your first agent in five minutes.</h2>
+  <p class="section-sub">
+    Install the SDK, call <code style="font-family:var(--mono);color:var(--accent)">verify()</code>, and your
+    audit trail starts building. No infrastructure to deploy.
+  </p>
+  <div class="cta-buttons">
+    <a href="/#pilot" class="btn-primary">Request Demo</a>
+    <a href="/docs" class="btn-ghost">View Documentation</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-cols">
+    <div>
+      <span class="footer-brand">Kontext</span>
+      <p class="footer-tagline">Cryptographic compliance infrastructure for AI-native finance. GENIUS Act ready.</p>
+    </div>
+    <div>
+      <div class="footer-col-title">Product</div>
+      <ul class="footer-links">
+        <li><a href="/docs">Documentation</a></li>
+        <li><a href="/changelog">Changelog</a></li>
+        <li><a href="https://github.com/Legaci-Labs/kontext">GitHub</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Company</div>
+      <ul class="footer-links">
+        <li><a href="/about">About</a></li>
+        <li><a href="/team">Founder</a></li>
+        <li><a href="/blog">Blog</a></li>
+        <li><a href="mailto:vinay@getlegaci.com">Contact</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Legal</div>
+      <ul class="footer-links">
+        <li><a href="/privacy">Privacy Policy</a></li>
+        <li><a href="/terms">Terms of Service</a></li>
+        <li><a href="mailto:vinay@getlegaci.com?subject=DPA%20Request">DPA Request</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-copy">
+      &copy; 2026 Legaci Labs Inc. &nbsp;&middot;&nbsp; Kontext v0.11.1
+    </div>
+    <div class="footer-disclaimer">
+      Kontext provides developer tools that generate cryptographic proof of compliance for agentic payments.
+      This does not constitute legal advice or guarantee regulatory compliance.
+      Consult qualified legal counsel for compliance certification.
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── Mobile menu ───────────────────────────────────────────────────────────
+function toggleMobileMenu() {
+  document.getElementById('mobile-menu').classList.toggle('open');
+}
+function closeMobileMenu() {
+  document.getElementById('mobile-menu').classList.remove('open');
+}
+
+// ── Nav scroll effect ─────────────────────────────────────────────────────
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 40);
+}, { passive: true });
+
+// ── Scroll reveal ─────────────────────────────────────────────────────────
+const revealEls = document.querySelectorAll('.reveal');
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      revealObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+revealEls.forEach(el => revealObserver.observe(el));
+
+// ── Smooth scroll for anchor links ───────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.location.hash) {
+    const target = document.querySelector(window.location.hash);
+    if (target) {
+      setTimeout(() => {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }
+});
+</script>
+</body>
+</html>

@@ -39,13 +39,9 @@ export default function CheckoutCancelPage() {
           </Link>
         </Button>
         <Button variant="outline" asChild>
-          <a
-            href="https://github.com/Legaci-Labs/kontext"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+          <Link href="/docs">
             Get Started Free
-          </a>
+          </Link>
         </Button>
       </div>
     </div>
