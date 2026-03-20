@@ -104,7 +104,7 @@ export default function LandingPage() {
               What your compliance team sees for every payment
             </h2>
             <p className="mx-auto mt-4 max-w-lg text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-              One view across stablecoins, ACH, wire, card, and SEPA — whether initiated by an agent, a human, or a scheduled system.
+              One view across stablecoins, ACH, wire, card, and more — whether initiated by an agent, a human, or a scheduled system.
             </p>
           </div>
 

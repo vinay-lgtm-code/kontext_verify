@@ -224,9 +224,9 @@ const result = await ctx.verify({
   agentId: 'research-agent',
 });
 
-// result.decision = 'approved' | 'requires-review' | 'blocked'
+// result.compliant = true/false
 // result.checks = [{ name: 'OFAC Sanctions', passed: true }, ...]
-// result.auditBundleId = 'TXN-2026-03-19-7f8a2b'`}</code>
+// result.riskLevel = 'low' | 'medium' | 'high' | 'critical'`}</code>
             </pre>
           </div>
         </div>

@@ -33,6 +33,10 @@ import type {
   AnchorResult,
   CounterpartyAttestation,
   ERC8021Attribution,
+  SARReport,
+  CTRReport,
+  CasePacket,
+  ApprovalPolicy,
   AgentSession,
   CreateSessionInput,
   ProvenanceCheckpoint,
@@ -77,6 +81,7 @@ import { requirePlan } from './plan-gate.js';
 import type { EventExporter } from './exporters.js';
 import { NoopExporter } from './exporters.js';
 import { FeatureFlagManager } from './feature-flags.js';
+import { WebhookManager } from './webhooks.js';
 import { generateId, now, parseAmount } from './utils.js';
 import { loadConfigFile } from './config-loader.js';
 import { WalletMonitor } from './integrations/wallet-monitor.js';
@@ -163,6 +168,8 @@ export class Kontext {
   private circleWalletManager: CircleWalletManager | null = null;
   private coinbaseWalletManager: CoinbaseWalletManager | null = null;
   private metamaskWalletManager: MetaMaskWalletManager | null = null;
+  private webhookManager: WebhookManager | null = null;
+  private approvalPolicies: ApprovalPolicy[] = [];
 
   private constructor(config: KontextConfig) {
     this.config = config;
@@ -266,6 +273,22 @@ export class Kontext {
           { agentId: config.agentId },
         );
       }
+    }
+
+    // Initialize webhook manager if configured
+    if (config.webhooks && config.webhooks.length > 0) {
+      requirePlan('webhooks', this.planManager.getTier());
+      this.webhookManager = new WebhookManager(config.webhooks);
+      // Auto-forward anomaly events to webhooks
+      this.anomalyDetector.onAnomaly((event) => {
+        this.webhookManager?.emit('anomaly.detected', {
+          anomalyId: event.id,
+          type: event.type,
+          severity: event.severity,
+          description: event.description,
+          agentId: event.agentId,
+        }).catch(() => {});
+      });
     }
   }
 
@@ -813,7 +836,13 @@ export class Kontext {
    */
   async createTask(input: CreateTaskInput): Promise<Task> {
     this.validateMetadata(input.metadata);
-    return this.taskManager.createTask(input);
+    const task = await this.taskManager.createTask(input);
+    this.webhookManager?.emit('task.created', {
+      taskId: task.id,
+      agentId: task.agentId,
+      description: task.description,
+    }).catch(() => {});
+    return task;
   }
 
   /**
@@ -823,7 +852,12 @@ export class Kontext {
    * @returns The confirmed task
    */
   async confirmTask(input: ConfirmTaskInput): Promise<Task> {
-    return this.taskManager.confirmTask(input);
+    const task = await this.taskManager.confirmTask(input);
+    this.webhookManager?.emit('task.confirmed', {
+      taskId: task.id,
+      agentId: task.agentId,
+    }).catch(() => {});
+    return task;
   }
 
   /**
@@ -868,6 +902,26 @@ export class Kontext {
   }
 
   // --------------------------------------------------------------------------
+  // Approval Policies
+  // --------------------------------------------------------------------------
+
+  /**
+   * Set approval policies that trigger review/blocking in verify().
+   * Requires Pay-as-you-go plan or higher.
+   */
+  setApprovalPolicies(policies: ApprovalPolicy[]): void {
+    requirePlan('approval-policies', this.planManager.getTier());
+    this.approvalPolicies = policies;
+  }
+
+  /**
+   * Get configured approval policies.
+   */
+  getApprovalPolicies(): ApprovalPolicy[] {
+    return [...this.approvalPolicies];
+  }
+
+  // --------------------------------------------------------------------------
   // Audit Export
   // --------------------------------------------------------------------------
 
@@ -894,6 +948,76 @@ export class Kontext {
    */
   async generateReport(options: ReportOptions): Promise<ComplianceReport> {
     return this.auditExporter.generateReport(options);
+  }
+
+  /**
+   * Generate a SAR (Suspicious Activity Report) template.
+   * Requires Pay-as-you-go plan or higher.
+   */
+  async generateSARReport(options: {
+    period: { start: Date; end: Date };
+    agentId: string;
+    filingType?: 'initial' | 'continuing' | 'corrected';
+    subjectName?: string;
+  }): Promise<SARReport> {
+    requirePlan('sar-ctr-reports', this.planManager.getTier());
+    const report = await this.auditExporter.generateSARReport(options);
+    const verification = this.verifyDigestChain();
+    const chain = this.logger.getDigestChain();
+    report.digestProof = {
+      terminalDigest: chain.getTerminalDigest(),
+      chainLength: chain.exportChain().links.length,
+      valid: verification.valid,
+    };
+    return report;
+  }
+
+  /**
+   * Generate a CTR (Currency Transaction Report) template.
+   * Requires Pay-as-you-go plan or higher.
+   */
+  async generateCTRReport(options: {
+    period: { start: Date; end: Date };
+    agentId?: string;
+    entityName?: string;
+  }): Promise<CTRReport> {
+    requirePlan('sar-ctr-reports', this.planManager.getTier());
+    const report = await this.auditExporter.generateCTRReport(options);
+    const verification = this.verifyDigestChain();
+    const chain = this.logger.getDigestChain();
+    report.digestProof = {
+      terminalDigest: chain.getTerminalDigest(),
+      chainLength: chain.exportChain().links.length,
+      valid: verification.valid,
+    };
+    return report;
+  }
+
+  /**
+   * Export a per-transaction case packet with all related evidence.
+   */
+  async exportCasePacket(txId: string): Promise<CasePacket> {
+    const tx = this.store.queryTransactions(() => true).find((t) => t.id === txId);
+    if (!tx) {
+      throw new Error(`Transaction not found: ${txId}`);
+    }
+    const agentId = tx.agentId;
+    const reasoning = this.getReasoningEntries(agentId);
+    const trustScore = await this.getTrustScore(agentId);
+    const verification = this.verifyDigestChain();
+    const chain = this.logger.getDigestChain();
+    const exported = chain.exportChain();
+    const position = exported.links.findIndex((l) => l.actionId === txId);
+    const packet = await this.auditExporter.exportCasePacket(txId, {
+      reasoningEntries: reasoning,
+      trustScore,
+    });
+    packet.digestProof = {
+      position: position >= 0 ? position : 0,
+      terminalDigest: chain.getTerminalDigest(),
+      valid: verification.valid,
+    };
+    return packet;
   }
 
   // --------------------------------------------------------------------------
@@ -1248,35 +1372,84 @@ export class Kontext {
       }
     }
 
-    // 7. Auto-create approval task if amount exceeds threshold
+    // 7. Auto-create approval task if amount exceeds threshold or approval policy triggers
     let requiresApproval: boolean | undefined;
     let task: Task | undefined;
+
+    // Check legacy approvalThreshold
     if (this.config.approvalThreshold) {
       const amount = parseAmount(input.amount);
       const threshold = parseAmount(this.config.approvalThreshold);
       if (amount > threshold) {
         requiresApproval = true;
-        const label = input.token
-          ? `${input.token} ${input.amount} transfer`
-          : `${input.currency ?? 'USD'} ${input.amount} payment`;
-        task = await this.createTask({
-          description: `Approve ${label} from ${input.from} to ${input.to}`,
-          agentId: input.agentId,
-          requiredEvidence: input.txHash ? ['txHash'] : ['paymentReference'],
-          metadata: {
-            amount: input.amount,
-            from: input.from,
-            to: input.to,
-            approvalThreshold: this.config.approvalThreshold,
-            ...(input.txHash ? { txHash: input.txHash } : {}),
-            ...(input.chain ? { chain: input.chain } : {}),
-            ...(input.token ? { token: input.token } : {}),
-            ...(input.currency ? { currency: input.currency } : {}),
-            ...(input.paymentMethod ? { paymentMethod: input.paymentMethod } : {}),
-            ...(input.paymentReference ? { paymentReference: input.paymentReference } : {}),
-          },
-        });
       }
+    }
+
+    // Check approval policies
+    for (const policy of this.approvalPolicies) {
+      if (requiresApproval) break;
+      switch (policy.type) {
+        case 'amount-threshold': {
+          const threshold = parseAmount(String(policy.config['threshold'] ?? '0'));
+          if (parseAmount(input.amount) > threshold && policy.action === 'require-approval') {
+            requiresApproval = true;
+          }
+          break;
+        }
+        case 'low-trust-score': {
+          const minScore = Number(policy.config['minScore'] ?? 50);
+          if (trustScore.score < minScore && policy.action === 'require-approval') {
+            requiresApproval = true;
+          }
+          break;
+        }
+        case 'anomaly-detected': {
+          if (anomalies.length > 0 && policy.action === 'require-approval') {
+            requiresApproval = true;
+          }
+          break;
+        }
+        case 'new-destination': {
+          // Check if 'to' address has been seen before
+          const priorTxs = this.store.queryTransactions(
+            (t) => t.to === input.to && t.id !== transaction.id,
+          );
+          if (priorTxs.length === 0 && policy.action === 'require-approval') {
+            requiresApproval = true;
+          }
+          break;
+        }
+      }
+    }
+
+    if (requiresApproval) {
+      const label = input.token
+        ? `${input.token} ${input.amount} transfer`
+        : `${input.currency ?? 'USD'} ${input.amount} payment`;
+      task = await this.createTask({
+        description: `Approve ${label} from ${input.from} to ${input.to}`,
+        agentId: input.agentId,
+        requiredEvidence: input.txHash ? ['txHash'] : ['paymentReference'],
+        metadata: {
+          amount: input.amount,
+          from: input.from,
+          to: input.to,
+          ...(this.config.approvalThreshold ? { approvalThreshold: this.config.approvalThreshold } : {}),
+          ...(input.txHash ? { txHash: input.txHash } : {}),
+          ...(input.chain ? { chain: input.chain } : {}),
+          ...(input.token ? { token: input.token } : {}),
+          ...(input.currency ? { currency: input.currency } : {}),
+          ...(input.paymentMethod ? { paymentMethod: input.paymentMethod } : {}),
+          ...(input.paymentReference ? { paymentReference: input.paymentReference } : {}),
+        },
+      });
+    }
+
+    // 8. Compute intent hash if intent context provided
+    let intentHash: string | undefined;
+    if (input.intent) {
+      const canonical = JSON.stringify(input.intent);
+      intentHash = createHash('sha256').update(canonical).digest('hex');
     }
 
     return {
@@ -1293,6 +1466,7 @@ export class Kontext {
         valid: verification.valid,
       },
       ...(reasoningId ? { reasoningId } : {}),
+      ...(intentHash ? { intentHash } : {}),
       ...(requiresApproval ? { requiresApproval, task } : {}),
       ...(anchorProof ? { anchorProof } : {}),
       ...(counterpartyResult ? { counterparty: counterpartyResult } : {}),

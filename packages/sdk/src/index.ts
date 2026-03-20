@@ -17,6 +17,10 @@ export {
 } from './exporters.js';
 export type { EventExporter, ExporterResult } from './exporters.js';
 
+// Webhooks
+export { WebhookManager } from './webhooks.js';
+export type { WebhookConfig, WebhookEventType, WebhookDeliveryResult } from './webhooks.js';
+
 // All types
 export type {
   // Config
@@ -52,6 +56,15 @@ export type {
   // Verify
   VerifyInput,
   VerifyResult,
+  IntentContext,
+
+  // SAR/CTR Reports & Case Packets
+  SARReport,
+  CTRReport,
+  CasePacket,
+
+  // Approval Policies
+  ApprovalPolicy,
 
   // Agent Reasoning & Session Tracing
   LogReasoningInput,

@@ -243,6 +243,21 @@ export interface KontextConfig {
   interceptorMode?: 'post-send' | 'pre-send' | 'both';
 
   /**
+   * Webhook endpoints for real-time event delivery.
+   * Requires Pay-as-you-go plan or higher.
+   */
+  webhooks?: import('./webhooks.js').WebhookConfig[];
+
+  /**
+   * Evidence retention policy. Records older than the configured
+   * period are removed on flush() or manual cleanup().
+   */
+  retention?: {
+    /** Retention period in days (e.g., 90 for Starter, 365 for Enterprise) */
+    days: number;
+  };
+
+  /**
    * Wallet provider configuration. When provided, SDK initializes the
    * corresponding wallet manager (Circle, Coinbase, or MetaMask) for
    * compliance-wrapped wallet operations.
@@ -901,6 +916,74 @@ export interface ComplianceReport {
   anomalies: AnomalyEvent[];
 }
 
+/** SAR report template (FinCEN Form 111 aligned) */
+export interface SARReport {
+  id: string;
+  generatedAt: string;
+  filingType: 'initial' | 'continuing' | 'corrected';
+  period: DateRange;
+  projectId: string;
+  subject: {
+    agentId: string;
+    addresses: string[];
+    name?: string;
+  };
+  suspiciousActivity: {
+    types: string[];
+    totalAmount: string;
+    dateRange: DateRange;
+    narrative: string;
+  };
+  supportingTransactions: TransactionRecord[];
+  supportingAnomalies: AnomalyEvent[];
+  digestProof: {
+    terminalDigest: string;
+    chainLength: number;
+    valid: boolean;
+  };
+}
+
+/** CTR report template (FinCEN Form 112 aligned) */
+export interface CTRReport {
+  id: string;
+  generatedAt: string;
+  period: DateRange;
+  projectId: string;
+  transactions: Array<{
+    record: TransactionRecord;
+    amount: string;
+    aggregatedDaily?: string;
+  }>;
+  totalAmount: string;
+  entityInfo: {
+    agentId: string;
+    name?: string;
+  };
+  digestProof: {
+    terminalDigest: string;
+    chainLength: number;
+    valid: boolean;
+  };
+}
+
+/** Per-transaction evidence case packet */
+export interface CasePacket {
+  id: string;
+  exportedAt: string;
+  transaction: TransactionRecord;
+  reasoningEntries: ReasoningEntry[];
+  screeningResults: ComplianceCheckResult[];
+  anomalies: AnomalyEvent[];
+  digestProof: {
+    position: number;
+    terminalDigest: string;
+    valid: boolean;
+  };
+  trustScore: TrustScore;
+  relatedTasks: Task[];
+  intentHash?: string;
+}
+
 /** Exported audit data */
 export interface ExportResult {
   /** Export format */
@@ -1190,6 +1273,28 @@ export interface VerifyInput extends LogTransactionInput {
     /** Acceptable delta percentage (default: 0.001 = 0.1%) */
     tolerance?: number;
   };
+  /** Intent context: binds payment purpose, scope, and limits via SHA-256 hash */
+  intent?: IntentContext;
+}
+
+/** Approval policy — defines conditions that trigger review/blocking */
+export interface ApprovalPolicy {
+  /** Policy trigger type */
+  type: 'amount-threshold' | 'low-trust-score' | 'anomaly-detected' | 'new-destination';
+  /** Policy-specific configuration */
+  config: Record<string, unknown>;
+  /** What happens when the policy triggers */
+  action: 'require-approval' | 'block' | 'flag';
+}
+
+/** Payment intent context — hashed and bound to the evidence record */
+export interface IntentContext {
+  /** Payment purpose (e.g., 'invoice-payment', 'payroll', 'vendor-settlement') */
+  purpose: string;
+  /** Scope description (e.g., 'Q1 vendor payments') */
+  scope?: string;
+  /** Operational limits at time of payment (e.g., { dailyMax: '50000' }) */
+  limits?: Record<string, string>;
 }
 
 /** Result of the verify() convenience method */
@@ -1226,6 +1331,8 @@ export interface VerifyResult {
   task?: Task;
   /** ERC-8021 builder attribution (present when erc8021 config provided and tx has attribution) */
   attribution?: ERC8021Attribution;
+  /** SHA-256 hash of the intent context (present when intent provided in input) */
+  intentHash?: string;
   /** Coverage warning when using built-in screening only (no external providers configured) */
   coverageWarning?: string;
   /** Reserve snapshot (present when reserveSnapshot config provided in input and token/chain available) */

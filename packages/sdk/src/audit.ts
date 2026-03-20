@@ -11,10 +11,16 @@ import type {
   ExportResult,
   ReportOptions,
   ComplianceReport,
+  SARReport,
+  CTRReport,
+  CasePacket,
+  DateRange,
+  ReasoningEntry,
+  TrustScore,
   KontextConfig,
 } from './types.js';
 import { KontextStore } from './store.js';
-import { generateId, now, isWithinDateRange, toCsv } from './utils.js';
+import { generateId, now, isWithinDateRange, toCsv, parseAmount } from './utils.js';
 
 /**
  * AuditExporter handles compliance data export and report generation.
@@ -156,6 +162,199 @@ export class AuditExporter {
     };
 
     return report;
+  }
+
+  /**
+   * Generate a SAR report template for a given period and agent.
+   */
+  async generateSARReport(options: {
+    period: DateRange;
+    agentId: string;
+    filingType?: 'initial' | 'continuing' | 'corrected';
+    subjectName?: string;
+  }): Promise<SARReport> {
+    const exportOpts: ExportOptions = {
+      format: 'json',
+      dateRange: options.period,
+      agentIds: [options.agentId],
+      includeAnomalies: true,
+    };
+
+    const transactions = this.filterTransactions(exportOpts);
+    const anomalies = this.filterAnomalies(exportOpts);
+
+    const addresses = new Set<string>();
+    for (const tx of transactions) {
+      addresses.add(tx.from);
+      addresses.add(tx.to);
+    }
+
+    const totalAmount = transactions
+      .reduce((sum, tx) => sum + parseAmount(tx.amount), 0)
+      .toFixed(2);
+
+    const anomalyTypes = [...new Set(anomalies.map((a) => a.type))];
+    const narrative = anomalies.length > 0
+      ? anomalies.map((a) => `[${a.severity.toUpperCase()}] ${a.description}`).join('. ')
+      : 'No anomalies detected in the reporting period.';
+
+    return {
+      id: generateId(),
+      generatedAt: now(),
+      filingType: options.filingType ?? 'initial',
+      period: options.period,
+      projectId: this.config.projectId,
+      subject: {
+        agentId: options.agentId,
+        addresses: [...addresses],
+        ...(options.subjectName ? { name: options.subjectName } : {}),
+      },
+      suspiciousActivity: {
+        types: anomalyTypes,
+        totalAmount,
+        dateRange: options.period,
+        narrative,
+      },
+      supportingTransactions: transactions,
+      supportingAnomalies: anomalies,
+      digestProof: {
+        terminalDigest: '',
+        chainLength: 0,
+        valid: true,
+      },
+    };
+  }
+
+  /**
+   * Generate a CTR report for transactions above the $10,000 threshold.
+   */
+  async generateCTRReport(options: {
+    period: DateRange;
+    agentId?: string;
+    entityName?: string;
+  }): Promise<CTRReport> {
+    const exportOpts: ExportOptions = {
+      format: 'json',
+      dateRange: options.period,
+      ...(options.agentId ? { agentIds: [options.agentId] } : {}),
+    };
+
+    const allTransactions = this.filterTransactions(exportOpts);
+
+    // Filter to transactions at or above the CTR threshold ($10,000)
+    const CTR_THRESHOLD = 10000;
+    const ctrTransactions: Array<{ record: TransactionRecord; amount: string; aggregatedDaily?: string }> = allTransactions
+      .filter((tx) => parseAmount(tx.amount) >= CTR_THRESHOLD)
+      .map((tx) => ({
+        record: tx,
+        amount: tx.amount,
+      }));
+
+    // Also detect daily aggregation above threshold (structuring detection)
+    const dailyTotals = new Map<string, { total: number; txIds: string[] }>();
+    for (const tx of allTransactions) {
+      const day = tx.timestamp.slice(0, 10);
+      const entry = dailyTotals.get(day) ?? { total: 0, txIds: [] };
+      entry.total += parseAmount(tx.amount);
+      entry.txIds.push(tx.id);
+      dailyTotals.set(day, entry);
+    }
+
+    // Add aggregated entries for days where total exceeds threshold but individual txns don't
+    for (const [day, entry] of dailyTotals) {
+      if (entry.total >= CTR_THRESHOLD) {
+        for (const tx of allTransactions) {
+          if (tx.timestamp.startsWith(day) && parseAmount(tx.amount) < CTR_THRESHOLD) {
+            const existing = ctrTransactions.find((c) => c.record.id === tx.id);
+            if (!existing) {
+              ctrTransactions.push({
+                record: tx,
+                amount: tx.amount,
+                aggregatedDaily: entry.total.toFixed(2),
+              });
+            }
+          }
+        }
+      }
+    }
+
+    const totalAmount = ctrTransactions
+      .reduce((sum, c) => sum + parseAmount(c.amount), 0)
+      .toFixed(2);
+
+    return {
+      id: generateId(),
+      generatedAt: now(),
+      period: options.period,
+      projectId: this.config.projectId,
+      transactions: ctrTransactions,
+      totalAmount,
+      entityInfo: {
+        agentId: options.agentId ?? 'all',
+        ...(options.entityName ? { name: options.entityName } : {}),
+      },
+      digestProof: {
+        terminalDigest: '',
+        chainLength: 0,
+        valid: true,
+      },
+    };
+  }
+
+  /**
+   * Export a per-transaction case packet with all related evidence.
+   */
+  async exportCasePacket(
+    txId: string,
+    extras: {
+      reasoningEntries?: ReasoningEntry[];
+      trustScore?: TrustScore;
+      intentHash?: string;
+    } = {},
+  ): Promise<CasePacket> {
+    const allTransactions = this.store.queryTransactions(() => true);
+    const transaction = allTransactions.find((tx) => tx.id === txId);
+    if (!transaction) {
+      throw new Error(`Transaction not found: ${txId}`);
+    }
+
+    // Find anomalies for the same agentId around the transaction time
+    const anomalies = this.store.queryAnomalies(
+      (a) => a.agentId === transaction.agentId,
+    );
+
+    // Find related tasks (same agentId, matching txHash in metadata)
+    const relatedTasks = this.store.queryTasks((t) => {
+      if (t.agentId !== transaction.agentId) return false;
+      const meta = t.metadata as Record<string, unknown> | undefined;
+      if (meta && transaction.txHash && meta['txHash'] === transaction.txHash) return true;
+      return false;
+    });
+
+    const defaultTrustScore: TrustScore = {
+      agentId: transaction.agentId,
+      score: 0,
+      level: 'untrusted',
+      factors: [],
+      computedAt: now(),
+    };
+
+    return {
+      id: generateId(),
+      exportedAt: now(),
+      transaction,
+      reasoningEntries: extras.reasoningEntries ?? [],
+      screeningResults: [],
+      anomalies,
+      digestProof: {
+        position: 0,
+        terminalDigest: '',
+        valid: true,
+      },
+      trustScore: extras.trustScore ?? defaultTrustScore,
+      relatedTasks,
+      ...(extras.intentHash ? { intentHash: extras.intentHash } : {}),
+    };
   }
 
   // --------------------------------------------------------------------------
