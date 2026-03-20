@@ -4,18 +4,18 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Blog",
   description:
-    "Insights on agent compliance, stablecoin regulation, and building trust in the agent economy.",
+    "Insights on compliance controls, evidence integrity, and regulatory readiness for programmable payments infrastructure.",
 };
 
 const posts = [
   {
-    slug: "regulated-entity-partner-problem",
-    title: "You're the Regulated Entity. Your Partner Initiated the Transaction. Now What?",
+    slug: "bsa-always-on-settlement",
+    title: "Your BSA Program Wasn't Built for 24/7 Settlement. Here's What Breaks.",
     description:
-      "The BaaS compliance tension amplifies with stablecoins. Irreversible transactions, 24/7 settlement, multi-chain monitoring, and the GENIUS Act overlay mean platform providers need fundamentally different compliance architecture.",
-    date: "2026-03-20",
-    readTime: "13 min",
-    tags: ["BaaS", "Stablecoin Infrastructure", "Risk"],
+      "The GENIUS Act doesn't just add stablecoins to the BSA framework. It exposes fundamental architectural assumptions in how most institutions run their compliance programs.",
+    date: "2026-03-15",
+    readTime: "12 min",
+    tags: ["BSA", "Stablecoins", "Compliance"],
   },
   {
     slug: "who-authorized-this",
@@ -27,22 +27,13 @@ const posts = [
     tags: ["Agentic Payments", "Compliance", "Risk"],
   },
   {
-    slug: "bsa-always-on-settlement",
-    title: "Your BSA Program Wasn't Built for 24/7 Settlement. Here's What Breaks.",
+    slug: "regulated-entity-partner-problem",
+    title: "You're the Regulated Entity. Your Partner Initiated the Transaction. Now What?",
     description:
-      "The GENIUS Act doesn't just add stablecoins to the BSA framework. It exposes fundamental architectural assumptions in how most institutions run their compliance programs.",
-    date: "2026-03-15",
-    readTime: "12 min",
-    tags: ["BSA", "Stablecoins", "Compliance"],
-  },
-  {
-    slug: "introducing-kontext",
-    title: "Introducing Kontext: Trust Layer for Agentic Stablecoin Transactions",
-    description:
-      "AI agents are moving real money. Here is why they need a compliance layer, and how Kontext provides it in five lines of code.",
-    date: "2026-02-07",
-    readTime: "6 min",
-    tags: ["Launch", "GENIUS Act", "USDC"],
+      "The BaaS compliance tension amplifies with stablecoins. Irreversible transactions, 24/7 settlement, multi-chain monitoring, and the GENIUS Act overlay mean platform providers need fundamentally different compliance architecture.",
+    date: "2026-03-20",
+    readTime: "13 min",
+    tags: ["BaaS", "Stablecoin Infrastructure", "Risk"],
   },
   {
     slug: "tamper-evident-audit-trails",
@@ -53,48 +44,63 @@ const posts = [
     readTime: "8 min",
     tags: ["Engineering", "Audit", "Cryptography"],
   },
+  {
+    slug: "introducing-kontext",
+    title: "Introducing Kontext: Trust Layer for Agentic Stablecoin Transactions",
+    description:
+      "AI agents are moving real money. Here is why they need a compliance layer, and how Kontext provides it in five lines of code.",
+    date: "2026-02-07",
+    readTime: "6 min",
+    tags: ["Launch", "GENIUS Act", "USDC"],
+  },
 ];
 
 export default function BlogPage() {
   return (
     <>
       {/* Header */}
-      <section className="border-b border-[var(--term-surface-2)]">
+      <section className="border-b border-[var(--ic-border)]">
         <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
-          <h1 className="text-sm font-medium">
-            <span className="text-[var(--term-green)]">$</span>{" "}
-            BLOG
+          <h1 className="font-serif text-3xl italic text-[var(--ic-text)]">
+            Blog
           </h1>
-          <p className="mt-4 text-xs text-[var(--term-text-2)]">
-            Insights on agent compliance, stablecoin regulation, and building
-            trust in the agent economy.
+          <p className="mt-4 text-sm text-[var(--ic-text-muted)]">
+            Insights on compliance controls, evidence integrity, and regulatory
+            readiness for programmable payments infrastructure.
           </p>
         </div>
       </section>
 
-      {/* Posts — git-log style */}
+      {/* Posts */}
       <section>
         <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="space-y-0 divide-y divide-[var(--term-surface-2)]">
+          <div className="space-y-0 divide-y divide-[var(--ic-border)]">
             {posts.map((post) => (
               <Link
                 key={post.slug}
                 href={`/blog/${post.slug}`}
                 className="group block py-6 first:pt-0 last:pb-0"
               >
-                <div className="flex items-baseline gap-3 text-xs text-[var(--term-text-3)]">
+                <div className="flex items-baseline gap-3 text-xs text-[var(--ic-text-dim)]">
                   <time dateTime={post.date} className="font-mono shrink-0">
-                    [{post.date}]
+                    {post.date}
                   </time>
                   <span>{post.readTime}</span>
-                  <span className="hidden sm:inline">
-                    {post.tags.map((tag) => `[${tag}]`).join(" ")}
+                  <span className="hidden sm:flex sm:gap-1.5">
+                    {post.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded bg-[var(--ic-accent-dim)] px-2 py-0.5 font-mono text-[9px] font-medium uppercase tracking-wider text-[var(--ic-accent)]"
+                      >
+                        {tag}
+                      </span>
+                    ))}
                   </span>
                 </div>
-                <h2 className="mt-2 text-sm font-medium text-[var(--term-text)] group-hover:text-[var(--term-green)] transition-colors">
+                <h2 className="mt-2 text-sm font-medium text-[var(--ic-text)] group-hover:text-[var(--ic-accent)] transition-colors">
                   {post.title}
                 </h2>
-                <p className="mt-1 text-xs text-[var(--term-text-2)] leading-relaxed">
+                <p className="mt-1 text-xs text-[var(--ic-text-muted)] leading-relaxed">
                   {post.description}
                 </p>
               </Link>

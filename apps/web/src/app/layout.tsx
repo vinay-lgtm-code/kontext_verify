@@ -1,39 +1,53 @@
 import type { Metadata } from "next";
-import { Fira_Code } from "next/font/google";
+import { DM_Sans, IBM_Plex_Mono, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import { CookieConsentBanner } from "../components/cookie-consent";
 
-const firaCode = Fira_Code({
+const dmSans = DM_Sans({
   subsets: ["latin"],
-  variable: "--font-fira-code",
+  variable: "--font-dm-sans",
+  display: "swap",
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-ibm-plex-mono",
+  display: "swap",
+});
+
+const instrumentSerif = Instrument_Serif({
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
+  variable: "--font-instrument-serif",
   display: "swap",
 });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://getkontext.com"),
   title: {
-    default: "Kontext — Trust infrastructure for agents that move USDC on Base & Arc",
+    default: "Kontext — Compliance Audit Trails for Programmable Payments",
     template: "%s | Kontext",
   },
   description:
-    "Proof of compliance SDK for AI agents making agentic stablecoin and fiat payments. OFAC screening, audit trails, on-chain anchoring, and A2A attestation. Free on Base + Arc. Zero dependencies.",
+    "Kontext creates audit-defensible evidence trails for programmable payments — stablecoin, fiat, card, and ACH. Patented tamper-evident logging, OFAC screening, and compliance-grade proof across wallets, treasury systems, and payment orchestration.",
   keywords: [
-    "USDC compliance SDK",
-    "AI agent audit trail",
-    "on-chain anchoring",
-    "digest anchoring",
-    "A2A attestation",
-    "agent-to-agent attestation",
-    "Base chain compliance",
-    "Arc chain compliance",
-    "Circle Programmable Wallets compliance",
-    "stablecoin compliance",
-    "trust scoring",
-    "GENIUS Act",
+    "compliance audit trail",
+    "programmable payments compliance",
+    "ACH compliance",
+    "treasury compliance audit trail",
+    "payment orchestration compliance",
+    "multi-rail compliance",
     "OFAC screening",
+    "payment evidence trail",
+    "GENIUS Act compliance",
+    "AI agent audit trail",
+    "tamper-evident logging",
+    "payment compliance SDK",
+    "USDC compliance",
+    "Circle Programmable Wallets compliance",
     "TypeScript SDK",
-    "x402 protocol",
-    "batch anchoring",
   ],
   authors: [{ name: "Kontext" }],
   creator: "Kontext",
@@ -42,15 +56,15 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://getkontext.com",
     siteName: "Kontext",
-    title: "Kontext — Trust infrastructure for agents that move USDC on Base & Arc",
+    title: "Kontext — Compliance Audit Trails for Programmable Payments",
     description:
-      "Proof of compliance SDK for AI agents. OFAC screening, audit trails, on-chain anchoring. Free on Base + Arc.",
+      "Audit-defensible evidence trails for programmable payments across stablecoin, fiat, card, and ACH rails. Patented tamper-evident logging and OFAC screening for compliance teams.",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Kontext — Trust infrastructure for agents that move USDC",
+        alt: "Kontext — Compliance Audit Trails for Programmable Payments",
       },
     ],
   },
@@ -68,7 +82,6 @@ const organizationJsonLd = {
   url: "https://getkontext.com",
   logo: "https://getkontext.com/og-image.png",
   sameAs: [
-    "https://github.com/Legaci-Labs/kontext",
     "https://www.npmjs.com/package/kontext-sdk",
   ],
   contactPoint: {
@@ -86,27 +99,25 @@ const softwareJsonLd = {
   operatingSystem: "Cross-platform (Node.js 18+)",
   programmingLanguage: "TypeScript",
   softwareVersion: "0.12.0",
-  license: "https://opensource.org/licenses/MIT",
   url: "https://getkontext.com",
   downloadUrl: "https://www.npmjs.com/package/kontext-sdk",
-  codeRepository: "https://github.com/Legaci-Labs/kontext",
   description:
-    "Trust infrastructure for AI agents that move USDC on Base & Arc. Audit trails, OFAC screening, on-chain anchoring, and agent-to-agent attestation. Zero runtime dependencies.",
+    "Compliance-grade audit trails for programmable payments. OFAC screening, tamper-evident logging, and cryptographic proof. Zero runtime dependencies.",
   offers: [
     {
       "@type": "Offer",
-      name: "Free",
-      price: "0",
-      priceCurrency: "USD",
-      description: "20,000 events/month on Base + Arc. Core SDK, digest chain, trust scoring.",
+      name: "Starter",
+      description: "For teams standing up programmable payments controls. 1 environment, capped volume, core evidence features.",
     },
     {
       "@type": "Offer",
-      name: "Pay as you go",
-      price: "0.002",
-      priceCurrency: "USD",
-      unitText: "per event above 20K free",
-      description: "ETH, SOL, Base, Polygon, Arbitrum, Optimism, Arc, Avalanche. Anomaly rules, unified screening, CSV export, cloud persistence.",
+      name: "Growth",
+      description: "For payment infrastructure companies with active compliance teams. Multiple environments, RBAC, SAR/CTR, multi-chain.",
+    },
+    {
+      "@type": "Offer",
+      name: "Enterprise",
+      description: "For regulated platforms with multi-rail programs and audit requirements. Custom volumes, extended retention, GRC integrations.",
     },
   ],
   author: {
@@ -116,16 +127,13 @@ const softwareJsonLd = {
   featureList: [
     "Transaction verification with OFAC screening",
     "Tamper-evident SHA-256 digest chain",
-    "On-chain anchoring to Base smart contracts",
-    "Batch anchoring (50 digests per tx, ~$0.001)",
-    "Agent-to-agent (A2A) attestation",
-    "x402 micropayment compliance",
-    "Trust scoring (0-100) with 5-factor breakdown",
+    "Compliance-grade audit trails",
+    "Intent hashing and context binding",
+    "Trust scoring with 5-factor breakdown",
     "Rule-based anomaly detection",
-    "Agent reasoning logs",
-    "Compliance certificate generation",
+    "Audit-ready evidence export (JSON/CSV)",
     "Human-in-the-loop task confirmation",
-    "ERC-8021 transaction attribution",
+    "SAR/CTR report templates",
   ],
 };
 
@@ -134,6 +142,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Static JSON-LD structured data (hardcoded, not user input)
   const jsonLdScripts = [
     JSON.stringify(organizationJsonLd),
     JSON.stringify(softwareJsonLd),
@@ -142,7 +151,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={firaCode.variable}
+      className={`${dmSans.variable} ${ibmPlexMono.variable} ${instrumentSerif.variable}`}
     >
       <head>
         <meta name="base:app_id" content="69a630f4a0fdf68983d307ed" />
@@ -155,7 +164,7 @@ export default function RootLayout({
           />
         ))}
       </head>
-      <body className="min-h-screen bg-background font-mono antialiased">
+      <body className="min-h-screen bg-background font-sans antialiased">
         <CookieConsentBanner />
         {children}
       </body>

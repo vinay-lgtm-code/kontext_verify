@@ -142,15 +142,15 @@ export function TabCli() {
 
   return (
     <div
-      className="flex flex-col h-[500px] border border-[var(--term-surface-2)] bg-[#09090b]"
+      className="flex flex-col h-[500px] rounded-lg border border-[var(--ic-border)] bg-[hsl(var(--background))]"
       onClick={() => inputRef.current?.focus()}
     >
       {/* Terminal chrome header */}
-      <div className="flex items-center gap-2 border-b border-[var(--term-surface-2)] px-4 py-2">
-        <span className="w-2.5 h-2.5 rounded-full bg-[var(--term-red)] opacity-60" />
-        <span className="w-2.5 h-2.5 rounded-full bg-[var(--term-amber)] opacity-60" />
-        <span className="w-2.5 h-2.5 rounded-full bg-[var(--term-green)] opacity-60" />
-        <span className="ml-2 text-xs text-[var(--term-text-3)]">
+      <div className="flex items-center gap-2 border-b border-[var(--ic-border)] px-4 py-2">
+        <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f57] opacity-60" />
+        <span className="w-2.5 h-2.5 rounded-full bg-[#febc2e] opacity-60" />
+        <span className="w-2.5 h-2.5 rounded-full bg-[#28c840] opacity-60" />
+        <span className="ml-2 text-xs text-[var(--ic-text-dim)]">
           kontext@cli ~ $
         </span>
       </div>
@@ -161,11 +161,11 @@ export function TabCli() {
           <div key={i}>
             {line.type === "input" ? (
               <div className="flex items-start gap-2">
-                <span className="text-[var(--term-green)] text-xs shrink-0">$</span>
-                <span className="text-xs text-foreground">{line.text}</span>
+                <span className="text-[var(--ic-accent)] text-xs shrink-0">$</span>
+                <span className="text-xs text-[var(--ic-text)]">{line.text}</span>
               </div>
             ) : (
-              <pre className="text-xs text-[var(--term-text-2)] leading-relaxed whitespace-pre-wrap font-mono">
+              <pre className="text-xs text-[var(--ic-text-muted)] leading-relaxed whitespace-pre-wrap font-mono">
                 {line.text}
               </pre>
             )}
@@ -174,8 +174,8 @@ export function TabCli() {
       </div>
 
       {/* Input */}
-      <div className="flex items-center gap-2 border-t border-[var(--term-surface-2)] px-4 py-3">
-        <span className="text-[var(--term-green)] text-xs shrink-0">$</span>
+      <div className="flex items-center gap-2 border-t border-[var(--ic-border)] px-4 py-3">
+        <span className="text-[var(--ic-accent)] text-xs shrink-0">$</span>
         <input
           ref={inputRef}
           type="text"
@@ -185,7 +185,7 @@ export function TabCli() {
             if (e.key === "Enter") handleSubmit();
           }}
           placeholder="Type a command..."
-          className="flex-1 bg-transparent text-xs text-foreground placeholder:text-[var(--term-text-3)] outline-none font-mono"
+          className="flex-1 bg-transparent text-xs text-[var(--ic-text)] placeholder:text-[var(--ic-text-dim)] outline-none font-mono"
         />
       </div>
     </div>

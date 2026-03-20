@@ -20,7 +20,7 @@ export function AgentView() {
   const [activeTab, setActiveTab] = useState("agents");
 
   return (
-    <div className="border border-[var(--term-surface-2)] bg-[var(--term-surface)]">
+    <div className="rounded-xl border border-[var(--ic-border)] bg-[var(--ic-surface)]">
       <TabBar tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
       <div
         role="tabpanel"

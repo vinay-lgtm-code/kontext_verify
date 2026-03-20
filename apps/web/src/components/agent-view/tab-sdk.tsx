@@ -53,9 +53,7 @@ export function TabSdk() {
           <Link
             key={badge.label}
             href={badge.href}
-            className={`text-[10px] font-mono px-2 py-1 border transition-colors ${
-              "border-[var(--term-border-bright)] text-[var(--term-text-3)] hover:text-[var(--term-text-2)] hover:border-[var(--term-text-3)]"
-            }`}
+            className="text-[10px] font-mono px-2 py-1 border rounded-md transition-colors border-[var(--ic-border)] text-[var(--ic-text-dim)] hover:text-[var(--ic-text-muted)] hover:border-[var(--ic-text-muted)]"
           >
             {badge.label}
           </Link>

@@ -32,12 +32,12 @@ export function PlaygroundPreview() {
   };
 
   return (
-    <div className="border border-[var(--term-surface-2)] bg-[var(--term-surface)]">
-      <div className="border-b border-[var(--term-surface-2)] px-4 py-2 flex items-center gap-2">
-        <span className="w-2.5 h-2.5 rounded-full bg-[var(--term-red)] opacity-60" />
-        <span className="w-2.5 h-2.5 rounded-full bg-[var(--term-amber)] opacity-60" />
-        <span className="w-2.5 h-2.5 rounded-full bg-[var(--term-green)] opacity-60" />
-        <span className="text-xs text-[var(--term-text-3)] font-mono ml-2">
+    <div className="rounded-xl border border-[var(--ic-border)] bg-[var(--ic-surface)]">
+      <div className="border-b border-[var(--ic-border)] px-4 py-2 flex items-center gap-2">
+        <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
+        <span className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
+        <span className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
+        <span className="text-xs text-[var(--ic-text-dim)] font-mono ml-2">
           playground
         </span>
       </div>
@@ -54,12 +54,12 @@ export function PlaygroundPreview() {
               if (e.key === "Enter") handleVerify();
             }}
             placeholder="Wallet address or entity name..."
-            className="flex-1 border border-[var(--term-surface-2)] bg-background px-3 py-2 text-sm font-mono text-[var(--term-text-2)] placeholder:text-[var(--term-text-3)] focus:border-[var(--term-green)] focus:outline-none"
+            className="flex-1 rounded-md border border-[var(--ic-border)] bg-[hsl(var(--background))] px-3 py-2 text-sm font-mono text-[var(--ic-text-muted)] placeholder:text-[var(--ic-text-dim)] focus:border-[var(--ic-accent)] focus:outline-none"
           />
           <button
             onClick={handleVerify}
             disabled={!query}
-            className="border border-[var(--term-green)] bg-transparent px-4 py-2 text-xs text-[var(--term-green)] font-mono hover:bg-[var(--term-green)] hover:text-black transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="rounded-md border border-[var(--ic-accent)] bg-transparent px-4 py-2 text-xs text-[var(--ic-accent)] font-mono hover:bg-[var(--ic-accent)] hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
             verify()
           </button>
@@ -70,23 +70,23 @@ export function PlaygroundPreview() {
             onClick={() =>
               tryExample("0x388C818CA8B9251b393131C08a736A67ccB19297")
             }
-            className="text-[10px] text-[var(--term-text-3)] hover:text-[var(--term-green)] transition-colors"
+            className="text-[10px] text-[var(--ic-text-dim)] hover:text-[var(--ic-accent)] transition-colors"
           >
             Try clean address
           </button>
-          <span className="text-[var(--term-surface-3)]">&middot;</span>
+          <span className="text-[var(--ic-border-dim)]">&middot;</span>
           <button
             onClick={() =>
               tryExample("0x098B716B8Aaf21512996dC57EB0615e2383E2f96")
             }
-            className="text-[10px] text-[var(--term-text-3)] hover:text-[var(--term-red)] transition-colors"
+            className="text-[10px] text-[var(--ic-text-dim)] hover:text-[var(--ic-red)] transition-colors"
           >
             Try sanctioned address
           </button>
-          <span className="text-[var(--term-surface-3)]">&middot;</span>
+          <span className="text-[var(--ic-border-dim)]">&middot;</span>
           <button
             onClick={() => tryExample("Lazarus Group")}
-            className="text-[10px] text-[var(--term-text-3)] hover:text-[var(--term-red)] transition-colors"
+            className="text-[10px] text-[var(--ic-text-dim)] hover:text-[var(--ic-red)] transition-colors"
           >
             Try sanctioned entity
           </button>
@@ -94,32 +94,34 @@ export function PlaygroundPreview() {
 
         <div className="min-h-[60px]">
           {result ? (
-            <div className="border-t border-[var(--term-surface-2)] pt-3">
+            <div className="border-t border-[var(--ic-border)] pt-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span
-                    className={result.compliant ? "led-green" : "led-red"}
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      result.compliant ? "bg-[var(--ic-green)]" : "bg-[var(--ic-red)]"
+                    }`}
                   />
                   <span
                     className={`text-sm font-medium ${
                       result.compliant
-                        ? "text-[var(--term-green)]"
-                        : "text-[var(--term-red)]"
+                        ? "text-[var(--ic-green)]"
+                        : "text-[var(--ic-red)]"
                     }`}
                   >
                     {result.compliant ? "Compliant" : "Blocked"}
                   </span>
-                  <span className="text-[11px] text-[var(--term-text-3)]">
+                  <span className="text-[11px] text-[var(--ic-text-dim)]">
                     {result.checks.filter((c) => c.passed).length}/
                     {result.checks.length} checks passed
                   </span>
-                  <span className="text-[11px] text-[var(--term-text-3)]">
+                  <span className="text-[11px] text-[var(--ic-text-dim)]">
                     Risk: {result.riskLevel}
                   </span>
                 </div>
                 <Link
                   href="/playground"
-                  className="text-[11px] text-[var(--term-blue)] hover:underline hidden sm:inline"
+                  className="text-[11px] text-[var(--ic-accent)] hover:underline hidden sm:inline"
                 >
                   Full playground &rarr;
                 </Link>
@@ -135,19 +137,19 @@ export function PlaygroundPreview() {
                     <span
                       className={
                         check.passed
-                          ? "text-[var(--term-green)]"
-                          : "text-[var(--term-red)]"
+                          ? "text-[var(--ic-green)]"
+                          : "text-[var(--ic-red)]"
                       }
                     >
                       {check.passed ? "\u2713" : "\u2717"}
                     </span>
-                    <span className="text-[var(--term-text-3)]">
+                    <span className="text-[var(--ic-text-dim)]">
                       {check.name}
                     </span>
                   </div>
                 ))}
                 {result.checks.length > 4 && (
-                  <span className="text-[10px] text-[var(--term-text-3)]">
+                  <span className="text-[10px] text-[var(--ic-text-dim)]">
                     +{result.checks.length - 4} more checks
                   </span>
                 )}
@@ -155,7 +157,7 @@ export function PlaygroundPreview() {
 
               <Link
                 href="/playground"
-                className="text-[11px] text-[var(--term-blue)] hover:underline mt-3 inline-block sm:hidden"
+                className="text-[11px] text-[var(--ic-accent)] hover:underline mt-3 inline-block sm:hidden"
               >
                 Full playground &rarr;
               </Link>
@@ -164,7 +166,7 @@ export function PlaygroundPreview() {
             <div className="text-right">
               <Link
                 href="/playground"
-                className="text-[11px] text-[var(--term-blue)] hover:underline"
+                className="text-[11px] text-[var(--ic-accent)] hover:underline"
               >
                 Full playground &rarr;
               </Link>
