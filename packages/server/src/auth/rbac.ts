@@ -70,6 +70,13 @@ export function hasPermission(role: Role, perm: Permission): boolean {
   return ROLE_PERMISSIONS[role]?.includes(perm) ?? false;
 }
 
+/** Buyer-friendly display names for RBAC roles */
+export const ROLE_DISPLAY_NAMES: Record<Role, string> = {
+  admin: 'Administrator',
+  'staff-dev': 'Platform Engineering',
+  'staff-risk': 'Compliance & Risk',
+};
+
 // ---------------------------------------------------------------------------
 // Hono middleware factories
 // ---------------------------------------------------------------------------

@@ -347,4 +347,34 @@ export class KontextStore {
     this.sessions.clear();
     this.checkpoints.clear();
   }
+
+  /**
+   * Remove records older than the retention period.
+   *
+   * @param retentionDays - Number of days to retain records
+   * @returns Number of records removed
+   */
+  cleanup(retentionDays: number): number {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - retentionDays);
+    const cutoffStr = cutoff.toISOString();
+
+    const beforeActions = this.actions.length;
+    const beforeTx = this.transactions.length;
+    const beforeAnomalies = this.anomalies.length;
+
+    this.actions = this.actions.filter((a) => a.timestamp >= cutoffStr);
+    this.transactions = this.transactions.filter((t) => t.timestamp >= cutoffStr);
+    this.anomalies = this.anomalies.filter((a) => a.detectedAt >= cutoffStr);
+
+    for (const [id, task] of this.tasks) {
+      if (task.createdAt < cutoffStr) {
+        this.tasks.delete(id);
+      }
+    }
+
+    return (beforeActions - this.actions.length)
+      + (beforeTx - this.transactions.length)
+      + (beforeAnomalies - this.anomalies.length);
+  }
 }

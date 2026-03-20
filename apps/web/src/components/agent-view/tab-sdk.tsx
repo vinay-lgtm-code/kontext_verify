@@ -14,26 +14,23 @@ const ctx = Kontext.init({
 // Stablecoin: agent-initiated USDC transfer on Base
 const stablecoin = await ctx.verify({
   txHash: '0xabc...def',
-  rail: 'stablecoin',
   chain: 'base',
   amount: '28000',
-  currency: 'USDC',
+  token: 'USDC',
   from: '0xTreasury',
   to: '0xVendor',
-  initiator: { id: 'treasury-agent', type: 'agent' },
-  fundingSource: 'Circle Wallet',
+  agentId: 'treasury-agent',
 });
 
 // ACH: human-initiated domestic transfer
 const ach = await ctx.verify({
-  txRef: 'ACH-2026-03-19-0042',
-  rail: 'ach',
+  paymentReference: 'ACH-2026-03-19-0042',
+  paymentMethod: 'ach',
   amount: '15000',
   currency: 'USD',
-  from: { account: '****4521' },
-  to: { account: '****7890' },
-  initiator: { id: 'j.martinez', type: 'human' },
-  fundingSource: 'Treasury Account',
+  from: 'Acme Corp ****4521',
+  to: 'Global Payments ****7890',
+  agentId: 'ap-system',
 });
 
 // result.compliant    → true
@@ -46,7 +43,6 @@ const badges = [
   { label: "ACH", href: "/docs#ach" },
   { label: "Wire", href: "/docs#wire" },
   { label: "Card", href: "/docs#card" },
-  { label: "SEPA", href: "/docs#sepa" },
   { label: "Multi-rail", href: "/docs#multi-rail" },
   { label: "Circle Wallets", href: "/docs#circle-wallets" },
   { label: "CCTP", href: "/docs#cctp" },
