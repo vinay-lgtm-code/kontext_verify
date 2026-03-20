@@ -152,35 +152,6 @@
 .stagger > *:nth-child(7) { animation-delay: 300ms; }
 .stagger > *:nth-child(8) { animation-delay: 350ms; }
 
-/* ===== FlipText Character Animation ===== */
-.flip-char {
-  display: inline-block;
-  position: relative;
-  overflow: hidden;
-  vertical-align: bottom;
-}
-.flip-char-inner {
-  position: relative;
-}
-.flip-face {
-  display: inline-block;
-  backface-visibility: hidden;
-  transition: transform 0.4s ease, opacity 0.4s ease;
-}
-.flip-face-front.flip-out {
-  transform: translateY(-100%);
-  opacity: 0;
-}
-.flip-face-back {
-  position: absolute;
-  left: 0;
-  top: 100%;
-  opacity: 0;
-}
-.flip-face-back.flip-in {
-  transform: translateY(-100%);
-  opacity: 1;
-}
 
 /* ===== Smooth Scroll ===== */
 html {
