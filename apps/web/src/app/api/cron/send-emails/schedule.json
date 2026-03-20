@@ -1,0 +1,494 @@
+[
+  {
+    "draft_id": "r-2984158966050352473",
+    "scheduled_time": "2026-03-24T08:00:00-04:00",
+    "company": "Payman AI",
+    "to": "support@paymanai.com"
+  },
+  {
+    "draft_id": "r5651569818627724372",
+    "scheduled_time": "2026-03-24T08:08:00-04:00",
+    "company": "Skyfire",
+    "to": "craig@skyfire.xyz"
+  },
+  {
+    "draft_id": "r6105917946873068994",
+    "scheduled_time": "2026-03-24T08:16:00-04:00",
+    "company": "Alfred Pay",
+    "to": "dylan@alfredpay.io"
+  },
+  {
+    "draft_id": "r-8162774228760885531",
+    "scheduled_time": "2026-03-24T08:24:00-04:00",
+    "company": "Ansa",
+    "to": "hello@getansa.com"
+  },
+  {
+    "draft_id": "r5240899216706224366",
+    "scheduled_time": "2026-03-24T08:32:00-04:00",
+    "company": "Atomic",
+    "to": "andrea.martone@atomicfi.com"
+  },
+  {
+    "draft_id": "r8733503010528688527",
+    "scheduled_time": "2026-03-24T08:40:00-04:00",
+    "company": "BVNK",
+    "to": "jasmine.baliwag@bvnk.com"
+  },
+  {
+    "draft_id": "r-5249284418591135778",
+    "scheduled_time": "2026-03-24T08:48:00-04:00",
+    "company": "Brankas",
+    "to": "todd.schweitzer@brank.as"
+  },
+  {
+    "draft_id": "r-5943879469769180725",
+    "scheduled_time": "2026-03-24T08:56:00-04:00",
+    "company": "Cedar Money",
+    "to": "benjy@cedar.money"
+  },
+  {
+    "draft_id": "r-3576157196543602983",
+    "scheduled_time": "2026-03-24T09:04:00-04:00",
+    "company": "Conduit",
+    "to": "federico@conduitpay.com"
+  },
+  {
+    "draft_id": "r5577228783885530601",
+    "scheduled_time": "2026-03-24T09:12:00-04:00",
+    "company": "Crossmint",
+    "to": "rodri@crossmint.com"
+  },
+  {
+    "draft_id": "r4680543853690508139",
+    "scheduled_time": "2026-03-24T09:20:00-04:00",
+    "company": "Dakota",
+    "to": "ryan@dakota.xyz"
+  },
+  {
+    "draft_id": "r-1906715185374775719",
+    "scheduled_time": "2026-03-24T09:28:00-04:00",
+    "company": "Decentro",
+    "to": "pratik@decentro.tech"
+  },
+  {
+    "draft_id": "r-4850112502176017609",
+    "scheduled_time": "2026-03-24T09:36:00-04:00",
+    "company": "Formance",
+    "to": "ayelen@formance.com"
+  },
+  {
+    "draft_id": "r-7039821693539717940",
+    "scheduled_time": "2026-03-24T09:44:00-04:00",
+    "company": "Fuse",
+    "to": "bianca@atteline.com"
+  },
+  {
+    "draft_id": "r3774796460726026547",
+    "scheduled_time": "2026-03-24T09:52:00-04:00",
+    "company": "Halliday",
+    "to": "griffin@halliday.xyz"
+  },
+  {
+    "draft_id": "r-404085638228222467",
+    "scheduled_time": "2026-03-25T08:00:00-04:00",
+    "company": "KAST",
+    "to": "media@kast.xyz"
+  },
+  {
+    "draft_id": "r2517055655239801145",
+    "scheduled_time": "2026-03-25T08:08:00-04:00",
+    "company": "Kira",
+    "to": "info@kirafin.ai"
+  },
+  {
+    "draft_id": "r-8747295390328740017",
+    "scheduled_time": "2026-03-25T08:16:00-04:00",
+    "company": "Mesh",
+    "to": "ivan.inchauste@meshconnect.com"
+  },
+  {
+    "draft_id": "r2606555488580319757",
+    "scheduled_time": "2026-03-25T08:24:00-04:00",
+    "company": "Natural.co",
+    "to": "devan@natural.co"
+  },
+  {
+    "draft_id": "r182660840444072059",
+    "scheduled_time": "2026-03-25T08:32:00-04:00",
+    "company": "Rain",
+    "to": "charles@raincards.xyz"
+  },
+  {
+    "draft_id": "r-8180388975259994088",
+    "scheduled_time": "2026-03-25T08:40:00-04:00",
+    "company": "Reap",
+    "to": "raphael@reap.global"
+  },
+  {
+    "draft_id": "r-5564505572908281442",
+    "scheduled_time": "2026-03-25T08:48:00-04:00",
+    "company": "RedotPay",
+    "to": "michael@redotpay.com"
+  },
+  {
+    "draft_id": "r-4104453344070010668",
+    "scheduled_time": "2026-03-25T08:56:00-04:00",
+    "company": "Ryft",
+    "to": "sadra@ryftpay.com"
+  },
+  {
+    "draft_id": "r-7614143886444345021",
+    "scheduled_time": "2026-03-25T09:04:00-04:00",
+    "company": "Simetrik",
+    "to": "sebastian.arteaga@simetrik.com"
+  },
+  {
+    "draft_id": "r149073900102081853",
+    "scheduled_time": "2026-03-25T09:12:00-04:00",
+    "company": "Sphere",
+    "to": "arnold@spherepay.co"
+  },
+  {
+    "draft_id": "r3256915660130617007",
+    "scheduled_time": "2026-03-25T09:20:00-04:00",
+    "company": "Swan",
+    "to": "nicolas.benady@swan.io"
+  },
+  {
+    "draft_id": "r333338105650756517",
+    "scheduled_time": "2026-03-25T09:28:00-04:00",
+    "company": "Tazapay",
+    "to": "arnaud@tazapay.com"
+  },
+  {
+    "draft_id": "r5627750118420603857",
+    "scheduled_time": "2026-03-25T09:36:00-04:00",
+    "company": "Utila",
+    "to": "sam@utila.io"
+  },
+  {
+    "draft_id": "r3791474654769202977",
+    "scheduled_time": "2026-03-25T09:44:00-04:00",
+    "company": "Xflow",
+    "to": "ashwin@xflowpay.com"
+  },
+  {
+    "draft_id": "r9135261099462592222",
+    "scheduled_time": "2026-03-25T09:52:00-04:00",
+    "company": "Anchorage Digital",
+    "to": "hiren.desai@anchorage.com"
+  },
+  {
+    "draft_id": "r4693262996187502417",
+    "scheduled_time": "2026-03-26T08:00:00-04:00",
+    "company": "Basis Theory",
+    "to": "cl@basistheory.com"
+  },
+  {
+    "draft_id": "r-7636508355626598604",
+    "scheduled_time": "2026-03-26T08:08:00-04:00",
+    "company": "Brex",
+    "to": "ajoshi@brex.com"
+  },
+  {
+    "draft_id": "r1031161938758279868",
+    "scheduled_time": "2026-03-26T08:16:00-04:00",
+    "company": "Coinshift",
+    "to": "tarun@coinshift.xyz"
+  },
+  {
+    "draft_id": "r-5914332158920571099",
+    "scheduled_time": "2026-03-26T08:24:00-04:00",
+    "company": "Deel",
+    "to": "jennie.jacobson@deel.com"
+  },
+  {
+    "draft_id": "r-6259658446987314734",
+    "scheduled_time": "2026-03-26T08:32:00-04:00",
+    "company": "Fireblocks",
+    "to": "hanan@fireblocks.com"
+  },
+  {
+    "draft_id": "r8649434254993335161",
+    "scheduled_time": "2026-03-26T08:40:00-04:00",
+    "company": "Lithic",
+    "to": "nikil@lithic.com"
+  },
+  {
+    "draft_id": "r79765343716089392",
+    "scheduled_time": "2026-03-26T08:48:00-04:00",
+    "company": "Modern Treasury",
+    "to": "derek.schwede@moderntreasury.com"
+  },
+  {
+    "draft_id": "r4466212416474542959",
+    "scheduled_time": "2026-03-26T08:56:00-04:00",
+    "company": "MoonPay",
+    "to": "elise@moonpay.com"
+  },
+  {
+    "draft_id": "r-948790857670046853",
+    "scheduled_time": "2026-03-26T09:04:00-04:00",
+    "company": "Ramp",
+    "to": "agopinathan@ramp.com"
+  },
+  {
+    "draft_id": "r-8880534102408873836",
+    "scheduled_time": "2026-03-26T09:12:00-04:00",
+    "company": "Request.Finance",
+    "to": "mashudi.sumohadiwidjojo@request.finance"
+  },
+  {
+    "draft_id": "r-6005113941113812300",
+    "scheduled_time": "2026-03-26T09:20:00-04:00",
+    "company": "Transak",
+    "to": "aman@transak.com"
+  },
+  {
+    "draft_id": "r6769850327399687491",
+    "scheduled_time": "2026-03-26T09:28:00-04:00",
+    "company": "Zero Hash",
+    "to": "adam.berg@zerohash.com"
+  },
+  {
+    "draft_id": "r57556594803064891",
+    "scheduled_time": "2026-03-26T09:36:00-04:00",
+    "company": "dLocal",
+    "to": "glonetti@dlocal.com"
+  },
+  {
+    "draft_id": "r-7025304861049415583",
+    "scheduled_time": "2026-03-26T09:44:00-04:00",
+    "company": "Castle",
+    "to": "adam.zima@castle.io"
+  },
+  {
+    "draft_id": "r5342757637644007326",
+    "scheduled_time": "2026-03-26T09:52:00-04:00",
+    "company": "Rye",
+    "to": "support@rye.com"
+  },
+  {
+    "draft_id": "r7760090021730019802",
+    "scheduled_time": "2026-03-31T08:00:00-04:00",
+    "company": "Decaf",
+    "to": "fernanda@decaf.so"
+  },
+  {
+    "draft_id": "r-5750647544684596903",
+    "scheduled_time": "2026-03-31T08:08:00-04:00",
+    "company": "Sling Money",
+    "to": "mike@sling.money"
+  },
+  {
+    "draft_id": "r7143287023552718629",
+    "scheduled_time": "2026-03-31T08:16:00-04:00",
+    "company": "Atomic",
+    "to": "sylvia.johnson@atomicfi.com"
+  },
+  {
+    "draft_id": "r-1198815075427866416",
+    "scheduled_time": "2026-03-31T08:24:00-04:00",
+    "company": "BVNK",
+    "to": "jesse.hemson-struthers@bvnk.com"
+  },
+  {
+    "draft_id": "r-6965659886844970314",
+    "scheduled_time": "2026-03-31T08:32:00-04:00",
+    "company": "Cedar Money",
+    "to": "dayo@cedar.money"
+  },
+  {
+    "draft_id": "r8313807481759482399",
+    "scheduled_time": "2026-03-31T08:40:00-04:00",
+    "company": "Conduit",
+    "to": "james@conduitpay.com"
+  },
+  {
+    "draft_id": "r7673470675843435935",
+    "scheduled_time": "2026-03-31T08:48:00-04:00",
+    "company": "Ryft",
+    "to": "samantha@ryftpay.com"
+  },
+  {
+    "draft_id": "r7864479303528083621",
+    "scheduled_time": "2026-03-31T08:56:00-04:00",
+    "company": "Swan",
+    "to": "stephie.ndinga@swan.io"
+  },
+  {
+    "draft_id": "r3077512451903565756",
+    "scheduled_time": "2026-03-31T09:04:00-04:00",
+    "company": "Tazapay",
+    "to": "rahulshinghal@tazapay.com"
+  },
+  {
+    "draft_id": "r4894820660731539857",
+    "scheduled_time": "2026-03-31T09:12:00-04:00",
+    "company": "Xflow",
+    "to": "jyothi@xflowpay.com"
+  },
+  {
+    "draft_id": "r-4688755810257529520",
+    "scheduled_time": "2026-03-31T09:20:00-04:00",
+    "company": "Anchorage Digital",
+    "to": "kevin.wysocki@anchorage.com"
+  },
+  {
+    "draft_id": "r5456686007569833335",
+    "scheduled_time": "2026-03-31T09:28:00-04:00",
+    "company": "Brex",
+    "to": "gmurphy@brex.com"
+  },
+  {
+    "draft_id": "r4536450437076517268",
+    "scheduled_time": "2026-03-31T09:36:00-04:00",
+    "company": "Deel",
+    "to": "macarena.wiedemann@deel.com"
+  },
+  {
+    "draft_id": "r8888398315022496672",
+    "scheduled_time": "2026-03-31T09:44:00-04:00",
+    "company": "Fireblocks",
+    "to": "mark@fireblocks.com"
+  },
+  {
+    "draft_id": "r8751617165858729767",
+    "scheduled_time": "2026-03-31T09:52:00-04:00",
+    "company": "Modern Treasury",
+    "to": "dimitri@moderntreasury.com"
+  },
+  {
+    "draft_id": "r-2959508356450490178",
+    "scheduled_time": "2026-04-01T08:00:00-04:00",
+    "company": "MoonPay",
+    "to": "eoin@moonpay.com"
+  },
+  {
+    "draft_id": "r-8209293809672787574",
+    "scheduled_time": "2026-04-01T08:08:00-04:00",
+    "company": "Ramp",
+    "to": "lmehr@ramp.com"
+  },
+  {
+    "draft_id": "r-6153492517571725356",
+    "scheduled_time": "2026-04-01T08:16:00-04:00",
+    "company": "Transak",
+    "to": "siraj@transak.com"
+  },
+  {
+    "draft_id": "r4366494904510105374",
+    "scheduled_time": "2026-04-01T08:24:00-04:00",
+    "company": "Zero Hash",
+    "to": "erik@zerohash.com"
+  },
+  {
+    "draft_id": "r226570465983633067",
+    "scheduled_time": "2026-04-01T08:32:00-04:00",
+    "company": "dLocal",
+    "to": "jcammarota@dlocal.com"
+  },
+  {
+    "draft_id": "r-6929916338468702188",
+    "scheduled_time": "2026-04-01T08:40:00-04:00",
+    "company": "Castle",
+    "to": "johan@castle.io"
+  },
+  {
+    "draft_id": "r834232371967920641",
+    "scheduled_time": "2026-04-01T08:48:00-04:00",
+    "company": "Decaf",
+    "to": "scott@decaf.so"
+  },
+  {
+    "draft_id": "r4925729333845158746",
+    "scheduled_time": "2026-04-01T08:56:00-04:00",
+    "company": "Anchorage Digital",
+    "to": "mark.dubose@anchorage.com"
+  },
+  {
+    "draft_id": "r-4207927381992431387",
+    "scheduled_time": "2026-04-01T09:04:00-04:00",
+    "company": "Brex",
+    "to": "jbrown@brex.com"
+  },
+  {
+    "draft_id": "r-6355320046244574968",
+    "scheduled_time": "2026-04-01T09:12:00-04:00",
+    "company": "Fireblocks",
+    "to": "oded@fireblocks.com"
+  },
+  {
+    "draft_id": "r4002727997141559795",
+    "scheduled_time": "2026-04-01T09:20:00-04:00",
+    "company": "Modern Treasury",
+    "to": "matt@moderntreasury.com"
+  },
+  {
+    "draft_id": "r6852488612261014650",
+    "scheduled_time": "2026-04-02T08:00:00-04:00",
+    "company": "MoonPay",
+    "to": "ivan@moonpay.com"
+  },
+  {
+    "draft_id": "r-1293110332852213741",
+    "scheduled_time": "2026-04-02T08:08:00-04:00",
+    "company": "Ramp",
+    "to": "rfoss@ramp.com"
+  },
+  {
+    "draft_id": "r909186163761314891",
+    "scheduled_time": "2026-04-02T08:16:00-04:00",
+    "company": "Zero Hash",
+    "to": "matt.weiss@zerohash.com"
+  },
+  {
+    "draft_id": "r1751594523924052559",
+    "scheduled_time": "2026-04-02T08:24:00-04:00",
+    "company": "Anchorage Digital",
+    "to": "nathan.mccauley@anchorage.com"
+  },
+  {
+    "draft_id": "r7162416642746381349",
+    "scheduled_time": "2026-04-02T08:32:00-04:00",
+    "company": "Fireblocks",
+    "to": "omer@fireblocks.com"
+  },
+  {
+    "draft_id": "r-2439018362702024939",
+    "scheduled_time": "2026-04-07T08:00:00-04:00",
+    "company": "MoonPay",
+    "to": "thomas@moonpay.com"
+  },
+  {
+    "draft_id": "r2556662518504658895",
+    "scheduled_time": "2026-04-07T08:08:00-04:00",
+    "company": "Ramp",
+    "to": "spark@ramp.com"
+  },
+  {
+    "draft_id": "r2730565247652338432",
+    "scheduled_time": "2026-04-07T08:16:00-04:00",
+    "company": "Anchorage Digital",
+    "to": "troy.winslow@anchorage.com"
+  },
+  {
+    "draft_id": "r-2086628990734741146",
+    "scheduled_time": "2026-04-07T08:24:00-04:00",
+    "company": "Fireblocks",
+    "to": "ran@fireblocks.com"
+  },
+  {
+    "draft_id": "r-3865953906007918474",
+    "scheduled_time": "2026-04-08T08:00:00-04:00",
+    "company": "MoonPay",
+    "to": "victor@moonpay.com"
+  },
+  {
+    "draft_id": "r3482872561447900476",
+    "scheduled_time": "2026-04-08T08:08:00-04:00",
+    "company": "Ramp",
+    "to": "wpetrie@ramp.com"
+  }
+]
