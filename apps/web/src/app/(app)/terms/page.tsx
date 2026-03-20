@@ -28,17 +28,9 @@ export default function TermsPage() {
 
           <h2>The SDK</h2>
           <p>
-            The Kontext SDK is open-source software licensed under the MIT
-            License. You may use, modify, and distribute it in accordance with
-            that license. The SDK source code is available at{" "}
-            <a
-              href="https://github.com/Legaci-Labs/kontext"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              github.com/Legaci-Labs/kontext
-            </a>
-            .
+            The Kontext SDK is proprietary software provided under the Kontext
+            Terms of Service. You may use the SDK in accordance with these terms
+            and any applicable subscription agreement.
           </p>
 
           <h2>Cloud Services</h2>

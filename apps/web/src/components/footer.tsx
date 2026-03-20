@@ -14,11 +14,6 @@ const footerLinks = {
     { href: "/faqs", label: "FAQs" },
     { href: "/blog", label: "Blog" },
     { href: "/contact", label: "Contact" },
-    {
-      href: "https://github.com/Legaci-Labs/kontext",
-      label: "GitHub",
-      external: true,
-    },
   ],
   Company: [
     { href: "/about", label: "About" },
