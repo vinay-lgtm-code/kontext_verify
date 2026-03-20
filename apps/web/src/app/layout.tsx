@@ -82,7 +82,6 @@ const organizationJsonLd = {
   url: "https://getkontext.com",
   logo: "https://getkontext.com/og-image.png",
   sameAs: [
-    "https://github.com/Legaci-Labs/kontext",
     "https://www.npmjs.com/package/kontext-sdk",
   ],
   contactPoint: {
@@ -100,10 +99,8 @@ const softwareJsonLd = {
   operatingSystem: "Cross-platform (Node.js 18+)",
   programmingLanguage: "TypeScript",
   softwareVersion: "0.12.0",
-  license: "https://opensource.org/licenses/MIT",
   url: "https://getkontext.com",
   downloadUrl: "https://www.npmjs.com/package/kontext-sdk",
-  codeRepository: "https://github.com/Legaci-Labs/kontext",
   description:
     "Compliance-grade audit trails for programmable payments. OFAC screening, tamper-evident logging, and cryptographic proof. Zero runtime dependencies.",
   offers: [

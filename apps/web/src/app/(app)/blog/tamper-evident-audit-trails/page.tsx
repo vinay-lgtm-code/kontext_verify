@@ -462,17 +462,7 @@ console.log(verified); // true`}
             documentation
           </Link>{" "}
           includes a full walkthrough of digest chain configuration, export
-          formats, verification APIs, and on-chain anchoring setup. The SDK is
-          available on{" "}
-          <a
-            href="https://github.com/Legaci-Labs/kontext"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary hover:underline"
-          >
-            GitHub
-          </a>
-          .
+          formats, verification APIs, and on-chain anchoring setup.
         </p>
         <p>
           If your agents are moving money, your audit trails need to be more
