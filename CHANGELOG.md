@@ -2,6 +2,23 @@
 
 All notable public changes to the Kontext SDK and platform are documented here.
 
+## [0.13.0] - 2026-03-20
+
+### Added
+- **Intent hashing**: `IntentContext` type and SHA-256 intent hash computation in `verify()`. Binds payment purpose, scope, and limits to a cryptographic hash stored in the transaction record.
+- **SAR report templates**: `generateSARReport()` — FinCEN Form 111-aligned suspicious activity report with auto-generated narrative from anomaly data and digest proof.
+- **CTR report templates**: `generateCTRReport()` — FinCEN Form 112-aligned currency transaction report with $10K threshold detection and daily aggregation for structuring analysis.
+- **Case packet export**: `exportCasePacket(txId)` — per-transaction evidence bundle with transaction record, reasoning entries, anomalies, trust score, related tasks, and digest proof.
+- **Approval policies**: `setApprovalPolicies()` — configurable multi-trigger approval evaluation (`amount-threshold`, `low-trust-score`, `anomaly-detected`, `new-destination`) with `require-approval`, `block`, or `flag` actions.
+- **Evidence retention**: `retention.days` config option and `KontextStore.cleanup(retentionDays)` for TTL-based record eviction.
+- **Webhook lifecycle events**: `WebhookManager` now emits `task.created`, `task.confirmed`, and anomaly events automatically.
+- **RBAC display names**: Human-readable role labels (`Administrator`, `Platform Engineering`, `Compliance & Risk`).
+
+### Fixed
+- Website pricing page code snippet now uses actual `VerifyResult` shape (`compliant`, `checks`, `riskLevel`) instead of non-existent `decision`/`auditBundleId`.
+- Website SDK tab code snippet now uses actual `VerifyInput` fields (`token`, `agentId`, `paymentMethod`, `paymentReference`) instead of non-existent `rail`/`initiator`/`fundingSource`/`txRef`.
+- Removed SEPA from command center subtitle (no SEPA module exists).
+
 ## [0.12.0] - 2026-03-17
 
 ### Added
