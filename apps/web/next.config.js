@@ -18,18 +18,11 @@ function readChangelogSync() {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   env: {
     CHANGELOG_CONTENT: readChangelogSync(),
   },
   async rewrites() {
     return [
-      {
-        source: "/",
-        destination: "/enterprise.html",
-      },
       {
         source: "/products",
         destination: "/enterprise-products.html",

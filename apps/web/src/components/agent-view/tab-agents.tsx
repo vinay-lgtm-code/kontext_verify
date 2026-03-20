@@ -9,11 +9,11 @@ function Section({
 }) {
   return (
     <details open>
-      <summary className="flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer py-2 hover:text-[var(--term-green)]">
-        <span className="text-[var(--term-green)]">$</span>
+      <summary className="flex items-center gap-2 text-sm font-medium text-[var(--ic-text)] cursor-pointer py-2 hover:text-[var(--ic-accent)]">
+        <span className="text-[var(--ic-accent)]">$</span>
         {title}
       </summary>
-      <div className="pl-4 pb-4 text-sm text-[var(--term-text-2)] leading-relaxed">
+      <div className="pl-4 pb-4 text-sm text-[var(--ic-text-muted)] leading-relaxed">
         {children}
       </div>
     </details>
@@ -30,7 +30,7 @@ export function TabAgents() {
       <Section title="WHAT IS KONTEXT">
         <p>
           Compliance logging SDK for AI agents that move money.
-          One call — <code className="text-[var(--term-green)]">verify()</code> — runs
+          One call — <code className="text-[var(--ic-accent)]">verify()</code> — runs
           OFAC screening, logs the transaction into a tamper-evident digest chain,
           computes trust score, returns structured compliance result. Zero
           dependencies. Free on Base/Arc.
@@ -40,15 +40,15 @@ export function TabAgents() {
       <Section title="INTEGRATE IN 3 STEPS">
         <ol className="list-none space-y-1.5">
           <li>
-            <span className="text-[var(--term-text-3)]">1.</span>{" "}
+            <span className="text-[var(--ic-text-dim)]">1.</span>{" "}
             <code>npm install kontext-sdk</code>
           </li>
           <li>
-            <span className="text-[var(--term-text-3)]">2.</span>{" "}
+            <span className="text-[var(--ic-text-dim)]">2.</span>{" "}
             <code>{`Kontext.init({ projectId: '...', environment: '...' })`}</code>
           </li>
           <li>
-            <span className="text-[var(--term-text-3)]">3.</span>{" "}
+            <span className="text-[var(--ic-text-dim)]">3.</span>{" "}
             <code>{`await ctx.verify({ txHash, chain: 'base', amount, token: 'USDC', from, to, agentId })`}</code>
           </li>
         </ol>
@@ -140,13 +140,13 @@ const result = await ctx.verify({
           ].map((chain) => (
             <span
               key={chain.name}
-              className={`text-xs px-2 py-0.5 border ${
+              className={`text-xs px-2 py-0.5 border rounded-md ${
                 chain.free
-                  ? "border-[var(--term-green)] text-[var(--term-green)]"
-                  : "border-[var(--term-border-bright)] text-[var(--term-text-3)]"
+                  ? "border-[var(--ic-green)] text-[var(--ic-green)]"
+                  : "border-[var(--ic-border)] text-[var(--ic-text-dim)]"
               }`}
             >
-              {chain.free && <span className="led-green mr-1" />}
+              {chain.free && <span className="h-1.5 w-1.5 rounded-full bg-[var(--ic-green)] inline-block mr-1" />}
               {chain.name}
             </span>
           ))}
@@ -162,24 +162,24 @@ const result = await ctx.verify({
       <Section title="MACHINE-READABLE ENDPOINTS">
         <div className="space-y-1 font-mono text-xs">
           <p>
-            <span className="text-[var(--term-text-3)]">Agent card</span>
-            <span className="text-[var(--term-text-3)]"> ··· </span>
-            <span className="text-[var(--term-blue)]">https://getkontext.com/.well-known/kontext.json</span>
+            <span className="text-[var(--ic-text-dim)]">Agent card</span>
+            <span className="text-[var(--ic-text-dim)]"> ··· </span>
+            <span className="text-[var(--ic-accent)]">https://getkontext.com/.well-known/kontext.json</span>
           </p>
           <p>
-            <span className="text-[var(--term-text-3)]">LLM guide</span>
-            <span className="text-[var(--term-text-3)]"> ···· </span>
-            <span className="text-[var(--term-blue)]">https://getkontext.com/llms.txt</span>
+            <span className="text-[var(--ic-text-dim)]">LLM guide</span>
+            <span className="text-[var(--ic-text-dim)]"> ···· </span>
+            <span className="text-[var(--ic-accent)]">https://getkontext.com/llms.txt</span>
           </p>
           <p>
-            <span className="text-[var(--term-text-3)]">npm</span>
-            <span className="text-[var(--term-text-3)]"> ·········· </span>
-            <span className="text-[var(--term-blue)]">https://npmjs.com/package/kontext-sdk</span>
+            <span className="text-[var(--ic-text-dim)]">npm</span>
+            <span className="text-[var(--ic-text-dim)]"> ·········· </span>
+            <span className="text-[var(--ic-accent)]">https://npmjs.com/package/kontext-sdk</span>
           </p>
           <p>
-            <span className="text-[var(--term-text-3)]">Docs</span>
-            <span className="text-[var(--term-text-3)]"> ········· </span>
-            <span className="text-[var(--term-blue)]">https://getkontext.com/docs</span>
+            <span className="text-[var(--ic-text-dim)]">Docs</span>
+            <span className="text-[var(--ic-text-dim)]"> ········· </span>
+            <span className="text-[var(--ic-accent)]">https://getkontext.com/docs</span>
           </p>
         </div>
       </Section>

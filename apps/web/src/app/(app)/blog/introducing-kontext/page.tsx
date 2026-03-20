@@ -78,7 +78,7 @@ export default function IntroducingKontextPost() {
         <h1 className="mt-4 text-sm font-medium">
           Introducing Kontext: Trust Layer for Agentic Stablecoin Transactions
         </h1>
-        <p className="mt-4 text-xs text-[var(--term-text-2)] leading-relaxed">
+        <p className="mt-4 text-xs text-[var(--ic-text-muted)] leading-relaxed">
           AI agents are moving real money. They are paying vendors, settling
           invoices, and executing trades autonomously. But who is watching the
           agents? Today we are open-sourcing Kontext -- a compliance and trust

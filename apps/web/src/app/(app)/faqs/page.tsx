@@ -13,7 +13,7 @@ import { ArrowRight } from "lucide-react";
 export const metadata: Metadata = {
   title: "FAQs",
   description:
-    "Frequently asked questions about Kontext — the trust layer for agentic stablecoin and fiat payments. Cryptographic verifiable intent, auto-instrumentation, pricing, and more.",
+    "Frequently asked questions about Kontext — compliance-grade audit trails for programmable payments. Evidence capture, digest chain, integrations, and more.",
 };
 
 const faqCategories = [
@@ -23,27 +23,17 @@ const faqCategories = [
       {
         question: "What is Kontext?",
         answer:
-          "Kontext is the trust layer for agentic stablecoin and fiat payments. It provides cryptographic verifiable intent for org-wide payments — run npx kontext init, wrap your client in one line, and every stablecoin transfer gets OFAC screening, a tamper-evident audit trail, and a trust score automatically.",
+          "Kontext is the compliance evidence layer for programmable payments. It captures the full decision trail around every payment — intent, screening results, policy checks, approvals, and execution references — and produces audit-ready evidence packages for compliance, risk, fraud, and audit teams.",
       },
       {
         question: "Who is Kontext built for?",
         answer:
-          "Developers and teams building autonomous agents that move money — USDC on Base, cross-chain CCTP transfers, Stripe payment intents, or any workflow where AI agents initiate payments. Kontext captures cryptographic proof that every payment was intended, screened, and logged across your entire organization.",
+          "Payment infrastructure teams handling stablecoin transfers, API-driven payouts, or agent-initiated payments. Kontext serves compliance officers, risk managers, internal audit, and payments product teams who need to prove what happened before, during, and after every payment decision.",
       },
       {
         question: "What does 'verifiable intent' mean?",
         answer:
           "Verifiable intent means cryptographic proof that a payment was authorized, screened for sanctions, and logged before it happened. Kontext's patented digest chain links each action to the full history before it, creating tamper-evident evidence that compliance checks actually ran — not just a promise that they did.",
-      },
-      {
-        question: "Can I inspect the source code?",
-        answer:
-          "Yes. The SDK source code is available on GitHub under the MIT license. You can audit the implementation, verify the digest chain logic, and run it on your own infrastructure. The free tier includes 20,000 events/month. Pay as you go ($2/1K events above 20K free) adds all anomaly detection rules, unified screening, CSV export, multi-chain support, webhooks, and cloud persistence.",
-      },
-      {
-        question: "What license does Kontext use?",
-        answer:
-          "Kontext is released under the MIT License. You can use it freely in commercial and non-commercial projects without restrictions.",
       },
     ],
   },
@@ -53,22 +43,12 @@ const faqCategories = [
       {
         question: "What languages and runtimes are supported?",
         answer:
-          "The SDK is TypeScript-first with full type safety and ships with zero runtime dependencies. It runs on Node.js 18+, Bun, and Deno. The core API is also accessible via REST for non-JavaScript environments.",
+          "The primary SDK is TypeScript-first with full type safety and zero runtime dependencies. It runs on Node.js 18+, Bun, and Deno. A Python client (kontext-sdk, Python 3.9+) is also available for Python-based payment systems and agent frameworks. The core API is also accessible via REST for other environments.",
       },
       {
         question: "What blockchain chains are supported?",
         answer:
-          "The free tier supports Base and Arc. Pro unlocks all 8 chains: Ethereum, Base, Polygon, Arbitrum, Optimism, Arc, Avalanche, and Solana.",
-      },
-      {
-        question: "How does trust scoring work?",
-        answer:
-          "Each verified action receives a trust score between 0 and 1 computed from multiple weighted factors: agent history, amount normality relative to the agent's baseline, transaction velocity, recipient trust, and contextual pattern matching. The factors and weights are configurable.",
-      },
-      {
-        question: "How does anomaly detection work?",
-        answer:
-          "Anomaly detection runs a configurable rule engine on every verify() call. The free tier includes two basic rules: unusual amount and frequency spike. Pro unlocks all six detection rules including new-destination, off-hours, rapid-succession, and round-amount checks.",
+          "Kontext supports 8 chains: Ethereum, Base, Polygon, Arbitrum, Optimism, Arc, Avalanche, and Solana.",
       },
       {
         question: "What is the digest chain?",
@@ -78,12 +58,12 @@ const faqCategories = [
       {
         question: "How is audit data stored?",
         answer:
-          "With the free tier SDK, all data stays on your infrastructure — you control storage entirely. On Pro, audit data is encrypted at rest (AES-256) and in transit (TLS 1.3), stored in cloud infrastructure following SOC 2-aligned practices. You retain full ownership and can export or delete data at any time.",
+          "Audit data is encrypted at rest (AES-256) and in transit (TLS 1.3), stored in cloud infrastructure following SOC 2-aligned practices. You retain full ownership and can export or delete data at any time.",
       },
       {
         question: "What are the performance characteristics?",
         answer:
-          "The verify() call adds sub-5ms overhead for local rule evaluation. The SDK is under 10kb gzipped with zero runtime dependencies. Cloud-powered trust scoring (Pro) adds a network round-trip but is optimized for P95 latency under 50ms via edge deployment.",
+          "The verify() call adds sub-5ms overhead for local rule evaluation. The SDK is under 100kb gzipped with zero runtime dependencies. Cloud-powered features add a network round-trip but are optimized for P95 latency under 50ms via edge deployment.",
       },
       {
         question: "What is on-chain anchoring?",
@@ -101,29 +81,14 @@ const faqCategories = [
           "Yes, but it's minimal. Each anchor transaction costs roughly 45K gas on Base, which at current gas prices is well under $0.01. Read-only verification (checking if a digest was anchored) costs nothing — it's a standard eth_call with no gas. The SDK's verifyAnchor() function works with zero dependencies, just a raw RPC URL.",
       },
       {
-        question: "What is agent forensics?",
-        answer:
-          "Agent forensics maps wallets to agent identities, detects multi-wallet clustering using 5 heuristics (shared-owner, temporal-correlation, funding-chain, amount-pattern, and network-overlap), and computes identity confidence scores from 0 to 100. It answers the question: which agent controls which wallets? Available on the Pro tier via registerAgentIdentity(), getWalletClusters(), and getKYAConfidenceScore().",
-      },
-      {
-        question: "How does wallet clustering work?",
-        answer:
-          "Wallet clustering uses a Union-Find algorithm with 5 heuristics to detect wallets controlled by the same agent. The heuristics are: shared-owner (explicitly registered), temporal-correlation (wallets active in the same time windows), funding-chain (one wallet funds another), amount-pattern (matching transaction amounts across wallets), and network-overlap (shared counterparties). Each cluster includes evidence trails documenting why wallets were grouped.",
-      },
-      {
-        question: "How does auto-instrumentation work?",
-        answer:
-          "Run npx kontext init to generate a kontext.config.json with your wallets, tokens, chains, and compliance mode. Then wrap your viem client with withKontextCompliance(client, kontext) — one line. Two interception layers provide full coverage: the code wrap intercepts sendTransaction/writeContract calls on your client, and the chain listener watches your monitored wallets on-chain for all outgoing stablecoin transfers regardless of source (other scripts, wallet UIs, Circle dashboard, other agents). Deduplication is built in.",
-      },
-      {
         question: "What is the Kontext CLI?",
         answer:
-          "The Kontext CLI (@kontext-sdk/cli) is the starting point for most developers. Run npx kontext init to set up your project with an interactive wizard. The CLI also provides commands for verify (full verification with digest chain), check (static compliance check), reason (log agent reasoning), cert (generate certificates), audit (export audit trails), anchor (on-chain anchoring), attest (A2A attestation), sync (OFAC SDN list sync), session/checkpoint (agent provenance), and mcp (MCP server for AI coding assistants).",
+          "The Kontext CLI (@kontext-sdk/cli) provides commands for common compliance workflows: verify (full verification with digest chain), check (static compliance check), audit (export audit trails), and anchor (on-chain anchoring).",
       },
       {
         question: "Do micropayments need compliance?",
         answer:
-          "Yes. OFAC screening applies to every transaction regardless of amount. The Travel Rule only requires data-sharing above $3,000, but OFAC sanctions screening, ongoing transaction monitoring, and audit trails are required on every transfer under the BSA. The GENIUS Act reinforces these requirements for stablecoin transactions. Autonomous agents running high-frequency micropayments via x402 create cumulative patterns that can trigger Suspicious Activity Reports regardless of individual amounts. Kontext's verify() + digest chain provides evidence for every payment in a single call.",
+          "Yes. OFAC screening applies to every transaction regardless of amount. The Travel Rule only requires data-sharing above $3,000, but OFAC sanctions screening, ongoing transaction monitoring, and audit trails are required on every transfer under the BSA. The GENIUS Act reinforces these requirements for stablecoin transactions. Autonomous agents running high-frequency micropayments create cumulative patterns that can trigger Suspicious Activity Reports regardless of individual amounts. Kontext's verify() + digest chain provides evidence for every payment in a single call.",
       },
     ],
   },
@@ -133,17 +98,12 @@ const faqCategories = [
       {
         question: "How do I integrate Kontext with USDC transfers?",
         answer:
-          "The recommended path: run npx kontext init, then wrap your viem client with withKontextCompliance(). Every USDC transfer is automatically verified. For explicit control, call ctx.verify() directly on individual transactions. Both approaches produce the same cryptographic audit trail.",
-      },
-      {
-        question: "Does auto-instrumentation work with any viem client?",
-        answer:
-          "Yes. withKontextCompliance() wraps any viem WalletClient. It intercepts sendTransaction and writeContract calls, detects stablecoin transfers by contract address and function selector, and runs verify() automatically. Non-stablecoin transactions pass through untouched with zero overhead.",
+          "Call ctx.verify() on your payment transactions. Each call runs OFAC screening, logs the decision context, and adds the evidence to the tamper-evident digest chain. One function call produces the full compliance record.",
       },
       {
         question: "Does Kontext work with the x402 protocol?",
         answer:
-          "Yes. Auto-instrumentation catches x402 micropayments automatically when they flow through your wrapped viem client. For non-viem x402 flows, call ctx.verify() directly on the payment details.",
+          "Yes. Call ctx.verify() directly on x402 payment details to produce the same compliance evidence trail.",
       },
       {
         question: "Can I use Kontext with Stripe?",
@@ -153,7 +113,7 @@ const faqCategories = [
       {
         question: "Does Kontext work with LangChain, CrewAI, or AutoGen?",
         answer:
-          "Yes. Kontext is framework-agnostic. The Vercel AI SDK has a first-class wrapper (kontextWrapModel). For LangChain, CrewAI, and AutoGen, use ctx.verify() and ctx.log() directly in your agent's tool calls or callbacks. Auto-instrumentation via withKontextCompliance() works regardless of framework.",
+          "Yes. Kontext is framework-agnostic. The Vercel AI SDK has a first-class wrapper (kontextWrapModel). For LangChain, CrewAI, and AutoGen, use ctx.verify() and ctx.log() directly in your agent's tool calls or callbacks.",
       },
     ],
   },
@@ -173,37 +133,17 @@ const faqCategories = [
       {
         question: "Is Kontext itself a certified compliance product?",
         answer:
-          "Kontext is a developer tool, not a regulated financial entity. Pro plan infrastructure follows SOC 2-aligned practices for data handling. However, Kontext does not guarantee regulatory compliance and is not a substitute for legal counsel — it provides the technical building blocks your compliance program needs.",
+          "Kontext is compliance infrastructure, not a regulated financial entity. Cloud infrastructure follows SOC 2-aligned practices for data handling. However, Kontext does not guarantee regulatory compliance and is not a substitute for legal counsel — it provides the technical building blocks your compliance program needs.",
       },
       {
         question: "What audit export formats are supported?",
         answer:
-          "The free tier supports JSON export. Pro adds CSV export. Exports can be filtered by date range, agent, action type, and flag status.",
+          "JSON and CSV exports are available. Exports can be filtered by date range, agent, action type, and flag status.",
       },
       {
         question: "Is Kontext a replacement for legal counsel?",
         answer:
-          "No. Kontext is infrastructure tooling, not legal advice. It provides the technical capabilities — logging, scoring, detection, and reporting — that your legal and compliance teams need to build a compliance program. Always consult qualified legal counsel for regulatory requirements specific to your jurisdiction and use case.",
-      },
-    ],
-  },
-  {
-    name: "Pricing & Plans",
-    faqs: [
-      {
-        question: "What is included in the free tier?",
-        answer:
-          "The free tier includes auto-instrumentation (npx kontext init + withKontextCompliance), wallet monitoring, the full SDK with 20,000 events/month, action logging, JSON export, basic anomaly detection (2 rules), trust scoring, digest chain verification, on-chain anchoring, A2A attestation, compliance certificates, and Base + Arc chain support. Free forever, no credit card required.",
-      },
-      {
-        question: "What does Pay as you go include?",
-        answer:
-          "Pay as you go is $2 per 1,000 events above the 20K free tier. No monthly minimum, no commitment. It includes everything in Free plus: all six anomaly detection rules, unified screening (OFAC, Chainalysis, OpenSanctions), custom blocklist/allowlist, CSV export, multi-chain support (all 8 chains), webhook alerts, cloud persistence, and email support.",
-      },
-      {
-        question: "Can I self-host the entire stack?",
-        answer:
-          "Yes. The SDK runs entirely on your infrastructure with zero external dependencies. You control where data is stored and how it is processed.",
+          "No. Kontext is infrastructure tooling, not legal advice. It provides the technical capabilities — logging, detection, and reporting — that your legal and compliance teams need to build a compliance program. Always consult qualified legal counsel for regulatory requirements specific to your jurisdiction and use case.",
       },
     ],
   },
@@ -213,12 +153,12 @@ const faqCategories = [
       {
         question: "How is data encrypted?",
         answer:
-          "All data in transit is encrypted with TLS 1.3. On Pro, data at rest is encrypted with AES-256. API keys are hashed and never stored in plaintext. The free tier keeps all data on your infrastructure, so encryption is governed by your own setup.",
+          "All data in transit is encrypted with TLS 1.3. Data at rest is encrypted with AES-256. API keys are hashed and never stored in plaintext.",
       },
       {
         question: "Where is cloud data stored?",
         answer:
-          "Pro plan data is stored in GCP infrastructure following SOC 2-aligned practices. All data is encrypted at rest and in transit.",
+          "Audit data is stored in GCP cloud infrastructure following SOC 2-aligned practices. All data is encrypted at rest and in transit.",
       },
       {
         question: "How does Kontext handle PII?",

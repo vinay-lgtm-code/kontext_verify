@@ -55,7 +55,7 @@ export function TypingAnimation({
 
     return parts.map((part, i) =>
       highlightWords.includes(part) ? (
-        <span key={i} className="text-[var(--term-green)] glow">
+        <span key={i} className="text-[var(--ic-accent)]">
           {part}
         </span>
       ) : (

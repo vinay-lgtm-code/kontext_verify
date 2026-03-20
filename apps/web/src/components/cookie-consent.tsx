@@ -111,7 +111,7 @@ export function CookieSettingsButton() {
     <button
       type="button"
       onClick={() => CookieConsent.showPreferences()}
-      className="text-xs text-[var(--term-text-2)] transition-colors hover:text-[var(--term-blue)]"
+      className="text-xs text-[var(--ic-text-muted)] transition-colors hover:text-[var(--ic-accent)]"
       aria-label="Open cookie preferences"
     >
       Cookie Settings
