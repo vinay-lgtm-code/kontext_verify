@@ -180,7 +180,7 @@ export async function POST(request: Request) {
 
   try {
     const { error } = await resend.emails.send({
-      from: "Kontext <assessments@getkontext.com>",
+      from: "Kontext <assessments@send.getlegaci.com>",
       to: validEmails,
       subject,
       html,
