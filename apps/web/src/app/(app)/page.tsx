@@ -4,6 +4,7 @@ import { CodeBlock } from "@/components/code-block";
 import { HeroSection } from "@/components/hero-section";
 import { AgentView } from "@/components/agent-view";
 import { ComplianceCommandCenter } from "@/components/compliance-command-center";
+import { AssessmentSection } from "@/components/assessment/assessment-section";
 import {
   ShieldCheck,
   ScanEye,
@@ -272,6 +273,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ===== ASSESSMENT ===== */}
+      <AssessmentSection />
 
       {/* ===== INTEGRATION POINT ===== */}
       <section className="relative px-4 py-24 sm:px-6 lg:px-8">
