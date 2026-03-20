@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { google } from "googleapis";
+import { Resend } from "resend";
 
 interface ShareRequest {
   emails: string[];
@@ -169,51 +169,31 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "At least one valid email required" }, { status: 400 });
   }
 
-  // Check Gmail OAuth credentials
-  const clientId = process.env.GMAIL_CLIENT_ID;
-  const clientSecret = process.env.GMAIL_CLIENT_SECRET;
-  const refreshToken = process.env.GMAIL_REFRESH_TOKEN;
-
-  if (!clientId || !clientSecret || !refreshToken) {
+  if (!process.env.RESEND_API_KEY) {
     return NextResponse.json({ error: "Email service not configured" }, { status: 503 });
   }
 
-  const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
-  oauth2Client.setCredentials({ refresh_token: refreshToken });
-
-  const gmail = google.gmail({ version: "v1", auth: oauth2Client });
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   const html = buildEmailHtml(body);
   const subject = `Payment Evidence Gap Assessment \u2014 Score: ${body.scores.overallScore}/100`;
 
-  let sentCount = 0;
+  try {
+    const { error } = await resend.emails.send({
+      from: "Kontext <assessments@getkontext.com>",
+      to: validEmails,
+      subject,
+      html,
+    });
 
-  for (const email of validEmails) {
-    const raw = Buffer.from(
-      [
-        `To: ${email}`,
-        `Subject: ${subject}`,
-        "MIME-Version: 1.0",
-        'Content-Type: text/html; charset="UTF-8"',
-        "",
-        html,
-      ].join("\r\n")
-    ).toString("base64url");
-
-    try {
-      await gmail.users.messages.send({
-        userId: "me",
-        requestBody: { raw },
-      });
-      sentCount++;
-    } catch {
-      // Continue sending to remaining emails
+    if (error) {
+      console.error("Resend error:", error);
+      return NextResponse.json({ error: "Failed to send emails" }, { status: 500 });
     }
-  }
 
-  if (sentCount === 0) {
+    return NextResponse.json({ success: true, sent: validEmails.length });
+  } catch (err) {
+    console.error("Resend send failed:", err);
     return NextResponse.json({ error: "Failed to send emails" }, { status: 500 });
   }
-
-  return NextResponse.json({ success: true, sent: sentCount });
 }
