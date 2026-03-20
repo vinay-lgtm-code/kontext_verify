@@ -4,37 +4,41 @@
 
 @layer base {
   :root {
-    /* Terminal Noir — Backgrounds (zinc scale) */
-    --background: 240 6% 4%;       /* #09090b */
-    --foreground: 0 0% 98%;        /* #fafafa */
-    --card: 240 6% 10%;            /* #18181b */
-    --card-foreground: 0 0% 98%;   /* #fafafa */
-    --primary: 142 69% 58%;        /* #4ade80 */
-    --primary-foreground: 240 6% 4%;
-    --secondary: 240 4% 16%;       /* #27272a */
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 4% 16%;           /* #27272a */
-    --muted-foreground: 240 4% 46%; /* #71717a */
-    --accent: 240 4% 16%;
-    --accent-foreground: 0 0% 98%;
-    --border: 240 4% 16%;          /* #27272a */
-    --input: 240 4% 16%;
-    --ring: 142 69% 58%;
-    --radius: 0px;
+    /* Institutional Clarity — Backgrounds */
+    --background: 228 33% 3%;        /* #07080b */
+    --foreground: 224 52% 91%;       /* #dde4f5 */
+    --card: 226 30% 7%;              /* #0d1018 */
+    --card-foreground: 224 52% 91%;  /* #dde4f5 */
+    --primary: 222 93% 60%;          /* #3b6ef8 */
+    --primary-foreground: 0 0% 100%; /* #ffffff */
+    --secondary: 224 26% 11%;        /* #131825 */
+    --secondary-foreground: 224 52% 91%;
+    --muted: 222 22% 44%;            /* #5a6885 */
+    --muted-foreground: 222 22% 44%;
+    --accent: 222 93% 60%;           /* #3b6ef8 */
+    --accent-foreground: 0 0% 100%;
+    --border: 222 30% 18%;           /* #1c2540 */
+    --input: 222 30% 18%;
+    --ring: 222 93% 60%;
+    --radius: 8px;
 
-    /* Terminal Noir — Semantic accents */
-    --term-green: #4ade80;
-    --term-green-glow: rgba(74, 222, 128, 0.2);
-    --term-blue: #60a5fa;
-    --term-amber: #fbbf24;
-    --term-red: #f87171;
-    --term-cyan: #22d3ee;
-    --term-surface: #18181b;
-    --term-surface-2: #27272a;
-    --term-surface-3: #3f3f46;
-    --term-text-2: #a1a1aa;
-    --term-text-3: #71717a;
-    --term-border-bright: #3f3f46;
+    /* Institutional Clarity — Semantic colors */
+    --ic-surface: #0d1018;
+    --ic-surface-2: #131825;
+    --ic-surface-3: #1a2030;
+    --ic-border: #1c2540;
+    --ic-border-dim: #131a30;
+    --ic-text: #dde4f5;
+    --ic-text-muted: #5a6885;
+    --ic-text-dim: #4a5572;
+    --ic-accent: #3b6ef8;
+    --ic-accent-dim: rgba(59, 110, 248, 0.1);
+    --ic-accent-glow: rgba(59, 110, 248, 0.22);
+    --ic-green: #22c55e;
+    --ic-green-dim: rgba(34, 197, 94, 0.1);
+    --ic-amber: #f59e0b;
+    --ic-red: #ef4444;
+    --ic-red-dim: rgba(239, 68, 68, 0.1);
   }
 }
 
@@ -49,180 +53,45 @@
   }
 }
 
-/* ===== CRT Scanline Overlay ===== */
-body::after {
-  content: '';
+/* ===== Grid Background Pattern ===== */
+.grid-bg {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 9999;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 0, 0, 0.03) 2px,
-    rgba(0, 0, 0, 0.03) 4px
-  );
-}
-
-/* ===== Grain Texture ===== */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 9998;
-  opacity: 0.04;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-  background-size: 256px 256px;
+  z-index: 0;
+  background-image:
+    linear-gradient(var(--ic-border-dim) 1px, transparent 1px),
+    linear-gradient(90deg, var(--ic-border-dim) 1px, transparent 1px);
+  background-size: 60px 60px;
+  opacity: 0.4;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 20%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 20%, transparent 80%);
 }
 
 /* ===== Accessibility: Reduced Motion ===== */
 @media (prefers-reduced-motion: reduce) {
-  body::after,
-  body::before {
-    display: none;
-  }
-  .animate-blink,
-  .animate-typing,
   .animate-fade-in,
   .animate-slide-up,
-  .animate-stagger {
+  .animate-stagger,
+  .animate-pulse-dot,
+  .animate-ticker {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
   }
-  .flip-face { animation: none !important; }
-  .flip-out, .flip-in { animation: none !important; }
 }
 
-/* ===== Airport Flipboard Effect ===== */
-.flip-char {
-  display: inline-block;
-  position: relative;
-  overflow: hidden;
-  height: 1.2em;
-  line-height: 1.2em;
-  transition: width 0.3s ease;
-}
-
-.flip-char-inner {
-  display: block;
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-
-.flip-face {
-  display: block;
-  position: absolute;
-  inset: 0;
-  backface-visibility: hidden;
-  text-align: center;
-}
-
-.flip-face-front {
-  transform: rotateX(0deg);
-  transform-origin: bottom center;
-}
-
-.flip-face-back {
-  transform: rotateX(90deg);
-  transform-origin: top center;
-  opacity: 0;
-}
-
-.flip-out {
-  animation: flip-down 0.3s ease-in forwards;
-}
-
-.flip-in {
-  animation: flip-up 0.3s ease-out 0.15s forwards;
-}
-
-@keyframes flip-down {
-  0% { transform: rotateX(0deg); opacity: 1; }
-  100% { transform: rotateX(-90deg); opacity: 0; }
-}
-
-@keyframes flip-up {
-  0% { transform: rotateX(90deg); opacity: 0; }
-  100% { transform: rotateX(0deg); opacity: 1; }
-}
-
-/* ===== Green Phosphor Glow ===== */
-.glow {
-  text-shadow: 0 0 10px var(--term-green-glow), 0 0 20px var(--term-green-glow);
-}
-.glow-subtle {
-  text-shadow: 0 0 6px var(--term-green-glow);
-}
-
-/* ===== Blinking Cursor ===== */
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
-.cursor::after {
-  content: '\2588';
-  animation: blink 1s steps(1) infinite;
-  color: var(--term-green);
-}
-
-/* ===== Status LEDs ===== */
-.led {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.led-green {
-  background: var(--term-green);
-  box-shadow: 0 0 4px var(--term-green-glow);
-}
-.led-amber {
-  background: var(--term-amber);
-  box-shadow: 0 0 4px rgba(251, 191, 36, 0.3);
-}
-.led-red {
-  background: var(--term-red);
-  box-shadow: 0 0 4px rgba(248, 113, 113, 0.3);
-}
-
-/* ===== Terminal Window Chrome ===== */
-.terminal-chrome {
-  background: var(--term-surface);
-  border: 1px solid var(--term-surface-2);
-}
-.terminal-chrome-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--term-surface-2);
-  background: var(--term-surface);
-}
-.terminal-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-.terminal-dot-red { background: #f87171; }
-.terminal-dot-amber { background: #fbbf24; }
-.terminal-dot-green { background: #4ade80; }
-
-/* ===== Code Block Styling (Terminal Noir) ===== */
+/* ===== Code Block Styling (Institutional Clarity) ===== */
 .code-block {
-  background: var(--term-surface);
-  border: 1px solid var(--term-surface-2);
+  background: var(--ic-surface-2);
+  border: 1px solid var(--ic-border);
+  border-radius: var(--radius);
   overflow: hidden;
 }
 
 .code-block pre {
   margin: 0;
-  padding: 1rem;
+  padding: 1.25rem;
   overflow-x: auto;
   font-size: 0.8rem;
   line-height: 1.7;
@@ -236,10 +105,10 @@ body::before {
 }
 
 .code-block code {
-  font-family: var(--font-martian-mono), monospace;
+  font-family: var(--font-ibm-plex-mono), monospace;
 }
 
-/* Syntax highlighting tokens (terminal palette) */
+/* Syntax highlighting tokens */
 .token-keyword { color: #c678dd; }
 .token-string { color: #98c379; }
 .token-comment { color: #5c6370; font-style: italic; }
@@ -260,9 +129,13 @@ body::before {
   0% { opacity: 0; transform: translateY(16px); }
   100% { opacity: 1; transform: translateY(0); }
 }
-@keyframes typing {
-  from { width: 0; }
-  to { width: 100%; }
+@keyframes fade-up {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
 /* Staggered fade-in utility */
@@ -279,16 +152,34 @@ body::before {
 .stagger > *:nth-child(7) { animation-delay: 300ms; }
 .stagger > *:nth-child(8) { animation-delay: 350ms; }
 
-/* ===== Prompt Prefix ===== */
-.prompt::before {
-  content: '$ ';
-  color: var(--term-text-3);
+/* ===== FlipText Character Animation ===== */
+.flip-char {
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+  vertical-align: bottom;
 }
-
-/* ===== Box-Drawing Border Utility ===== */
-.box-border-terminal {
-  border: 1px solid var(--term-surface-2);
-  background: var(--term-surface);
+.flip-char-inner {
+  position: relative;
+}
+.flip-face {
+  display: inline-block;
+  backface-visibility: hidden;
+  transition: transform 0.4s ease, opacity 0.4s ease;
+}
+.flip-face-front.flip-out {
+  transform: translateY(-100%);
+  opacity: 0;
+}
+.flip-face-back {
+  position: absolute;
+  left: 0;
+  top: 100%;
+  opacity: 0;
+}
+.flip-face-back.flip-in {
+  transform: translateY(-100%);
+  opacity: 1;
 }
 
 /* ===== Smooth Scroll ===== */
@@ -296,7 +187,7 @@ html {
   scroll-behavior: smooth;
 }
 
-/* ===== Prose styles (Terminal Noir) ===== */
+/* ===== Prose styles (Institutional Clarity) ===== */
 .prose-kontext {
   line-height: 1.8;
 }
@@ -334,7 +225,7 @@ html {
 
 .prose-kontext p {
   margin-bottom: 1.25rem;
-  color: var(--term-text-2);
+  color: var(--ic-text-muted);
 }
 
 .prose-kontext strong {
@@ -343,7 +234,7 @@ html {
 }
 
 .prose-kontext a {
-  color: var(--term-blue);
+  color: var(--ic-accent);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -352,7 +243,7 @@ html {
 .prose-kontext ol {
   margin-bottom: 1.25rem;
   padding-left: 1.5rem;
-  color: var(--term-text-2);
+  color: var(--ic-text-muted);
 }
 
 .prose-kontext li {
@@ -363,10 +254,11 @@ html {
 .prose-kontext ol li { list-style-type: decimal; }
 
 .prose-kontext code {
-  background: var(--term-surface-2);
+  background: var(--ic-surface-2);
   padding: 0.15rem 0.4rem;
+  border-radius: 4px;
   font-size: 0.875em;
-  font-family: var(--font-martian-mono), monospace;
+  font-family: var(--font-ibm-plex-mono), monospace;
 }
 
 .prose-kontext pre code {
@@ -375,22 +267,21 @@ html {
 }
 
 .prose-kontext blockquote {
-  border-left: 2px solid var(--term-green);
+  border-left: 2px solid var(--ic-accent);
   padding-left: 1rem;
   margin: 1.5rem 0;
-  color: var(--term-text-2);
+  color: var(--ic-text-muted);
   font-style: italic;
 }
 
 .prose-kontext hr {
-  border-color: var(--term-surface-2);
+  border-color: var(--ic-border);
   margin: 2rem 0;
 }
 
 /* ===== Print Styles ===== */
 @media print {
-  body::after,
-  body::before {
+  .grid-bg {
     display: none !important;
   }
   body {

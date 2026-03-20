@@ -82,7 +82,7 @@ export default function WhoAuthorizedThisPost() {
           The Examiner Question That Will Define Agentic Payments: &apos;Who
           Authorized This?&apos;
         </h1>
-        <p className="mt-4 text-xs text-[var(--term-text-2)] leading-relaxed">
+        <p className="mt-4 text-xs text-[var(--ic-text-muted)] leading-relaxed">
           Compliance frameworks assume human agency. When AI agents
           autonomously send USDC, concepts like &quot;authorized&quot; and
           &quot;intentional&quot; become ambiguous. The first enforcement
@@ -361,9 +361,36 @@ export default function WhoAuthorizedThisPost() {
           before it arrives.
         </p>
 
+        {/* Kontext CTA */}
+        <div className="mt-8 rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] p-5">
+          <p className="text-sm text-[var(--ic-text-muted)]">
+            Kontext&apos;s patented tamper-evident audit trail captures intent, screening results, and approval context for every programmable payment.{" "}
+            <Link href="/contact" className="text-[var(--ic-accent)] hover:underline">
+              Learn how it works →
+            </Link>
+          </p>
+        </div>
+
+        {/* Related reading */}
+        <div className="mt-8">
+          <h3 className="font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--ic-text-dim)]">Related reading</h3>
+          <ul className="mt-3 space-y-2">
+            <li>
+              <Link href="/blog/bsa-always-on-settlement" className="text-sm text-[var(--ic-text-muted)] hover:text-[var(--ic-accent)] transition-colors">
+                Your BSA Program Wasn&apos;t Built for 24/7 Settlement →
+              </Link>
+            </li>
+            <li>
+              <Link href="/blog/regulated-entity-partner-problem" className="text-sm text-[var(--ic-text-muted)] hover:text-[var(--ic-accent)] transition-colors">
+                You&apos;re the Regulated Entity. Your Partner Initiated the Transaction. →
+              </Link>
+            </li>
+          </ul>
+        </div>
+
         <Separator className="my-12" />
 
-        <p className="text-xs text-[var(--term-text-3)]">
+        <p className="text-xs text-[var(--ic-text-dim)]">
           Vinay Narayan is the founder of Legaci Labs. He holds a patent on
           tamper-evident digest chains for agent audit trails.
         </p>

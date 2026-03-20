@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
 import { useState, type FormEvent } from "react";
@@ -46,23 +45,22 @@ export default function ContactPage() {
   return (
     <>
       {/* Hero */}
-      <section className="border-b border-[var(--term-surface-2)]">
+      <section className="border-b border-[var(--ic-border)]">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <Link
               href="/"
-              className="mb-8 inline-flex items-center gap-1 text-xs text-[var(--term-text-3)] hover:text-[var(--term-text-2)] transition-colors"
+              className="mb-8 inline-flex items-center gap-1 text-xs text-[var(--ic-text-dim)] hover:text-[var(--ic-text-muted)] transition-colors"
             >
               <ArrowLeft size={14} />
               Back to home
             </Link>
-            <h1 className="text-sm font-medium">
-              <span className="text-[var(--term-green)]">$</span>{" "}
-              CONTACT
+            <h1 className="font-serif text-3xl italic text-[var(--ic-text)]">
+              Request a demo
             </h1>
-            <p className="mt-4 text-xs text-[var(--term-text-2)]">
-              Interested in Pro? Have a compliance question? Drop us a
-              line and we will get back to you within one business day.
+            <p className="mt-4 text-sm text-[var(--ic-text-muted)]">
+              Tell us about your payment infrastructure and compliance needs.
+              We&apos;ll follow up within one business day.
             </p>
           </div>
         </div>
@@ -72,14 +70,25 @@ export default function ContactPage() {
       <section className="bg-background">
         <div className="mx-auto max-w-xl px-4 py-16 sm:px-6 lg:px-8">
           {status === "success" ? (
-            <div className=" border border-emerald-500/30 bg-emerald-500/5 p-8 text-center">
+            <div className="rounded-lg border border-[var(--ic-green)]/30 bg-[var(--ic-green-dim)] p-8 text-center">
               <CheckCircle
                 size={48}
-                className="mx-auto mb-4 text-emerald-500"
+                className="mx-auto mb-4 text-[var(--ic-green)]"
               />
-              <h2 className="text-2xl font-bold">Message sent</h2>
-              <p className="mt-2 text-muted-foreground">
-                We will get back to you within one business day.
+              <h2 className="text-2xl font-semibold text-[var(--ic-text)]">Message sent</h2>
+              <p className="mt-2 text-sm text-[var(--ic-text-muted)]">
+                We&apos;ll get back to you within one business day.
+              </p>
+              <p className="mt-4 text-sm text-[var(--ic-text-muted)]">
+                Want to get started sooner?{" "}
+                <a
+                  href="https://cal.com/vinay-narayan2/30min"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[var(--ic-accent)] hover:underline"
+                >
+                  Schedule a call now →
+                </a>
               </p>
               <Button className="mt-6" asChild>
                 <Link href="/">Back to home</Link>
@@ -99,7 +108,7 @@ export default function ContactPage() {
               <div>
                 <label
                   htmlFor="name"
-                  className="block text-xs font-medium mb-2 uppercase tracking-widest text-[var(--term-text-3)]"
+                  className="block font-mono text-[10px] font-medium mb-2 uppercase tracking-widest text-[var(--ic-text-dim)]"
                 >
                   Name
                 </label>
@@ -108,7 +117,7 @@ export default function ContactPage() {
                   id="name"
                   name="name"
                   required
-                  className="w-full  border border-border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] px-4 py-3 text-sm text-[var(--ic-text)] placeholder:text-[var(--ic-text-dim)] focus:border-[var(--ic-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--ic-accent)]"
                   placeholder="Your name"
                 />
               </div>
@@ -116,7 +125,7 @@ export default function ContactPage() {
               <div>
                 <label
                   htmlFor="email"
-                  className="block text-xs font-medium mb-2 uppercase tracking-widest text-[var(--term-text-3)]"
+                  className="block font-mono text-[10px] font-medium mb-2 uppercase tracking-widest text-[var(--ic-text-dim)]"
                 >
                   Email
                 </label>
@@ -125,7 +134,7 @@ export default function ContactPage() {
                   id="email"
                   name="email"
                   required
-                  className="w-full  border border-border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] px-4 py-3 text-sm text-[var(--ic-text)] placeholder:text-[var(--ic-text-dim)] focus:border-[var(--ic-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--ic-accent)]"
                   placeholder="you@company.com"
                 />
               </div>
@@ -133,7 +142,7 @@ export default function ContactPage() {
               <div>
                 <label
                   htmlFor="company"
-                  className="block text-xs font-medium mb-2 uppercase tracking-widest text-[var(--term-text-3)]"
+                  className="block font-mono text-[10px] font-medium mb-2 uppercase tracking-widest text-[var(--ic-text-dim)]"
                 >
                   Company
                 </label>
@@ -141,15 +150,31 @@ export default function ContactPage() {
                   type="text"
                   id="company"
                   name="company"
-                  className="w-full  border border-border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] px-4 py-3 text-sm text-[var(--ic-text)] placeholder:text-[var(--ic-text-dim)] focus:border-[var(--ic-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--ic-accent)]"
                   placeholder="Your company (optional)"
                 />
               </div>
 
               <div>
                 <label
+                  htmlFor="role"
+                  className="block font-mono text-[10px] font-medium mb-2 uppercase tracking-widest text-[var(--ic-text-dim)]"
+                >
+                  Role
+                </label>
+                <input
+                  type="text"
+                  id="role"
+                  name="role"
+                  className="w-full rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] px-4 py-3 text-sm text-[var(--ic-text)] placeholder:text-[var(--ic-text-dim)] focus:border-[var(--ic-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--ic-accent)]"
+                  placeholder="e.g., Head of Compliance, CEO, Platform Engineering Lead"
+                />
+              </div>
+
+              <div>
+                <label
                   htmlFor="interest"
-                  className="block text-xs font-medium mb-2 uppercase tracking-widest text-[var(--term-text-3)]"
+                  className="block font-mono text-[10px] font-medium mb-2 uppercase tracking-widest text-[var(--ic-text-dim)]"
                 >
                   I am interested in
                 </label>
@@ -157,18 +182,20 @@ export default function ContactPage() {
                   id="interest"
                   name="interest"
                   required
-                  className="w-full  border border-border bg-background px-4 py-3 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] px-4 py-3 text-sm text-[var(--ic-text)] focus:border-[var(--ic-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--ic-accent)]"
                 >
-                  <option value="">Select a plan</option>
-                  <option value="pro">Pro (usage-based)</option>
-                  <option value="other">Other / General inquiry</option>
+                  <option value="">Select an option</option>
+                  <option value="starter">Starter — standing up payments controls</option>
+                  <option value="growth">Growth — production compliance for my team</option>
+                  <option value="enterprise">Enterprise — regulated platform, custom requirements</option>
+                  <option value="general">General inquiry</option>
                 </select>
               </div>
 
               <div>
                 <label
                   htmlFor="message"
-                  className="block text-xs font-medium mb-2 uppercase tracking-widest text-[var(--term-text-3)]"
+                  className="block font-mono text-[10px] font-medium mb-2 uppercase tracking-widest text-[var(--ic-text-dim)]"
                 >
                   Message
                 </label>
@@ -177,13 +204,13 @@ export default function ContactPage() {
                   name="message"
                   rows={5}
                   required
-                  className="w-full  border border-border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-                  placeholder="Tell us about your use case, expected volume, or any questions you have."
+                  className="w-full rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] px-4 py-3 text-sm text-[var(--ic-text)] placeholder:text-[var(--ic-text-dim)] focus:border-[var(--ic-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--ic-accent)] resize-none"
+                  placeholder="Tell us about your payment stack, compliance challenges, and what you're looking to solve."
                 />
               </div>
 
               {status === "error" && (
-                <div className="flex items-start gap-3  border border-red-500/30 bg-red-500/5 p-4 text-sm text-red-400">
+                <div className="flex items-start gap-3 rounded-lg border border-[var(--ic-red)]/30 bg-[var(--ic-red-dim)] p-4 text-sm text-[var(--ic-red)]">
                   <AlertCircle size={16} className="mt-0.5 shrink-0" />
                   {errorMsg}
                 </div>
@@ -198,8 +225,16 @@ export default function ContactPage() {
                 {status === "submitting" ? "Sending..." : "Send Message"}
               </Button>
 
-              <p className="text-center text-xs text-muted-foreground">
-                We typically respond within one business day.
+              <p className="mt-4 text-center text-xs text-[var(--ic-text-dim)]">
+                Prefer to schedule directly?{" "}
+                <a
+                  href="https://cal.com/vinay-narayan2/30min"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[var(--ic-accent)] hover:underline"
+                >
+                  Book a 30-minute call →
+                </a>
               </p>
             </form>
           )}

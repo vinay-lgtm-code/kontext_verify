@@ -167,12 +167,12 @@ export function TabSandbox() {
   };
 
   return (
-    <div className="flex flex-col h-[500px] border border-[var(--term-surface-2)] bg-[#09090b]">
+    <div className="flex flex-col h-[500px] rounded-lg border border-[var(--ic-border)] bg-[hsl(var(--background))]">
       {/* Messages area */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <p className="text-sm text-[var(--term-text-3)] mb-4">
+            <p className="text-sm text-[var(--ic-text-dim)] mb-4">
               Test USDC transactions with live compliance checks
             </p>
             <div className="flex flex-wrap justify-center gap-2">
@@ -180,7 +180,7 @@ export function TabSandbox() {
                 <button
                   key={prompt}
                   onClick={() => handleSubmit(prompt)}
-                  className="text-[10px] px-3 py-1.5 border border-[var(--term-surface-2)] text-[var(--term-text-3)] hover:text-[var(--term-green)] hover:border-[var(--term-green)] transition-colors"
+                  className="text-[10px] px-3 py-1.5 rounded-md border border-[var(--ic-border)] text-[var(--ic-text-dim)] hover:text-[var(--ic-accent)] hover:border-[var(--ic-accent)]/30 transition-colors"
                 >
                   {prompt}
                 </button>
@@ -193,11 +193,11 @@ export function TabSandbox() {
           <div key={i}>
             {msg.role === "user" ? (
               <div className="flex items-start gap-2">
-                <span className="text-[var(--term-green)] text-sm shrink-0">$</span>
-                <span className="text-sm text-foreground">{msg.content}</span>
+                <span className="text-[var(--ic-accent)] text-sm shrink-0">$</span>
+                <span className="text-sm text-[var(--ic-text)]">{msg.content}</span>
               </div>
             ) : (
-              <pre className="text-xs text-[var(--term-text-2)] leading-relaxed whitespace-pre-wrap font-mono">
+              <pre className="text-xs text-[var(--ic-text-muted)] leading-relaxed whitespace-pre-wrap font-mono">
                 {msg.content}
               </pre>
             )}
@@ -207,12 +207,12 @@ export function TabSandbox() {
 
       {/* Example prompts bar — shown after messages exist */}
       {messages.length > 0 && (
-        <div className="flex gap-2 px-4 py-2 border-t border-[var(--term-surface-2)] overflow-x-auto">
+        <div className="flex gap-2 px-4 py-2 border-t border-[var(--ic-border)] overflow-x-auto">
           {examplePrompts.map((prompt) => (
             <button
               key={prompt}
               onClick={() => handleSubmit(prompt)}
-              className="text-[10px] px-2 py-1 border border-[var(--term-surface-2)] text-[var(--term-text-3)] hover:text-[var(--term-green)] hover:border-[var(--term-green)] transition-colors whitespace-nowrap shrink-0"
+              className="text-[10px] px-2 py-1 rounded-md border border-[var(--ic-border)] text-[var(--ic-text-dim)] hover:text-[var(--ic-accent)] hover:border-[var(--ic-accent)]/30 transition-colors whitespace-nowrap shrink-0"
             >
               {prompt}
             </button>
@@ -221,8 +221,8 @@ export function TabSandbox() {
       )}
 
       {/* Input */}
-      <div className="flex items-center gap-2 border-t border-[var(--term-surface-2)] px-4 py-3">
-        <span className="text-[var(--term-green)] text-sm shrink-0">$</span>
+      <div className="flex items-center gap-2 border-t border-[var(--ic-border)] px-4 py-3">
+        <span className="text-[var(--ic-accent)] text-sm shrink-0">$</span>
         <input
           type="text"
           value={input}
@@ -231,7 +231,7 @@ export function TabSandbox() {
             if (e.key === "Enter") handleSubmit(input);
           }}
           placeholder="Describe a USDC transaction to verify..."
-          className="flex-1 bg-transparent text-sm text-foreground placeholder:text-[var(--term-text-3)] outline-none"
+          className="flex-1 bg-transparent text-sm text-[var(--ic-text)] placeholder:text-[var(--ic-text-dim)] outline-none"
         />
       </div>
     </div>

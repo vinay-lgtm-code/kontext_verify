@@ -17,7 +17,6 @@ function tokenize(code: string): React.ReactNode[] {
     let remaining = line;
     let key = 0;
 
-    // Simple syntax highlighting
     const patterns: [RegExp, string][] = [
       [/^(\/\/.*)/, "token-comment"],
       [/^(import|from|export|const|let|var|async|await|return|new|if|else|function|class|interface|type)\b/, "token-keyword"],
@@ -83,31 +82,23 @@ export function CodeBlock({
   };
 
   return (
-    <div className="code-block group relative border border-[var(--term-surface-2)] bg-[var(--term-surface)]">
-      <div className="flex items-center justify-between border-b border-[var(--term-surface-2)] px-4 py-2">
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-[var(--term-red)] opacity-60" />
-          <span className="w-2.5 h-2.5 rounded-full bg-[var(--term-amber)] opacity-60" />
-          <span className="w-2.5 h-2.5 rounded-full bg-[var(--term-green)] opacity-60" />
-          {filename && (
-            <span className="text-xs text-[var(--term-text-3)] font-mono ml-2">
-              {filename}
-            </span>
-          )}
-        </div>
-        <span className="text-xs text-[var(--term-text-3)]">{language}</span>
+    <div className="code-block group relative">
+      <div className="flex items-center justify-between border-b border-[var(--ic-border)] px-4 py-2.5">
+        <span className="text-xs text-[var(--ic-text-muted)] font-mono">
+          {filename || language}
+        </span>
+        <button
+          onClick={handleCopy}
+          className="p-1 text-[var(--ic-text-dim)] opacity-0 transition-opacity hover:text-[var(--ic-text-muted)] group-hover:opacity-100"
+          aria-label="Copy code"
+        >
+          {copied ? <Check size={14} /> : <Copy size={14} />}
+        </button>
       </div>
       <div className="relative">
         <pre className={showLineNumbers ? "pl-12" : ""}>
           <code>{tokenize(code.trim())}</code>
         </pre>
-        <button
-          onClick={handleCopy}
-          className="absolute right-3 top-3 p-1.5 text-[var(--term-text-3)] opacity-0 transition-opacity hover:text-[var(--term-text-2)] group-hover:opacity-100 bg-[var(--term-surface-2)] hover:bg-[var(--term-surface-3)]"
-          aria-label="Copy code"
-        >
-          {copied ? <Check size={14} /> : <Copy size={14} />}
-        </button>
       </div>
     </div>
   );

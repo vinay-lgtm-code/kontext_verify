@@ -23,100 +23,89 @@ import { Check, ArrowRight } from "lucide-react";
 
 const plans = [
   {
-    name: "Free",
-    price: "$0",
-    priceDetail: "forever",
+    name: "Starter",
+    price: "",
+    priceDetail: "",
     description:
-      "Everything you need to start proving compliance for your agents. No credit card, no catch.",
-    cta: "Get Started",
-    ctaHref: "/docs",
+      "For teams standing up programmable payments controls.",
+    cta: "Book a Demo",
+    ctaHref: "/contact",
     highlighted: false,
     features: [
-      "20,000 events/month",
-      "Core SDK (verify(), log(), logTransaction())",
-      "Tamper-evident digest chain",
-      "Trust scoring",
-      "Basic anomaly detection (2 rules)",
-      "JSON audit export",
-      "Base + Arc chain support",
-      "Agent reasoning logs",
-      "Compliance certificates",
-      "On-chain anchoring (verified Base mainnet contract)",
-      "A2A attestation",
-      "Kontext CLI (12 commands)",
-      "Community support via docs + GitHub",
+      "1 production environment",
+      "Capped monthly payment volume",
+      "OFAC screening (built-in SDN)",
+      "Patented tamper-evident chain",
+      "JSON + CSV audit export",
+      "Standard evidence retention",
+      "Email support",
     ],
   },
   {
-    name: "Pay as you go",
-    price: "$0.002",
-    priceDetail: "per event above 20K",
+    name: "Growth",
+    price: "",
+    priceDetail: "",
     description:
-      "For agents in production. Usage-based pricing with no monthly minimum. First 20K events always free.",
-    cta: "Get Started",
-    ctaHref: "/docs",
+      "For payment infrastructure companies with active compliance teams.",
+    cta: "Book a Demo",
+    ctaHref: "/contact",
     highlighted: true,
     features: [
-      "First 20,000 events free every month",
-      "Everything in Free, plus:",
-      "All 6 anomaly rules",
-      "Unified screening (OFAC, Chainalysis, OpenSanctions)",
-      "Custom blocklist/allowlist",
-      "CSV export",
-      "Multi-chain: ETH, SOL, Base, Polygon, Arbitrum, Optimism, Arc, Avalanche",
-      "Webhook alerts",
-      "Agent forensics (identity, wallet clustering)",
-      "Cloud persistence",
-      "Email support",
+      "Everything in Starter",
+      "Higher monthly payment volume",
+      "Multiple environments + integrations",
+      "Role-based access (compliance, risk, audit)",
+      "Advanced alerting + webhooks",
+      "SAR/CTR report templates",
+      "Multi-chain evidence trails (8 chains)",
+    ],
+  },
+  {
+    name: "Enterprise",
+    price: "",
+    priceDetail: "",
+    description:
+      "For regulated platforms with multi-rail programs and audit requirements.",
+    cta: "Contact Sales",
+    ctaHref: "/contact",
+    highlighted: false,
+    features: [
+      "Everything in Growth",
+      "Custom volume bands",
+      "Extended evidence retention",
+      "Custom policy + controls mapping",
+      "Case management / GRC integrations",
+      "Security review + procurement terms",
+      "Dedicated support + SLAs",
     ],
   },
 ];
 
 const faqs = [
   {
-    question: "Is the free tier really free?",
+    question: "What counts as a payment decision?",
     answer:
-      "Yes. The Kontext SDK is genuinely free — 20,000 events per month, no credit card required, no time limit. It includes verify(), action logging, trust scoring, basic anomaly detection, digest chain verification, on-chain anchoring, A2A attestation, and JSON export.",
-  },
-  {
-    question: "What counts as an event?",
-    answer:
-      "Each call to verify(), log(), logTransaction(), or logReasoning() counts as one event. Reads like getTrustScore() or verifyDigestChain() are free and do not count toward your limit.",
-  },
-  {
-    question: "What happens when I hit the event limit?",
-    answer:
-      "On the Free tier, you will get a clear warning as you approach 20,000 events. Beyond the limit, new logging calls will return a soft error with an upgrade prompt — your agent keeps running, it just stops recording new events until the next month or until you upgrade to Pro.",
-  },
-  {
-    question: "How does Pro pricing work?",
-    answer:
-      "Pro is usage-based at $0.002 per event above the 20K free tier. No monthly minimum, no commitment. Your first 20,000 events are always free every month. Formula: max(0, events - 20,000) x $0.002.",
-  },
-  {
-    question: "What does Pro add over Free?",
-    answer:
-      "Pro unlocks all six anomaly rules (adding newDestination, offHoursActivity, rapidSuccession, and roundAmount), unified screening across OFAC SDN, Chainalysis, and OpenSanctions, custom blocklist/allowlist management, CSV export, multi-chain support across ETH, SOL, Base, Polygon, Arbitrum, Optimism, Arc, and Avalanche, webhook alerts, cloud persistence, and email support.",
+      "Each call to verify(), log(), or logTransaction() counts as one payment decision monitored. Reads like verifyDigestChain() or export operations do not count toward your volume.",
   },
   {
     question: "What chains does Kontext support?",
     answer:
-      "The Free tier supports Base and Arc. Pro unlocks all 8 chains: ETH, SOL, Base, Polygon, Arbitrum, Optimism, Arc, and Avalanche.",
+      "Kontext supports 8 chains: Ethereum, Base, Polygon, Arbitrum, Optimism, Arc, Avalanche, and Solana.",
   },
   {
     question: "How does Kontext handle my data?",
     answer:
-      "On the Free tier, all data stays on your infrastructure — nothing leaves your machine. On Pro with cloud features enabled, data is encrypted at rest and in transit, stored on GCP. You retain full ownership and can export or delete your data at any time.",
+      "All audit data is encrypted at rest (AES-256) and in transit (TLS 1.3), stored in GCP cloud infrastructure following SOC 2-aligned practices. You retain full ownership and can export or delete your data at any time.",
   },
   {
     question: "Does Kontext help with GENIUS Act compliance?",
     answer:
-      "Kontext provides the developer tooling to build a compliance audit trail aligned with the GENIUS Act (signed July 2025, regulations due July 2026). It logs what your agents did, why they did it, and proves compliance checks ran with cryptographic proof. That said, Kontext is a developer SDK, not a law firm — consult qualified legal counsel for your specific regulatory obligations.",
+      "Kontext provides the compliance infrastructure to build an audit-defensible evidence trail aligned with the GENIUS Act (signed July 2025, regulations due July 2026). It logs what happened, why it was allowed, and proves compliance checks ran with cryptographic proof. Kontext is compliance infrastructure, not a law firm — consult qualified legal counsel for your specific regulatory obligations.",
   },
   {
-    question: "What kind of support do I get?",
+    question: "How is pricing structured?",
     answer:
-      "Free tier includes documentation and community support. Pro includes email support.",
+      "Annual platform fee based on payment decisions monitored per month — the unit your compliance and risk teams already think in. Contact us for specific pricing based on your volume and requirements.",
   },
 ];
 
@@ -136,8 +125,8 @@ export default function PricingPage() {
               PRICING
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
-              Free for up to 20K events a month — including on-chain anchoring
-              on Base mainnet. Pay only for what you use beyond that.
+              Priced like a controls product, not a logging meter. Annual
+              platform fee based on payment decisions monitored.
             </p>
           </div>
         </div>
@@ -146,7 +135,7 @@ export default function PricingPage() {
       {/* Plans */}
       <section className="bg-background">
         <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-3">
             {plans.map((plan) => (
               <Card
                 key={plan.name}
@@ -165,16 +154,6 @@ export default function PricingPage() {
                 )}
                 <CardHeader className="pb-4">
                   <CardTitle className="text-xl">{plan.name}</CardTitle>
-                  <div className="mt-2 flex items-baseline gap-1">
-                    <span className="text-2xl font-bold tracking-tight">
-                      {plan.price}
-                    </span>
-                    {plan.priceDetail && (
-                      <span className="text-sm text-muted-foreground">
-                        {plan.priceDetail}
-                      </span>
-                    )}
-                  </div>
                   <CardDescription className="mt-2">
                     {plan.description}
                   </CardDescription>
@@ -245,9 +224,9 @@ const result = await ctx.verify({
   agentId: 'research-agent',
 });
 
-// result.compliant = true/false
+// result.decision = 'approved' | 'requires-review' | 'blocked'
 // result.checks = [{ name: 'OFAC Sanctions', passed: true }, ...]
-// result.riskLevel = 'low' | 'medium' | 'high' | 'critical'`}</code>
+// result.auditBundleId = 'TXN-2026-03-19-7f8a2b'`}</code>
             </pre>
           </div>
         </div>
@@ -300,22 +279,22 @@ const result = await ctx.verify({
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center text-center">
             <h2 className="text-sm font-medium">
-              Ready to ship compliant agents?
+              Be ready to explain every payment decision
             </h2>
             <p className="mt-4 max-w-md text-muted-foreground">
-              Install the SDK and add compliance logging to your first agent in
-              under 5 minutes. No API key required.
+              See how Kontext creates an audit-defensible evidence trail for
+              programmable payments.
             </p>
             <div className="mt-6 flex flex-col gap-4 sm:flex-row">
               <Button size="lg" asChild>
-                <Link href="/docs">
-                  Get Started Free
+                <Link href="/contact">
+                  Book a Demo
                   <ArrowRight size={16} className="ml-2" />
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link href="/contact">
-                  Contact Us
+                <Link href="/docs">
+                  Read the Docs
                 </Link>
               </Button>
             </div>

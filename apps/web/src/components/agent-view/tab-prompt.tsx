@@ -67,7 +67,7 @@ export function TabPrompt() {
         <div className="relative">
           <button
             onClick={handleCopy}
-            className="absolute right-0 top-0 flex items-center gap-1.5 px-3 py-1.5 text-xs text-[var(--term-text-3)] hover:text-[var(--term-green)] bg-[var(--term-surface-2)] hover:bg-[var(--term-surface-3)] transition-colors"
+            className="absolute right-0 top-0 flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs text-[var(--ic-text-dim)] hover:text-[var(--ic-accent)] bg-[var(--ic-surface-2)] hover:bg-[var(--ic-surface-3)] transition-colors"
           >
             {copied ? (
               <>
@@ -79,14 +79,14 @@ export function TabPrompt() {
               </>
             )}
           </button>
-          <pre className="text-xs text-[var(--term-text-2)] leading-relaxed overflow-x-auto max-h-[500px] overflow-y-auto whitespace-pre-wrap pr-20">
+          <pre className="text-xs text-[var(--ic-text-muted)] leading-relaxed overflow-x-auto max-h-[500px] overflow-y-auto whitespace-pre-wrap pr-20">
             {prompt}
           </pre>
         </div>
       </TerminalChrome>
 
       {/* What happens when pasted */}
-      <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--term-text-3)]">
+      <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--ic-text-dim)]">
         {[
           "paste",
           "detect stack",
@@ -95,8 +95,8 @@ export function TabPrompt() {
           "done (~2 min)",
         ].map((step, i) => (
           <span key={step} className="flex items-center gap-2">
-            <span className="text-[var(--term-text-2)]">{step}</span>
-            {i < 4 && <span className="text-[var(--term-green)]">&rarr;</span>}
+            <span className="text-[var(--ic-text-muted)]">{step}</span>
+            {i < 4 && <span className="text-[var(--ic-accent)]">&rarr;</span>}
           </span>
         ))}
       </div>

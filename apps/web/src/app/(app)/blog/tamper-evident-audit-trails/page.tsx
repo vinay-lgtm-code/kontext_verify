@@ -78,7 +78,7 @@ export default function TamperEvidentAuditTrailsPost() {
         <h1 className="mt-4 text-sm font-medium">
           Building Tamper-Evident Audit Trails for AI Agent Transactions
         </h1>
-        <p className="mt-4 text-xs text-[var(--term-text-2)] leading-relaxed">
+        <p className="mt-4 text-xs text-[var(--ic-text-muted)] leading-relaxed">
           AI agents are making autonomous financial decisions -- paying vendors,
           settling invoices, moving stablecoins across chains. When a regulator
           asks for proof that your logs have not been tampered with, a database
@@ -180,7 +180,7 @@ export default function TamperEvidentAuditTrailsPost() {
         <div className="my-8 overflow-x-auto">
           <div className="flex items-center gap-0 min-w-[600px]">
             {/* Block 0 */}
-            <div className="flex-shrink-0 rounded-l-lg border border-border bg-[var(--term-surface)] px-4 py-3 text-center w-[180px]">
+            <div className="flex-shrink-0 rounded-l-lg border border-border bg-[var(--ic-surface-2)] px-4 py-3 text-center w-[180px]">
               <div className="text-xs font-mono text-muted-foreground mb-1">Entry 0 (Genesis)</div>
               <div className="text-xs font-mono font-bold text-primary truncate">Digest: a3f2...8b01</div>
             </div>
@@ -189,7 +189,7 @@ export default function TamperEvidentAuditTrailsPost() {
               <ArrowRight size={16} className="text-muted-foreground" />
             </div>
             {/* Block 1 */}
-            <div className="flex-shrink-0 border border-border bg-[var(--term-surface)] px-4 py-3 text-center w-[180px]">
+            <div className="flex-shrink-0 border border-border bg-[var(--ic-surface-2)] px-4 py-3 text-center w-[180px]">
               <div className="text-xs font-mono text-muted-foreground mb-1">Entry 1</div>
               <div className="text-xs font-mono font-bold text-primary truncate">Digest: 7c91...f4e2</div>
             </div>
@@ -198,7 +198,7 @@ export default function TamperEvidentAuditTrailsPost() {
               <ArrowRight size={16} className="text-muted-foreground" />
             </div>
             {/* Block 2 */}
-            <div className="flex-shrink-0 border border-border bg-[var(--term-surface)] px-4 py-3 text-center w-[180px]">
+            <div className="flex-shrink-0 border border-border bg-[var(--ic-surface-2)] px-4 py-3 text-center w-[180px]">
               <div className="text-xs font-mono text-muted-foreground mb-1">Entry 2</div>
               <div className="text-xs font-mono font-bold text-primary truncate">Digest: d4b7...29a6</div>
             </div>
@@ -207,7 +207,7 @@ export default function TamperEvidentAuditTrailsPost() {
               <ArrowRight size={16} className="text-muted-foreground" />
             </div>
             {/* Block N */}
-            <div className="flex-shrink-0 rounded-r-lg border border-border bg-[var(--term-surface)] px-4 py-3 text-center w-[180px]">
+            <div className="flex-shrink-0 rounded-r-lg border border-border bg-[var(--ic-surface-2)] px-4 py-3 text-center w-[180px]">
               <div className="text-xs font-mono text-muted-foreground mb-1">Entry N</div>
               <div className="text-xs font-mono font-bold text-primary truncate">Digest: e8f3...61cd</div>
             </div>

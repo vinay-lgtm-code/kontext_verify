@@ -66,7 +66,7 @@ export function FlipText({ words, interval = 2500 }: FlipTextProps) {
 
   return (
     <span
-      className="inline-flex text-[var(--term-green)] glow"
+      className="inline-flex text-[var(--ic-accent)]"
       aria-label={words[currentIndex]}
     >
       {Array.from({ length: maxLen }).map((_, i) => {
