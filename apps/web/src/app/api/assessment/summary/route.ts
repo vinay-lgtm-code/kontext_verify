@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
+import AnthropicVertex from "@anthropic-ai/vertex-sdk";
+import { GoogleAuth } from "google-auth-library";
 
 interface SummaryRequest {
   scores: {
@@ -61,11 +62,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  if (!process.env.ANTHROPIC_API_KEY) {
+  const projectId = process.env.ANTHROPIC_VERTEX_PROJECT_ID;
+  const region = process.env.CLOUD_ML_REGION;
+
+  if (!projectId || !region) {
     return NextResponse.json(buildFallback(body));
   }
 
-  const client = new Anthropic();
+  const credentialsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+  const googleAuth = credentialsJson
+    ? new GoogleAuth({
+        credentials: JSON.parse(credentialsJson),
+        scopes: "https://www.googleapis.com/auth/cloud-platform",
+      })
+    : undefined;
+
+  const client = new AnthropicVertex({ projectId, region, googleAuth });
 
   const flowType =
     typeof body.responses["flow_type"] === "string"
