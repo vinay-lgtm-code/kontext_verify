@@ -167,8 +167,7 @@ export function EvidenceDrawer({ event, onClose, fetchEvidence }: EvidenceDrawer
             {bundle && (
               <div className="dash-drawer-section">
                 <div className="dash-drawer-section-title">
-                  Cryptographic Proof{' '}
-                  <span style={{ fontWeight: 400, opacity: 0.6 }}>US 12,463,819 B1</span>
+                  Cryptographic Proof
                 </div>
                 <div style={{ marginBottom: 8 }}>
                   <div className="dash-drawer-label" style={{ fontSize: 11, marginBottom: 4 }}>Intent Hash</div>

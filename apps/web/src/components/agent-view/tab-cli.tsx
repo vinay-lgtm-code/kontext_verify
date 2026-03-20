@@ -2,18 +2,19 @@
 
 import { useState, useRef, useEffect } from "react";
 
-const HELP_TEXT = `kontext-sdk v0.12.0 — compliance proof at agent speed
+const HELP_TEXT = `kontext-sdk v0.12.0 — compliance evidence for programmable payments
 
 commands:
   check <from> <to>              OFAC + compliance check
-  verify --chain --amount --to   Full verify() with audit trail
+  verify --rail --amount --to    Full verify() with audit trail
   audit --verify                 Verify digest chain integrity
   cert --agent <id>              Compliance certificate
-  trust <agentId>                Trust score breakdown
+  evidence <txRef>               Evidence package summary
+  trust <initiatorId>            Trust score breakdown
   help                           Show all commands
   clear                          Clear terminal
 
-try: check 0xAgentWallet 0xRecipient`;
+try: verify --rail=ach --amount=15000 --to=****7890`;
 
 function processCommand(cmd: string): string {
   const parts = cmd.trim().split(/\s+/);
@@ -25,8 +26,8 @@ function processCommand(cmd: string): string {
   if (command === "clear") return "__CLEAR__";
 
   if (command === "check") {
-    const from = parts[1] || "0xAgentWallet";
-    const to = parts[2] || "0xRecipient";
+    const from = parts[1] || "0xTreasury";
+    const to = parts[2] || "0xVendor";
     return `Checking ${from} → ${to}...
 
 ┌─────────────────────────────────────────┐
@@ -42,13 +43,16 @@ function processCommand(cmd: string): string {
   }
 
   if (command === "verify") {
-    const chain = parts.find((p) => p.startsWith("--chain="))?.split("=")[1] || "base";
+    const rail = parts.find((p) => p.startsWith("--rail="))?.split("=")[1] || "stablecoin";
     const amount = parts.find((p) => p.startsWith("--amount="))?.split("=")[1] || "500";
-    return `Verifying transaction on ${chain}...
+    const chain = parts.find((p) => p.startsWith("--chain="))?.split("=")[1] || "";
+    const currency = rail === "ach" || rail === "wire" || rail === "card" ? "USD" : "USDC";
+    const chainLabel = chain ? `  Chain: ${chain}` : "";
 
-Chain:   ${chain}
-Amount:  $${amount} USDC
-Token:   USDC
+    return `Verifying ${rail.toUpperCase()} payment...
+
+Rail:    ${rail}${chainLabel ? "\n" + chainLabel : ""}
+Amount:  $${amount} ${currency}
 Status:  COMPLIANT ✓
 
 Checks:
@@ -80,19 +84,40 @@ Status: CHAIN INTACT — no tampering detected.`;
 ┌─────────────────────────────────────────┐
 │ COMPLIANCE CERTIFICATE                  │
 ├─────────────────────────────────────────┤
-│ Agent: ${agentId.padEnd(33)}│
+│ Initiator: ${agentId.padEnd(28)}│
 │ Period: 2026-02-01 to 2026-03-01       │
 │ Status: COMPLIANT                       │
 │ Trust Score: 87/100 (high)              │
 │ Events Logged: 142                      │
+│ Rails: stablecoin, ach, wire           │
 │ Digest Chain: 142 links, verified ✓    │
 │ Content Hash: sha256:9f8e7d...         │
 └─────────────────────────────────────────┘`;
   }
 
+  if (command === "evidence") {
+    const txRef = parts[1] || "ACH-2026-03-19-0042";
+    return `Evidence package for ${txRef}:
+
+┌─────────────────────────────────────────┐
+│ EVIDENCE PACKAGE                        │
+├─────────────────────────────────────────┤
+│ Ref: ${txRef.padEnd(34)}│
+│ Rail: ACH                               │
+│ Amount: $15,000.00 USD                  │
+│ From: ****4521 (Chase)                  │
+│ To: ****7890 (Wells Fargo)              │
+│ Initiator: j.martinez (human)           │
+│ OFAC: Cleared ✓                        │
+│ Intent Hash: sha256:4a7b...             │
+│ Digest Position: #1,847                 │
+│ Chain Verified: ✓                      │
+└─────────────────────────────────────────┘`;
+  }
+
   if (command === "trust") {
-    const agentId = parts[1] || "treasury-agent";
-    return `Trust score for ${agentId}:
+    const initiatorId = parts[1] || "treasury-agent";
+    return `Trust score for ${initiatorId}:
 
 Score: 87/100 (HIGH)
 

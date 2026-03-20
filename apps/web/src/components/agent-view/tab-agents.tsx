@@ -29,11 +29,11 @@ export function TabAgents() {
     >
       <Section title="WHAT IS KONTEXT">
         <p>
-          Compliance logging SDK for AI agents that move money.
-          One call — <code className="text-[var(--ic-accent)]">verify()</code> — runs
-          OFAC screening, logs the transaction into a tamper-evident digest chain,
-          computes trust score, returns structured compliance result. Zero
-          dependencies. Free on Base/Arc.
+          Compliance evidence SDK for programmable payments.
+          One call — <code className="text-[var(--ic-accent)]">verify()</code> — captures
+          intent, runs OFAC screening, logs the payment into a tamper-evident digest chain,
+          and returns a structured compliance result. Works across stablecoins, ACH,
+          wire, card, and SEPA rails.
         </p>
       </Section>
 
@@ -49,139 +49,99 @@ export function TabAgents() {
           </li>
           <li>
             <span className="text-[var(--ic-text-dim)]">3.</span>{" "}
-            <code>{`await ctx.verify({ txHash, chain: 'base', amount, token: 'USDC', from, to, agentId })`}</code>
+            <code>{`await ctx.verify({ txHash, rail, amount, currency, from, to, initiator })`}</code>
           </li>
         </ol>
       </Section>
 
-      <Section title="DEFAULT FLOW: x402 USDC ON BASE/ARC">
-        <TerminalChrome title="x402-flow.ts" className="mt-2">
+      <Section title="STABLECOIN PAYMENT">
+        <TerminalChrome title="stablecoin-transfer.ts" className="mt-2">
           <pre className="text-xs leading-relaxed overflow-x-auto">
-            <code>{`// Agent receives HTTP 402 → reasons about payment → verify → pay
-const result = await ctx.verify({
-  ...x402Payment,
-  chain: 'base',    // or 'arc'
-  token: 'USDC',
-  agentId: 'payment-agent',
-  counterparty: {
-    endpoint: 'https://api.example.com/.well-known/kontext'
-  }
+            <code>{`const result = await ctx.verify({
+  txHash: '0xabc...def',
+  rail: 'stablecoin',
+  chain: 'base',
+  amount: '28000',
+  currency: 'USDC',
+  from: '0xTreasury',
+  to: '0xVendor',
+  initiator: { id: 'treasury-agent', type: 'agent' },
+  fundingSource: 'Circle Wallet',
 });`}</code>
           </pre>
         </TerminalChrome>
       </Section>
 
-      <Section title="CIRCLE PROGRAMMABLE WALLETS">
-        <TerminalChrome title="circle-wallets.ts" className="mt-2">
+      <Section title="ACH / WIRE / CARD PAYMENT">
+        <TerminalChrome title="fiat-transfer.ts" className="mt-2">
           <pre className="text-xs leading-relaxed overflow-x-auto">
-            <code>{`// Wrap Circle transfers with compliance
-const result = await ctx.verify({
-  txHash: circleResponse.txHash,
-  chain: 'arc',
-  amount: '5000',
-  token: 'USDC',
-  from: circleWallet,
-  to: recipient,
-  agentId: 'treasury-agent',
+            <code>{`const result = await ctx.verify({
+  txRef: 'ACH-2026-03-19-0042',
+  rail: 'ach',
+  amount: '15000',
+  currency: 'USD',
+  from: { account: '****4521', institution: 'Chase' },
+  to: { account: '****7890', institution: 'Wells Fargo' },
+  initiator: { id: 'j.martinez', type: 'human' },
+  fundingSource: 'Treasury Account',
 });`}</code>
           </pre>
         </TerminalChrome>
       </Section>
 
-      <Section title="VERIFY INPUT SCHEMA">
-        <TerminalChrome title="types.ts" className="mt-2">
-          <pre className="text-xs leading-relaxed overflow-x-auto">
-            <code>{`interface VerifyInput {
-  txHash: string;
-  chain: 'base' | 'arc' | 'ethereum' | 'polygon' | 'arbitrum' | 'optimism' | 'avalanche' | 'solana';
-  amount: string;
-  token: 'USDC' | 'USDT' | 'DAI' | 'EURC';
-  from: string;
-  to: string;
-  agentId: string;
-  reasoning?: string;
-  counterparty?: { endpoint: string; agentId: string };
-  anchor?: { rpcUrl: string; contractAddress: string; privateKey?: string };
-  metadata?: Record<string, unknown>;
-}`}</code>
-          </pre>
-        </TerminalChrome>
-      </Section>
-
-      <Section title="VERIFY OUTPUT SCHEMA">
-        <TerminalChrome title="types.ts" className="mt-2">
-          <pre className="text-xs leading-relaxed overflow-x-auto">
-            <code>{`interface VerifyResult {
-  compliant: boolean;
-  checks: Array<{ name: string; passed: boolean; details?: string }>;
-  riskLevel: 'low' | 'medium' | 'high' | 'critical';
-  recommendations: string[];
-  trustScore: { score: number; level: string; factors: Factor[] };
-  digestProof: { valid: boolean; chainLength: number };
-  transaction: TransactionRecord;
-  counterparty?: { attested: boolean; digest: string };
-  anchorProof?: { txHash: string; blockNumber: number };
-}`}</code>
-          </pre>
-        </TerminalChrome>
-      </Section>
-
-      <Section title="SUPPORTED CHAINS (Base + Arc free)">
+      <Section title="SUPPORTED RAILS">
         <div className="flex flex-wrap gap-2 mt-1">
           {[
-            { name: "base", free: true },
-            { name: "arc", free: true },
-            { name: "ethereum", free: false },
-            { name: "polygon", free: false },
-            { name: "arbitrum", free: false },
-            { name: "optimism", free: false },
-            { name: "avalanche", free: false },
-            { name: "solana", free: false },
-          ].map((chain) => (
+            { name: "Stablecoin", highlight: true },
+            { name: "ACH", highlight: true },
+            { name: "Wire", highlight: true },
+            { name: "Card", highlight: true },
+            { name: "SEPA", highlight: true },
+          ].map((rail) => (
             <span
-              key={chain.name}
-              className={`text-xs px-2 py-0.5 border rounded-md ${
-                chain.free
-                  ? "border-[var(--ic-green)] text-[var(--ic-green)]"
-                  : "border-[var(--ic-border)] text-[var(--ic-text-dim)]"
-              }`}
+              key={rail.name}
+              className="text-xs px-2 py-0.5 border rounded-md border-[var(--ic-accent)]/30 text-[var(--ic-accent)]"
             >
-              {chain.free && <span className="h-1.5 w-1.5 rounded-full bg-[var(--ic-green)] inline-block mr-1" />}
-              {chain.name}
+              {rail.name}
             </span>
           ))}
         </div>
       </Section>
 
-      <Section title="PRIMARY TOKEN: USDC">
-        <p>
-          Also supports: USDT, DAI, EURC
-        </p>
+      <Section title="SUPPORTED CHAINS (Stablecoin)">
+        <div className="flex flex-wrap gap-2 mt-1">
+          {["base", "arc", "ethereum", "polygon", "arbitrum", "optimism", "avalanche", "solana"].map((chain) => (
+            <span
+              key={chain}
+              className="text-xs px-2 py-0.5 border rounded-md border-[var(--ic-border)] text-[var(--ic-text-dim)]"
+            >
+              {chain}
+            </span>
+          ))}
+        </div>
       </Section>
 
-      <Section title="MACHINE-READABLE ENDPOINTS">
-        <div className="space-y-1 font-mono text-xs">
-          <p>
-            <span className="text-[var(--ic-text-dim)]">Agent card</span>
-            <span className="text-[var(--ic-text-dim)]"> ··· </span>
-            <span className="text-[var(--ic-accent)]">https://getkontext.com/.well-known/kontext.json</span>
-          </p>
-          <p>
-            <span className="text-[var(--ic-text-dim)]">LLM guide</span>
-            <span className="text-[var(--ic-text-dim)]"> ···· </span>
-            <span className="text-[var(--ic-accent)]">https://getkontext.com/llms.txt</span>
-          </p>
-          <p>
-            <span className="text-[var(--ic-text-dim)]">npm</span>
-            <span className="text-[var(--ic-text-dim)]"> ·········· </span>
-            <span className="text-[var(--ic-accent)]">https://npmjs.com/package/kontext-sdk</span>
-          </p>
-          <p>
-            <span className="text-[var(--ic-text-dim)]">Docs</span>
-            <span className="text-[var(--ic-text-dim)]"> ········· </span>
-            <span className="text-[var(--ic-accent)]">https://getkontext.com/docs</span>
-          </p>
+      <Section title="SUPPORTED CURRENCIES">
+        <div className="flex flex-wrap gap-2 mt-1">
+          {["USD", "EUR", "GBP", "SGD", "INR", "AED", "USDC", "USDT", "EURC"].map((currency) => (
+            <span
+              key={currency}
+              className="text-xs px-2 py-0.5 border rounded-md border-[var(--ic-border)] text-[var(--ic-text-dim)]"
+            >
+              {currency}
+            </span>
+          ))}
         </div>
+      </Section>
+
+      <Section title="INITIATOR TYPES">
+        <p>
+          <code className="text-[var(--ic-accent)]">agent</code> — autonomous AI systems, bots, service accounts
+          <br />
+          <code className="text-[var(--ic-accent)]">human</code> — staff, treasury operators, approvers
+          <br />
+          <code className="text-[var(--ic-accent)]">system</code> — scheduled jobs, reconciliation, settlement engines
+        </p>
       </Section>
     </article>
   );
