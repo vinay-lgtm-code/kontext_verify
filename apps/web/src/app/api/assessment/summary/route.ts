@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
+import { writeFileSync, existsSync } from "fs";
 import AnthropicVertex from "@anthropic-ai/vertex-sdk";
-import { GoogleAuth } from "google-auth-library";
 
 interface SummaryRequest {
   scores: {
@@ -70,14 +70,15 @@ export async function POST(request: Request) {
   }
 
   const credentialsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
-  const googleAuth = credentialsJson
-    ? new GoogleAuth({
-        credentials: JSON.parse(credentialsJson),
-        scopes: "https://www.googleapis.com/auth/cloud-platform",
-      })
-    : undefined;
+  if (credentialsJson && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    const tmpPath = "/tmp/gcp-sa-key.json";
+    if (!existsSync(tmpPath)) {
+      writeFileSync(tmpPath, credentialsJson, { mode: 0o600 });
+    }
+    process.env.GOOGLE_APPLICATION_CREDENTIALS = tmpPath;
+  }
 
-  const client = new AnthropicVertex({ projectId, region, googleAuth });
+  const client = new AnthropicVertex({ projectId, region });
 
   const flowType =
     typeof body.responses["flow_type"] === "string"
