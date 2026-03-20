@@ -509,7 +509,6 @@ export default function LandingPage() {
                 <li>Decision Context Capture</li>
                 <li>Evidence Logging</li>
                 <li>Tamper-Evident Chain (Patented)</li>
-                <li className="font-mono text-[9px] text-[var(--ic-text-dim)]">US 12,463,819 B1</li>
                 <li>Audit Export</li>
               </ul>
             </div>

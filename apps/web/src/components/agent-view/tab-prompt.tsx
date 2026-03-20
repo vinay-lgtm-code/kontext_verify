@@ -4,52 +4,59 @@ import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { TerminalChrome } from "./terminal-chrome";
 
-const prompt = `Add Kontext compliance logging to this project. Kontext is a zero-dependency
-TypeScript SDK that wraps USDC payments with OFAC screening, audit trails,
-and tamper-evident digest chains. Built for x402, Circle Wallets, and Base/Arc.
+const prompt = `Add Kontext compliance evidence logging to this project. Kontext is a zero-dependency
+TypeScript SDK that wraps payments — stablecoin, ACH, wire, card, and SEPA — with
+OFAC screening, audit trails, and tamper-evident digest chains.
 
 Steps:
 1. Run: npm install kontext-sdk
-2. Find where this project sends payments. Look for:
-   - x402 payment headers (HTTP 402 responses with payment-required)
-   - Circle SDK transfers (circle-sdk, @circle-fin/*)
-   - ethers/viem sendTransaction or USDC approve+transfer patterns
-   - Any HTTP call or smart contract interaction that moves USDC
+2. Find where this project sends or initiates payments. Look for:
+   - Stablecoin: ethers/viem sendTransaction, USDC approve+transfer, Circle SDK
+   - ACH/Wire: bank transfer APIs, treasury management calls, Plaid, Dwolla
+   - Card: Stripe charges, Adyen payments, payment gateway calls
+   - SEPA: EU bank transfer APIs, payment service providers
+   - x402: HTTP 402 responses with payment-required headers
 3. Ask me:
    - What is your project name? (used as projectId)
-   - Which chain? (base or arc for free tier; ethereum, polygon, arbitrum,
-     optimism for Pay as you go)
-   - Do you want local persistence? (FileStorage vs in-memory)
+   - Which payment rails? (stablecoin, ach, wire, card, sepa)
+   - Which chain for stablecoin? (base, arc, ethereum, polygon, etc.)
 4. Import and initialize at the entry point:
-   import { Kontext, FileStorage } from 'kontext-sdk';
+   import { Kontext } from 'kontext-sdk';
    const ctx = Kontext.init({
      projectId: '<answer>',
      environment: 'production',
-     storage: new FileStorage('.kontext'),
    });
-5. Wrap each payment with ctx.verify(). Canonical x402 flow:
-   // Agent receives 402 → reasons about payment → verify USDC → anchor
+5. Wrap each payment with ctx.verify():
+   // Stablecoin payment
    const result = await ctx.verify({
      txHash: tx.hash,
-     chain: '<answer>',          // 'base' or 'arc' recommended
+     rail: 'stablecoin',
+     chain: '<answer>',
      amount: String(amountInUSDC),
-     token: 'USDC',
+     currency: 'USDC',
      from: senderAddress,
      to: recipientAddress,
-     agentId: '<your-agent-name>',
-     reasoning: '<why the agent approved this payment>',
-     counterparty: {             // optional: bilateral compliance proof
-       endpoint: 'https://counterparty/.well-known/kontext',
-       agentId: 'counterparty-agent',
-     },
+     initiator: { id: '<agent-or-user-id>', type: 'agent' },
    });
+
+   // ACH payment
+   const result = await ctx.verify({
+     txRef: achReference,
+     rail: 'ach',
+     amount: String(amount),
+     currency: 'USD',
+     from: { account: senderAccount },
+     to: { account: recipientAccount },
+     initiator: { id: '<user-id>', type: 'human' },
+   });
+
    if (!result.compliant) {
      throw new Error(\`Blocked: \${result.recommendations.join(', ')}\`);
    }
 6. Add cleanup: await ctx.destroy()
 
 Docs: https://getkontext.com/docs
-Free: 20,000 events/month on Base and Arc. No API key needed.
+Evidence trails for stablecoin, ACH, wire, card, and SEPA payments.
 Zero runtime dependencies.`;
 
 export function TabPrompt() {

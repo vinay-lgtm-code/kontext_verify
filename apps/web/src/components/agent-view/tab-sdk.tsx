@@ -7,20 +7,33 @@ import { CopyBlock } from "./copy-block";
 const sdkCode = `import { Kontext } from 'kontext-sdk';
 
 const ctx = Kontext.init({
-  projectId: 'my-agent',
+  projectId: 'payments-platform',
   environment: 'production',
 });
 
-// x402: agent hits 402, reasons, verifies USDC payment on Base
-const result = await ctx.verify({
+// Stablecoin: agent-initiated USDC transfer on Base
+const stablecoin = await ctx.verify({
   txHash: '0xabc...def',
-  chain: 'base',         // or 'arc' — both free tier
-  amount: '0.50',
-  token: 'USDC',
-  from: '0xAgentWallet',
-  to: '0xAPIProvider',
-  agentId: 'research-agent',
-  reasoning: 'Paying CoinGecko API via x402. Provider not sanctioned.',
+  rail: 'stablecoin',
+  chain: 'base',
+  amount: '28000',
+  currency: 'USDC',
+  from: '0xTreasury',
+  to: '0xVendor',
+  initiator: { id: 'treasury-agent', type: 'agent' },
+  fundingSource: 'Circle Wallet',
+});
+
+// ACH: human-initiated domestic transfer
+const ach = await ctx.verify({
+  txRef: 'ACH-2026-03-19-0042',
+  rail: 'ach',
+  amount: '15000',
+  currency: 'USD',
+  from: { account: '****4521' },
+  to: { account: '****7890' },
+  initiator: { id: 'j.martinez', type: 'human' },
+  fundingSource: 'Treasury Account',
 });
 
 // result.compliant    → true
@@ -29,13 +42,14 @@ const result = await ctx.verify({
 // result.digestProof  → { valid: true, chainLength: 42 }`;
 
 const badges = [
-  { label: "USDC", href: "/docs#usdc" },
-  { label: "x402", href: "/docs#x402" },
+  { label: "Stablecoin", href: "/docs#stablecoin" },
+  { label: "ACH", href: "/docs#ach" },
+  { label: "Wire", href: "/docs#wire" },
+  { label: "Card", href: "/docs#card" },
+  { label: "SEPA", href: "/docs#sepa" },
+  { label: "Multi-rail", href: "/docs#multi-rail" },
   { label: "Circle Wallets", href: "/docs#circle-wallets" },
-  { label: "Base", href: "/docs#base" },
-  { label: "Arc", href: "/docs#arc" },
   { label: "CCTP", href: "/docs#cctp" },
-  { label: "ERC-8021", href: "/docs#erc-8021" },
 ];
 
 export function TabSdk() {
@@ -45,7 +59,7 @@ export function TabSdk() {
       <CopyBlock code="npm install kontext-sdk" label="install" />
 
       {/* Code example */}
-      <CodeBlock code={sdkCode} language="typescript" filename="agent.ts" />
+      <CodeBlock code={sdkCode} language="typescript" filename="payments.ts" />
 
       {/* Ecosystem badges */}
       <div className="flex flex-wrap gap-2">

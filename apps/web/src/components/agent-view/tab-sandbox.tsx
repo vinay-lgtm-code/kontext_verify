@@ -8,58 +8,101 @@ interface Message {
 }
 
 const examplePrompts = [
-  "Simulate x402 USDC Payment on Arc",
+  "Verify $28K ACH transfer",
   "Send $5K USDC on Base",
-  "Check trust score",
+  "Check wire payment compliance",
   "Verify digest chain",
 ];
 
 function formatComplianceResult(input: string): Message[] {
   const lower = input.toLowerCase();
 
-  if (lower.includes("x402") || lower.includes("arc")) {
+  if (lower.includes("ach") || lower.includes("28k") || lower.includes("28000")) {
     return [
       {
         role: "system",
         content: `$ ctx.verify({
-  txHash: '0x7f2a...e91c',
-  chain: 'arc',
-  amount: '0.50',
-  token: 'USDC',
-  from: '0xAgent...A1',
-  to: '0xAPI...B2',
-  agentId: 'research-agent',
+  txRef: 'ACH-2026-03-19-0042',
+  rail: 'ach',
+  amount: '28000',
+  currency: 'USD',
+  from: { account: '****4521', institution: 'Chase' },
+  to: { account: '****7890', institution: 'Wells Fargo' },
+  initiator: { id: 'j.martinez', type: 'human' },
+  fundingSource: 'Treasury Account',
 })
 
 {
   compliant: true,
-  riskLevel: 'low',
+  riskLevel: 'medium',
   checks: [
     { name: 'OFAC Sanctions', passed: true },
-    { name: 'Amount Threshold', passed: true },
-    { name: 'Transaction Frequency', passed: true },
+    { name: 'Amount Threshold (CTR)', passed: true,
+      details: 'Above $10K CTR reporting threshold' },
+    { name: 'Destination Risk', passed: true },
   ],
-  trustScore: { score: 92, level: 'high' },
-  digestProof: { valid: true, chainLength: 7 },
+  recommendations: ['CTR filing recommended (>$10K)'],
+  trustScore: { score: 82, level: 'high' },
+  digestProof: { valid: true, chainLength: 1847 },
 }
 
-Digest: d4e5f6...a1b2 → chain verified ✓`,
+⚠ CTR threshold ($10K) triggered. Report generated.
+Digest: c3d4e5...f6a7 → chain verified ✓`,
       },
     ];
   }
 
-  if (lower.includes("5k") || lower.includes("5000") || lower.includes("base")) {
+  if (lower.includes("wire")) {
+    return [
+      {
+        role: "system",
+        content: `$ ctx.verify({
+  txRef: 'WIRE-2026-03-19-007',
+  rail: 'wire',
+  amount: '125000',
+  currency: 'USD',
+  from: { account: '****2200', institution: 'JPMorgan' },
+  to: { account: '****8844', institution: 'HSBC London' },
+  initiator: { id: 'settlement-engine', type: 'system' },
+  fundingSource: 'Operating Account',
+})
+
+{
+  compliant: true,
+  riskLevel: 'high',
+  checks: [
+    { name: 'OFAC Sanctions', passed: true },
+    { name: 'Amount Threshold (Large)', passed: true,
+      details: 'Above $50K large transaction threshold' },
+    { name: 'Cross-border Risk', passed: true,
+      details: 'Destination: United Kingdom' },
+  ],
+  recommendations: ['Large transaction review recommended',
+                     'Cross-border documentation required'],
+  trustScore: { score: 74, level: 'medium' },
+  digestProof: { valid: true, chainLength: 1848 },
+}
+
+⚠ Large cross-border wire. Compliance review flagged.
+Digest: d4e5f6...a7b8 → chain verified ✓`,
+      },
+    ];
+  }
+
+  if (lower.includes("5k") || lower.includes("5000") || lower.includes("usdc") || lower.includes("base") || lower.includes("stablecoin")) {
     return [
       {
         role: "system",
         content: `$ ctx.verify({
   txHash: '0x3b1c...f42d',
+  rail: 'stablecoin',
   chain: 'base',
   amount: '5000',
-  token: 'USDC',
+  currency: 'USDC',
   from: '0xTreasury...C3',
   to: '0xVendor...D4',
-  agentId: 'treasury-agent',
+  initiator: { id: 'treasury-agent', type: 'agent' },
+  fundingSource: 'Circle Wallet',
 })
 
 {
@@ -72,8 +115,8 @@ Digest: d4e5f6...a1b2 → chain verified ✓`,
     { name: 'Transaction Frequency', passed: true },
   ],
   recommendations: ['Enhanced due diligence recommended (>$3K)'],
-  trustScore: { score: 78, level: 'medium' },
-  digestProof: { valid: true, chainLength: 8 },
+  trustScore: { score: 87, level: 'high' },
+  digestProof: { valid: true, chainLength: 1849 },
 }
 
 ⚠ EDD threshold ($3K) triggered. Recommend human review.
@@ -100,7 +143,7 @@ Digest: a7b8c9...d3e4 → chain verified ✓`,
   ],
 }
 
-Agent 'treasury-agent' trusted at 87/100.`,
+Initiator 'treasury-agent' trusted at 87/100.`,
       },
     ];
   }
@@ -115,11 +158,11 @@ Agent 'treasury-agent' trusted at 87/100.`,
   valid: true,
   genesisHash: 'a1b2c3d4e5f6...',
   terminalDigest: 'f6e5d4c3b2a1...',
-  length: 42,
-  linksVerified: 42,
+  length: 1849,
+  linksVerified: 1849,
 }
 
-Chain integrity: 42/42 links verified ✓
+Chain integrity: 1849/1849 links verified ✓
 No tampering detected. All records intact.`,
       },
     ];
@@ -129,18 +172,18 @@ No tampering detected. All records intact.`,
     {
       role: "system",
       content: `$ ctx.verify({
-  txHash: '0x...',
-  chain: 'base',
+  txRef: '...',
+  rail: 'ach',
   amount: '100',
-  token: 'USDC',
-  from: '0xSender',
-  to: '0xReceiver',
-  agentId: 'agent-v1',
+  currency: 'USD',
+  from: { account: '****1234' },
+  to: { account: '****5678' },
+  initiator: { id: 'operator', type: 'human' },
 })
 
 { compliant: true, riskLevel: 'low', trustScore: { score: 90 } }
 
-Try: "Simulate x402 USDC Payment on Arc" or "Send $5K USDC on Base"`,
+Try: "Verify $28K ACH transfer" or "Check wire payment compliance"`,
     },
   ];
 }
@@ -173,7 +216,7 @@ export function TabSandbox() {
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <p className="text-sm text-[var(--ic-text-dim)] mb-4">
-              Test USDC transactions with live compliance checks
+              Test payments across stablecoin, ACH, wire, and card rails
             </p>
             <div className="flex flex-wrap justify-center gap-2">
               {examplePrompts.map((prompt) => (
@@ -230,7 +273,7 @@ export function TabSandbox() {
           onKeyDown={(e) => {
             if (e.key === "Enter") handleSubmit(input);
           }}
-          placeholder="Describe a USDC transaction to verify..."
+          placeholder="Describe a payment to verify..."
           className="flex-1 bg-transparent text-sm text-[var(--ic-text)] placeholder:text-[var(--ic-text-dim)] outline-none"
         />
       </div>

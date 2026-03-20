@@ -9,7 +9,7 @@ import { TabSandbox } from "./tab-sandbox";
 import { TabCli } from "./tab-cli";
 
 const tabs = [
-  { id: "agents", label: "Agents" },
+  { id: "agents", label: "Overview" },
   { id: "cli", label: "CLI" },
   { id: "sdk", label: "SDK" },
   { id: "prompt", label: "Prompt" },

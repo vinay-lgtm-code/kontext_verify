@@ -8,16 +8,8 @@ export function HeroSection() {
   return (
     <section className="relative px-4 pt-24 pb-20 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl text-center">
-        {/* Context badge */}
-        <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-[var(--ic-accent)]/25 bg-[var(--ic-accent-dim)] px-4 py-1.5 opacity-0 animate-fade-in">
-          <span className="h-2 w-2 rounded-full bg-[var(--ic-accent)]" />
-          <span className="font-mono text-[11px] font-medium tracking-wide text-[var(--ic-accent)]">
-            Rising compliance expectations for programmable payments
-          </span>
-        </div>
-
         {/* Headline */}
-        <h1 className="font-serif text-4xl font-normal leading-[1.1] tracking-tight text-[var(--ic-text)] sm:text-5xl lg:text-6xl opacity-0 animate-fade-up" style={{ animationDelay: "100ms" }}>
+        <h1 className="font-serif text-4xl font-normal leading-[1.1] tracking-tight text-[var(--ic-text)] sm:text-5xl lg:text-6xl opacity-0 animate-fade-up">
           Compliance-grade audit trails for{" "}
           <em><FlipText words={["payments", "wallets", "agents", "transfers"]} /></em>
         </h1>
@@ -45,13 +37,8 @@ export function HeroSection() {
           </Link>
         </div>
 
-        {/* Patent pill */}
-        <p className="mt-4 font-mono text-[11px] text-[var(--ic-text-dim)] opacity-0 animate-fade-up" style={{ animationDelay: "400ms" }}>
-          Patented tamper-evident audit trail · US 12,463,819 B1
-        </p>
-
         {/* Dashboard preview */}
-        <div className="mx-auto mt-12 max-w-4xl rounded-xl border border-[var(--ic-border)] bg-[var(--ic-surface)] overflow-hidden pointer-events-none select-none shadow-[0_0_60px_-15px_rgba(59,110,248,0.15)] opacity-0 animate-slide-up" style={{ animationDelay: "450ms" }}>
+        <div className="mx-auto mt-12 max-w-4xl rounded-xl border border-[var(--ic-border)] bg-[var(--ic-surface)] overflow-hidden pointer-events-none select-none shadow-[0_0_60px_-15px_rgba(59,110,248,0.15)] opacity-0 animate-slide-up" style={{ animationDelay: "400ms" }}>
           {/* Browser chrome */}
           <div className="flex items-center gap-2 border-b border-[var(--ic-border)] px-4 py-2.5">
             <div className="flex gap-1.5">
@@ -138,7 +125,7 @@ export function HeroSection() {
         </div>
 
         {/* Logo strip */}
-        <div className="mt-12 opacity-0 animate-fade-in" style={{ animationDelay: "600ms" }}>
+        <div className="mt-12 opacity-0 animate-fade-in" style={{ animationDelay: "500ms" }}>
           <LogoStrip />
         </div>
       </div>
