@@ -55,7 +55,7 @@ internal/
 # Pay-as-you-go / Pro / Enterprise (kept locally, not in public repo)
 packages/sdk/src/storage-firestore.ts
 packages/sdk/src/approval.ts
-packages/sdk/src/webhooks.ts
+# packages/sdk/src/webhooks.ts — un-ignored: needed by index.ts barrel exports
 # packages/sdk/src/kya/ — un-ignored: needed for public SDK
 packages/sdk/src/integrations/cctp.ts
 packages/sdk/src/integrations/circle-wallets.ts
