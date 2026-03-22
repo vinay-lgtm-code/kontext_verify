@@ -6,13 +6,19 @@ import { CookieSettingsButton } from "./cookie-consent";
 const footerLinks = {
   Product: [
     { href: "/docs", label: "Documentation" },
-    { href: "/integrations", label: "Use Cases" },
+    { href: "/use-cases", label: "Use Cases" },
+    { href: "/bank-readiness", label: "Bank Readiness" },
+    { href: "/ai-agents", label: "AI Agents" },
     { href: "/integrations", label: "Integrations" },
     { href: "/changelog", label: "Changelog" },
   ],
   Resources: [
     { href: "/faqs", label: "FAQs" },
     { href: "/blog", label: "Blog" },
+    { href: "/assessment", label: "Readiness Assessment" },
+    { href: "/bank-readiness-checklist", label: "Bank Readiness Checklist" },
+    { href: "/sample-payment-decision-packet", label: "Sample Evidence Packet" },
+    { href: "/sample-ai-initiated-payment-packet", label: "AI Payment Packet" },
     { href: "/contact", label: "Contact" },
   ],
   Company: [
@@ -35,7 +41,7 @@ export function Footer() {
               Kontext
             </Link>
             <p className="mt-3 text-xs text-[var(--ic-text-dim)] leading-relaxed max-w-[200px]">
-              Compliance-grade audit trails for programmable payments.
+              Payment decision evidence for compliance teams.
             </p>
           </div>
 

@@ -8,7 +8,9 @@ import { Menu, X } from "lucide-react";
 
 const navLinks = [
   { href: "/#product", label: "Product" },
-  { href: "/#solutions", label: "Solutions" },
+  { href: "/use-cases", label: "Use Cases" },
+  { href: "/ai-agents", label: "AI Agents" },
+  { href: "/bank-readiness", label: "Bank Readiness" },
   { href: "/pricing", label: "Pricing" },
   { href: "/docs", label: "Docs" },
   { href: "/blog", label: "Blog" },
@@ -76,7 +78,7 @@ export function Navbar() {
             <Link href="/docs">View Docs</Link>
           </Button>
           <Button size="sm" asChild>
-            <Link href="/contact">Request Demo</Link>
+            <Link href="/contact">Book a Demo</Link>
           </Button>
         </div>
 
@@ -125,7 +127,7 @@ export function Navbar() {
               </Button>
               <Button size="sm" asChild>
                 <Link href="/contact" onClick={() => setMobileMenuOpen(false)}>
-                  Request Demo
+                  Book a Demo
                 </Link>
               </Button>
             </div>

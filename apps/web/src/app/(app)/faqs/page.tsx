@@ -31,9 +31,9 @@ const faqCategories = [
           "Payment infrastructure teams handling stablecoin transfers, API-driven payouts, or agent-initiated payments. Kontext serves compliance officers, risk managers, internal audit, and payments product teams who need to prove what happened before, during, and after every payment decision.",
       },
       {
-        question: "What does 'verifiable intent' mean?",
+        question: "What does 'verifiable decision context' mean?",
         answer:
-          "Verifiable intent means cryptographic proof that a payment was authorized, screened for sanctions, and logged before it happened. Kontext's patented digest chain links each action to the full history before it, creating tamper-evident evidence that compliance checks actually ran — not just a promise that they did.",
+          "Verifiable decision context means cryptographic proof that a payment was authorized, screened for sanctions, and logged before it happened. Kontext's patented digest chain links each action to the full history before it, creating tamper-evident evidence that compliance checks actually ran — not just a promise that they did.",
       },
     ],
   },
@@ -43,7 +43,7 @@ const faqCategories = [
       {
         question: "What languages and runtimes are supported?",
         answer:
-          "The primary SDK is TypeScript-first with full type safety and zero runtime dependencies. It runs on Node.js 18+, Bun, and Deno. A Python client (kontext-sdk, Python 3.9+) is also available for Python-based payment systems and agent frameworks. The core API is also accessible via REST for other environments.",
+          "The primary SDK is TypeScript-first with full type safety. It runs on Node.js 18+, Bun, and Deno. A Python client (kontext-sdk, Python 3.9+) is also available for Python-based payment systems. The core API is also accessible via REST for other environments.",
       },
       {
         question: "What blockchain chains are supported?",
@@ -63,7 +63,7 @@ const faqCategories = [
       {
         question: "What are the performance characteristics?",
         answer:
-          "The verify() call adds sub-5ms overhead for local rule evaluation. The SDK is under 100kb gzipped with zero runtime dependencies. Cloud-powered features add a network round-trip but are optimized for P95 latency under 50ms via edge deployment.",
+          "The verify() call adds sub-5ms overhead for local rule evaluation. The SDK is under 100kb gzipped. Cloud-powered features add a network round-trip but are optimized for P95 latency under 50ms via edge deployment.",
       },
       {
         question: "What is on-chain anchoring?",
@@ -128,7 +128,7 @@ const faqCategories = [
       {
         question: "How does Kontext support GENIUS Act compliance efforts?",
         answer:
-          "Kontext provides cryptographic verifiable intent — proof that every payment was authorized, screened, and logged. The patented digest chain creates tamper-evident audit trails, OFAC screening runs on every transfer, and compliance certificates bundle the evidence your team needs. It powers your compliance efforts but does not make you compliant on its own.",
+          "Kontext provides cryptographic proof that every payment was authorized, screened, and logged. The patented digest chain creates tamper-evident audit trails, OFAC screening runs on every transfer, and compliance certificates bundle the evidence your team needs. It powers your compliance efforts but does not make you compliant on its own.",
       },
       {
         question: "Is Kontext itself a certified compliance product?",

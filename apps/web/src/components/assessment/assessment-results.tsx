@@ -149,8 +149,11 @@ export function AssessmentResults({
             Share
           </button>
 
+          <span className="font-mono text-[9px] font-medium uppercase tracking-[3px] text-[var(--ic-text-dim)]">
+            Maturity Score
+          </span>
           <span
-            className="font-mono text-[10px] font-semibold uppercase tracking-[3px]"
+            className="mt-1 font-mono text-[10px] font-semibold uppercase tracking-[3px]"
             style={{ color: bandColor }}
           >
             {bandLabels[scores.band]}
@@ -297,10 +300,27 @@ export function AssessmentResults({
         ) : null}
       </motion.div>
 
-      {/* Top gaps */}
-      <motion.div {...stagger(3)}>
+      {/* Top 3 gaps at a glance */}
+      <motion.div {...stagger(3)} className="rounded-lg border border-[var(--ic-red)]/30 bg-[var(--ic-red)]/5 p-4">
+        <span className="font-mono text-[10px] font-semibold uppercase tracking-[3px] text-[var(--ic-red)]">
+          Top Gaps at a Glance
+        </span>
+        <ul className="mt-2 space-y-1.5">
+          {findings.topGaps.slice(0, 3).map((gap, i) => (
+            <li key={i} className="flex items-start gap-2">
+              <span className="mt-[7px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[var(--ic-red)]" />
+              <span className="text-[13px] leading-relaxed text-[var(--ic-text-muted)]">
+                {gap}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </motion.div>
+
+      {/* Full gaps */}
+      <motion.div {...stagger(4)}>
         <span className="font-mono text-[10px] font-semibold uppercase tracking-[3px] text-[var(--ic-text-dim)]">
-          Your Biggest Gaps
+          All Evidence Gaps
         </span>
         <div className="mt-3 space-y-3">
           {findings.topGaps.map((gap, i) => (
@@ -320,7 +340,7 @@ export function AssessmentResults({
       </motion.div>
 
       {/* Team impacts — collapsible */}
-      <motion.div {...stagger(4)}>
+      <motion.div {...stagger(5)}>
         <button
           onClick={() => toggle("teamImpacts")}
           className="flex w-full items-center justify-between"
@@ -367,7 +387,7 @@ export function AssessmentResults({
       </motion.div>
 
       {/* Evidence schema — collapsible */}
-      <motion.div {...stagger(5)}>
+      <motion.div {...stagger(6)}>
         <button
           onClick={() => toggle("evidenceSchema")}
           className="flex w-full items-center justify-between"
@@ -407,7 +427,7 @@ export function AssessmentResults({
       </motion.div>
 
       {/* Roadmap — collapsible */}
-      <motion.div {...stagger(6)}>
+      <motion.div {...stagger(7)}>
         <button
           onClick={() => toggle("roadmap")}
           className="flex w-full items-center justify-between"
@@ -466,7 +486,7 @@ export function AssessmentResults({
       </motion.div>
 
       {/* Demo CTA */}
-      <motion.div {...stagger(7)} className="flex flex-col items-center rounded-xl border border-[var(--ic-accent)] bg-[var(--ic-accent)]/5 px-6 py-7">
+      <motion.div {...stagger(8)} className="flex flex-col items-center rounded-xl border border-[var(--ic-accent)] bg-[var(--ic-accent)]/5 px-6 py-7">
         <h3 className="text-[16px] font-semibold text-[var(--ic-text)]">
           Want help reviewing your results?
         </h3>
@@ -483,8 +503,54 @@ export function AssessmentResults({
         </Link>
       </motion.div>
 
+      {/* Recommended next step */}
+      <motion.div {...stagger(9)} className="rounded-lg border border-[var(--ic-border)] p-5">
+        <span className="font-mono text-[10px] font-semibold uppercase tracking-[3px] text-[var(--ic-text-dim)]">
+          Recommended Next Step
+        </span>
+        <div className="mt-3 space-y-2">
+          {scores.overallScore < 40 ? (
+            <>
+              <p className="text-[13px] leading-relaxed text-[var(--ic-text-muted)]">
+                Your stack has significant evidence gaps. Start with the bank readiness checklist to understand what reviewers expect.
+              </p>
+              <Link
+                href="/bank-readiness-checklist"
+                className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--ic-accent)] hover:underline"
+              >
+                View bank readiness checklist →
+              </Link>
+            </>
+          ) : scores.overallScore < 70 ? (
+            <>
+              <p className="text-[13px] leading-relaxed text-[var(--ic-text-muted)]">
+                You have a foundation but key gaps remain. See how a structured evidence packet addresses the most common reviewer questions.
+              </p>
+              <Link
+                href="/sample-payment-decision-packet"
+                className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--ic-accent)] hover:underline"
+              >
+                View sample evidence packet →
+              </Link>
+            </>
+          ) : (
+            <>
+              <p className="text-[13px] leading-relaxed text-[var(--ic-text-muted)]">
+                Your evidence infrastructure is strong. Review how Kontext can formalize and automate what you already do well.
+              </p>
+              <Link
+                href="/bank-readiness"
+                className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--ic-accent)] hover:underline"
+              >
+                View bank readiness guide →
+              </Link>
+            </>
+          )}
+        </div>
+      </motion.div>
+
       {/* Disclaimer */}
-      <motion.p {...stagger(8)} className="pb-4 text-center text-[11px] leading-relaxed text-[var(--ic-text-dim)]">
+      <motion.p {...stagger(10)} className="pb-4 text-center text-[11px] leading-relaxed text-[var(--ic-text-dim)]">
         This assessment is informational only and does not constitute legal,
         regulatory, or compliance advice.
       </motion.p>

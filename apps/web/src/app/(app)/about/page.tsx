@@ -8,7 +8,7 @@ import { ArrowRight } from "lucide-react";
 export const metadata: Metadata = {
   title: "About Kontext",
   description:
-    "The agent economy is growing fast, but trust infrastructure hasn't kept up. Kontext provides the trust layer that makes agentic stablecoin and fiat transactions verifiable.",
+    "The agent economy is growing fast, but compliance infrastructure hasn't kept up. Kontext provides the evidence layer that makes programmable stablecoin and fiat transactions auditable.",
 };
 
 export default function AboutPage() {
@@ -47,7 +47,7 @@ export default function AboutPage() {
               stablecoins and traditional payment rails.
             </p>
             <p>
-              But here is the gap: <strong>there is no trust layer</strong>.
+              But here is the gap: <strong>there is no evidence layer</strong>.
             </p>
             <p>
               When a human employee sends a $10,000 wire transfer, there are
@@ -59,7 +59,7 @@ export default function AboutPage() {
               This is not a theoretical problem. As agents gain more autonomy
               and handle higher-value transactions, the lack of compliance
               infrastructure becomes a regulatory risk, an operational risk, and
-              a trust risk. Companies cannot adopt agentic workflows at scale
+              a trust risk. Companies cannot adopt autonomous payment workflows at scale
               without solving this.
             </p>
 
@@ -121,7 +121,7 @@ export default function AboutPage() {
             </ol>
             <p>
               Five lines of code gives you all of this. The SDK is lightweight
-              (under 10kb gzipped), has zero runtime dependencies, and works
+              (under 10kb gzipped) and works
               with any agent framework.
             </p>
 
@@ -179,7 +179,7 @@ export default function AboutPage() {
               sensible defaults, and clear documentation.
             </p>
             <p>
-              This is early. If you are working on agentic commerce
+              This is early. If you are working on programmable payments
               with stablecoins or fiat payments, we would love to hear from you.
             </p>
 
@@ -193,8 +193,8 @@ export default function AboutPage() {
               trustworthy.
             </p>
             <p>
-              Kontext&apos;s vision is to be the trust infrastructure for this
-              new economy -- the trust layer that every agent
+              Kontext&apos;s vision is to be the compliance evidence infrastructure for this
+              new economy -- the evidence layer that every payment
               builder reaches for, the way Stripe became the payment layer
               every developer reaches for.
             </p>
