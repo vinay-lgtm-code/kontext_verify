@@ -32,6 +32,9 @@ jobs:
         run: pnpm lint
         continue-on-error: true
 
+      - name: Typecheck SDK
+        run: pnpm --filter kontext-sdk run typecheck
+
       - name: Test SDK
         run: pnpm --filter kontext-sdk test
 

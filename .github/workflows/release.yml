@@ -103,6 +103,10 @@ jobs:
         if: steps.check.outputs.should_release == 'true'
         run: pnpm install --frozen-lockfile
 
+      - name: Typecheck SDK
+        if: steps.check.outputs.should_release == 'true'
+        run: pnpm --filter kontext-sdk run typecheck
+
       - name: Run tests
         if: steps.check.outputs.should_release == 'true'
         run: |
@@ -202,6 +206,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Typecheck SDK
+        run: pnpm --filter kontext-sdk run typecheck
 
       - name: Run tests
         run: |
