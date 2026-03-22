@@ -5,11 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { AssessmentWizard } from "./assessment-wizard";
 import { AssessmentResults } from "./assessment-results";
-import type { Responses } from "@/lib/assessment-engine";
+import type { Responses } from "@/lib/assessment-questions";
 import { scoreAssessment } from "@/lib/assessment-engine";
 import { generateFindings } from "@/lib/assessment-findings";
 
-type DrawerState = "idle" | "wizard" | "results";
+type DrawerState = "wizard" | "results";
 
 interface AssessmentDrawerProps {
   open: boolean;
@@ -36,7 +36,7 @@ export function AssessmentDrawer({ open, onClose }: AssessmentDrawerProps) {
   const scores = state === "results" ? scoreAssessment(responses) : null;
   const findings =
     scores && state === "results"
-      ? generateFindings(responses, scores.subScores, scores.tags)
+      ? generateFindings(responses, scores)
       : null;
 
   return (
@@ -67,8 +67,8 @@ export function AssessmentDrawer({ open, onClose }: AssessmentDrawerProps) {
             <div className="flex items-center justify-between border-b border-[var(--ic-border)] px-7 py-5">
               <h2 className="text-[15px] font-semibold text-[var(--ic-text)]">
                 {state === "results"
-                  ? "Your Assessment Results"
-                  : "Payment Evidence Gap Assessment"}
+                  ? "Your Readiness Results"
+                  : "Payment Review Readiness Assessment"}
               </h2>
               <button
                 onClick={handleClose}
