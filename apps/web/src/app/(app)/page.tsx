@@ -5,6 +5,10 @@ import { HeroSection } from "@/components/hero-section";
 import { AgentView } from "@/components/agent-view";
 import { ComplianceCommandCenter } from "@/components/compliance-command-center";
 import { AssessmentSection } from "@/components/assessment/assessment-section";
+import { PaymentDecisionPacket } from "@/components/payment-decision-packet";
+import { ReviewerQuestions } from "@/components/reviewer-questions";
+import { IntegrationsStrip } from "@/components/integrations-strip";
+import { InitiationSourcesStrip } from "@/components/initiation-sources-strip";
 import {
   ShieldCheck,
   ScanEye,
@@ -13,7 +17,6 @@ import {
   Code,
   ArrowRight,
   Check,
-  Download,
   Info,
 } from "lucide-react";
 
@@ -54,10 +57,10 @@ export default function LandingPage() {
               <ul className="mt-6 space-y-4">
                 {[
                   "Logs scattered across 4+ systems with no linkage",
-                  '"We think we checked" — no proof screening ran',
+                  '"We think we checked" — no proof screening ran before funds moved',
                   "Hours to reconstruct a single flagged payment",
                   "No exportable evidence for examiner review",
-                  "No record of which system or agent authorized the payment decision",
+                  "No record of which system or person authorized the payment decision",
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-3">
                     <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[var(--ic-red)]" />
@@ -78,8 +81,8 @@ export default function LandingPage() {
               <ul className="mt-6 space-y-4">
                 {[
                   "Every payment decision linked in one evidence trail",
-                  "Cryptographic proof that screening checks ran",
-                  "Patented tamper-evident audit trail with digest chain integrity",
+                  "Proof that screening checks ran before funds moved",
+                  "Tamper-evident audit trail — every record cryptographically linked",
                   "Export a complete case packet for any transaction",
                   "Configurable policy controls for payment thresholds and approval workflows",
                 ].map((item) => (
@@ -116,7 +119,7 @@ export default function LandingPage() {
       </section>
 
       {/* ===== EVIDENCE PACKAGE ===== */}
-      <section id="product" className="relative px-4 py-24 sm:px-6 lg:px-8">
+      <section id="evidence-package" className="relative px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
           <div className="text-center">
             <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
@@ -127,92 +130,74 @@ export default function LandingPage() {
             </h2>
             <p className="mx-auto mt-4 max-w-lg text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
               Every programmable payment generates a structured compliance record
-              with full decision context — from intent to execution to export.
+              with full decision context — from initiation to execution to export.
             </p>
           </div>
 
-          {/* Evidence record card */}
-          <div className="mt-12 overflow-hidden rounded-xl border border-[var(--ic-border)] bg-[var(--ic-surface)]">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-[var(--ic-border)] px-6 py-4">
-              <span className="font-mono text-xs font-medium text-[var(--ic-text)]">
-                TXN-2026-03-19-7f8a2b
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded bg-[var(--ic-green-dim)] px-2.5 py-1">
-                <span className="h-1.5 w-1.5 rounded-full bg-[var(--ic-green)]" />
-                <span className="font-mono text-[9px] font-semibold uppercase tracking-wider text-[var(--ic-green)]">
-                  Compliant
-                </span>
-              </span>
-            </div>
-
-            {/* Body */}
-            <div className="space-y-5 p-6">
-              {/* Row 1 */}
-              <div className="grid grid-cols-3 gap-8">
-                <div>
-                  <span className="font-mono text-[9px] font-semibold uppercase tracking-widest text-[var(--ic-text-dim)]">Amount</span>
-                  <p className="mt-1 text-[15px] font-semibold text-[var(--ic-text)]">$28,000.00 USDC</p>
-                </div>
-                <div>
-                  <span className="font-mono text-[9px] font-semibold uppercase tracking-widest text-[var(--ic-text-dim)]">Corridor</span>
-                  <p className="mt-1 text-[15px] font-medium text-[var(--ic-text)]">US → EU (Base)</p>
-                </div>
-                <div>
-                  <span className="font-mono text-[9px] font-semibold uppercase tracking-widest text-[var(--ic-text-dim)]">Timestamp</span>
-                  <p className="mt-1 text-[15px] font-medium text-[var(--ic-text)]">2026-03-19 14:32:07 UTC</p>
-                </div>
-              </div>
-
-              {/* Row 2 */}
-              <div className="grid grid-cols-2 gap-8">
-                <div>
-                  <span className="font-mono text-[9px] font-semibold uppercase tracking-widest text-[var(--ic-text-dim)]">OFAC Screening</span>
-                  <p className="mt-1 text-sm font-medium text-[var(--ic-green)]">
-                    Passed — SDN v2026.03.18, checked in 42ms
-                  </p>
-                </div>
-                <div>
-                  <span className="font-mono text-[9px] font-semibold uppercase tracking-widest text-[var(--ic-text-dim)]">Intent Hash</span>
-                  <p className="mt-1 font-mono text-xs text-[var(--ic-text-muted)]">
-                    sha256:e3b0c44...9b2d8f (invoice-payment)
-                  </p>
-                </div>
-              </div>
-
-              {/* Row 3 */}
-              <div className="grid grid-cols-3 gap-8">
-                <div>
-                  <span className="font-mono text-[9px] font-semibold uppercase tracking-widest text-[var(--ic-text-dim)]">Approval</span>
-                  <p className="mt-1 text-sm font-medium text-[var(--ic-text)]">
-                    Auto-approved (within $50K daily limit)
-                  </p>
-                </div>
-                <div>
-                  <span className="font-mono text-[9px] font-semibold uppercase tracking-widest text-[var(--ic-text-dim)]">Digest Chain</span>
-                  <p className="mt-1 text-sm font-medium text-[var(--ic-text)]">
-                    Position #1,847 — chain verified
-                  </p>
-                </div>
-                <div>
-                  <span className="font-mono text-[9px] font-semibold uppercase tracking-widest text-[var(--ic-text-dim)]">Risk Level</span>
-                  <span className="mt-1 inline-flex rounded bg-[var(--ic-green-dim)] px-2 py-0.5">
-                    <span className="font-mono text-[9px] font-semibold uppercase tracking-wider text-[var(--ic-green)]">Low</span>
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="flex justify-end border-t border-[var(--ic-border)] px-6 py-3">
-              <button className="inline-flex items-center gap-1.5 rounded-md border border-[var(--ic-accent)]/20 bg-[var(--ic-accent-dim)] px-4 py-2 text-xs font-medium text-[var(--ic-accent)] transition-colors hover:bg-[var(--ic-accent)]/15">
-                <Download size={14} />
-                Export case packet
-              </button>
-            </div>
+          <div className="mt-12">
+            <PaymentDecisionPacket variant="full" />
           </div>
         </div>
       </section>
+
+      {/* ===== AI-INITIATED PAYMENTS ===== */}
+      <section className="relative border-t border-[var(--ic-border)] px-4 py-24 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl">
+          <div className="text-center">
+            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
+              AI-Initiated Payments
+            </span>
+            <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
+              Why AI-initiated payments need more evidence
+            </h2>
+            <p className="mx-auto mt-4 max-w-xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
+              When software makes payment decisions faster, reviewers need better proof — not less.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
+            {[
+              {
+                title: "Autonomy increases speed",
+                desc: "AI agents and workflows can initiate or recommend payment actions faster than manual finance operations.",
+              },
+              {
+                title: "Review pressure increases too",
+                desc: "Risk, compliance, and partner reviewers still need to know what checks ran, who approved the action, and what policy was in force.",
+              },
+              {
+                title: "Logs are not enough",
+                desc: "Without structured payment evidence, teams end up reconstructing prompts, approvals, transactions, and exceptions from scattered systems after the fact.",
+              },
+            ].map((card) => (
+              <div
+                key={card.title}
+                className="rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] p-6"
+              >
+                <h3 className="text-[15px] font-semibold text-[var(--ic-text)]">
+                  {card.title}
+                </h3>
+                <p className="mt-2 text-[13px] leading-relaxed text-[var(--ic-text-muted)]">
+                  {card.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 text-center">
+            <Link
+              href="/sample-ai-initiated-payment-packet"
+              className="inline-flex items-center gap-2 text-sm font-medium text-[var(--ic-accent)] transition-colors hover:text-[var(--ic-accent)]/80"
+            >
+              See an AI-initiated payment packet
+              <ArrowRight size={14} />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== INITIATION SOURCES ===== */}
+      <InitiationSourcesStrip />
 
       {/* ===== BUYER ROLES ===== */}
       <section className="relative border-t border-[var(--ic-border)] bg-[var(--ic-surface-2)] px-4 py-24 sm:px-6 lg:px-8">
@@ -244,7 +229,7 @@ export default function LandingPage() {
               {
                 icon: FileSearch,
                 title: "Internal Audit",
-                desc: "Patented tamper-evident digest chain proves no records were altered after the fact.",
+                desc: "Tamper-evident audit trail proves no records were altered after the fact.",
               },
               {
                 icon: CreditCard,
@@ -254,7 +239,7 @@ export default function LandingPage() {
               {
                 icon: Code,
                 title: "Platform Engineering",
-                desc: "One SDK integration. Works whether payments are triggered by autonomous agents, orchestration systems, or direct API calls.",
+                desc: "One integration point. Captures initiation source, agent identity, and approval lineage — whether payments are triggered by AI agents, orchestration systems, or direct API calls.",
               },
             ].map((role) => (
               <div
@@ -274,164 +259,11 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ===== REVIEWER QUESTIONS ===== */}
+      <ReviewerQuestions />
+
       {/* ===== ASSESSMENT ===== */}
       <AssessmentSection />
-
-      {/* ===== INTEGRATION POINT ===== */}
-      <section className="relative px-4 py-24 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-5xl">
-          <div className="text-center">
-            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
-              One Integration
-            </span>
-            <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
-              One integration. Full evidence trail.
-            </h2>
-            <p className="mx-auto mt-4 max-w-lg text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-              Wrap your payment call once — whether it&apos;s triggered by an autonomous agent, an orchestration engine, or a direct API call. Kontext records the decision context
-              around every transfer or payout.
-            </p>
-          </div>
-
-          <div className="mt-12 grid items-start gap-12 lg:grid-cols-2">
-            {/* Code block */}
-            <CodeBlock
-              code={`const result = await ctx.verify({
-  txHash: transfer.hash,
-  chain: 'base',
-  amount: '28000',
-  token: 'USDC',
-  from: sender,
-  to: recipient,
-  agentId: 'treasury-v2'
-});`}
-              filename="payment-handler.ts"
-            />
-
-            {/* Outcomes */}
-            <div className="space-y-6">
-              <h3 className="text-lg font-semibold text-[var(--ic-text)]">
-                What happens automatically
-              </h3>
-              {[
-                { n: "1", title: "OFAC sanctions screening runs", desc: "Against latest SDN list, result recorded with timestamp" },
-                { n: "2", title: "Intent context is hashed and bound", desc: "SHA-256 hash of payment purpose, scope, and limits" },
-                { n: "3", title: "Evidence joins patented tamper-evident chain", desc: "Each event linked cryptographically to the previous" },
-                { n: "4", title: "Optional on-chain anchoring", desc: "Anchor digest to Base for independent verification" },
-                { n: "5", title: "Audit-ready export available", desc: "JSON or CSV case packet for any transaction" },
-              ].map((item) => (
-                <div key={item.n} className="flex gap-3.5">
-                  <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-[var(--ic-accent-dim)]">
-                    <span className="font-mono text-xs font-semibold text-[var(--ic-accent)]">{item.n}</span>
-                  </div>
-                  <div>
-                    <p className="text-[15px] font-medium text-[var(--ic-text)]">{item.title}</p>
-                    <p className="text-[13px] text-[var(--ic-text-muted)]">{item.desc}</p>
-                  </div>
-                </div>
-              ))}
-              <p className="mt-6 font-mono text-[11px] text-[var(--ic-text-dim)]">
-                agentId identifies the autonomous system or service account that authorized the payment — captured in every evidence record.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ===== EXPLORE THE SDK ===== */}
-      <section className="relative border-t border-[var(--ic-border)] bg-[var(--ic-surface-2)] px-4 py-24 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-6xl">
-          <div className="text-center">
-            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
-              Integration
-            </span>
-            <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
-              Drop into your existing payment flows
-            </h2>
-            <p className="mx-auto mt-4 max-w-lg text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-              SDK, CLI, or direct API integration — however your team builds, Kontext fits.
-            </p>
-          </div>
-
-          <div className="mt-12">
-            <AgentView />
-          </div>
-        </div>
-      </section>
-
-      {/* ===== EXAMINER CARDS ===== */}
-      <section className="relative px-4 py-24 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-6xl">
-          <div className="text-center">
-            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
-              Examiner Questions
-            </span>
-            <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
-              Three questions your examiner will ask
-            </h2>
-          </div>
-
-          <div className="mt-12 grid gap-5 md:grid-cols-3">
-            {[
-              {
-                question: '"Were the counterparties screened?"',
-                badge: "OFAC Cleared",
-                badgeColor: "green",
-                answer: "Both addresses screened against SDN list v2026.03.18. Result: no match. Check completed in 42ms with full provenance recorded.",
-              },
-              {
-                question: '"Was this payment authorized for this purpose?"',
-                badge: "Intent Verified",
-                badgeColor: "accent",
-                answer: "Intent hash binds payment purpose (invoice-payment), amount ($28K), and daily limit ($50K). Hash verified against execution parameters.",
-              },
-              {
-                question: '"Has this audit record been modified?"',
-                badge: "Chain Intact",
-                badgeColor: "green",
-                answer: "Patented tamper-evident digest chain verified. Position #1,847. Any modification would break the cryptographic link to all subsequent records.",
-              },
-            ].map((card) => (
-              <div
-                key={card.question}
-                className="rounded-xl border border-[var(--ic-border)] bg-[hsl(var(--background))] p-7"
-              >
-                <p className="font-serif text-xl italic leading-snug text-[var(--ic-text)]">
-                  {card.question}
-                </p>
-                <div className="my-5 h-px bg-[var(--ic-border)]" />
-                <span
-                  className={`inline-flex items-center gap-1.5 rounded px-2.5 py-1 ${
-                    card.badgeColor === "green"
-                      ? "bg-[var(--ic-green-dim)]"
-                      : "bg-[var(--ic-accent-dim)]"
-                  }`}
-                >
-                  <span
-                    className={`h-1.5 w-1.5 rounded-full ${
-                      card.badgeColor === "green"
-                        ? "bg-[var(--ic-green)]"
-                        : "bg-[var(--ic-accent)]"
-                    }`}
-                  />
-                  <span
-                    className={`font-mono text-[9px] font-semibold uppercase tracking-wider ${
-                      card.badgeColor === "green"
-                        ? "text-[var(--ic-green)]"
-                        : "text-[var(--ic-accent)]"
-                    }`}
-                  >
-                    {card.badge}
-                  </span>
-                </span>
-                <p className="mt-4 text-[13px] leading-relaxed text-[var(--ic-text-muted)]">
-                  {card.answer}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* ===== AUDIT / INCIDENT ===== */}
       <section id="solutions" className="relative border-t border-[var(--ic-border)] bg-[var(--ic-surface-2)] px-4 py-24 sm:px-6 lg:px-8">
@@ -477,7 +309,7 @@ export default function LandingPage() {
               Where Kontext Fits
             </span>
             <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
-              A compliance layer across your payment stack
+              An evidence layer across your payment stack
             </h2>
           </div>
 
@@ -487,7 +319,7 @@ export default function LandingPage() {
               <h3 className="text-base font-semibold text-[var(--ic-text)]">Your Payment Stack</h3>
               <div className="my-4 h-px bg-[var(--ic-border)]" />
               <ul className="space-y-2 text-[13px] text-[var(--ic-text-muted)]">
-                <li>Autonomous Payment Agents</li>
+                <li>Payment Agents &amp; Automation</li>
                 <li>Wallet APIs</li>
                 <li>Payment Orchestration</li>
                 <li>Card Platforms</li>
@@ -505,7 +337,7 @@ export default function LandingPage() {
             <div className="flex-1 rounded-xl border border-[var(--ic-accent)]/25 bg-[var(--ic-accent-dim)] p-7">
               <h3 className="text-base font-semibold text-[var(--ic-accent)]">Kontext</h3>
               <span className="mt-1 font-mono text-[10px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
-                Compliance Layer
+                Evidence Layer
               </span>
               <div className="my-4 h-px bg-[var(--ic-accent)]/10" />
               <ul className="space-y-2 text-[13px] text-[var(--ic-text-muted)]">
@@ -545,11 +377,71 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Doesn't replace */}
           <p className="mt-6 text-center text-[13px] text-[var(--ic-text-dim)]">
             Kontext doesn&apos;t replace your sanctions vendor, case management system, payment processor, ledger, or wallet provider.
             It sits across them as the evidence layer.
           </p>
+        </div>
+      </section>
+
+      {/* ===== INTEGRATIONS STRIP ===== */}
+      <IntegrationsStrip />
+
+      {/* ===== WHAT KONTEXT IS NOT ===== */}
+      <section className="relative px-4 py-24 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl">
+          <div className="text-center">
+            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
+              What We Are
+            </span>
+            <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
+              Kontext is the evidence layer, not a replacement
+            </h2>
+            <p className="mx-auto mt-4 max-w-xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
+              Kontext is not a fraud engine, banking core, or payment processor.
+              It is the evidence and controls layer that explains payment
+              decisions across your stack.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
+            {[
+              {
+                label: "Payment Processor",
+                does: "Moves money",
+                color: "var(--ic-text-dim)",
+              },
+              {
+                label: "Fraud Tool",
+                does: "Scores risk",
+                color: "var(--ic-text-dim)",
+              },
+              {
+                label: "Kontext",
+                does: "Proves the decision context",
+                color: "var(--ic-accent)",
+              },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className={`rounded-lg border p-6 text-center ${
+                  item.label === "Kontext"
+                    ? "border-[var(--ic-accent)]/25 bg-[var(--ic-accent-dim)]"
+                    : "border-[var(--ic-border)] bg-[var(--ic-surface)]"
+                }`}
+              >
+                <h3
+                  className="text-base font-semibold"
+                  style={{ color: item.color }}
+                >
+                  {item.label}
+                </h3>
+                <p className="mt-2 text-[15px] text-[var(--ic-text-muted)]">
+                  {item.does}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -563,9 +455,6 @@ export default function LandingPage() {
             <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
               Priced like a controls product, not a logging meter
             </h2>
-            <p className="mx-auto mt-2 max-w-md text-[15px] text-[var(--ic-text-muted)]">
-              Compliance infrastructure your board can point to.
-            </p>
             <p className="mx-auto mt-4 max-w-lg text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
               Annual platform fee based on payment decisions monitored — the unit
               your compliance and risk teams already think in.
@@ -577,7 +466,7 @@ export default function LandingPage() {
             <div className="rounded-xl border border-[var(--ic-border)] bg-[hsl(var(--background))] p-8">
               <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--ic-text-dim)]">Starter</span>
               <p className="mt-3 text-sm font-medium text-[var(--ic-text)]">
-                For teams standing up programmable payments controls
+                For teams preparing for launch or first partner review
               </p>
               <div className="my-6 h-px bg-[var(--ic-border)]" />
               <ul className="space-y-3">
@@ -585,7 +474,7 @@ export default function LandingPage() {
                   "1 production environment",
                   "Capped monthly payment volume",
                   "OFAC screening (built-in SDN)",
-                  "Patented tamper-evident chain",
+                  "Tamper-evident audit trail",
                   "JSON + CSV audit export",
                   "Standard evidence retention",
                 ].map((f) => (
@@ -612,7 +501,7 @@ export default function LandingPage() {
               </div>
               <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--ic-accent)]">Growth</span>
               <p className="mt-3 text-sm font-medium text-[var(--ic-text)]">
-                For payment infrastructure companies with active compliance teams
+                For startups running live payment operations with formal controls
               </p>
               <div className="my-6 h-px bg-[var(--ic-accent)]/10" />
               <ul className="space-y-3">
@@ -643,7 +532,7 @@ export default function LandingPage() {
             <div className="rounded-xl border border-[var(--ic-border)] bg-[hsl(var(--background))] p-8">
               <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--ic-text-dim)]">Enterprise</span>
               <p className="mt-3 text-sm font-medium text-[var(--ic-text)]">
-                For regulated platforms with multi-rail programs and audit requirements
+                For multi-rail teams with audit, bank, and enterprise diligence needs
               </p>
               <div className="my-6 h-px bg-[var(--ic-border)]" />
               <ul className="space-y-3">
@@ -672,22 +561,122 @@ export default function LandingPage() {
           </div>
 
           {/* ROI strip */}
-          <div className="mt-12 rounded-lg border border-[var(--ic-border)] bg-[hsl(var(--background))] p-6">
-            <p className="text-center text-sm font-medium text-[var(--ic-text)]">
-              Why teams invest in Kontext
+          <div className="mt-12 rounded-lg border border-[var(--ic-border)] bg-[hsl(var(--background))] p-8">
+            <p className="text-center text-sm font-semibold text-[var(--ic-text)]">
+              Why teams invest before they feel &ldquo;big enough&rdquo;
             </p>
-            <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="mt-6 grid gap-6 md:grid-cols-2">
+              <div>
+                <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--ic-red)]">Before Kontext</span>
+                <ul className="mt-3 space-y-2">
+                  {[
+                    "Launch reviews stall on missing evidence",
+                    "Hours reconstructing each incident",
+                    "Spreadsheets and screenshots for diligence",
+                    "Manual responses to partner questionnaires",
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-2">
+                      <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[var(--ic-red)]" />
+                      <span className="text-[13px] text-[var(--ic-text-muted)]">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--ic-green)]">With Kontext</span>
+                <ul className="mt-3 space-y-2">
+                  {[
+                    "Launch reviews close with structured evidence packets",
+                    "Incident reconstruction in seconds, not hours",
+                    "Examiner-ready exports replace ad hoc collection",
+                    "Diligence responses backed by verifiable evidence",
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-2">
+                      <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[var(--ic-green)]" />
+                      <span className="text-[13px] text-[var(--ic-text-muted)]">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== FOR DEVELOPERS ===== */}
+      <section id="product" className="relative px-4 py-24 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl">
+          <div className="text-center">
+            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
+              For Developers
+            </span>
+            <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
+              One integration. Full evidence trail.
+            </h2>
+            <p className="mx-auto mt-4 max-w-lg text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
+              Wrap your payment call once — whether it&apos;s triggered by an autonomous agent, an orchestration engine, or a direct API call. Kontext records the decision context
+              around every transfer or payout.
+            </p>
+          </div>
+
+          <div className="mt-12 grid items-start gap-12 lg:grid-cols-2">
+            {/* Code block */}
+            <CodeBlock
+              code={`const result = await ctx.verify({
+  txHash: transfer.hash,
+  chain: 'base',
+  amount: '28000',
+  token: 'USDC',
+  from: sender,
+  to: recipient,
+  agentId: 'treasury-v2'
+});`}
+              filename="payment-handler.ts"
+            />
+
+            {/* Outcomes */}
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-[var(--ic-text)]">
+                What happens automatically
+              </h3>
               {[
-                "Fewer hours reconstructing payment incidents",
-                "Close bank partnerships and enterprise deals faster",
-                "Reduce regulatory risk exposure across automated payment flows",
-                "Lower operational risk from automated payments",
-              ].map((v) => (
-                <p key={v} className="text-[12px] leading-relaxed text-[var(--ic-text-muted)]">
-                  {v}
-                </p>
+                { n: "1", title: "OFAC sanctions screening runs", desc: "Against latest SDN list, result recorded with timestamp" },
+                { n: "2", title: "Decision context captured with cryptographic proof", desc: "SHA-256 hash of payment purpose, scope, and limits" },
+                { n: "3", title: "Evidence joins tamper-evident chain", desc: "Each event linked cryptographically to the previous" },
+                { n: "4", title: "Audit-ready export available", desc: "JSON or CSV case packet for any transaction" },
+              ].map((item) => (
+                <div key={item.n} className="flex gap-3.5">
+                  <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-[var(--ic-accent-dim)]">
+                    <span className="font-mono text-xs font-semibold text-[var(--ic-accent)]">{item.n}</span>
+                  </div>
+                  <div>
+                    <p className="text-[15px] font-medium text-[var(--ic-text)]">{item.title}</p>
+                    <p className="text-[13px] text-[var(--ic-text-muted)]">{item.desc}</p>
+                  </div>
+                </div>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== DEVELOPER INTEGRATION ===== */}
+      <section className="relative border-t border-[var(--ic-border)] bg-[var(--ic-surface-2)] px-4 py-24 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl">
+          <div className="text-center">
+            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
+              Developer Integration
+            </span>
+            <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
+              SDK, CLI, or API — however your team builds
+            </h2>
+            <p className="mx-auto mt-4 max-w-lg text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
+              Developer implementation: SDK wrap, CLI commands, or direct API integration.
+            </p>
+          </div>
+
+          <div className="mt-12">
+            <AgentView />
           </div>
         </div>
       </section>
@@ -696,23 +685,23 @@ export default function LandingPage() {
       <section className="relative px-4 py-28 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl lg:text-5xl">
-            Be ready to explain every payment decision
+            Programmable payments need evidence. Autonomous payments need even more.
           </h2>
           <p className="mx-auto mt-6 max-w-md text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-            Reduce risk, accelerate partner diligence, and give your board defensible proof that controls are in place.
+            Kontext helps teams explain every payment decision — including actions initiated by AI agents, workflows, and APIs.
           </p>
           <div className="mt-8 flex items-center justify-center gap-4">
-            <Link
-              href="/contact"
+            <a
+              href="#evidence-package"
               className="inline-flex items-center rounded-lg bg-[var(--ic-accent)] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--ic-accent)]/90"
             >
-              Book a demo
-            </Link>
+              See sample packet
+            </a>
             <Link
-              href="/docs"
+              href="/ai-agents"
               className="inline-flex items-center rounded-lg border border-[var(--ic-border)] px-6 py-3 text-sm font-medium text-[var(--ic-text-muted)] transition-colors hover:bg-[var(--ic-surface)] hover:text-[var(--ic-text)]"
             >
-              Read the docs
+              Explore AI agents use case
             </Link>
           </div>
         </div>

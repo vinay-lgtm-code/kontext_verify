@@ -102,7 +102,7 @@ const softwareJsonLd = {
   url: "https://getkontext.com",
   downloadUrl: "https://www.npmjs.com/package/kontext-sdk",
   description:
-    "Compliance-grade audit trails for programmable payments. OFAC screening, tamper-evident logging, and cryptographic proof. Zero runtime dependencies.",
+    "Payment decision evidence for compliance teams. OFAC screening, tamper-evident audit trails, and examiner-ready evidence packets for programmable payments.",
   offers: [
     {
       "@type": "Offer",

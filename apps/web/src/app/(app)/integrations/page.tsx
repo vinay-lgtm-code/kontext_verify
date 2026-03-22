@@ -1,4 +1,6 @@
-import type { Metadata } from "next";
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,13 +27,40 @@ import {
   Handshake,
   Terminal,
   Wrench,
+  ChevronDown,
+  Shield,
+  FileText,
+  Search,
 } from "lucide-react";
+import { track } from "@/lib/analytics";
 
-export const metadata: Metadata = {
-  title: "Integrations",
-  description:
-    "Integrate Kontext with LangChain, CrewAI, AutoGen, USDC, Stripe, x402, on-chain anchoring, and A2A attestation. Add proof of compliance to any agent framework or payment protocol.",
-};
+const marketingCategories = [
+  {
+    title: "Payment Rails",
+    icon: DollarSign,
+    items: ["USDC / Circle", "Stripe", "ACH", "Wire", "Card"],
+  },
+  {
+    title: "Screening",
+    icon: Search,
+    items: ["OFAC SDN (built-in)", "Chainalysis", "OpenSanctions"],
+  },
+  {
+    title: "Export Formats",
+    icon: FileText,
+    items: ["JSON", "CSV", "Examiner Packet", "Partner Diligence Packet"],
+  },
+  {
+    title: "Compliance Controls",
+    icon: Shield,
+    items: [
+      "Approval workflows",
+      "Policy versioning",
+      "Anomaly detection",
+      "Tamper-evident audit trail",
+    ],
+  },
+];
 
 const langchainCode = `import { Kontext } from 'kontext-sdk';
 
@@ -152,7 +181,7 @@ const agentFrameworks = [
     icon: Link2,
     title: "LangChain",
     description:
-      "Works with verify() and log() — add proof of compliance to any LangChain agent by wrapping tool calls. No dedicated wrapper needed; the core SDK functions work directly in callbacks.",
+      "Works with verify() and log() — add compliance evidence to any LangChain agent by wrapping tool calls.",
     code: langchainCode,
     filename: "langchain-integration.ts",
     status: "Works with verify()",
@@ -163,7 +192,7 @@ const agentFrameworks = [
     icon: Bot,
     title: "CrewAI",
     description:
-      "Works with verify() and log() — hook into CrewAI's task lifecycle to log task starts, verify completions with trust scoring, and capture errors across your entire crew.",
+      "Works with verify() and log() — hook into CrewAI's task lifecycle to capture compliance evidence across your entire crew.",
     code: crewaiCode,
     filename: "crewai-integration.ts",
     status: "Works with verify()",
@@ -174,7 +203,7 @@ const agentFrameworks = [
     icon: MessageSquare,
     title: "AutoGen",
     description:
-      "Works with verify() and log() — intercept multi-agent messages, log exchanges, verify transaction decisions, and block non-compliant actions in real time.",
+      "Works with verify() and log() — intercept multi-agent messages and verify transaction decisions with compliance evidence.",
     code: autogenCode,
     filename: "autogen-integration.ts",
     status: "Works with verify()",
@@ -187,19 +216,19 @@ const paymentIntegrations = [
     icon: DollarSign,
     title: "USDC / Circle",
     description:
-      "Native stablecoin compliance support for USDC transfers on Base and Ethereum. Audit trails, trust scoring, and GENIUS Act alignment.",
+      "Native stablecoin compliance evidence for USDC transfers on Base and Ethereum. Audit trails and GENIUS Act alignment.",
     status: "Available",
-    linkHref: "/use-cases#usdc-payments",
+    linkHref: "/use-cases/stablecoin-infrastructure",
     linkLabel: "View use case",
   },
   {
     icon: CreditCard,
     title: "Stripe",
     description:
-      "Verify agent-initiated Stripe payment intents with trust scoring. Audit IDs embedded in Stripe metadata for full traceability.",
+      "Compliance evidence for agent-initiated Stripe payment intents. Audit IDs embedded in Stripe metadata for full traceability.",
     status: "Available",
-    linkHref: "/use-cases#stripe-agentic",
-    linkLabel: "View use case",
+    linkHref: "/use-cases",
+    linkLabel: "View use cases",
   },
   {
     icon: Zap,
@@ -207,8 +236,8 @@ const paymentIntegrations = [
     description:
       "HTTP-native micropayment verification middleware. Per-request compliance checks for agent-to-service payment flows.",
     status: "Available",
-    linkHref: "/use-cases#x402-protocol",
-    linkLabel: "View use case",
+    linkHref: "/use-cases",
+    linkLabel: "View use cases",
   },
 ];
 
@@ -217,40 +246,76 @@ const protocolIntegrations = [
     icon: Anchor,
     title: "On-Chain Anchoring",
     description:
-      "Anchor your terminal digest to Base via the KontextAnchor contract. Immutable, publicly verifiable proof that compliance checks ran. Read-only verification needs zero dependencies.",
+      "Anchor your terminal digest to Base via the KontextAnchor contract. Immutable, publicly verifiable proof that compliance checks ran.",
     status: "Available",
-    linkHref: "/use-cases#on-chain-anchoring",
-    linkLabel: "View use case",
+    linkHref: "/docs",
+    linkLabel: "View docs",
   },
   {
     icon: Handshake,
     title: "A2A Attestation",
     description:
-      "Exchange compliance proofs between agents via .well-known/kontext.json discovery. Both sides prove they ran checks on the same transaction. Zero dependencies.",
+      "Exchange compliance proofs between agents via .well-known/kontext.json discovery. Both sides prove they ran checks on the same transaction.",
     status: "Available",
-    linkHref: "/use-cases#a2a-attestation",
-    linkLabel: "View use case",
+    linkHref: "/docs",
+    linkLabel: "View docs",
   },
 ];
+
+function DeveloperSection({
+  title,
+  children,
+  defaultOpen = false,
+}: {
+  title: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="border-t border-border">
+      <button
+        onClick={() => {
+          setOpen(!open);
+          track("developer_details_toggle", { section: title });
+        }}
+        className="flex w-full items-center justify-between px-4 py-4 sm:px-6 lg:px-8"
+      >
+        <span className="text-[13px] font-medium text-[var(--ic-text-muted)]">
+          Developer details: {title}
+        </span>
+        <ChevronDown
+          size={16}
+          className={`text-[var(--ic-text-dim)] transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open && <div className="px-4 pb-12 sm:px-6 lg:px-8">{children}</div>}
+    </div>
+  );
+}
 
 export default function IntegrationsPage() {
   return (
     <>
       {/* Hero */}
-      <section className="border-b border-[var(--term-surface-2)]">
+      <section className="border-b border-[var(--ic-border)]">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
           <div className="text-center">
-            <h1 className="text-sm font-medium">
-              <span className="text-[var(--term-green)]">$</span>{" "}
-              INTEGRATIONS
+            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
+              Integrations
+            </span>
+            <h1 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
+              Kontext works across your payment stack
             </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
-              verify() works with any agent framework. Add proof of compliance to any workflow in minutes.
+            <p className="mx-auto mt-4 max-w-2xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
+              Compliance evidence for stablecoin, fiat, and cross-chain payment
+              flows. One integration captures screening, approvals, and audit
+              trails across every rail.
             </p>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-center">
               <Button size="lg" className="gap-2" asChild>
-                <Link href="/docs">
-                  Get Started
+                <Link href="/contact">
+                  Book a Demo
                   <ArrowRight size={16} />
                 </Link>
               </Button>
@@ -265,171 +330,34 @@ export default function IntegrationsPage() {
         </div>
       </section>
 
-      {/* Quick Navigation */}
-      <section className="sticky top-16 z-40 border-b border-border bg-background">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-2 overflow-x-auto py-3 scrollbar-none">
-            <a
-              href="#cli-devops"
-              className="inline-flex shrink-0 border border-border bg-[var(--term-surface-2)] px-3 py-1.5 text-xs text-foreground transition-colors hover:bg-[var(--term-surface-2)]"
-            >
-              CLI &amp; DevOps
-            </a>
-            <a
-              href="#agent-frameworks"
-              className="inline-flex shrink-0 border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground hover:bg-[var(--term-surface-2)]"
-            >
-              Agent Frameworks
-            </a>
-            <a
-              href="#payment-commerce"
-              className="inline-flex shrink-0 border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground hover:bg-[var(--term-surface-2)]"
-            >
-              Payment &amp; Commerce
-            </a>
-            <a
-              href="#protocols"
-              className="inline-flex shrink-0 border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground hover:bg-[var(--term-surface-2)]"
-            >
-              Protocols
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* CLI & DevOps */}
-      <section
-        id="cli-devops"
-        className="scroll-mt-32 bg-background"
-      >
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="mb-12">
-            <Badge variant="outline" className="mb-4">
-              CLI &amp; DevOps
-            </Badge>
-            <h2 className="text-sm font-medium">
-              Terminal-first proof of compliance
-            </h2>
-            <p className="mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
-              Run proof of compliance operations from the command line or integrate with
-              AI coding assistants via the MCP server.
-            </p>
-          </div>
-
-          <div className="grid gap-6 sm:grid-cols-2">
-            <Card className="group relative overflow-hidden transition-all ">
-              <CardHeader>
-                <div className="mb-3 flex items-center justify-between">
-                  <div className="inline-flex h-10 w-10 items-center justify-center border border-border bg-[var(--term-surface-2)] text-primary">
-                    <Terminal size={20} />
-                  </div>
-                  <Badge variant="outline">Available</Badge>
+      {/* Marketing categories */}
+      <section className="bg-background">
+        <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {marketingCategories.map((cat) => (
+              <div
+                key={cat.title}
+                className="rounded-xl border border-[var(--ic-border)] bg-[hsl(var(--background))] p-5"
+              >
+                <div className="flex items-center gap-2">
+                  <cat.icon
+                    size={16}
+                    className="text-[var(--ic-accent)]"
+                  />
+                  <h3 className="font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--ic-text)]">
+                    {cat.title}
+                  </h3>
                 </div>
-                <CardTitle className="text-lg">Kontext CLI</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-sm leading-relaxed">
-                  12 commands for proof of compliance operations: check, verify, reason,
-                  cert, audit, anchor, attest, sync, session, checkpoint, status,
-                  and mcp. Install globally or run via npx.
-                </CardDescription>
-                <div className="mt-4 overflow-hidden border border-border bg-muted/50 p-3 font-mono text-xs">
-                  <span className="text-primary">$</span> npm install -g @kontext-sdk/cli<br/>
-                  <span className="text-primary">$</span> kontext verify --chain base --amount 5000
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="group relative overflow-hidden transition-all ">
-              <CardHeader>
-                <div className="mb-3 flex items-center justify-between">
-                  <div className="inline-flex h-10 w-10 items-center justify-center border border-border bg-[var(--term-surface-2)] text-primary">
-                    <Wrench size={20} />
-                  </div>
-                  <Badge variant="outline">Available</Badge>
-                </div>
-                <CardTitle className="text-lg">MCP Server</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-sm leading-relaxed">
-                  8 proof of compliance tools exposed via Model Context Protocol for Claude
-                  Code, Cursor, and Windsurf. AI coding assistants get proof of compliance
-                  verification, audit export, and trust scoring as native tools.
-                </CardDescription>
-                <div className="mt-4 overflow-hidden border border-border bg-muted/50 p-3 font-mono text-xs">
-                  <span className="text-primary">$</span> kontext mcp
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Agent Frameworks */}
-      <section id="agent-frameworks" className="scroll-mt-32 border-t border-border bg-background">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="mb-12">
-            <Badge variant="outline" className="mb-4">
-              Agent Frameworks
-            </Badge>
-            <h2 className="text-sm font-medium">
-              Drop-in agent framework support
-            </h2>
-            <p className="mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
-              LangChain, CrewAI, and AutoGen work directly with verify() and log().
-              No dedicated wrapper needed — the core SDK functions work in any callback or lifecycle hook.
-            </p>
-          </div>
-
-          <div className="space-y-16">
-            {agentFrameworks.map((framework, index) => (
-              <div key={framework.id} id={framework.id} className="scroll-mt-32">
-                <div
-                  className={`grid items-start gap-8 lg:gap-12 ${
-                    index % 2 === 0
-                      ? "lg:grid-cols-2"
-                      : "lg:grid-cols-2 lg:[direction:rtl]"
-                  }`}
-                >
-                  {/* Info */}
-                  <div className={index % 2 !== 0 ? "lg:[direction:ltr]" : ""}>
-                    <div className="mb-4 flex items-center gap-3">
-                      <div className="inline-flex h-10 w-10 items-center justify-center border border-border bg-[var(--term-surface-2)] text-primary">
-                        <framework.icon size={20} />
-                      </div>
-                      <Badge variant="outline">
-                        {framework.status}
-                      </Badge>
-                    </div>
-                    <h3 className="text-2xl font-bold tracking-tight">
-                      {framework.title}
-                    </h3>
-                    <p className="mt-3 text-muted-foreground leading-relaxed">
-                      {framework.description}
-                    </p>
-                    <div className="mt-6">
-                      <Button variant="outline" size="sm" className="gap-2" asChild>
-                        <Link href={framework.docsLink}>
-                          View docs
-                          <ArrowRight size={14} />
-                        </Link>
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Code */}
-                  <div className={`border border-border ${index % 2 !== 0 ? "lg:[direction:ltr]" : ""}`}>
-                    <CodeBlock
-                      code={framework.code}
-                      language="typescript"
-                      filename={framework.filename}
-                    />
-                  </div>
-                </div>
-
-                {index < agentFrameworks.length - 1 && (
-                  <Separator className="mt-16" />
-                )}
+                <ul className="mt-3 space-y-1.5">
+                  {cat.items.map((item) => (
+                    <li
+                      key={item}
+                      className="text-[13px] text-[var(--ic-text-muted)]"
+                    >
+                      {item}
+                    </li>
+                  ))}
+                </ul>
               </div>
             ))}
           </div>
@@ -437,21 +365,18 @@ export default function IntegrationsPage() {
       </section>
 
       {/* Payment & Commerce */}
-      <section
-        id="payment-commerce"
-        className="scroll-mt-32 border-t border-border bg-background"
-      >
+      <section className="border-t border-border bg-background">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="mb-12">
-            <Badge variant="outline" className="mb-4">
-              Payment &amp; Commerce
-            </Badge>
-            <h2 className="text-sm font-medium">
+            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
+              Payment & Commerce
+            </span>
+            <h2 className="mt-3 font-serif text-2xl font-normal text-[var(--ic-text)]">
               Payment and commerce integrations
             </h2>
-            <p className="mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
-              Verify and audit agent transactions across stablecoin transfers,
-              traditional payment processors, and micropayment protocols.
+            <p className="mt-3 max-w-2xl text-[15px] text-[var(--ic-text-muted)]">
+              Compliance evidence for stablecoin transfers, traditional payment
+              processors, and micropayment protocols.
             </p>
           </div>
 
@@ -459,16 +384,14 @@ export default function IntegrationsPage() {
             {paymentIntegrations.map((integration) => (
               <Card
                 key={integration.title}
-                className="group relative overflow-hidden transition-all "
+                className="group relative overflow-hidden transition-all"
               >
                 <CardHeader>
                   <div className="mb-3 flex items-center justify-between">
-                    <div className="inline-flex h-10 w-10 items-center justify-center border border-border bg-[var(--term-surface-2)] text-primary">
+                    <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] text-primary">
                       <integration.icon size={20} />
                     </div>
-                    <Badge variant="outline">
-                      {integration.status}
-                    </Badge>
+                    <Badge variant="outline">{integration.status}</Badge>
                   </div>
                   <CardTitle className="text-lg">
                     {integration.title}
@@ -495,21 +418,18 @@ export default function IntegrationsPage() {
       </section>
 
       {/* Protocols */}
-      <section
-        id="protocols"
-        className="scroll-mt-32 border-t border-border bg-background"
-      >
+      <section className="border-t border-border bg-background">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="mb-12">
-            <Badge variant="outline" className="mb-4">
+            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
               Protocols
-            </Badge>
-            <h2 className="text-sm font-medium">
+            </span>
+            <h2 className="mt-3 font-serif text-2xl font-normal text-[var(--ic-text)]">
               Protocol integrations
             </h2>
-            <p className="mt-4 max-w-2xl text-xs text-[var(--term-text-2)]">
-              On-chain anchoring and agent-to-agent attestation — cryptographic proof
-              layers built into verify().
+            <p className="mt-3 max-w-2xl text-[15px] text-[var(--ic-text-muted)]">
+              On-chain anchoring and agent-to-agent attestation for
+              cryptographic evidence verification.
             </p>
           </div>
 
@@ -517,16 +437,14 @@ export default function IntegrationsPage() {
             {protocolIntegrations.map((integration) => (
               <Card
                 key={integration.title}
-                className="group relative overflow-hidden transition-all "
+                className="group relative overflow-hidden transition-all"
               >
                 <CardHeader>
                   <div className="mb-3 flex items-center justify-between">
-                    <div className="inline-flex h-10 w-10 items-center justify-center border border-border bg-[var(--term-surface-2)] text-primary">
+                    <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] text-primary">
                       <integration.icon size={20} />
                     </div>
-                    <Badge variant="outline">
-                      {integration.status}
-                    </Badge>
+                    <Badge variant="outline">{integration.status}</Badge>
                   </div>
                   <CardTitle className="text-lg">
                     {integration.title}
@@ -552,23 +470,166 @@ export default function IntegrationsPage() {
         </div>
       </section>
 
-      {/* Framework Agnostic Note */}
-      <section className="border-t border-border bg-background">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="border border-border bg-[var(--term-surface)] p-8 sm:p-12">
+      {/* For Developers separator */}
+      <section className="border-t border-border bg-[var(--ic-surface-2)]">
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-4">
+            <Cpu size={18} className="text-[var(--ic-accent)]" />
+            <div>
+              <h2 className="font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--ic-accent)]">
+                For Developers
+              </h2>
+              <p className="mt-1 text-[13px] text-[var(--ic-text-muted)]">
+                SDK integration details, code examples, and framework-specific
+                guides
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* CLI & MCP */}
+        <DeveloperSection title="CLI & MCP Server">
+          <div className="mx-auto max-w-7xl">
+            <div className="grid gap-6 sm:grid-cols-2">
+              <Card className="group relative overflow-hidden transition-all">
+                <CardHeader>
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] text-primary">
+                      <Terminal size={20} />
+                    </div>
+                    <Badge variant="outline">Available</Badge>
+                  </div>
+                  <CardTitle className="text-lg">Kontext CLI</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-sm leading-relaxed">
+                    12 commands for compliance operations: check, verify,
+                    reason, cert, audit, anchor, attest, sync, session,
+                    checkpoint, status, and mcp.
+                  </CardDescription>
+                  <div className="mt-4 overflow-hidden rounded border border-[var(--ic-border)] bg-muted/50 p-3 font-mono text-xs">
+                    <span className="text-primary">$</span> npm install -g
+                    @kontext-sdk/cli
+                    <br />
+                    <span className="text-primary">$</span> kontext verify
+                    --chain base --amount 5000
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="group relative overflow-hidden transition-all">
+                <CardHeader>
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] text-primary">
+                      <Wrench size={20} />
+                    </div>
+                    <Badge variant="outline">Available</Badge>
+                  </div>
+                  <CardTitle className="text-lg">MCP Server</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-sm leading-relaxed">
+                    8 compliance tools exposed via Model Context Protocol for
+                    Claude Code, Cursor, and Windsurf. AI coding assistants get
+                    compliance verification, audit export, and trust scoring as
+                    native tools.
+                  </CardDescription>
+                  <div className="mt-4 overflow-hidden rounded border border-[var(--ic-border)] bg-muted/50 p-3 font-mono text-xs">
+                    <span className="text-primary">$</span> kontext mcp
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </DeveloperSection>
+
+        {/* Agent Frameworks */}
+        <DeveloperSection title="Agent Framework Examples">
+          <div className="mx-auto max-w-7xl space-y-16">
+            {agentFrameworks.map((framework, index) => (
+              <div
+                key={framework.id}
+                id={framework.id}
+                className="scroll-mt-32"
+              >
+                <div
+                  className={`grid items-start gap-8 lg:gap-12 ${
+                    index % 2 === 0
+                      ? "lg:grid-cols-2"
+                      : "lg:grid-cols-2 lg:[direction:rtl]"
+                  }`}
+                >
+                  <div
+                    className={
+                      index % 2 !== 0 ? "lg:[direction:ltr]" : ""
+                    }
+                  >
+                    <div className="mb-4 flex items-center gap-3">
+                      <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] text-primary">
+                        <framework.icon size={20} />
+                      </div>
+                      <Badge variant="outline">{framework.status}</Badge>
+                    </div>
+                    <h3 className="text-2xl font-bold tracking-tight">
+                      {framework.title}
+                    </h3>
+                    <p className="mt-3 text-muted-foreground leading-relaxed">
+                      {framework.description}
+                    </p>
+                    <div className="mt-6">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                        asChild
+                      >
+                        <Link href={framework.docsLink}>
+                          View docs
+                          <ArrowRight size={14} />
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`rounded border border-[var(--ic-border)] ${index % 2 !== 0 ? "lg:[direction:ltr]" : ""}`}
+                  >
+                    <CodeBlock
+                      code={framework.code}
+                      language="typescript"
+                      filename={framework.filename}
+                    />
+                  </div>
+                </div>
+
+                {index < agentFrameworks.length - 1 && (
+                  <Separator className="mt-16" />
+                )}
+              </div>
+            ))}
+          </div>
+        </DeveloperSection>
+
+        {/* Framework agnostic note */}
+        <div className="mx-auto max-w-7xl border-t border-border px-4 py-12 sm:px-6 lg:px-8">
+          <div className="rounded-xl border border-[var(--ic-border)] bg-[hsl(var(--background))] p-8 sm:p-12">
             <div className="max-w-2xl">
               <div className="mb-4 flex items-center gap-2">
                 <Cpu size={20} className="text-primary" />
-                <h3 className="text-lg font-semibold">
-                  Framework Agnostic
-                </h3>
+                <h3 className="text-lg font-semibold">Framework Agnostic</h3>
               </div>
               <p className="text-muted-foreground leading-relaxed">
                 Kontext is a standalone TypeScript SDK with zero framework
-                dependencies. The integrations above are convenience wrappers —
-                you can use <code className="bg-muted px-1.5 py-0.5 font-mono text-sm border border-border">ctx.verify()</code> and{" "}
-                <code className="bg-muted px-1.5 py-0.5 font-mono text-sm border border-border">ctx.log()</code> directly in any
-                agent framework, custom pipeline, or serverless function.
+                dependencies. Use{" "}
+                <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm border border-[var(--ic-border)]">
+                  ctx.verify()
+                </code>{" "}
+                and{" "}
+                <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm border border-[var(--ic-border)]">
+                  ctx.log()
+                </code>{" "}
+                directly in any agent framework, custom pipeline, or serverless
+                function.
               </p>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <Button size="sm" className="gap-2" asChild>
@@ -577,10 +638,15 @@ export default function IntegrationsPage() {
                     <ArrowRight size={14} />
                   </Link>
                 </Button>
-                <Button variant="outline" size="sm" className="gap-2" asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  asChild
+                >
                   <Link href="/docs">
                     <ExternalLink size={14} />
-                    View Examples in Docs
+                    View Examples
                   </Link>
                 </Button>
               </div>
@@ -593,22 +659,22 @@ export default function IntegrationsPage() {
       <section className="border-t border-border bg-background">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center text-center">
-            <h2 className="text-sm font-medium">
-              Start building with trust
+            <h2 className="font-serif text-2xl font-normal text-[var(--ic-text)]">
+              See how Kontext fits your payment stack
             </h2>
             <p className="mt-4 max-w-md text-muted-foreground">
-              Add proof of compliance to your agentic workflows in minutes. TypeScript-first,
-              zero dependencies, and ready for production.
+              Compliance evidence across stablecoin, fiat, and cross-chain
+              payment flows. One integration point.
             </p>
             <div className="mt-6 flex flex-col gap-4 sm:flex-row">
               <Button size="lg" className="gap-2" asChild>
-                <Link href="/docs">
-                  Get Started
+                <Link href="/contact">
+                  Book a Demo
                   <ArrowRight size={16} />
                 </Link>
               </Button>
               <Button variant="outline" size="lg" asChild>
-                <Link href="/contact">Contact Us</Link>
+                <Link href="/docs">Read the Docs</Link>
               </Button>
             </div>
           </div>
