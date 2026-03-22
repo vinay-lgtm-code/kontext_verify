@@ -6,7 +6,9 @@ on:
     paths:
       - 'apps/web/**'
       - 'apps/demo/**'
+      - 'CHANGELOG.md'
       - '.github/workflows/deploy-website.yml'
+  workflow_dispatch:
 
 concurrency:
   group: deploy-website
