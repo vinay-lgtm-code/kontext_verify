@@ -5,15 +5,13 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to release (e.g. 0.3.0)'
+        description: 'Version to release (e.g. 0.14.0)'
         required: true
         type: string
 
-  # Scheduled auto-release: 12 PM PST (20:00 UTC) every 2nd day
-  # Cron doesn't support "every 2 days" natively, so we run daily
-  # and the job checks whether 48 hours have passed since the last tag.
+  # Scheduled weekly release: Fridays at 12 PM PST (20:00 UTC)
   schedule:
-    - cron: '0 20 * * *'
+    - cron: '0 20 * * 5'
 
 concurrency:
   group: release
@@ -21,10 +19,10 @@ concurrency:
 
 jobs:
   # ==========================================================================
-  # Scheduled auto-release (patch bump, skip if nothing new)
+  # Scheduled weekly auto-release (patch bump, skip if nothing new)
   # ==========================================================================
   auto-release:
-    name: Scheduled Release
+    name: Weekly Release
     if: github.event_name == 'schedule' && github.repository == 'vinay-lgtm-code/kontext_verify'
     runs-on: ubuntu-latest
     permissions:
@@ -34,35 +32,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: release
+          ref: main
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check if release is needed
         id: check
         run: |
-          # Get the latest tag
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 
           if [ -z "$LAST_TAG" ]; then
             echo "No previous tags — first release"
             echo "should_release=true" >> "$GITHUB_OUTPUT"
-            echo "new_commits=true" >> "$GITHUB_OUTPUT"
-            echo "next_version=0.2.2" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          # Check if at least 48 hours have passed since the last tag
-          TAG_EPOCH=$(git log -1 --format=%ct "$LAST_TAG")
-          NOW_EPOCH=$(date +%s)
-          DIFF=$(( NOW_EPOCH - TAG_EPOCH ))
-          HOURS=$(( DIFF / 3600 ))
-
-          echo "Hours since last tag ($LAST_TAG): $HOURS"
-
-          if [ "$HOURS" -lt 48 ]; then
-            echo "Less than 48 hours since last release — skipping"
-            echo "should_release=false" >> "$GITHUB_OUTPUT"
+            echo "next_version=0.14.0" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -77,7 +59,6 @@ jobs:
           fi
 
           # Auto-bump: increment patch version from last tag
-          # Strip leading 'v' if present
           CURRENT=$(echo "$LAST_TAG" | sed 's/^v//')
           MAJOR=$(echo "$CURRENT" | cut -d. -f1)
           MINOR=$(echo "$CURRENT" | cut -d. -f2)
@@ -87,7 +68,6 @@ jobs:
 
           echo "Next version: $NEXT_VERSION"
           echo "should_release=true" >> "$GITHUB_OUTPUT"
-          echo "new_commits=true" >> "$GITHUB_OUTPUT"
           echo "next_version=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
 
       - uses: pnpm/action-setup@v4
@@ -98,6 +78,11 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+
+      - uses: actions/setup-python@v5
+        if: steps.check.outputs.should_release == 'true'
+        with:
+          python-version: '3.12'
 
       - name: Install dependencies
         if: steps.check.outputs.should_release == 'true'
@@ -120,6 +105,13 @@ jobs:
       - name: Build CLI
         if: steps.check.outputs.should_release == 'true'
         run: pnpm --filter @kontext-sdk/cli build
+
+      - name: Build Python client
+        if: steps.check.outputs.should_release == 'true'
+        run: |
+          pip install build
+          cd packages/python-client
+          python -m build
 
       - name: Generate changelogs
         if: steps.check.outputs.should_release == 'true'
@@ -137,15 +129,21 @@ jobs:
           cd packages/cli
           npm version ${{ steps.check.outputs.next_version }} --no-git-tag-version
 
+      - name: Bump Python client version
+        if: steps.check.outputs.should_release == 'true'
+        run: |
+          cd packages/python-client
+          sed -i 's/^version = .*/version = "${{ steps.check.outputs.next_version }}"/' pyproject.toml
+
       - name: Commit, tag, and push
         if: steps.check.outputs.should_release == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add CHANGELOG.md packages/sdk/package.json packages/cli/package.json
-          git commit -m "release: v${{ steps.check.outputs.next_version }} (scheduled)"
+          git add CHANGELOG.md packages/sdk/package.json packages/cli/package.json packages/python-client/pyproject.toml
+          git commit -m "release: v${{ steps.check.outputs.next_version }} (weekly)"
           git tag "v${{ steps.check.outputs.next_version }}"
-          git push origin release --tags
+          git push origin main --tags
 
       - name: Setup npm auth
         if: steps.check.outputs.should_release == 'true'
@@ -164,6 +162,14 @@ jobs:
           cd packages/cli
           npm publish --no-provenance --access public
 
+      - name: Publish Python client to PyPI
+        if: steps.check.outputs.should_release == 'true'
+        continue-on-error: true
+        run: |
+          pip install twine
+          cd packages/python-client
+          twine upload dist/* -u __token__ -p ${{ secrets.PYPI_TOKEN }}
+
       - name: Create GitHub Release
         if: steps.check.outputs.should_release == 'true'
         uses: softprops/action-gh-release@v2
@@ -179,6 +185,12 @@ jobs:
         run: |
           gcloud storage cp CHANGELOG-INTERNAL.md gs://kontext-internal-logs/changelogs/v${{ steps.check.outputs.next_version }}.md
 
+      - name: Trigger website deploy
+        if: steps.check.outputs.should_release == 'true'
+        run: gh workflow run deploy-website.yml --ref main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   # ==========================================================================
   # Manual release with explicit version
   # ==========================================================================
@@ -193,7 +205,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: release
+          ref: main
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -203,6 +215,10 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -221,6 +237,12 @@ jobs:
       - name: Build CLI
         run: pnpm --filter @kontext-sdk/cli build
 
+      - name: Build Python client
+        run: |
+          pip install build
+          cd packages/python-client
+          python -m build
+
       - name: Generate changelogs
         run: ./scripts/generate-changelog.sh ${{ inputs.version }}
 
@@ -234,14 +256,19 @@ jobs:
           cd packages/cli
           npm version ${{ inputs.version }} --no-git-tag-version
 
+      - name: Bump Python client version
+        run: |
+          cd packages/python-client
+          sed -i 's/^version = .*/version = "${{ inputs.version }}"/' pyproject.toml
+
       - name: Commit, tag, and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add CHANGELOG.md packages/sdk/package.json packages/cli/package.json
+          git add CHANGELOG.md packages/sdk/package.json packages/cli/package.json packages/python-client/pyproject.toml
           git commit -m "release: v${{ inputs.version }}"
           git tag "v${{ inputs.version }}"
-          git push origin release --tags
+          git push origin main --tags
 
       - name: Setup npm auth
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" >> ~/.npmrc
@@ -257,6 +284,13 @@ jobs:
           cd packages/cli
           npm publish --no-provenance --access public
 
+      - name: Publish Python client to PyPI
+        continue-on-error: true
+        run: |
+          pip install twine
+          cd packages/python-client
+          twine upload dist/* -u __token__ -p ${{ secrets.PYPI_TOKEN }}
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -269,3 +303,8 @@ jobs:
         continue-on-error: true
         run: |
           gcloud storage cp CHANGELOG-INTERNAL.md gs://kontext-internal-logs/changelogs/v${{ inputs.version }}.md
+
+      - name: Trigger website deploy
+        run: gh workflow run deploy-website.yml --ref main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
