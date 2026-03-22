@@ -5,52 +5,39 @@ import AnthropicVertex from "@anthropic-ai/vertex-sdk";
 interface SummaryRequest {
   scores: {
     overallScore: number;
-    band: string;
+    overallTier: string;
     subScores: {
-      intentAttribution: number;
-      policyEvidence: number;
-      executionLinkage: number;
-      auditReplayReadiness: number;
+      decisionTraceability: number;
+      reviewerReadiness: number;
+      operationalResilience: number;
+      automationControls?: number;
     };
-    tags: string[];
+    blockerTags: string[];
+    artifactGapTags: string[];
+    persona: {
+      role?: string;
+      companyType?: string;
+      stage?: string;
+      depth?: string;
+    };
   };
   findings: {
-    topGaps: string[];
-    teamImpacts: {
-      compliance: string;
-      riskFraud: string;
-      audit: string;
-      platformProduct: string;
-    };
-    roadmap: {
-      mustHave: string[];
-      shouldHave: string[];
-      advanced: string[];
+    bluntSummary: string;
+    likelyReviewerBlockers: string[];
+    missingArtifacts: string[];
+    remediationPlan: {
+      days30: string[];
+      days60: string[];
+      days90: string[];
     };
   };
   responses: Record<string, string | string[]>;
 }
 
 function buildFallback(req: SummaryRequest) {
-  const flowType =
-    typeof req.responses["flow_type"] === "string"
-      ? req.responses["flow_type"].replace(/_/g, " ")
-      : "payment";
-
-  const bandLabel: Record<string, string> = {
-    strong: "strong evidence posture",
-    functional_but_exposed: "functional but exposed evidence posture",
-    significant_gaps: "significant evidence gaps",
-    high_risk: "high operational risk",
-  };
-
   return {
-    executiveSummary: `This ${flowType} flow scored ${req.scores.overallScore}/100, indicating ${bandLabel[req.scores.band] ?? "notable gaps"}. ${req.findings.topGaps.slice(0, 2).join(" ")}`,
-    likelyFailureModes: req.findings.topGaps.slice(0, 3),
-    whyThisMattersNow:
-      "Regulatory expectations for payment evidence are tightening. Teams that cannot reconstruct payment decisions on demand face increasing exposure during audits, partner diligence, and incident response.",
-    suggestedNextStep:
-      "Start by linking screening results and execution references directly to each payment record. This addresses the highest-impact gaps with the lowest implementation effort.",
+    bluntSummary: req.findings.bluntSummary,
+    narrativeExplanation: "",
   };
 }
 
@@ -80,82 +67,64 @@ export async function POST(request: Request) {
 
   const client = new AnthropicVertex({ projectId, region });
 
-  const flowType =
-    typeof body.responses["flow_type"] === "string"
-      ? body.responses["flow_type"].replace(/_/g, " ")
-      : "payment";
+  const role = body.scores.persona.role?.replace(/_/g, " ") ?? "unknown";
+  const companyType = body.scores.persona.companyType?.replace(/_/g, " ") ?? "unknown";
+  const stage = body.scores.persona.stage?.replace(/_/g, " ") ?? "unknown";
 
-  const automationLevel =
-    typeof body.responses["automation_level"] === "string"
-      ? body.responses["automation_level"].replace(/_/g, " ")
-      : "unknown";
+  const initiationSources = Array.isArray(body.responses["initiation_sources"])
+    ? body.responses["initiation_sources"].join(", ")
+    : "unknown";
 
   const rails = Array.isArray(body.responses["rails"])
     ? body.responses["rails"].join(", ")
     : "unknown";
 
-  const systems = Array.isArray(body.responses["systems_touched"])
-    ? body.responses["systems_touched"].join(", ")
-    : "unknown";
+  const prompt = `You are generating a concise, realistic assessment narrative for a payments infrastructure team.
 
-  const teams = Array.isArray(body.responses["stakeholder_teams"])
-    ? body.responses["stakeholder_teams"].join(", ")
-    : "unknown";
-
-  const painSignals = Array.isArray(body.responses["pain_last_12_months"])
-    ? body.responses["pain_last_12_months"].join(", ")
-    : "none";
-
-  const prompt = `You are generating a concise operator-grade assessment summary for a payments or stablecoin infrastructure team.
-
-Audience:
-- compliance
-- risk/fraud
-- audit
-- payments product/platform
+Audience: ${role} at a ${companyType} company (${stage} stage).
 
 Writing rules:
 - be specific, not generic
 - avoid hype
-- do not mention vendors
+- do not mention vendors or products
 - do not sell
-- do not invent facts
+- do not invent facts beyond what the scores and findings show
 - do not state legal conclusions
 - write clearly and professionally
-- focus on operational implications
+- focus on operational implications and what reviewers would actually notice
 
 Assessment context:
-- Flow type: ${flowType}
-- Automation level: ${automationLevel}
+- Company type: ${companyType}
+- Stage: ${stage}
 - Rails: ${rails}
-- Systems involved: ${systems}
-- Stakeholder teams: ${teams}
+- Initiation sources: ${initiationSources}
+- Role: ${role}
 
 Scores:
-- Overall: ${body.scores.overallScore} / 100
-- Band: ${body.scores.band}
-- Intent & Attribution: ${body.scores.subScores.intentAttribution}
-- Policy Evidence: ${body.scores.subScores.policyEvidence}
-- Execution Linkage: ${body.scores.subScores.executionLinkage}
-- Audit Replay Readiness: ${body.scores.subScores.auditReplayReadiness}
+- Overall: ${body.scores.overallScore}/100 (tier: ${body.scores.overallTier})
+- Decision Traceability: ${body.scores.subScores.decisionTraceability}/100
+- Reviewer Readiness: ${body.scores.subScores.reviewerReadiness}/100
+- Operational Resilience: ${body.scores.subScores.operationalResilience}/100
+${body.scores.subScores.automationControls !== undefined ? `- Automation Controls: ${body.scores.subScores.automationControls}/100` : ""}
 
-Top gaps:
-${body.findings.topGaps.map((g) => `- ${g}`).join("\n")}
+Deterministic summary (already generated):
+${body.findings.bluntSummary}
 
-Pain signals:
-${painSignals}
+Reviewer blockers:
+${body.findings.likelyReviewerBlockers.map((b) => `- ${b}`).join("\n")}
 
-Roadmap:
-- Must have: ${body.findings.roadmap.mustHave.join("; ")}
-- Should have: ${body.findings.roadmap.shouldHave.join("; ")}
-- Advanced: ${body.findings.roadmap.advanced.join("; ")}
+Missing artifacts:
+${body.findings.missingArtifacts.map((a) => `- ${a}`).join("\n")}
+
+Remediation plan:
+- 30 days: ${body.findings.remediationPlan.days30.join("; ")}
+- 60 days: ${body.findings.remediationPlan.days60.join("; ")}
+- 90 days: ${body.findings.remediationPlan.days90.join("; ")}
 
 Return valid JSON only with this schema:
 {
-  "executiveSummary": "120-180 words",
-  "likelyFailureModes": ["string", "string", "string"],
-  "whyThisMattersNow": "60-100 words",
-  "suggestedNextStep": "40-80 words"
+  "bluntSummary": "1-2 sentences. Restate or improve the deterministic summary above, keeping it blunt and specific.",
+  "narrativeExplanation": "80-120 words. Explain what a real reviewer would notice, what questions they would ask, and what the practical risk is. Do not repeat the blunt summary."
 }`;
 
   try {

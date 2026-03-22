@@ -1,19 +1,15 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ArrowRight, Check, ClipboardCheck } from "lucide-react";
-import { assessmentSections, totalQuestions } from "@/lib/assessment-questions";
-import type { Responses } from "@/lib/assessment-engine";
-
-const flatQuestions = assessmentSections.flatMap((section, si) =>
-  section.questions.map((q) => ({ question: q, sectionIndex: si }))
-);
-
-// Precompute the global index where each section starts
-const sectionStartIndex = assessmentSections.map((_, si) =>
-  flatQuestions.findIndex((fq) => fq.sectionIndex === si)
-);
+import {
+  assessmentSections,
+  getVisibleQuestions,
+  getVisibleSections,
+} from "@/lib/assessment-questions";
+import type { Responses } from "@/lib/assessment-questions";
+import { track } from "@/lib/analytics";
 
 interface AssessmentWizardProps {
   onComplete: (responses: Responses) => void;
@@ -23,17 +19,33 @@ export function AssessmentWizard({ onComplete }: AssessmentWizardProps) {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [direction, setDirection] = useState(1);
   const [responses, setResponses] = useState<Responses>({});
+  const [started, setStarted] = useState(false);
 
-  const current = flatQuestions[questionIndex]!;
+  const visibleQuestions = useMemo(
+    () => getVisibleQuestions(assessmentSections, responses),
+    [responses]
+  );
+
+  const visibleSects = useMemo(
+    () => getVisibleSections(assessmentSections, responses),
+    [responses]
+  );
+
+  // Clamp index if questions shrink (e.g., depth changed)
+  const clampedIndex = Math.min(questionIndex, visibleQuestions.length - 1);
+  const current = visibleQuestions[clampedIndex];
+
+  if (!current) return null;
+
   const currentSectionIndex = current.sectionIndex;
-  const isFirst = questionIndex === 0;
-  const isLast = questionIndex === flatQuestions.length - 1;
+  const isFirst = clampedIndex === 0;
+  const isLast = clampedIndex === visibleQuestions.length - 1;
 
-  const totalAnswered = Object.keys(responses).filter((k) => {
-    const v = responses[k];
-    return v !== undefined && (typeof v === "string" ? v.length > 0 : (v as string[]).length > 0);
+  const totalAnswered = visibleQuestions.filter((vq) => {
+    const v = responses[vq.question.id];
+    return v !== undefined && (typeof v === "string" ? v.length > 0 : v.length > 0);
   }).length;
-  const progressPct = (totalAnswered / totalQuestions) * 100;
+  const progressPct = (totalAnswered / visibleQuestions.length) * 100;
 
   const currentAnswered = (() => {
     const r = responses[current.question.id];
@@ -41,25 +53,40 @@ export function AssessmentWizard({ onComplete }: AssessmentWizardProps) {
     return typeof r === "string" ? r.length > 0 : r.length > 0;
   })();
 
+  const depthTimeEstimate: Record<string, string> = {
+    quick: "3",
+    standard: "6",
+    deep: "8",
+  };
+  const selectedDepth = (responses["assessment_depth"] as string) ?? "quick";
+  const totalMinutes = depthTimeEstimate[selectedDepth] ?? "5";
+
   const handleSelect = useCallback(
     (questionId: string, value: string, type: "single_select" | "multi_select") => {
+      if (!started) {
+        setStarted(true);
+        track("assessment_started");
+      }
+
       setResponses((prev) => {
         if (type === "single_select") {
           return { ...prev, [questionId]: value };
         }
-        const current = (prev[questionId] as string[] | undefined) ?? [];
-        if (value === "none_yet") {
-          return { ...prev, [questionId]: ["none_yet"] };
+        const currentVal = (prev[questionId] as string[] | undefined) ?? [];
+        if (value === "none" || value === "none_yet") {
+          return { ...prev, [questionId]: [value] };
         }
-        const filtered = current.filter((v) => v !== "none_yet");
+        const filtered = currentVal.filter((v) => v !== "none" && v !== "none_yet");
         if (filtered.includes(value)) {
           const next = filtered.filter((v) => v !== value);
           return { ...prev, [questionId]: next.length > 0 ? next : [] };
         }
         return { ...prev, [questionId]: [...filtered, value] };
       });
+
+      track("assessment_question_answered", { question_id: questionId, value });
     },
-    []
+    [started]
   );
 
   const isSelected = (questionId: string, value: string): boolean => {
@@ -72,39 +99,44 @@ export function AssessmentWizard({ onComplete }: AssessmentWizardProps) {
   const goNext = () => {
     if (!isLast && currentAnswered) {
       setDirection(1);
-      setQuestionIndex((i) => i + 1);
+      setQuestionIndex(clampedIndex + 1);
     }
   };
 
   const goBack = () => {
     if (!isFirst) {
       setDirection(-1);
-      setQuestionIndex((i) => i - 1);
+      setQuestionIndex(clampedIndex - 1);
     }
   };
 
+  // Section navigation
+  const sectionStartIndex = (si: number): number => {
+    const idx = visibleQuestions.findIndex((vq) => vq.sectionIndex === si);
+    return idx >= 0 ? idx : 0;
+  };
+
   const jumpToSection = (si: number) => {
-    const targetIndex = sectionStartIndex[si]!;
-    if (targetIndex !== questionIndex) {
-      setDirection(targetIndex > questionIndex ? 1 : -1);
+    const targetIndex = sectionStartIndex(si);
+    if (targetIndex !== clampedIndex) {
+      setDirection(targetIndex > clampedIndex ? 1 : -1);
       setQuestionIndex(targetIndex);
     }
   };
 
-  // Determine which sections are accessible (completed or current)
   const sectionCompleted = (si: number) =>
-    flatQuestions
-      .filter((fq) => fq.sectionIndex === si)
-      .every((fq) => {
-        const r = responses[fq.question.id];
-        return r !== undefined && (typeof r === "string" ? r.length > 0 : (r as string[]).length > 0);
+    visibleQuestions
+      .filter((vq) => vq.sectionIndex === si)
+      .every((vq) => {
+        const r = responses[vq.question.id];
+        return r !== undefined && (typeof r === "string" ? r.length > 0 : r.length > 0);
       });
 
   // Questions in the current section for step dots
-  const currentSectionQuestions = flatQuestions.filter(
-    (fq) => fq.sectionIndex === currentSectionIndex
+  const currentSectionQuestions = visibleQuestions.filter(
+    (vq) => vq.sectionIndex === currentSectionIndex
   );
-  const currentSectionStart = sectionStartIndex[currentSectionIndex]!;
+  const currentSectionStart = sectionStartIndex(currentSectionIndex);
 
   const q = current.question;
 
@@ -114,10 +146,11 @@ export function AssessmentWizard({ onComplete }: AssessmentWizardProps) {
       <div className="border-b border-[var(--ic-border)] px-7 py-5">
         <div className="flex items-center justify-between">
           <span className="font-mono text-[10px] font-medium uppercase tracking-[2px] text-[var(--ic-text-dim)]">
-            Question {questionIndex + 1} of {totalQuestions}
+            Question {clampedIndex + 1} of {visibleQuestions.length}
           </span>
           <span className="font-mono text-[10px] font-medium uppercase tracking-[2px] text-[var(--ic-text-dim)]">
-            ~{Math.max(1, Math.ceil(((totalQuestions - totalAnswered) / totalQuestions) * 5))} min left
+            ~{Math.max(1, Math.ceil(((visibleQuestions.length - totalAnswered) / visibleQuestions.length) * Number(totalMinutes)))}{" "}
+            min left
           </span>
         </div>
 
@@ -131,7 +164,7 @@ export function AssessmentWizard({ onComplete }: AssessmentWizardProps) {
 
         {/* Section tabs */}
         <div className="mt-3 flex gap-1">
-          {assessmentSections.map((s, i) => {
+          {visibleSects.map(({ section: s, index: i }) => {
             const isActive = i === currentSectionIndex;
             const isDone = sectionCompleted(i) && i !== currentSectionIndex;
             const isClickable = i <= currentSectionIndex || sectionCompleted(i);
@@ -156,19 +189,19 @@ export function AssessmentWizard({ onComplete }: AssessmentWizardProps) {
 
         {/* Within-section step dots */}
         <div className="mt-2 flex gap-1.5">
-          {currentSectionQuestions.map((fq, i) => {
+          {currentSectionQuestions.map((vq, i) => {
             const globalIdx = currentSectionStart + i;
-            const isCurrent = globalIdx === questionIndex;
+            const isCurrent = globalIdx === clampedIndex;
             const answered = (() => {
-              const r = responses[fq.question.id];
-              return r !== undefined && (typeof r === "string" ? r.length > 0 : (r as string[]).length > 0);
+              const r = responses[vq.question.id];
+              return r !== undefined && (typeof r === "string" ? r.length > 0 : r.length > 0);
             })();
             return (
               <button
-                key={fq.question.id}
+                key={vq.question.id}
                 onClick={() => {
-                  if (globalIdx <= questionIndex || answered) {
-                    setDirection(globalIdx > questionIndex ? 1 : -1);
+                  if (globalIdx <= clampedIndex || answered) {
+                    setDirection(globalIdx > clampedIndex ? 1 : -1);
                     setQuestionIndex(globalIdx);
                   }
                 }}
@@ -178,7 +211,7 @@ export function AssessmentWizard({ onComplete }: AssessmentWizardProps) {
                     : answered
                     ? "bg-[var(--ic-accent)]/40"
                     : "bg-[var(--ic-border)]"
-                } ${globalIdx <= questionIndex || answered ? "cursor-pointer" : "cursor-default"}`}
+                } ${globalIdx <= clampedIndex || answered ? "cursor-pointer" : "cursor-default"}`}
               />
             );
           })}
@@ -189,7 +222,7 @@ export function AssessmentWizard({ onComplete }: AssessmentWizardProps) {
       <div className="flex-1 overflow-hidden">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
-            key={questionIndex}
+            key={q.id}
             custom={direction}
             initial={{ x: direction * 40, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
@@ -266,7 +299,17 @@ export function AssessmentWizard({ onComplete }: AssessmentWizardProps) {
 
         {isLast ? (
           <button
-            onClick={() => onComplete(responses)}
+            onClick={() => {
+              track("assessment_completed", {
+                depth: selectedDepth,
+                has_automation: String(hasAutomation(responses)),
+                has_agentic: String(hasAIAgent(responses)),
+              });
+              if (hasAutomation(responses)) {
+                track("assessment_completed_with_agentic_branch");
+              }
+              onComplete(responses);
+            }}
             disabled={!currentAnswered}
             className={`flex items-center gap-1.5 rounded-lg px-5 py-2.5 text-[13px] font-semibold transition-colors ${
               currentAnswered
@@ -294,4 +337,15 @@ export function AssessmentWizard({ onComplete }: AssessmentWizardProps) {
       </div>
     </div>
   );
+}
+
+function hasAutomation(responses: Responses): boolean {
+  const sources = responses["initiation_sources"];
+  if (!Array.isArray(sources)) return false;
+  return sources.some((s) => s === "workflow" || s === "api_service" || s === "ai_agent");
+}
+
+function hasAIAgent(responses: Responses): boolean {
+  const sources = responses["initiation_sources"];
+  return Array.isArray(sources) && sources.includes("ai_agent");
 }

@@ -2,11 +2,21 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, ChevronDown, Loader2, Send, X, Check } from "lucide-react";
+import {
+  AlertTriangle,
+  Check,
+  ChevronRight,
+  Loader2,
+  Send,
+  X,
+  ShieldCheck,
+  XCircle,
+} from "lucide-react";
 import Link from "next/link";
 import type { AssessmentScores, Responses } from "@/lib/assessment-engine";
-import { bandLabels, bandColors } from "@/lib/assessment-engine";
-import type { Findings } from "@/lib/assessment-findings";
+import { tierLabels, tierColors } from "@/lib/assessment-engine";
+import type { Findings, PacketFieldStatus } from "@/lib/assessment-findings";
+import { track } from "@/lib/analytics";
 
 interface AssessmentResultsProps {
   scores: AssessmentScores;
@@ -15,28 +25,76 @@ interface AssessmentResultsProps {
 }
 
 interface AiSummary {
-  executiveSummary: string;
-  likelyFailureModes: string[];
-  whyThisMattersNow: string;
-  suggestedNextStep: string;
+  bluntSummary: string;
+  narrativeExplanation: string;
 }
 
-const subScoreLabels = [
-  { key: "intentAttribution" as const, label: "Intent & Attribution" },
-  { key: "policyEvidence" as const, label: "Policy Evidence" },
-  { key: "executionLinkage" as const, label: "Execution Linkage" },
-  { key: "auditReplayReadiness" as const, label: "Audit Replay Readiness" },
+const subScoreLabels: { key: keyof AssessmentScores["subScores"]; label: string }[] = [
+  { key: "decisionTraceability", label: "Decision Traceability" },
+  { key: "reviewerReadiness", label: "Reviewer Readiness" },
+  { key: "operationalResilience", label: "Operational Resilience" },
+  { key: "automationControls", label: "Automation Controls" },
 ];
 
 function getSubScoreColor(score: number): string {
-  if (score >= 20) return "var(--ic-green)";
-  if (score >= 13) return "var(--ic-amber)";
+  if (score >= 70) return "var(--ic-green)";
+  if (score >= 40) return "var(--ic-amber)";
   return "var(--ic-red)";
 }
 
-function getGapColor(index: number, total: number): string {
-  if (index < Math.ceil(total * 0.4)) return "var(--ic-red)";
-  return "var(--ic-amber)";
+function PacketPreview({ fields }: { fields: PacketFieldStatus[] }) {
+  return (
+    <div className="space-y-1.5">
+      {fields.map((f) => {
+        const statusConfig = {
+          present: {
+            bg: "bg-[var(--ic-green)]/10",
+            border: "border-[var(--ic-green)]/20",
+            icon: <Check size={14} className="text-[var(--ic-green)]" />,
+            label: "Present",
+            labelColor: "text-[var(--ic-green)]",
+          },
+          partial: {
+            bg: "bg-amber-500/10",
+            border: "border-[var(--ic-amber)]/20",
+            icon: <AlertTriangle size={14} className="text-[var(--ic-amber)]" />,
+            label: "Partial",
+            labelColor: "text-[var(--ic-amber)]",
+          },
+          missing: {
+            bg: "bg-[var(--ic-red)]/10",
+            border: "border-[var(--ic-red)]/20",
+            icon: <XCircle size={14} className="text-[var(--ic-red)]" />,
+            label: "Missing",
+            labelColor: "text-[var(--ic-red)]",
+          },
+        };
+        const cfg = statusConfig[f.status];
+
+        return (
+          <div
+            key={f.field}
+            className={`flex items-center justify-between rounded-md border ${cfg.border} ${cfg.bg} px-3 py-2`}
+          >
+            <div className="flex items-center gap-2">
+              {cfg.icon}
+              <span className="text-[13px] text-[var(--ic-text-muted)]">
+                {f.field}
+                {f.conditional && (
+                  <span className="ml-1.5 font-mono text-[9px] uppercase tracking-wider text-[var(--ic-text-dim)]">
+                    Agent flows
+                  </span>
+                )}
+              </span>
+            </div>
+            <span className={`font-mono text-[10px] font-semibold uppercase tracking-wider ${cfg.labelColor}`}>
+              {cfg.label}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 export function AssessmentResults({
@@ -47,10 +105,20 @@ export function AssessmentResults({
   const [aiSummary, setAiSummary] = useState<AiSummary | null>(null);
   const [aiLoading, setAiLoading] = useState(true);
   const [displayScore, setDisplayScore] = useState(0);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [shareOpen, setShareOpen] = useState(false);
   const [shareEmails, setShareEmails] = useState(["", ""]);
   const [shareStatus, setShareStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+
+  // Track completion
+  useEffect(() => {
+    track("assessment_completed", {
+      tier: scores.overallTier,
+      score: String(scores.overallScore),
+      role: scores.persona.role ?? "",
+      company_type: scores.persona.companyType ?? "",
+      depth: scores.persona.depth ?? "",
+    });
+  }, [scores]);
 
   // Score count-up animation
   useEffect(() => {
@@ -67,7 +135,7 @@ export function AssessmentResults({
     requestAnimationFrame(tick);
   }, [scores.overallScore]);
 
-  // Fetch AI summary
+  // Fetch AI narrative summary
   useEffect(() => {
     let cancelled = false;
 
@@ -84,12 +152,8 @@ export function AssessmentResults({
       } catch {
         if (!cancelled) {
           setAiSummary({
-            executiveSummary: `This ${responses["flow_type"]?.toString().replace(/_/g, " ") ?? "payment"} flow scored ${scores.overallScore}/100, indicating ${bandLabels[scores.band].toLowerCase()}. ${findings.topGaps[0] ?? ""} ${findings.topGaps[1] ?? ""}`,
-            likelyFailureModes: findings.topGaps.slice(0, 3),
-            whyThisMattersNow:
-              "Regulatory expectations for payment evidence are tightening. Teams that cannot reconstruct payment decisions on demand face increasing exposure during audits, partner diligence, and incident response.",
-            suggestedNextStep:
-              "Start by linking screening results and execution references directly to each payment record. This addresses the highest-impact gaps with the lowest implementation effort.",
+            bluntSummary: findings.bluntSummary,
+            narrativeExplanation: "",
           });
         }
       } finally {
@@ -101,16 +165,14 @@ export function AssessmentResults({
     return () => { cancelled = true; };
   }, [scores, findings, responses]);
 
-  const bandColor = bandColors[scores.band];
-
-  const toggle = (key: string) =>
-    setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
+  const tierColor = tierColors[scores.overallTier];
 
   const handleShare = async () => {
     const validEmails = shareEmails.filter((e) => e.trim().length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim()));
     if (validEmails.length === 0) return;
 
     setShareStatus("sending");
+    track("assessment_results_shared", { tier: scores.overallTier });
     try {
       const res = await fetch("/api/assessment/share", {
         method: "POST",
@@ -119,7 +181,6 @@ export function AssessmentResults({
           emails: validEmails.map((e) => e.trim()),
           scores,
           findings,
-          aiSummary,
         }),
       });
       if (!res.ok) throw new Error("Send failed");
@@ -132,46 +193,81 @@ export function AssessmentResults({
   const stagger = (i: number) => ({
     initial: { opacity: 0, y: 16 },
     animate: { opacity: 1, y: 0 },
-    transition: { delay: i * 0.1, duration: 0.35 },
+    transition: { delay: i * 0.08, duration: 0.35 },
   });
+
+  const applicableSubScores = subScoreLabels.filter(
+    ({ key }) => scores.subScores[key] !== undefined
+  );
 
   return (
     <div className="space-y-7 px-7 py-7">
-      {/* Score hero */}
+      {/* 1. Blunt summary */}
       <motion.div {...stagger(0)}>
-        <div className="relative flex flex-col items-center rounded-xl border border-[var(--ic-border)] bg-[var(--ic-surface-2)] px-6 py-8">
-          {/* Share button - top right */}
-          <button
-            onClick={() => { setShareOpen(!shareOpen); setShareStatus("idle"); }}
-            className="absolute right-4 top-4 flex items-center gap-1.5 rounded-md border border-[var(--ic-border)] px-3 py-1.5 text-[11px] font-medium text-[var(--ic-text-muted)] transition-colors hover:bg-[var(--ic-surface)]"
-          >
-            <Send size={12} />
-            Share
-          </button>
+        <p className="text-[16px] font-medium leading-relaxed text-[var(--ic-text)]">
+          {findings.bluntSummary}
+        </p>
+      </motion.div>
 
-          <span className="font-mono text-[9px] font-medium uppercase tracking-[3px] text-[var(--ic-text-dim)]">
-            Maturity Score
-          </span>
+      {/* 2. Tier badge + score + sub-scores */}
+      <motion.div {...stagger(1)}>
+        <div className="flex flex-col items-center rounded-xl border border-[var(--ic-border)] bg-[var(--ic-surface-2)] px-6 py-6">
+          {/* Share button - top right */}
+          <div className="flex w-full justify-end">
+            <button
+              onClick={() => { setShareOpen(!shareOpen); setShareStatus("idle"); }}
+              className="flex items-center gap-1.5 rounded-md border border-[var(--ic-border)] px-3 py-1.5 text-[11px] font-medium text-[var(--ic-text-muted)] transition-colors hover:bg-[var(--ic-surface)]"
+            >
+              <Send size={12} />
+              Share
+            </button>
+          </div>
+
           <span
-            className="mt-1 font-mono text-[10px] font-semibold uppercase tracking-[3px]"
-            style={{ color: bandColor }}
+            className="mt-1 inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-[2px]"
+            style={{ color: tierColor, backgroundColor: `color-mix(in srgb, ${tierColor} 10%, transparent)` }}
           >
-            {bandLabels[scores.band]}
+            {tierLabels[scores.overallTier]}
           </span>
           <span
-            className="mt-2 text-[72px] font-bold leading-none"
-            style={{ color: bandColor }}
+            className="mt-2 text-[48px] font-bold leading-none"
+            style={{ color: tierColor }}
           >
             {displayScore}
           </span>
-          <span className="mt-1 text-[14px] text-[var(--ic-text-dim)]">
+          <span className="mt-1 text-[13px] text-[var(--ic-text-dim)]">
             out of 100
           </span>
-          <p className="mt-4 max-w-md text-center text-[14px] leading-relaxed text-[var(--ic-text-muted)]">
-            This result reflects how well your current stack appears able to
-            reconstruct one payment decision from intent through execution and
-            review.
-          </p>
+        </div>
+
+        {/* Sub-scores */}
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {applicableSubScores.map(({ key, label }) => {
+            const val = scores.subScores[key]!;
+            const color = getSubScoreColor(val);
+            return (
+              <div
+                key={key}
+                className="rounded-lg border border-[var(--ic-border)] p-3"
+              >
+                <span className="text-[11px] font-medium text-[var(--ic-text-muted)]">
+                  {label}
+                </span>
+                <div className="mt-1.5 flex items-baseline justify-between">
+                  <span className="text-[24px] font-bold" style={{ color }}>
+                    {val}
+                  </span>
+                  <span className="text-[12px] text-[var(--ic-text-dim)]">/ 100</span>
+                </div>
+                <div className="mt-1.5 h-1 w-full rounded-full bg-[var(--ic-border)]">
+                  <div
+                    className="h-1 rounded-full transition-all duration-500"
+                    style={{ width: `${val}%`, backgroundColor: color }}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Inline share form */}
@@ -186,9 +282,14 @@ export function AssessmentResults({
             >
               <div className="mt-2 rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface-2)] p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-[12px] font-medium text-[var(--ic-text-muted)]">
-                    Share results via email (max 2)
-                  </span>
+                  <div>
+                    <span className="text-[12px] font-medium text-[var(--ic-text-muted)]">
+                      Email this readiness summary
+                    </span>
+                    <p className="text-[11px] text-[var(--ic-text-dim)]">
+                      Includes blockers, missing artifacts, and remediation plan.
+                    </p>
+                  </div>
                   <button
                     onClick={() => setShareOpen(false)}
                     className="rounded p-0.5 text-[var(--ic-text-dim)] hover:text-[var(--ic-text)]"
@@ -245,307 +346,191 @@ export function AssessmentResults({
         </AnimatePresence>
       </motion.div>
 
-      {/* Sub-scores */}
-      <motion.div {...stagger(1)} className="grid grid-cols-2 gap-2">
-        {subScoreLabels.map(({ key, label }) => {
-          const val = scores.subScores[key];
-          const color = getSubScoreColor(val);
-          return (
-            <div
-              key={key}
-              className="rounded-lg border border-[var(--ic-border)] p-4"
-            >
-              <span className="text-[12px] font-medium text-[var(--ic-text-muted)]">
-                {label}
-              </span>
-              <div className="mt-2 flex items-baseline justify-between">
-                <span
-                  className="text-[28px] font-bold"
-                  style={{ color }}
-                >
-                  {val}
-                </span>
-                <span className="text-[14px] text-[var(--ic-text-dim)]">
-                  / 25
-                </span>
-              </div>
-              <div className="mt-2 h-1 w-full rounded-full bg-[var(--ic-border)]">
-                <div
-                  className="h-1 rounded-full transition-all duration-500"
-                  style={{
-                    width: `${(val / 25) * 100}%`,
-                    backgroundColor: color,
-                  }}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </motion.div>
-
-      {/* AI summary */}
-      <motion.div {...stagger(2)} className="rounded-lg border border-[var(--ic-border)] p-5">
-        <span className="font-mono text-[10px] font-semibold uppercase tracking-[3px] text-[var(--ic-text-dim)]">
-          Operator Summary
-        </span>
-        {aiLoading ? (
-          <div className="mt-4 flex items-center gap-2 text-[var(--ic-text-dim)]">
-            <Loader2 size={16} className="animate-spin" />
-            <span className="text-[13px]">Generating summary...</span>
-          </div>
-        ) : aiSummary ? (
-          <p className="mt-3 text-[14px] leading-[1.65] text-[var(--ic-text-muted)]">
-            {aiSummary.executiveSummary}
-          </p>
-        ) : null}
-      </motion.div>
-
-      {/* Top 3 gaps at a glance */}
-      <motion.div {...stagger(3)} className="rounded-lg border border-[var(--ic-red)]/30 bg-[var(--ic-red)]/5 p-4">
+      {/* 3. Likely reviewer blockers */}
+      <motion.div {...stagger(2)}>
         <span className="font-mono text-[10px] font-semibold uppercase tracking-[3px] text-[var(--ic-red)]">
-          Top Gaps at a Glance
+          Likely Reviewer Blockers
         </span>
-        <ul className="mt-2 space-y-1.5">
-          {findings.topGaps.slice(0, 3).map((gap, i) => (
-            <li key={i} className="flex items-start gap-2">
-              <span className="mt-[7px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[var(--ic-red)]" />
-              <span className="text-[13px] leading-relaxed text-[var(--ic-text-muted)]">
-                {gap}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <div className="mt-2 rounded-lg border border-[var(--ic-red)]/30 bg-[var(--ic-red)]/5 p-4">
+          <ul className="space-y-2">
+            {findings.likelyReviewerBlockers.map((blocker, i) => (
+              <li key={i} className="flex items-start gap-2">
+                <span className="mt-[7px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[var(--ic-red)]" />
+                <span className="text-[13px] leading-relaxed text-[var(--ic-text-muted)]">
+                  {blocker}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </motion.div>
 
-      {/* Full gaps */}
-      <motion.div {...stagger(4)}>
+      {/* 4. Reviewer questions at risk */}
+      {findings.reviewerQuestionsAtRisk.length > 0 && (
+        <motion.div {...stagger(3)}>
+          <span className="font-mono text-[10px] font-semibold uppercase tracking-[3px] text-[var(--ic-amber)]">
+            Questions reviewers may ask that your current stack would struggle to answer
+          </span>
+          <div className="mt-2 space-y-1.5">
+            {findings.reviewerQuestionsAtRisk.map((q, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-2 rounded-md border border-[var(--ic-amber)]/20 bg-amber-500/5 px-3 py-2"
+              >
+                <AlertTriangle size={14} className="flex-shrink-0 text-[var(--ic-amber)]" />
+                <span className="text-[13px] text-[var(--ic-text-muted)]">{q}</span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* 5. Missing artifacts */}
+      {findings.missingArtifacts.length > 0 && (
+        <motion.div {...stagger(4)}>
+          <span className="font-mono text-[10px] font-semibold uppercase tracking-[3px] text-[var(--ic-text-dim)]">
+            Artifacts you likely do not have today
+          </span>
+          <div className="mt-2 space-y-1.5">
+            {findings.missingArtifacts.map((artifact, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-2 rounded-md border border-[var(--ic-red)]/20 bg-[var(--ic-red)]/5 px-3 py-2"
+              >
+                <XCircle size={14} className="flex-shrink-0 text-[var(--ic-red)]" />
+                <span className="text-[13px] text-[var(--ic-text-muted)]">{artifact}</span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* 6. Packet preview */}
+      <motion.div {...stagger(5)}>
+        <div className="rounded-xl border border-[var(--ic-border)] bg-[var(--ic-surface-2)] p-5">
+          <div className="flex items-center gap-2">
+            <ShieldCheck size={14} className="text-[var(--ic-accent)]" />
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-[3px] text-[var(--ic-text-dim)]">
+              Your Evidence Packet Readiness
+            </span>
+          </div>
+          <p className="mt-2 text-[12px] text-[var(--ic-text-dim)]">
+            How your current stack maps to a reviewer-ready payment evidence packet.
+          </p>
+          <div className="mt-3">
+            <PacketPreview fields={findings.packetPreview} />
+          </div>
+        </div>
+      </motion.div>
+
+      {/* 7. Team impacts */}
+      <motion.div {...stagger(6)}>
         <span className="font-mono text-[10px] font-semibold uppercase tracking-[3px] text-[var(--ic-text-dim)]">
-          All Evidence Gaps
+          What This Means For Your Team
         </span>
         <div className="mt-3 space-y-3">
-          {findings.topGaps.map((gap, i) => (
-            <div key={i} className="flex items-start gap-2.5">
-              <span
-                className="mt-[7px] h-1.5 w-1.5 flex-shrink-0 rounded-full"
-                style={{
-                  backgroundColor: getGapColor(i, findings.topGaps.length),
-                }}
-              />
-              <span className="text-[13px] leading-relaxed text-[var(--ic-text-muted)]">
-                {gap}
+          {[
+            { label: "Compliance", text: findings.teamImpacts.compliance },
+            { label: "Risk & Fraud", text: findings.teamImpacts.riskFraud },
+            { label: "Internal Audit", text: findings.teamImpacts.audit },
+            { label: "Platform / Product", text: findings.teamImpacts.platformProduct },
+          ].map((item) => (
+            <div key={item.label} className="rounded-lg border border-[var(--ic-border)] p-4">
+              <span className="text-[12px] font-semibold text-[var(--ic-text)]">
+                {item.label}
               </span>
+              <p className="mt-1 text-[13px] leading-relaxed text-[var(--ic-text-muted)]">
+                {item.text}
+              </p>
             </div>
           ))}
         </div>
       </motion.div>
 
-      {/* Team impacts — collapsible */}
-      <motion.div {...stagger(5)}>
-        <button
-          onClick={() => toggle("teamImpacts")}
-          className="flex w-full items-center justify-between"
-        >
-          <span className="font-mono text-[10px] font-semibold uppercase tracking-[3px] text-[var(--ic-text-dim)]">
-            What This Means For Your Team
-          </span>
-          <motion.span
-            animate={{ rotate: expanded["teamImpacts"] ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <ChevronDown size={14} className="text-[var(--ic-text-dim)]" />
-          </motion.span>
-        </button>
-        <AnimatePresence>
-          {expanded["teamImpacts"] && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.25 }}
-              className="overflow-hidden"
-            >
-              <div className="mt-3 space-y-3">
-                {[
-                  { label: "Compliance", text: findings.teamImpacts.compliance },
-                  { label: "Risk & Fraud", text: findings.teamImpacts.riskFraud },
-                  { label: "Internal Audit", text: findings.teamImpacts.audit },
-                  { label: "Platform / Product", text: findings.teamImpacts.platformProduct },
-                ].map((item) => (
-                  <div key={item.label} className="rounded-lg border border-[var(--ic-border)] p-4">
-                    <span className="text-[12px] font-semibold text-[var(--ic-text)]">
-                      {item.label}
-                    </span>
-                    <p className="mt-1 text-[13px] leading-relaxed text-[var(--ic-text-muted)]">
-                      {item.text}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-
-      {/* Evidence schema — collapsible */}
-      <motion.div {...stagger(6)}>
-        <button
-          onClick={() => toggle("evidenceSchema")}
-          className="flex w-full items-center justify-between"
-        >
-          <span className="font-mono text-[10px] font-semibold uppercase tracking-[3px] text-[var(--ic-text-dim)]">
-            What Good Evidence Capture Should Include
-          </span>
-          <motion.span
-            animate={{ rotate: expanded["evidenceSchema"] ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <ChevronDown size={14} className="text-[var(--ic-text-dim)]" />
-          </motion.span>
-        </button>
-        <AnimatePresence>
-          {expanded["evidenceSchema"] && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.25 }}
-              className="overflow-hidden"
-            >
-              <div className="mt-3 space-y-2">
-                {findings.recommendedSchema.map((item, i) => (
+      {/* 8. 30/60/90-day remediation plan */}
+      <motion.div {...stagger(7)}>
+        <span className="font-mono text-[10px] font-semibold uppercase tracking-[3px] text-[var(--ic-text-dim)]">
+          30/60/90-Day Path to Reviewer Readiness
+        </span>
+        <div className="mt-3 space-y-4">
+          {[
+            { label: "First 30 days", items: findings.remediationPlan.days30, color: "var(--ic-red)" },
+            { label: "60 days", items: findings.remediationPlan.days60, color: "var(--ic-amber)" },
+            { label: "90 days", items: findings.remediationPlan.days90, color: "var(--ic-accent)" },
+          ].map((group) => (
+            <div key={group.label}>
+              <span
+                className="text-[11px] font-semibold uppercase tracking-wider"
+                style={{ color: group.color }}
+              >
+                {group.label}
+              </span>
+              <div className="mt-1.5 space-y-1.5">
+                {group.items.map((item, i) => (
                   <div key={i} className="flex items-start gap-2.5">
-                    <span className="mt-[7px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[var(--ic-accent)]" />
+                    <span
+                      className="mt-[7px] h-1.5 w-1.5 flex-shrink-0 rounded-full"
+                      style={{ backgroundColor: group.color }}
+                    />
                     <span className="text-[13px] leading-relaxed text-[var(--ic-text-muted)]">
                       {item}
                     </span>
                   </div>
                 ))}
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+          ))}
+        </div>
       </motion.div>
 
-      {/* Roadmap — collapsible */}
-      <motion.div {...stagger(7)}>
-        <button
-          onClick={() => toggle("roadmap")}
-          className="flex w-full items-center justify-between"
-        >
-          <span className="font-mono text-[10px] font-semibold uppercase tracking-[3px] text-[var(--ic-text-dim)]">
-            Suggested Remediation Path
-          </span>
-          <motion.span
-            animate={{ rotate: expanded["roadmap"] ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <ChevronDown size={14} className="text-[var(--ic-text-dim)]" />
-          </motion.span>
-        </button>
-        <AnimatePresence>
-          {expanded["roadmap"] && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.25 }}
-              className="overflow-hidden"
-            >
-              <div className="mt-3 space-y-4">
-                {[
-                  { label: "Must have", items: findings.roadmap.mustHave, color: "var(--ic-red)" },
-                  { label: "Should have", items: findings.roadmap.shouldHave, color: "var(--ic-amber)" },
-                  { label: "Advanced", items: findings.roadmap.advanced, color: "var(--ic-accent)" },
-                ].map((group) => (
-                  <div key={group.label}>
-                    <span
-                      className="text-[11px] font-semibold uppercase tracking-wider"
-                      style={{ color: group.color }}
-                    >
-                      {group.label}
-                    </span>
-                    <div className="mt-1.5 space-y-1.5">
-                      {group.items.map((item, i) => (
-                        <div key={i} className="flex items-start gap-2.5">
-                          <span
-                            className="mt-[7px] h-1.5 w-1.5 flex-shrink-0 rounded-full"
-                            style={{ backgroundColor: group.color }}
-                          />
-                          <span className="text-[13px] leading-relaxed text-[var(--ic-text-muted)]">
-                            {item}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-
-      {/* Demo CTA */}
-      <motion.div {...stagger(8)} className="flex flex-col items-center rounded-xl border border-[var(--ic-accent)] bg-[var(--ic-accent)]/5 px-6 py-7">
-        <h3 className="text-[16px] font-semibold text-[var(--ic-text)]">
-          Want help reviewing your results?
-        </h3>
-        <p className="mt-2 max-w-md text-center text-[13px] leading-relaxed text-[var(--ic-text-muted)]">
-          Book a 20-minute gap review and we&apos;ll walk through how one of
-          your real payment flows could become a complete evidence trail.
-        </p>
-        <Link
-          href="/contact"
-          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[var(--ic-accent)] px-7 py-3 text-[13px] font-semibold text-white transition-colors hover:bg-[var(--ic-accent)]/90"
-        >
-          <Calendar size={14} />
-          Book Gap Review
-        </Link>
-      </motion.div>
-
-      {/* Recommended next step */}
-      <motion.div {...stagger(9)} className="rounded-lg border border-[var(--ic-border)] p-5">
+      {/* 9. AI narrative summary (subordinate) */}
+      <motion.div {...stagger(8)} className="rounded-lg border border-[var(--ic-border)] p-5">
         <span className="font-mono text-[10px] font-semibold uppercase tracking-[3px] text-[var(--ic-text-dim)]">
-          Recommended Next Step
+          Narrative Summary
         </span>
-        <div className="mt-3 space-y-2">
-          {scores.overallScore < 40 ? (
-            <>
-              <p className="text-[13px] leading-relaxed text-[var(--ic-text-muted)]">
-                Your stack has significant evidence gaps. Start with the bank readiness checklist to understand what reviewers expect.
-              </p>
-              <Link
-                href="/bank-readiness-checklist"
-                className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--ic-accent)] hover:underline"
-              >
-                View bank readiness checklist →
-              </Link>
-            </>
-          ) : scores.overallScore < 70 ? (
-            <>
-              <p className="text-[13px] leading-relaxed text-[var(--ic-text-muted)]">
-                You have a foundation but key gaps remain. See how a structured evidence packet addresses the most common reviewer questions.
-              </p>
-              <Link
-                href="/sample-payment-decision-packet"
-                className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--ic-accent)] hover:underline"
-              >
-                View sample evidence packet →
-              </Link>
-            </>
-          ) : (
-            <>
-              <p className="text-[13px] leading-relaxed text-[var(--ic-text-muted)]">
-                Your evidence infrastructure is strong. Review how Kontext can formalize and automate what you already do well.
-              </p>
-              <Link
-                href="/bank-readiness"
-                className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--ic-accent)] hover:underline"
-              >
-                View bank readiness guide →
-              </Link>
-            </>
-          )}
+        {aiLoading ? (
+          <div className="mt-4 flex items-center gap-2 text-[var(--ic-text-dim)]">
+            <Loader2 size={16} className="animate-spin" />
+            <span className="text-[13px]">Generating narrative...</span>
+          </div>
+        ) : aiSummary?.narrativeExplanation ? (
+          <p className="mt-3 text-[14px] leading-[1.65] text-[var(--ic-text-muted)]">
+            {aiSummary.narrativeExplanation}
+          </p>
+        ) : aiSummary?.bluntSummary ? (
+          <p className="mt-3 text-[14px] leading-[1.65] text-[var(--ic-text-muted)]">
+            {aiSummary.bluntSummary}
+          </p>
+        ) : null}
+      </motion.div>
+
+      {/* 10. Next best asset CTA */}
+      <motion.div {...stagger(9)} className="flex flex-col items-center rounded-xl border border-[var(--ic-accent)] bg-[var(--ic-accent)]/5 px-6 py-7">
+        <h3 className="text-[16px] font-semibold text-[var(--ic-text)]">
+          Recommended next step
+        </h3>
+        <div className="mt-4 flex flex-col items-center gap-3">
+          <Link
+            href={findings.nextBestAsset.href}
+            onClick={() =>
+              track("assessment_cta_next_asset_clicked", {
+                href: findings.nextBestAsset.href,
+                tier: scores.overallTier,
+              })
+            }
+            className="inline-flex items-center gap-2 rounded-lg bg-[var(--ic-accent)] px-7 py-3 text-[13px] font-semibold text-white transition-colors hover:bg-[var(--ic-accent)]/90"
+          >
+            {findings.nextBestAsset.label}
+            <ChevronRight size={14} />
+          </Link>
+          <Link
+            href="/contact"
+            onClick={() => track("assessment_cta_contact_clicked", { tier: scores.overallTier })}
+            className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--ic-text-muted)] transition-colors hover:text-[var(--ic-text)]"
+          >
+            Talk to the team
+            <ChevronRight size={12} />
+          </Link>
         </div>
       </motion.div>
 
