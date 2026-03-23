@@ -52,7 +52,7 @@ import {
   getCheckoutSession,
   handleWebhookEvent,
   constructWebhookEvent,
-  PRO_PLAN_CONFIG,
+  STARTUP_PLAN_CONFIG,
 } from '../src/stripe.js';
 
 // ---------------------------------------------------------------------------
@@ -68,27 +68,27 @@ describe('Stripe Integration', () => {
   // PRO_PLAN_CONFIG
   // =========================================================================
 
-  describe('PRO_PLAN_CONFIG', () => {
+  describe('STARTUP_PLAN_CONFIG', () => {
     it('should define the correct product name', () => {
-      expect(PRO_PLAN_CONFIG.product.name).toBe('Kontext Pro');
+      expect(STARTUP_PLAN_CONFIG.product.name).toBe('Kontext Startup');
     });
 
-    it('should set price to $449 (44900 cents)', () => {
-      expect(PRO_PLAN_CONFIG.price.amount).toBe(44900);
-      expect(PRO_PLAN_CONFIG.price.currency).toBe('usd');
+    it('should set price to $2,000 (200000 cents)', () => {
+      expect(STARTUP_PLAN_CONFIG.price.amount).toBe(200000);
+      expect(STARTUP_PLAN_CONFIG.price.currency).toBe('usd');
     });
 
     it('should be a monthly recurring price', () => {
-      expect(PRO_PLAN_CONFIG.price.interval).toBe('month');
+      expect(STARTUP_PLAN_CONFIG.price.interval).toBe('month');
     });
 
-    it('should be per-seat', () => {
-      expect(PRO_PLAN_CONFIG.price.perSeat).toBe(true);
+    it('should not be per-seat', () => {
+      expect(STARTUP_PLAN_CONFIG.price.perSeat).toBe(false);
     });
 
-    it('should have pro tier metadata with 100K events limit', () => {
-      expect(PRO_PLAN_CONFIG.metadata.tier).toBe('pro');
-      expect(PRO_PLAN_CONFIG.metadata.events_limit).toBe('100000');
+    it('should have startup tier metadata with unlimited events', () => {
+      expect(STARTUP_PLAN_CONFIG.metadata.tier).toBe('startup');
+      expect(STARTUP_PLAN_CONFIG.metadata.events_limit).toBe('unlimited');
     });
   });
 
@@ -122,8 +122,8 @@ describe('Stripe Integration', () => {
       ]);
       expect(callArgs.allow_promotion_codes).toBe(true);
       expect(callArgs.billing_address_collection).toBe('required');
-      expect(callArgs.metadata.tier).toBe('pro');
-      expect(callArgs.metadata.events_limit).toBe('100000');
+      expect(callArgs.metadata.tier).toBe('startup');
+      expect(callArgs.metadata.events_limit).toBe('unlimited');
       expect(callArgs.metadata.seats).toBe('2');
     });
 
@@ -192,7 +192,7 @@ describe('Stripe Integration', () => {
       });
 
       const callArgs = mockCheckoutSessionsCreate.mock.calls[0]![0];
-      expect(callArgs.subscription_data.metadata.tier).toBe('pro');
+      expect(callArgs.subscription_data.metadata.tier).toBe('startup');
       expect(callArgs.subscription_data.metadata.seats).toBe('5');
     });
   });
@@ -310,15 +310,15 @@ describe('Stripe Integration', () => {
   // =========================================================================
 
   describe('handleWebhookEvent', () => {
-    it('should handle checkout.session.completed and activate pro', async () => {
+    it('should handle checkout.session.completed and activate startup', async () => {
       mockWebhooksConstructEvent.mockReturnValue({
         type: 'checkout.session.completed',
         data: {
           object: {
-            customer: 'cus_pro_1',
-            customer_email: 'new-pro@example.com',
+            customer: 'cus_startup_1',
+            customer_email: 'new-startup@example.com',
             subscription: 'sub_new_1',
-            metadata: { tier: 'pro', events_limit: '100000', seats: '1' },
+            metadata: { tier: 'startup', events_limit: 'unlimited', seats: '1' },
           },
         },
       });
@@ -327,9 +327,9 @@ describe('Stripe Integration', () => {
 
       expect(result.type).toBe('checkout.session.completed');
       expect(result.handled).toBe(true);
-      expect(result.data?.['action']).toBe('activate_pro');
-      expect(result.data?.['customerId']).toBe('cus_pro_1');
-      expect(result.data?.['customerEmail']).toBe('new-pro@example.com');
+      expect(result.data?.['action']).toBe('activate_startup');
+      expect(result.data?.['customerId']).toBe('cus_startup_1');
+      expect(result.data?.['customerEmail']).toBe('new-startup@example.com');
       expect(result.data?.['subscriptionId']).toBe('sub_new_1');
     });
 
@@ -354,7 +354,7 @@ describe('Stripe Integration', () => {
       expect(result.data?.['status']).toBe('active');
     });
 
-    it('should handle customer.subscription.deleted and downgrade to free', async () => {
+    it('should handle customer.subscription.deleted and downgrade to pilot', async () => {
       mockWebhooksConstructEvent.mockReturnValue({
         type: 'customer.subscription.deleted',
         data: {
@@ -369,7 +369,7 @@ describe('Stripe Integration', () => {
 
       expect(result.type).toBe('customer.subscription.deleted');
       expect(result.handled).toBe(true);
-      expect(result.data?.['action']).toBe('downgrade_to_free');
+      expect(result.data?.['action']).toBe('downgrade_to_pilot');
       expect(result.data?.['customerId']).toBe('cus_cancelled_1');
     });
 
