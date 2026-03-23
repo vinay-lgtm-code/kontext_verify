@@ -97,6 +97,72 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ===== WHY KONTEXT ===== */}
+      <section className="relative px-4 py-24 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl">
+          <div className="text-center">
+            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
+              Why Kontext
+            </span>
+            <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
+              Built for a fragmented payment stack
+            </h2>
+            <p className="mx-auto mt-4 max-w-xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
+              Stablecoin payments now span multiple chains, wallet providers,
+              payment APIs, and compliance models. Kontext gives teams one
+              verifiable system of record for payment intent, screening,
+              approvals, and execution, no matter which rail moves the money.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
+            <div className="rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] p-8">
+              <h3 className="text-[16px] font-semibold text-[var(--ic-text)]">
+                One record across rails
+              </h3>
+              <p className="mt-2 text-[14px] leading-relaxed text-[var(--ic-text-muted)]">
+                Unify evidence from stablecoin rails, wallets, and fiat payment
+                systems into a single reviewer-ready trail.
+              </p>
+            </div>
+            <div className="rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] p-8">
+              <h3 className="text-[16px] font-semibold text-[var(--ic-text)]">
+                One source of truth across teams
+              </h3>
+              <p className="mt-2 text-[14px] leading-relaxed text-[var(--ic-text-muted)]">
+                Give engineering, compliance, and operations the same view of
+                what happened, who approved it, and what checks ran.
+              </p>
+            </div>
+            <div className="rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] p-8">
+              <h3 className="text-[16px] font-semibold text-[var(--ic-text)]">
+                One export for every review
+              </h3>
+              <p className="mt-2 text-[14px] leading-relaxed text-[var(--ic-text-muted)]">
+                Be ready for partner diligence, audits, launch reviews, and
+                incident investigations without stitching together logs by hand.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <Link
+              href="#evidence-package"
+              className="inline-flex items-center gap-2 rounded-lg bg-[var(--ic-accent)] px-7 py-3.5 text-[14px] font-semibold text-white transition-colors hover:bg-[var(--ic-accent)]/90"
+            >
+              See the payment record
+              <ArrowRight size={14} />
+            </Link>
+            <Link
+              href="/contact"
+              className="inline-flex items-center gap-2 rounded-lg border border-[var(--ic-border)] px-7 py-3.5 text-[14px] font-semibold text-[var(--ic-text-muted)] transition-colors hover:bg-[var(--ic-surface-2)]"
+            >
+              Book a demo
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* ===== COMPLIANCE COMMAND CENTER ===== */}
       <section className="relative bg-[var(--ic-surface-2)] px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
