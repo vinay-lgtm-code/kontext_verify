@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { Kontext } from '../src/index.js';
 
-function createClient(plan: 'free' | 'pro' | 'enterprise' = 'pro') {
+function createClient(plan: 'startup' | 'growth' | 'enterprise' = 'startup') {
   return Kontext.init({
     projectId: 'test-reports',
     environment: 'development',
@@ -47,15 +47,16 @@ describe('SAR Report', () => {
     expect(report.digestProof.terminalDigest).toBeTruthy();
   });
 
-  it('should require pro plan', async () => {
-    kontext = createClient('free');
-
+  it('should require startup plan (SAR/CTR gated to startup+)', async () => {
+    // SAR/CTR is available on startup plan, so we verify it works
+    const client = createClient('startup');
     await expect(
-      kontext.generateSARReport({
+      client.generateSARReport({
         period: { start: new Date(), end: new Date() },
         agentId: 'agent-1',
       }),
-    ).rejects.toThrow(/SAR\/CTR/);
+    ).resolves.toBeDefined();
+    await client.destroy();
   });
 });
 
@@ -100,13 +101,14 @@ describe('CTR Report', () => {
     expect(report.digestProof.valid).toBe(true);
   });
 
-  it('should require pro plan', async () => {
-    kontext = createClient('free');
-
+  it('should be available on startup plan (SAR/CTR gated to startup+)', async () => {
+    // SAR/CTR is available on startup plan
+    const client = createClient('startup');
     await expect(
-      kontext.generateCTRReport({
+      client.generateCTRReport({
         period: { start: new Date(), end: new Date() },
       }),
-    ).rejects.toThrow(/SAR\/CTR/);
+    ).resolves.toBeDefined();
+    await client.destroy();
   });
 });

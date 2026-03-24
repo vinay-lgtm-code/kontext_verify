@@ -11,7 +11,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 process.env['STRIPE_SECRET_KEY'] = 'sk_test_MOCK_REDACTED_000';
 process.env['STRIPE_WEBHOOK_SECRET'] = 'whsec_MOCK_REDACTED_000';
-process.env['STRIPE_PRO_PRICE_ID'] = 'price_MOCK_REDACTED_000';
+process.env['STRIPE_STARTUP_PRICE_ID'] = 'price_MOCK_REDACTED_000';
 
 // ---------------------------------------------------------------------------
 // Mock Stripe before importing the module under test

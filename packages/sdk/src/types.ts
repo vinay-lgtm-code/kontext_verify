@@ -126,16 +126,15 @@ export interface KontextConfig {
 
   /**
    * Pricing plan tier. Controls event metering limits.
-   * - 'free': 20,000 events/month
-   * - 'pro': 100,000 events/user/month (multiplied by seats)
+   * - 'startup': 20,000 events/month
+   * - 'growth': Unlimited events
    * - 'enterprise': Unlimited events
-   * @default 'free'
+   * @default 'startup'
    */
-  plan?: 'free' | 'pro' | 'enterprise';
+  plan?: 'startup' | 'growth' | 'enterprise';
 
   /**
-   * Number of seats (users) on the plan. Pro plan limits are multiplied
-   * by the number of seats: 100K events/user/mo.
+   * Number of seats (users) on the plan.
    * @default 1
    */
   seats?: number;
@@ -263,6 +262,12 @@ export interface KontextConfig {
    * compliance-wrapped wallet operations.
    */
   walletProvider?: WalletProviderConfig;
+
+  /** CCTP cross-chain transfer configuration (Enterprise) */
+  cctpConfig?: CCTPConfig;
+
+  /** x402 payment protocol configuration */
+  x402Config?: X402Config;
 }
 
 /** Screening configuration for pluggable multi-provider sanctions screening */
@@ -538,6 +543,202 @@ export interface MetaMaskTransferResult {
   transactionHash: string;
   status: string;
   complianceResult?: VerifyResult;
+}
+
+// ============================================================================
+// Circle Compliance Engine Types
+// ============================================================================
+
+export interface CircleComplianceConfig {
+  apiKey: string;
+  entitySecret: string;
+  baseUrl?: string;
+}
+
+export interface CircleScreenAddressInput {
+  address: string;
+  chain?: Chain;
+  agentId?: string;
+}
+
+export interface CircleScreenTransactionInput {
+  txHash: string;
+  chain: Chain;
+  amount?: string;
+  token?: Token;
+  from?: string;
+  to?: string;
+  agentId?: string;
+}
+
+export type CircleScreeningStatus = 'approved' | 'denied' | 'pending_review';
+
+export interface CircleScreeningResult {
+  id: string;
+  status: CircleScreeningStatus;
+  riskScore: number;
+  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  flags: string[];
+  details: Record<string, unknown>;
+  screenedAt: string;
+}
+
+export interface CircleComprehensiveRisk {
+  addressScreening: CircleScreeningResult | null;
+  transactionScreening: CircleScreeningResult | null;
+  overallStatus: CircleScreeningStatus;
+  overallRiskScore: number;
+  overallRiskLevel: 'low' | 'medium' | 'high' | 'critical';
+  complianceResult?: VerifyResult;
+}
+
+// ============================================================================
+// CCTP Cross-Chain Transfer Types
+// ============================================================================
+
+export interface CCTPConfig {
+  /** Circle Iris API key for attestation service */
+  irisApiKey?: string;
+  /** Override attestation endpoint (default: https://iris-api.circle.com) */
+  attestationBaseUrl?: string;
+  /** Override CCTP contract addresses per chain */
+  contractOverrides?: Partial<Record<Chain, string>>;
+  /** CCTP version preference */
+  version?: 'v1' | 'v2';
+}
+
+export type CCTPTransferState =
+  | 'pending_burn'
+  | 'burned'
+  | 'pending_attestation'
+  | 'attested'
+  | 'pending_mint'
+  | 'completed'
+  | 'failed';
+
+export interface CCTPTransferInput {
+  sourceChain: Chain;
+  destinationChain: Chain;
+  amount: string;
+  token: Token;
+  from: string;
+  to: string;
+  /** Burn transaction hash (if already initiated) */
+  burnTxHash?: string;
+  agentId?: string;
+  /** V2: enable fast transfer with hooks */
+  fast?: boolean;
+}
+
+export interface CCTPTransfer {
+  id: string;
+  state: CCTPTransferState;
+  sourceChain: Chain;
+  destinationChain: Chain;
+  amount: string;
+  token: Token;
+  from: string;
+  to: string;
+  burnTxHash?: string;
+  messageHash?: string;
+  attestation?: string;
+  mintTxHash?: string;
+  version: 'v1' | 'v2';
+  createdAt: string;
+  updatedAt: string;
+  complianceResult?: VerifyResult;
+}
+
+export interface CCTPTransferResult {
+  transfer: CCTPTransfer;
+  complianceResult?: VerifyResult;
+}
+
+// ============================================================================
+// x402 Payment Protocol Types
+// ============================================================================
+
+export interface X402Config {
+  /** Default wallet address for payments */
+  walletAddress?: string;
+  /** Default chain for payments */
+  defaultChain?: Chain;
+  /** Default token for payments */
+  defaultToken?: Token;
+  /** Max auto-approve amount (in token units). Above this, requires explicit approval. */
+  maxAutoApproveAmount?: string;
+}
+
+export interface X402PaymentRequirements {
+  /** Payment recipient address */
+  payTo: string;
+  /** Amount required (in token decimals) */
+  amount: string;
+  /** Token to pay in */
+  token: Token;
+  /** Chain to pay on */
+  chain: Chain;
+  /** Resource being purchased (URL or description) */
+  resource: string;
+  /** Expiration timestamp (ISO 8601) */
+  expiresAt?: string;
+  /** Unique payment request ID */
+  requestId: string;
+  /** Additional vendor-specific data */
+  extra?: Record<string, unknown>;
+}
+
+export interface X402PaymentProof {
+  /** On-chain transaction hash */
+  txHash: string;
+  /** Chain the payment was made on */
+  chain: Chain;
+  /** Payer address */
+  from: string;
+  /** Payment request ID being fulfilled */
+  requestId: string;
+  /** Amount paid */
+  amount: string;
+  /** Token used */
+  token: Token;
+}
+
+export interface X402PaymentResult {
+  /** Whether payment was successful */
+  success: boolean;
+  /** Payment proof to send with retry */
+  proof?: X402PaymentProof;
+  /** Compliance result from verify() */
+  complianceResult?: VerifyResult;
+  /** Error message if failed */
+  error?: string;
+}
+
+export interface X402VerificationResult {
+  /** Whether the payment proof is valid */
+  valid: boolean;
+  /** Verification details */
+  details: {
+    txConfirmed: boolean;
+    amountCorrect: boolean;
+    recipientCorrect: boolean;
+    notExpired: boolean;
+  };
+  /** Compliance result from verify() */
+  complianceResult?: VerifyResult;
+}
+
+export interface X402MiddlewareConfig {
+  /** Address to receive payments */
+  payTo: string;
+  /** Amount to charge (in token decimals) */
+  amount: string;
+  /** Token to accept */
+  token?: Token;
+  /** Chain to accept payment on */
+  chain?: Chain;
+  /** Expiration duration in seconds (default: 300) */
+  expiresInSec?: number;
 }
 
 /**
@@ -1205,8 +1406,8 @@ export type FlagScope = 'sdk' | 'server' | 'website' | 'all';
 
 /** Plan-based targeting for a single environment */
 export interface FlagPlanTargeting {
-  free: boolean;
-  pro: boolean;
+  startup: boolean;
+  growth: boolean;
   enterprise: boolean;
 }
 
@@ -1241,7 +1442,7 @@ export interface FeatureFlagConfig {
   /** Current environment */
   environment: Environment;
   /** Current plan tier */
-  plan: 'free' | 'pro' | 'enterprise';
+  plan: 'startup' | 'growth' | 'enterprise';
   /** Scope filter — only load flags matching this scope (or 'all') */
   scope?: FlagScope;
 }

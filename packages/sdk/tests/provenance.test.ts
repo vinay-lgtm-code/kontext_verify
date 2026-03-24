@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { Kontext, ProvenanceManager } from '../src/index.js';
 import type { CreateSessionInput, HumanAttestation } from '../src/index.js';
 
-function createClient(plan: 'free' | 'pro' | 'enterprise' = 'free') {
+function createClient(plan: 'startup' | 'growth' | 'enterprise' = 'startup') {
   return Kontext.init({
     projectId: 'test-project',
     environment: 'development',

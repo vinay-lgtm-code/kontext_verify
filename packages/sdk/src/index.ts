@@ -136,6 +136,29 @@ export type {
   MetaMaskAccount,
   MetaMaskTransferInput,
   MetaMaskTransferResult,
+
+  // Circle Compliance Engine Types
+  CircleComplianceConfig,
+  CircleScreenAddressInput,
+  CircleScreenTransactionInput,
+  CircleScreeningStatus,
+  CircleScreeningResult,
+  CircleComprehensiveRisk,
+
+  // CCTP Cross-Chain Transfer Types
+  CCTPConfig,
+  CCTPTransferState,
+  CCTPTransferInput,
+  CCTPTransfer,
+  CCTPTransferResult,
+
+  // x402 Payment Protocol Types
+  X402Config,
+  X402PaymentRequirements,
+  X402PaymentProof,
+  X402PaymentResult,
+  X402VerificationResult,
+  X402MiddlewareConfig,
 } from './types.js';
 
 // Feature Flags
@@ -305,6 +328,15 @@ export { loadConfigFile } from './config-loader.js';
 export { CircleWalletManager } from './integrations/circle-wallets.js';
 export { CoinbaseWalletManager } from './integrations/coinbase-wallets.js';
 export { MetaMaskWalletManager } from './integrations/metamask-wallets.js';
+
+// Circle Compliance Engine
+export { CircleComplianceEngine } from './integrations/circle-compliance.js';
+
+// CCTP Cross-Chain Transfers
+export { CCTPTransferManager } from './integrations/cctp.js';
+
+// x402 Payment Protocol
+export { X402PaymentManager, X402_HEADER, X402_PROOF_HEADER } from './integrations/x402.js';
 
 // Agent Forensics (KYA)
 export {

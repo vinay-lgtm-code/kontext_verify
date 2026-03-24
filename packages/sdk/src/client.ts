@@ -58,6 +58,19 @@ import type {
   MetaMaskAccount,
   MetaMaskTransferInput,
   MetaMaskTransferResult,
+  CircleComplianceConfig,
+  CircleScreenAddressInput,
+  CircleScreenTransactionInput,
+  CircleScreeningResult,
+  CircleComprehensiveRisk,
+  CCTPTransferInput,
+  CCTPTransfer,
+  CCTPTransferResult,
+  X402PaymentRequirements,
+  X402PaymentProof,
+  X402PaymentResult,
+  X402VerificationResult,
+  X402MiddlewareConfig,
 } from './types.js';
 import { TrustScorer } from './trust.js';
 import { AnomalyDetector } from './anomaly.js';
@@ -97,6 +110,9 @@ import {
 import { ReserveReconciler } from './integrations/reserve-reconciliation.js';
 import type { ReserveSnapshotInput, ReserveSnapshot } from './integrations/reserve-reconciliation.js';
 import { CircleWalletManager } from './integrations/circle-wallets.js';
+import { CircleComplianceEngine } from './integrations/circle-compliance.js';
+import { CCTPTransferManager } from './integrations/cctp.js';
+import { X402PaymentManager } from './integrations/x402.js';
 import { CoinbaseWalletManager } from './integrations/coinbase-wallets.js';
 import { MetaMaskWalletManager } from './integrations/metamask-wallets.js';
 import type {
@@ -166,6 +182,9 @@ export class Kontext {
   private crossSessionLinker: CrossSessionLinker | null = null;
   private confidenceScorer: KYAConfidenceScorer | null = null;
   private circleWalletManager: CircleWalletManager | null = null;
+  private circleComplianceEngine: CircleComplianceEngine | null = null;
+  private cctpTransferManager: CCTPTransferManager | null = null;
+  private x402PaymentManager: X402PaymentManager | null = null;
   private coinbaseWalletManager: CoinbaseWalletManager | null = null;
   private metamaskWalletManager: MetaMaskWalletManager | null = null;
   private webhookManager: WebhookManager | null = null;
@@ -190,7 +209,7 @@ export class Kontext {
     }
 
     // Initialize plan manager
-    const planTier: PlanTier = config.plan ?? 'free';
+    const planTier: PlanTier = config.plan ?? 'startup';
     this.planManager = new PlanManager(planTier, undefined, config.seats ?? 1);
 
     // Configure upgrade URLs
@@ -621,6 +640,42 @@ export class Kontext {
       this.circleWalletManager.setKontext(this);
     }
     return this.circleWalletManager;
+  }
+
+  /** Lazy-init CircleComplianceEngine from config.walletProvider (same Circle creds) */
+  private getCircleComplianceEngine(): CircleComplianceEngine {
+    if (!this.circleComplianceEngine) {
+      const wp = this.config.walletProvider;
+      if (!wp || wp.type !== 'circle') {
+        throw new KontextError(
+          KontextErrorCode.INITIALIZATION_ERROR,
+          'Circle wallet provider not configured. Set walletProvider.type to "circle" in your config.',
+        );
+      }
+      const apiKey = process.env[wp.apiKeyEnvVar] ?? '';
+      const entitySecret = process.env[wp.entitySecretEnvVar] ?? '';
+      this.circleComplianceEngine = new CircleComplianceEngine({ apiKey, entitySecret });
+      this.circleComplianceEngine.setKontext(this);
+    }
+    return this.circleComplianceEngine;
+  }
+
+  /** Lazy-init CCTPTransferManager */
+  private getCCTPManager(): CCTPTransferManager {
+    if (!this.cctpTransferManager) {
+      this.cctpTransferManager = new CCTPTransferManager(this.config.cctpConfig);
+      this.cctpTransferManager.setKontext(this);
+    }
+    return this.cctpTransferManager;
+  }
+
+  /** Lazy-init X402PaymentManager */
+  private getX402Manager(): X402PaymentManager {
+    if (!this.x402PaymentManager) {
+      this.x402PaymentManager = new X402PaymentManager(this.config.x402Config);
+      this.x402PaymentManager.setKontext(this);
+    }
+    return this.x402PaymentManager;
   }
 
   /** Lazy-init CoinbaseWalletManager from config.walletProvider */
@@ -2041,7 +2096,7 @@ export class Kontext {
   isFeatureEnabled(
     flagName: string,
     environment?: Environment,
-    plan?: 'free' | 'pro' | 'enterprise',
+    plan?: 'startup' | 'growth' | 'enterprise',
   ): boolean {
     if (!this.featureFlagManager) return false;
     return this.featureFlagManager.isEnabled(flagName, environment, plan);
@@ -2112,6 +2167,85 @@ export class Kontext {
   async metamaskTransferWithCompliance(input: MetaMaskTransferInput): Promise<MetaMaskTransferResult> {
     requirePlan('metamask-wallets', this.planManager.getTier());
     return this.getMetaMaskManager().transferWithCompliance(input);
+  }
+
+  // --------------------------------------------------------------------------
+  // Circle Compliance Engine (Enterprise)
+  // --------------------------------------------------------------------------
+
+  /** Screen an address via Circle Compliance Engine. Enterprise plan required. */
+  async circleScreenAddress(input: CircleScreenAddressInput): Promise<CircleScreeningResult> {
+    requirePlan('circle-compliance', this.planManager.getTier());
+    return this.getCircleComplianceEngine().screenAddress(input);
+  }
+
+  /** Screen a transaction via Circle Compliance Engine. Enterprise plan required. */
+  async circleScreenTransaction(input: CircleScreenTransactionInput): Promise<CircleScreeningResult> {
+    requirePlan('circle-compliance', this.planManager.getTier());
+    return this.getCircleComplianceEngine().screenTransaction(input);
+  }
+
+  /** Run comprehensive risk assessment via Circle Compliance Engine. Enterprise plan required. */
+  async circleGetComprehensiveRisk(input: CircleScreenTransactionInput): Promise<CircleComprehensiveRisk> {
+    requirePlan('circle-compliance', this.planManager.getTier());
+    return this.getCircleComplianceEngine().getComprehensiveRisk(input);
+  }
+
+  // --------------------------------------------------------------------------
+  // CCTP Cross-Chain Transfers (Enterprise)
+  // --------------------------------------------------------------------------
+
+  /** Initiate a CCTP cross-chain transfer. Enterprise plan required. */
+  async initiateCCTPTransfer(input: CCTPTransferInput): Promise<CCTPTransferResult> {
+    requirePlan('cctp-transfers', this.planManager.getTier());
+    return this.getCCTPManager().initiateTransfer(input);
+  }
+
+  /** Initiate a CCTP V2 fast transfer. Enterprise plan required. */
+  async initiateFastCCTPTransfer(input: CCTPTransferInput): Promise<CCTPTransferResult> {
+    requirePlan('cctp-transfers', this.planManager.getTier());
+    return this.getCCTPManager().initiateFastTransfer(input);
+  }
+
+  /** Confirm a pending CCTP transfer (poll attestation + complete). Enterprise plan required. */
+  async confirmCCTPTransfer(transferId: string): Promise<CCTPTransfer> {
+    requirePlan('cctp-transfers', this.planManager.getTier());
+    return this.getCCTPManager().confirmTransfer(transferId);
+  }
+
+  /** Get CCTP transfer status. Enterprise plan required. */
+  async getCCTPTransferStatus(transferId: string): Promise<CCTPTransfer> {
+    requirePlan('cctp-transfers', this.planManager.getTier());
+    return this.getCCTPManager().getTransferStatus(transferId);
+  }
+
+  // --------------------------------------------------------------------------
+  // x402 Payment Protocol (Startup)
+  // --------------------------------------------------------------------------
+
+  /** Create x402 payment requirements for a 402 response. */
+  createX402PaymentRequirements(config: X402MiddlewareConfig): X402PaymentRequirements {
+    requirePlan('x402-payments', this.planManager.getTier());
+    return this.getX402Manager().createPaymentRequirements(config);
+  }
+
+  /** Handle a 402 Payment Required response with compliance. */
+  async handleX402Payment(
+    requirements: X402PaymentRequirements,
+    executePay: (req: X402PaymentRequirements) => Promise<{ txHash: string; from: string }>,
+  ): Promise<X402PaymentResult> {
+    requirePlan('x402-payments', this.planManager.getTier());
+    return this.getX402Manager().handlePaymentRequired(requirements, executePay);
+  }
+
+  /** Verify an x402 payment proof. */
+  async verifyX402Payment(
+    proof: X402PaymentProof,
+    expectedAmount: string,
+    expectedRecipient: string,
+  ): Promise<X402VerificationResult> {
+    requirePlan('x402-payments', this.planManager.getTier());
+    return this.getX402Manager().verifyPayment(proof, expectedAmount, expectedRecipient);
   }
 
   // --------------------------------------------------------------------------

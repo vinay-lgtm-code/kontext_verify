@@ -25,8 +25,8 @@ function makeFirestoreDocument(name: string, overrides?: Record<string, unknown>
             development: {
               mapValue: {
                 fields: {
-                  free: { booleanValue: true },
-                  pro: { booleanValue: true },
+                  startup: { booleanValue: true },
+                  growth: { booleanValue: true },
                   enterprise: { booleanValue: true },
                 },
               },
@@ -34,8 +34,8 @@ function makeFirestoreDocument(name: string, overrides?: Record<string, unknown>
             staging: {
               mapValue: {
                 fields: {
-                  free: { booleanValue: false },
-                  pro: { booleanValue: true },
+                  startup: { booleanValue: false },
+                  growth: { booleanValue: true },
                   enterprise: { booleanValue: true },
                 },
               },
@@ -43,8 +43,8 @@ function makeFirestoreDocument(name: string, overrides?: Record<string, unknown>
             production: {
               mapValue: {
                 fields: {
-                  free: { booleanValue: false },
-                  pro: { booleanValue: false },
+                  startup: { booleanValue: false },
+                  growth: { booleanValue: false },
                   enterprise: { booleanValue: true },
                 },
               },
@@ -70,7 +70,7 @@ function defaultConfig(overrides?: Partial<FeatureFlagConfig>): FeatureFlagConfi
   return {
     gcpProjectId: 'test-project',
     environment: 'development',
-    plan: 'free',
+    plan: 'startup',
     cacheTtlMs: 60_000,
     ...overrides,
   };
@@ -89,11 +89,11 @@ describe('parseFirestoreDocument', () => {
     expect(flag!.name).toBe('test-flag');
     expect(flag!.description).toBe('Test flag: test-flag');
     expect(flag!.scope).toBe('all');
-    expect(flag!.targeting.development.free).toBe(true);
-    expect(flag!.targeting.staging.free).toBe(false);
-    expect(flag!.targeting.staging.pro).toBe(true);
+    expect(flag!.targeting.development.startup).toBe(true);
+    expect(flag!.targeting.staging.startup).toBe(false);
+    expect(flag!.targeting.staging.growth).toBe(true);
     expect(flag!.targeting.production.enterprise).toBe(true);
-    expect(flag!.targeting.production.free).toBe(false);
+    expect(flag!.targeting.production.startup).toBe(false);
   });
 
   it('should return null for a document without targeting', () => {
@@ -110,11 +110,11 @@ describe('parseFirestoreDocument', () => {
 
   it('should default missing booleans to false', () => {
     const doc = makeFirestoreDocument('partial-flag');
-    // Remove the 'free' field from production targeting
-    delete (doc.fields.targeting as any).mapValue.fields.production.mapValue.fields.free;
+    // Remove the 'startup' field from production targeting
+    delete (doc.fields.targeting as any).mapValue.fields.production.mapValue.fields.startup;
     const flag = parseFirestoreDocument(doc);
     expect(flag).not.toBeNull();
-    expect(flag!.targeting.production.free).toBe(false);
+    expect(flag!.targeting.production.startup).toBe(false);
   });
 });
 
@@ -149,7 +149,7 @@ describe('FeatureFlagManager', () => {
 
     const manager = new FeatureFlagManager(defaultConfig({
       environment: 'development',
-      plan: 'free',
+      plan: 'startup',
     }));
     await manager.init();
 
@@ -161,7 +161,7 @@ describe('FeatureFlagManager', () => {
 
     const manager = new FeatureFlagManager(defaultConfig({
       environment: 'production',
-      plan: 'free',
+      plan: 'startup',
     }));
     await manager.init();
 
@@ -173,13 +173,13 @@ describe('FeatureFlagManager', () => {
 
     const manager = new FeatureFlagManager(defaultConfig({
       environment: 'development',
-      plan: 'free',
+      plan: 'startup',
     }));
     await manager.init();
 
     // Override to production + enterprise
     expect(manager.isEnabled('my-flag', 'production', 'enterprise')).toBe(true);
-    expect(manager.isEnabled('my-flag', 'production', 'free')).toBe(false);
+    expect(manager.isEnabled('my-flag', 'production', 'startup')).toBe(false);
   });
 
   it('isEnabled should return defaultValue for unknown flag', async () => {

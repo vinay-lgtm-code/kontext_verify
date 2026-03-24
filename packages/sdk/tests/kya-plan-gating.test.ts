@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { Kontext } from '../src/client.js';
 import { isFeatureAvailable, requirePlan } from '../src/plan-gate.js';
 
-function createClient(plan: 'free' | 'pro' | 'enterprise' = 'enterprise') {
+function createClient(plan: 'startup' | 'growth' | 'enterprise' = 'enterprise') {
   return Kontext.init({
     projectId: 'test-project',
     environment: 'development',
@@ -18,24 +18,24 @@ describe('KYA Plan Gating', () => {
   });
 
   describe('isFeatureAvailable', () => {
-    it('blocks kya-identity on free plan', () => {
-      expect(isFeatureAvailable('kya-identity', 'free')).toBe(false);
+    it('allows kya-identity on startup plan', () => {
+      expect(isFeatureAvailable('kya-identity', 'startup')).toBe(true);
     });
 
-    it('allows kya-identity on pro plan', () => {
-      expect(isFeatureAvailable('kya-identity', 'pro')).toBe(true);
+    it('allows kya-identity on growth plan', () => {
+      expect(isFeatureAvailable('kya-identity', 'growth')).toBe(true);
     });
 
     it('allows kya-identity on enterprise plan', () => {
       expect(isFeatureAvailable('kya-identity', 'enterprise')).toBe(true);
     });
 
-    it('blocks kya-behavioral on free plan', () => {
-      expect(isFeatureAvailable('kya-behavioral', 'free')).toBe(false);
+    it('blocks kya-behavioral on startup plan', () => {
+      expect(isFeatureAvailable('kya-behavioral', 'startup')).toBe(false);
     });
 
-    it('blocks kya-behavioral on pro plan', () => {
-      expect(isFeatureAvailable('kya-behavioral', 'pro')).toBe(false);
+    it('blocks kya-behavioral on growth plan', () => {
+      expect(isFeatureAvailable('kya-behavioral', 'growth')).toBe(false);
     });
 
     it('allows kya-behavioral on enterprise plan', () => {
@@ -44,16 +44,20 @@ describe('KYA Plan Gating', () => {
   });
 
   describe('requirePlan', () => {
-    it('throws for kya-identity on free plan', () => {
-      expect(() => requirePlan('kya-identity', 'free')).toThrow(/Pro plan/);
+    it('does not throw for kya-identity on startup plan', () => {
+      expect(() => requirePlan('kya-identity', 'startup')).not.toThrow();
     });
 
-    it('does not throw for kya-identity on pro plan', () => {
-      expect(() => requirePlan('kya-identity', 'pro')).not.toThrow();
+    it('does not throw for kya-identity on growth plan', () => {
+      expect(() => requirePlan('kya-identity', 'growth')).not.toThrow();
     });
 
-    it('throws for kya-behavioral on pro plan', () => {
-      expect(() => requirePlan('kya-behavioral', 'pro')).toThrow(/Enterprise plan/);
+    it('throws for kya-behavioral on startup plan', () => {
+      expect(() => requirePlan('kya-behavioral', 'startup')).toThrow(/Enterprise plan/);
+    });
+
+    it('throws for kya-behavioral on growth plan', () => {
+      expect(() => requirePlan('kya-behavioral', 'growth')).toThrow(/Enterprise plan/);
     });
 
     it('does not throw for kya-behavioral on enterprise plan', () => {
@@ -61,57 +65,54 @@ describe('KYA Plan Gating', () => {
     });
   });
 
-  describe('client: Phase 1 (Pro tier) methods', () => {
-    it('registerAgentIdentity requires pro plan', () => {
-      kontext = createClient('free');
-      expect(() =>
-        kontext.registerAgentIdentity({ agentId: 'agent-1' }),
-      ).toThrow(/Pro plan/);
-    });
-
-    it('registerAgentIdentity works on pro plan', () => {
-      kontext = createClient('pro');
+  describe('client: Phase 1 (Startup tier) methods', () => {
+    it('registerAgentIdentity works on startup plan', () => {
+      kontext = createClient('startup');
       const identity = kontext.registerAgentIdentity({ agentId: 'agent-1' });
       expect(identity.agentId).toBe('agent-1');
     });
 
-    it('getAgentIdentity requires pro plan', () => {
-      kontext = createClient('free');
-      expect(() => kontext.getAgentIdentity('agent-1')).toThrow(/Pro plan/);
+    it('getAgentIdentity works on startup plan', () => {
+      kontext = createClient('startup');
+      kontext.registerAgentIdentity({ agentId: 'agent-1' });
+      expect(kontext.getAgentIdentity('agent-1')).toBeDefined();
     });
 
-    it('updateAgentIdentity requires pro plan', () => {
-      kontext = createClient('free');
+    it('updateAgentIdentity works on startup plan', () => {
+      kontext = createClient('startup');
+      kontext.registerAgentIdentity({ agentId: 'agent-1' });
       expect(() =>
         kontext.updateAgentIdentity('agent-1', { displayName: 'x' }),
-      ).toThrow(/Pro plan/);
+      ).not.toThrow();
     });
 
-    it('removeAgentIdentity requires pro plan', () => {
-      kontext = createClient('free');
-      expect(() => kontext.removeAgentIdentity('agent-1')).toThrow(/Pro plan/);
+    it('removeAgentIdentity works on startup plan', () => {
+      kontext = createClient('startup');
+      kontext.registerAgentIdentity({ agentId: 'agent-1' });
+      expect(() => kontext.removeAgentIdentity('agent-1')).not.toThrow();
     });
 
-    it('addAgentWallet requires pro plan', () => {
-      kontext = createClient('free');
+    it('addAgentWallet works on startup plan', () => {
+      kontext = createClient('startup');
+      kontext.registerAgentIdentity({ agentId: 'agent-1' });
       expect(() =>
         kontext.addAgentWallet('agent-1', { address: '0x123', chain: 'base' }),
-      ).toThrow(/Pro plan/);
+      ).not.toThrow();
     });
 
-    it('lookupAgentByWallet requires pro plan', () => {
-      kontext = createClient('free');
-      expect(() => kontext.lookupAgentByWallet('0x123')).toThrow(/Pro plan/);
+    it('lookupAgentByWallet works on startup plan', () => {
+      kontext = createClient('startup');
+      expect(() => kontext.lookupAgentByWallet('0x123')).not.toThrow();
     });
 
-    it('getWalletClusters requires pro plan', () => {
-      kontext = createClient('free');
-      expect(() => kontext.getWalletClusters()).toThrow(/Pro plan/);
+    it('getWalletClusters works on startup plan', () => {
+      kontext = createClient('startup');
+      expect(() => kontext.getWalletClusters()).not.toThrow();
     });
 
-    it('getKYAExport requires pro plan', () => {
-      kontext = createClient('free');
-      expect(() => kontext.getKYAExport()).toThrow(/Pro plan/);
+    it('getKYAExport works on startup plan', () => {
+      kontext = createClient('startup');
+      expect(() => kontext.getKYAExport()).not.toThrow();
     });
 
     it('Phase 1 methods work on enterprise plan', () => {
@@ -127,24 +128,24 @@ describe('KYA Plan Gating', () => {
 
   describe('client: Phase 2 (Enterprise tier) methods', () => {
     it('computeBehavioralEmbedding requires enterprise plan', () => {
-      kontext = createClient('pro');
+      kontext = createClient('startup');
       expect(() => kontext.computeBehavioralEmbedding('agent-1')).toThrow(
         /Enterprise plan/,
       );
     });
 
     it('analyzeAgentLinks requires enterprise plan', () => {
-      kontext = createClient('pro');
+      kontext = createClient('startup');
       expect(() => kontext.analyzeAgentLinks()).toThrow(/Enterprise plan/);
     });
 
     it('getLinkedAgents requires enterprise plan', () => {
-      kontext = createClient('pro');
+      kontext = createClient('startup');
       expect(() => kontext.getLinkedAgents('agent-1')).toThrow(/Enterprise plan/);
     });
 
     it('getKYAConfidenceScore requires enterprise plan', () => {
-      kontext = createClient('pro');
+      kontext = createClient('startup');
       expect(() => kontext.getKYAConfidenceScore('agent-1')).toThrow(
         /Enterprise plan/,
       );

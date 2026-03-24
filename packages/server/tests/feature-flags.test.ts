@@ -24,8 +24,8 @@ function makeFirestoreDocument(name: string) {
             development: {
               mapValue: {
                 fields: {
-                  free: { booleanValue: true },
-                  pro: { booleanValue: true },
+                  startup: { booleanValue: true },
+                  growth: { booleanValue: true },
                   enterprise: { booleanValue: true },
                 },
               },
@@ -33,8 +33,8 @@ function makeFirestoreDocument(name: string) {
             staging: {
               mapValue: {
                 fields: {
-                  free: { booleanValue: false },
-                  pro: { booleanValue: true },
+                  startup: { booleanValue: false },
+                  growth: { booleanValue: true },
                   enterprise: { booleanValue: true },
                 },
               },
@@ -42,8 +42,8 @@ function makeFirestoreDocument(name: string) {
             production: {
               mapValue: {
                 fields: {
-                  free: { booleanValue: false },
-                  pro: { booleanValue: false },
+                  startup: { booleanValue: false },
+                  growth: { booleanValue: false },
                   enterprise: { booleanValue: true },
                 },
               },
@@ -108,17 +108,17 @@ describe('ServerFeatureFlags', () => {
     await flags.init();
 
     // development — all plans enabled
-    expect(flags.isEnabled('gated-feature', 'development', 'free')).toBe(true);
-    expect(flags.isEnabled('gated-feature', 'development', 'pro')).toBe(true);
+    expect(flags.isEnabled('gated-feature', 'development', 'startup')).toBe(true);
+    expect(flags.isEnabled('gated-feature', 'development', 'growth')).toBe(true);
     expect(flags.isEnabled('gated-feature', 'development', 'enterprise')).toBe(true);
 
-    // staging — pro + enterprise only
-    expect(flags.isEnabled('gated-feature', 'staging', 'free')).toBe(false);
-    expect(flags.isEnabled('gated-feature', 'staging', 'pro')).toBe(true);
+    // staging — growth + enterprise only
+    expect(flags.isEnabled('gated-feature', 'staging', 'startup')).toBe(false);
+    expect(flags.isEnabled('gated-feature', 'staging', 'growth')).toBe(true);
 
     // production — enterprise only
-    expect(flags.isEnabled('gated-feature', 'production', 'free')).toBe(false);
-    expect(flags.isEnabled('gated-feature', 'production', 'pro')).toBe(false);
+    expect(flags.isEnabled('gated-feature', 'production', 'startup')).toBe(false);
+    expect(flags.isEnabled('gated-feature', 'production', 'growth')).toBe(false);
     expect(flags.isEnabled('gated-feature', 'production', 'enterprise')).toBe(true);
   });
 
@@ -131,7 +131,7 @@ describe('ServerFeatureFlags', () => {
     const flags = new ServerFeatureFlags('test-project');
     await flags.init();
 
-    expect(flags.isEnabled('nonexistent', 'development', 'free')).toBe(false);
+    expect(flags.isEnabled('nonexistent', 'development', 'startup')).toBe(false);
   });
 
   it('should filter flags by scope', async () => {

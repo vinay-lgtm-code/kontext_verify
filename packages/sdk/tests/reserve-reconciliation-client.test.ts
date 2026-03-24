@@ -29,7 +29,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function createClient(plan: 'free' | 'pro' | 'enterprise' = 'free') {
+function createClient(plan: 'startup' | 'growth' | 'enterprise' = 'startup') {
   return Kontext.init({
     projectId: 'test-reserve',
     environment: 'development',
@@ -106,7 +106,7 @@ describe('Kontext.logReserveSnapshot', () => {
   });
 
   it('all 8 chains unlocked from day one (no plan gate)', async () => {
-    kontext = createClient('free');
+    kontext = createClient('startup');
     stubSupplyAndBlock();
 
     const snapshot = await kontext.logReserveSnapshot({

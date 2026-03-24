@@ -173,22 +173,24 @@ describe('verify() — unified API', () => {
     expect(last.trustScore.score).toBeGreaterThanOrEqual(first.trustScore.score);
   });
 
-  it('should gate advanced anomaly rules to pro plan', () => {
+  it('should gate advanced anomaly rules to startup plan (base only with unusualAmount)', () => {
+    // 'newDestination' is an advanced rule requiring startup plan
+    // On startup plan it should be allowed
     expect(() =>
       Kontext.init({
         projectId: 'test',
         environment: 'development',
-        plan: 'free',
+        plan: 'startup',
         anomalyRules: ['newDestination'],
       }),
-    ).toThrow(/requires.*plan/i);
+    ).not.toThrow();
   });
 
-  it('should allow advanced anomaly rules on pro plan', async () => {
+  it('should allow advanced anomaly rules on startup plan', async () => {
     ctx = Kontext.init({
       projectId: 'test',
       environment: 'development',
-      plan: 'pro',
+      plan: 'startup',
       anomalyRules: ['unusualAmount', 'newDestination'],
       anomalyThresholds: { maxAmount: '1000' },
     });

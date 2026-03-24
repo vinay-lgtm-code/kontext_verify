@@ -30,7 +30,6 @@
     "viem": "^2.46.3"
   },
   "dependencies": {
-    "@circle-fin/developer-controlled-wallets": "^10.1.0",
     "typescript": "^5.9.3"
   }
 }
