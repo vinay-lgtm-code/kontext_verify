@@ -12,7 +12,7 @@ import { Kontext, KontextError, KontextErrorCode } from '../src/index.js';
 // Helpers
 // ============================================================================
 
-function createClient(plan: 'free' | 'pro' | 'enterprise' = 'free') {
+function createClient(plan: 'startup' | 'growth' | 'enterprise' = 'startup') {
   return Kontext.init({
     projectId: 'plan-gate-test',
     environment: 'development',
@@ -31,8 +31,8 @@ describe('logTransaction plan gating', () => {
     await kontext.destroy();
   });
 
-  it('should allow base chain transactions on free plan', async () => {
-    kontext = createClient('free');
+  it('should allow base chain transactions on startup plan', async () => {
+    kontext = createClient('startup');
 
     const tx = await kontext.logTransaction({
       txHash: '0x' + 'a'.repeat(64),
@@ -48,44 +48,40 @@ describe('logTransaction plan gating', () => {
     expect(tx.amount).toBe('100');
   });
 
-  it('should block ethereum chain transactions on free plan', async () => {
-    kontext = createClient('free');
+  it('should allow ethereum chain transactions on startup plan', async () => {
+    kontext = createClient('startup');
 
-    try {
-      await kontext.logTransaction({
-        txHash: '0x' + 'a'.repeat(64),
-        chain: 'ethereum',
-        amount: '100',
-        token: 'USDC',
-        from: '0x' + '1'.repeat(40),
-        to: '0x' + '2'.repeat(40),
-        agentId: 'agent-1',
-      });
-      expect.unreachable('should have thrown');
-    } catch (err) {
-      expect(err).toBeInstanceOf(KontextError);
-      expect((err as KontextError).code).toBe(KontextErrorCode.PLAN_REQUIRED);
-    }
+    const tx = await kontext.logTransaction({
+      txHash: '0x' + 'a'.repeat(64),
+      chain: 'ethereum',
+      amount: '100',
+      token: 'USDC',
+      from: '0x' + '1'.repeat(40),
+      to: '0x' + '2'.repeat(40),
+      agentId: 'agent-1',
+    });
+
+    expect(tx.chain).toBe('ethereum');
   });
 
-  it('should block polygon chain transactions on free plan', async () => {
-    kontext = createClient('free');
+  it('should allow polygon chain transactions on startup plan', async () => {
+    kontext = createClient('startup');
 
-    await expect(
-      kontext.logTransaction({
-        txHash: '0x' + 'a'.repeat(64),
-        chain: 'polygon',
-        amount: '100',
-        token: 'USDC',
-        from: '0x' + '1'.repeat(40),
-        to: '0x' + '2'.repeat(40),
-        agentId: 'agent-1',
-      }),
-    ).rejects.toThrow(/Pro plan/);
+    const tx = await kontext.logTransaction({
+      txHash: '0x' + 'a'.repeat(64),
+      chain: 'polygon',
+      amount: '100',
+      token: 'USDC',
+      from: '0x' + '1'.repeat(40),
+      to: '0x' + '2'.repeat(40),
+      agentId: 'agent-1',
+    });
+
+    expect(tx.chain).toBe('polygon');
   });
 
-  it('should allow non-base chain transactions on pro plan', async () => {
-    kontext = createClient('pro');
+  it('should allow non-base chain transactions on growth plan', async () => {
+    kontext = createClient('growth');
 
     const tx = await kontext.logTransaction({
       txHash: '0x' + 'a'.repeat(64),
@@ -130,23 +126,22 @@ describe('CSV export plan gating', () => {
     await kontext.destroy();
   });
 
-  it('should block CSV export on free plan', async () => {
-    kontext = createClient('free');
+  it('should allow CSV export on startup plan', async () => {
+    kontext = createClient('startup');
 
-    await expect(
-      kontext.export({ format: 'csv' }),
-    ).rejects.toThrow(/Pro plan/);
+    const result = await kontext.export({ format: 'csv' });
+    expect(result).toBeDefined();
   });
 
-  it('should allow JSON export on free plan', async () => {
-    kontext = createClient('free');
+  it('should allow JSON export on startup plan', async () => {
+    kontext = createClient('startup');
 
     const result = await kontext.export({ format: 'json' });
     expect(result).toBeDefined();
   });
 
-  it('should allow CSV export on pro plan', async () => {
-    kontext = createClient('pro');
+  it('should allow CSV export on growth plan', async () => {
+    kontext = createClient('growth');
 
     const result = await kontext.export({ format: 'csv' });
     expect(result).toBeDefined();
@@ -164,8 +159,8 @@ describe('USDC compliance availability', () => {
     await kontext.destroy();
   });
 
-  it('should allow checkUsdcCompliance on free plan', () => {
-    kontext = createClient('free');
+  it('should allow checkUsdcCompliance on startup plan', () => {
+    kontext = createClient('startup');
 
     const result = kontext.checkUsdcCompliance({
       txHash: '0x' + 'a'.repeat(64),

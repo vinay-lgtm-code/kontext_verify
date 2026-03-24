@@ -80,7 +80,7 @@ export class FeatureFlagManager {
   isEnabled(
     flagName: string,
     environment?: Environment,
-    plan?: 'free' | 'pro' | 'enterprise',
+    plan?: 'startup' | 'growth' | 'enterprise',
   ): boolean {
     const env = environment ?? this.config.environment;
     const tier = plan ?? this.config.plan;
@@ -246,8 +246,8 @@ function parsePlanTargeting(
 ): FlagPlanTargeting | null {
   if (!fields) return null;
   return {
-    free: fields['free']?.booleanValue ?? false,
-    pro: fields['pro']?.booleanValue ?? false,
+    startup: fields['startup']?.booleanValue ?? false,
+    growth: fields['growth']?.booleanValue ?? false,
     enterprise: fields['enterprise']?.booleanValue ?? false,
   };
 }

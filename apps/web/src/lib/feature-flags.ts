@@ -6,11 +6,11 @@ const API_BASE_URL =
   process.env['KONTEXT_API_URL'] ?? 'https://api.getkontext.com';
 
 type Environment = 'development' | 'staging' | 'production';
-type Plan = 'free' | 'pro' | 'enterprise';
+type Plan = 'startup' | 'growth' | 'enterprise';
 
 interface FlagPlanTargeting {
-  free: boolean;
-  pro: boolean;
+  startup: boolean;
+  growth: boolean;
   enterprise: boolean;
 }
 
@@ -65,7 +65,7 @@ export async function getFlags(): Promise<FlagResponse[]> {
  */
 export async function isFeatureEnabled(
   flagName: string,
-  plan: Plan = 'free',
+  plan: Plan = 'startup',
 ): Promise<boolean> {
   try {
     const environment = getEnvironment();

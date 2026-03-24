@@ -52,11 +52,11 @@ const VALID_API_KEYS = new Set(
 // ============================================================================
 
 /** Plan tier definitions and their limits */
-type PlanTier = 'free' | 'pro' | 'enterprise';
+type PlanTier = 'startup' | 'growth' | 'enterprise';
 
 const PLAN_LIMITS: Record<PlanTier, number> = {
-  free: 20_000,
-  pro: 100_000,
+  startup: 20_000,
+  growth: 100_000,
   enterprise: Infinity,
 };
 
@@ -75,7 +75,7 @@ const apiKeyUsage = new Map<string, ApiKeyUsage>();
 const apiKeyPlans = new Map<string, { plan: PlanTier; seats: number }>();
 
 // Load plan configuration from environment
-// Format: KONTEXT_API_KEY_PLANS="sk_live_abc:pro:3:org_legaci_demo,sk_live_def:enterprise"
+// Format: KONTEXT_API_KEY_PLANS="sk_live_abc:startup:3:org_legaci_demo,sk_live_def:enterprise"
 // Fields: key:plan:seats:org_id (org_id is optional)
 const apiKeyOrgMap = new Map<string, string>();
 const planConfig = process.env['KONTEXT_API_KEY_PLANS'];
@@ -86,7 +86,7 @@ if (planConfig) {
     const plan = parts[1];
     const seats = parts[2] ? parseInt(parts[2], 10) : 1;
     const orgId = parts[3];
-    if (key && plan && (plan === 'free' || plan === 'pro' || plan === 'enterprise')) {
+    if (key && plan && (plan === 'startup' || plan === 'growth' || plan === 'enterprise')) {
       apiKeyPlans.set(key, { plan: plan as PlanTier, seats: Math.max(1, seats || 1) });
     }
     if (key && orgId) {
@@ -104,7 +104,7 @@ function getApiKeyUsage(apiKey: string): ApiKeyUsage {
     const now = new Date();
     const planInfo = apiKeyPlans.get(apiKey);
     usage = {
-      plan: planInfo?.plan ?? 'free',
+      plan: planInfo?.plan ?? 'startup',
       seats: planInfo?.seats ?? 1,
       eventCount: 0,
       billingPeriodStart: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString(),
@@ -130,8 +130,8 @@ function getApiKeyUsage(apiKey: string): ApiKeyUsage {
 function getEffectiveLimit(usage: ApiKeyUsage): number {
   const base = PLAN_LIMITS[usage.plan];
   if (base === Infinity) return Infinity;
-  // Pro plan: 100K events per user/seat
-  if (usage.plan === 'pro') return base * usage.seats;
+  // Growth plan: 100K events per user/seat
+  if (usage.plan === 'growth') return base * usage.seats;
   return base;
 }
 
@@ -336,9 +336,9 @@ app.post('/v1/actions', authMiddleware, async (c) => {
   // Soft limit: still process the event but return 429 with upgrade instructions
   if (limitExceeded) {
     const effectiveLimit = getEffectiveLimit(usage);
-    const upgradeMessage = usage.plan === 'free'
-      ? "You've reached the 20,000 event limit on the Free plan. Upgrade to Pro for 100K events/user/mo → https://kontext.so/upgrade"
-      : `You've reached the ${effectiveLimit.toLocaleString()} event limit on Pro (${usage.seats} seat${usage.seats !== 1 ? 's' : ''}). Add seats or contact us for Enterprise pricing → https://cal.com/vinnaray`;
+    const upgradeMessage = usage.plan === 'startup'
+      ? "You've reached the 20,000 event limit on the Startup plan. Upgrade to Growth for 100K events/user/mo → https://kontext.so/upgrade"
+      : `You've reached the ${effectiveLimit.toLocaleString()} event limit on Growth (${usage.seats} seat${usage.seats !== 1 ? 's' : ''}). Add seats or contact us for Enterprise pricing → https://cal.com/vinnaray`;
 
     return c.json({
       success: true,
@@ -717,7 +717,7 @@ app.get('/v1/flags', (c) => {
 app.get('/v1/flags/:flagName', (c) => {
   const flagName = c.req.param('flagName');
   const environment = (c.req.query('environment') ?? 'production') as 'development' | 'staging' | 'production';
-  const plan = (c.req.query('plan') ?? 'free') as 'free' | 'pro' | 'enterprise';
+  const plan = (c.req.query('plan') ?? 'startup') as 'startup' | 'growth' | 'enterprise';
 
   const flag = featureFlags.getFlag(flagName);
   if (!flag) {
@@ -748,7 +748,7 @@ export function requireFlag(flagName: string, environment?: 'development' | 'sta
   return async (c: Parameters<Parameters<typeof app.use>[1]>[0], next: () => Promise<void>): Promise<Response | void> => {
     const apiKey = c.req.header('Authorization')?.slice(7) ?? '';
     const planInfo = apiKeyPlans.get(apiKey);
-    const plan = planInfo?.plan ?? 'free';
+    const plan = planInfo?.plan ?? 'startup';
     const role = c.get('role' as never) as Role | undefined;
     // Admin and staff always get feature-flag access
     const effectivePlan = role === 'admin' ? 'enterprise' : plan;
@@ -1018,7 +1018,7 @@ app.post('/v1/events/:eventId/assign', authMiddleware, requirePermission('assign
 
 const KONTEXT_APP_URL = process.env['KONTEXT_APP_URL'] ?? 'http://localhost:3000';
 
-// POST /v1/checkout — Create a Stripe Checkout Session for Pro plan
+// POST /v1/checkout — Create a Stripe Checkout Session for Startup plan
 app.post('/v1/checkout', async (c) => {
   let body: { email?: string; seats?: number };
   try {

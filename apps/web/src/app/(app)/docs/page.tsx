@@ -477,7 +477,7 @@ const ctx = Kontext.init({
   // Optional
   environment: 'production',  // 'development' | 'staging' | 'production'
   apiKey: 'sk_live_...',      // only needed for cloud mode
-  plan: 'free',               // 'free' | 'payg' | 'enterprise'
+  plan: 'startup',            // 'startup' | 'growth' | 'enterprise'
 
   // Persistence -- default is in-memory (resets on restart)
   storage: new FileStorage('./compliance-data'),
@@ -549,7 +549,7 @@ const agentIdentityCode = `import { Kontext } from 'kontext-sdk';
 const ctx = Kontext.init({
   apiKey: process.env.KONTEXT_KEY,
   projectId: 'forensics',
-  plan: 'payg',
+  plan: 'startup',
 });
 
 // Register an agent with wallet mappings
@@ -580,7 +580,7 @@ const walletClusteringCode = `import { Kontext } from 'kontext-sdk';
 const ctx = Kontext.init({
   apiKey: process.env.KONTEXT_KEY,
   projectId: 'forensics',
-  plan: 'payg',
+  plan: 'startup',
 });
 
 // Register agents and their wallets...
@@ -606,7 +606,7 @@ const confidenceScoringCode = `import { Kontext } from 'kontext-sdk';
 const ctx = Kontext.init({
   apiKey: process.env.KONTEXT_KEY,
   projectId: 'forensics',
-  plan: 'payg',
+  plan: 'startup',
 });
 
 // Compute identity confidence for an agent

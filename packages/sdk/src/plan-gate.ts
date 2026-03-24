@@ -24,30 +24,32 @@ export type GatedFeature =
   | 'kya-identity'
   | 'kya-behavioral'
   | 'coinbase-wallets'
-  | 'metamask-wallets';
+  | 'metamask-wallets'
+  | 'x402-payments';
 
 const FEATURE_MIN_PLAN: Record<GatedFeature, PlanTier> = {
-  'advanced-anomaly-rules': 'pro',
-  'sar-ctr-reports': 'pro',
-  'webhooks': 'pro',
-  'ofac-screening': 'pro',
-  'csv-export': 'pro',
-  'multi-chain': 'pro',
+  'advanced-anomaly-rules': 'startup',
+  'sar-ctr-reports': 'startup',
+  'webhooks': 'startup',
+  'ofac-screening': 'startup',
+  'csv-export': 'startup',
+  'multi-chain': 'startup',
   'cftc-compliance': 'enterprise',
   'circle-wallets': 'enterprise',
   'circle-compliance': 'enterprise',
   'gas-station': 'enterprise',
   'cctp-transfers': 'enterprise',
-  'approval-policies': 'pro',
-  'unified-screening': 'pro',
-  'blocklist-manager': 'pro',
-  'kya-identity': 'pro',
+  'approval-policies': 'startup',
+  'unified-screening': 'startup',
+  'blocklist-manager': 'startup',
+  'kya-identity': 'startup',
   'kya-behavioral': 'enterprise',
   'coinbase-wallets': 'enterprise',
   'metamask-wallets': 'enterprise',
+  'x402-payments': 'startup',
 };
 
-const PLAN_RANK: Record<PlanTier, number> = { free: 0, pro: 1, enterprise: 2 };
+const PLAN_RANK: Record<PlanTier, number> = { startup: 0, growth: 1, enterprise: 2 };
 
 const FEATURE_LABELS: Record<GatedFeature, string> = {
   'advanced-anomaly-rules': 'Advanced anomaly detection rules',
@@ -68,6 +70,7 @@ const FEATURE_LABELS: Record<GatedFeature, string> = {
   'kya-behavioral': 'KYA behavioral fingerprinting (cross-session linking, confidence scoring)',
   'coinbase-wallets': 'Coinbase Developer Platform Wallets',
   'metamask-wallets': 'MetaMask Embedded Wallets',
+  'x402-payments': 'x402 payment protocol',
 };
 
 /**

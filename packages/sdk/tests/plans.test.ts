@@ -21,20 +21,20 @@ function createClient(plan?: PlanTier, opts?: { upgradeUrl?: string; storage?: M
 // ---------------------------------------------------------------------------
 describe('PlanManager', () => {
   it('should define correct plan limits', () => {
-    expect(PLAN_LIMITS.free).toBe(20_000);
-    expect(PLAN_LIMITS.pro).toBe(Infinity);
+    expect(PLAN_LIMITS.startup).toBe(20_000);
+    expect(PLAN_LIMITS.growth).toBe(Infinity);
     expect(PLAN_LIMITS.enterprise).toBe(Infinity);
   });
 
   it('should return plan limits via static method', () => {
-    expect(PlanManager.getPlanLimits('free')).toEqual({ tier: 'free', eventLimit: 20_000 });
-    expect(PlanManager.getPlanLimits('pro')).toEqual({ tier: 'pro', eventLimit: Infinity });
+    expect(PlanManager.getPlanLimits('startup')).toEqual({ tier: 'startup', eventLimit: 20_000 });
+    expect(PlanManager.getPlanLimits('growth')).toEqual({ tier: 'growth', eventLimit: Infinity });
     expect(PlanManager.getPlanLimits('enterprise')).toEqual({ tier: 'enterprise', eventLimit: Infinity });
   });
 
-  it('should default to free tier', () => {
+  it('should default to startup tier', () => {
     const pm = new PlanManager();
-    expect(pm.getTier()).toBe('free');
+    expect(pm.getTier()).toBe('startup');
     expect(pm.getLimit()).toBe(20_000);
     expect(pm.getEventCount()).toBe(0);
     expect(pm.getRemainingEvents()).toBe(20_000);
@@ -42,9 +42,9 @@ describe('PlanManager', () => {
     expect(pm.isLimitExceeded()).toBe(false);
   });
 
-  it('should initialize with explicit pro tier', () => {
-    const pm = new PlanManager('pro');
-    expect(pm.getTier()).toBe('pro');
+  it('should initialize with explicit growth tier', () => {
+    const pm = new PlanManager('growth');
+    expect(pm.getTier()).toBe('growth');
     expect(pm.getLimit()).toBe(Infinity);
     expect(pm.getRemainingEvents()).toBe(Infinity);
     expect(pm.getUsagePercentage()).toBe(0);
@@ -59,7 +59,7 @@ describe('PlanManager', () => {
   });
 
   it('should increment event count on recordEvent', () => {
-    const pm = new PlanManager('free');
+    const pm = new PlanManager('startup');
     pm.recordEvent();
     expect(pm.getEventCount()).toBe(1);
     pm.recordEvent();
@@ -67,7 +67,7 @@ describe('PlanManager', () => {
   });
 
   it('should calculate remaining events correctly', () => {
-    const pm = new PlanManager('free');
+    const pm = new PlanManager('startup');
     for (let i = 0; i < 100; i++) pm.recordEvent();
     expect(pm.getRemainingEvents()).toBe(19_900);
     expect(pm.getUsagePercentage()).toBeCloseTo(0.5, 1);
@@ -82,7 +82,7 @@ describe('PlanManager', () => {
   });
 
   it('should emit warning at 80% threshold', () => {
-    const pm = new PlanManager('free');
+    const pm = new PlanManager('startup');
     const warnings: LimitEvent[] = [];
     pm.onUsageWarning((e) => warnings.push(e));
 
@@ -91,12 +91,12 @@ describe('PlanManager', () => {
 
     expect(warnings.length).toBe(1);
     expect(warnings[0]!.type).toBe('warning');
-    expect(warnings[0]!.plan).toBe('free');
+    expect(warnings[0]!.plan).toBe('startup');
     expect(warnings[0]!.usagePercentage).toBeGreaterThanOrEqual(80);
   });
 
   it('should emit warning only once', () => {
-    const pm = new PlanManager('free');
+    const pm = new PlanManager('startup');
     const warnings: LimitEvent[] = [];
     pm.onUsageWarning((e) => warnings.push(e));
 
@@ -107,7 +107,7 @@ describe('PlanManager', () => {
   });
 
   it('should emit limit reached at 100%', () => {
-    const pm = new PlanManager('free');
+    const pm = new PlanManager('startup');
     const events: LimitEvent[] = [];
     pm.onLimitReached((e) => events.push(e));
 
@@ -115,11 +115,11 @@ describe('PlanManager', () => {
 
     expect(events.length).toBe(1);
     expect(events[0]!.type).toBe('limit_reached');
-    expect(events[0]!.plan).toBe('free');
+    expect(events[0]!.plan).toBe('startup');
   });
 
   it('should emit throttled limit events every 100 events after limit', () => {
-    const pm = new PlanManager('free');
+    const pm = new PlanManager('startup');
     const events: LimitEvent[] = [];
     pm.onLimitReached((e) => events.push(e));
 
@@ -131,28 +131,28 @@ describe('PlanManager', () => {
   });
 
   it('should set plan tier and reset warning state', () => {
-    const pm = new PlanManager('free');
+    const pm = new PlanManager('startup');
     const warnings: LimitEvent[] = [];
     pm.onUsageWarning((e) => warnings.push(e));
 
     for (let i = 0; i < 16_000; i++) pm.recordEvent();
     expect(warnings.length).toBe(1);
 
-    // Upgrade to pro — warning state resets
-    pm.setPlan('pro');
-    expect(pm.getTier()).toBe('pro');
+    // Upgrade to growth — warning state resets
+    pm.setPlan('growth');
+    expect(pm.getTier()).toBe('growth');
     expect(pm.getLimit()).toBe(Infinity);
 
     // Event count is NOT reset by setPlan (count persists)
     expect(pm.getEventCount()).toBe(16_000);
 
-    // Pro has Infinity limit, so no warnings are emitted regardless of event count
+    // Growth has Infinity limit, so no warnings are emitted regardless of event count
     for (let i = 0; i < 64_001; i++) pm.recordEvent();
-    expect(warnings.length).toBe(1); // no new warnings after upgrade to pro
+    expect(warnings.length).toBe(1); // no new warnings after upgrade to growth
   });
 
   it('should reset billing period', () => {
-    const pm = new PlanManager('free');
+    const pm = new PlanManager('startup');
     for (let i = 0; i < 5_000; i++) pm.recordEvent();
     expect(pm.getEventCount()).toBe(5_000);
 
@@ -162,21 +162,21 @@ describe('PlanManager', () => {
   });
 
   it('should serialize and deserialize state', () => {
-    const pm = new PlanManager('pro');
+    const pm = new PlanManager('growth');
     for (let i = 0; i < 500; i++) pm.recordEvent();
 
     const json = pm.toJSON();
-    expect(json.tier).toBe('pro');
+    expect(json.tier).toBe('growth');
     expect(json.eventCount).toBe(500);
     expect(json.billingPeriodStart).toBeDefined();
 
     const restored = PlanManager.fromJSON(json);
-    expect(restored.getTier()).toBe('pro');
+    expect(restored.getTier()).toBe('growth');
     expect(restored.getEventCount()).toBe(500);
   });
 
   it('should allow unsubscribing from callbacks', () => {
-    const pm = new PlanManager('free');
+    const pm = new PlanManager('startup');
     const warnings: LimitEvent[] = [];
     const unsub = pm.onUsageWarning((e) => warnings.push(e));
     unsub();
@@ -186,7 +186,7 @@ describe('PlanManager', () => {
   });
 
   it('should set event count directly', () => {
-    const pm = new PlanManager('free');
+    const pm = new PlanManager('startup');
     pm.setEventCount(10_000);
     expect(pm.getEventCount()).toBe(10_000);
     expect(pm.getRemainingEvents()).toBe(10_000);
@@ -203,19 +203,19 @@ describe('Kontext Plan Integration', () => {
     await kontext.destroy();
   });
 
-  it('should default to free plan when no plan specified', () => {
+  it('should default to startup plan when no plan specified', () => {
     kontext = createClient();
     const usage = kontext.getUsage();
-    expect(usage.plan).toBe('free');
+    expect(usage.plan).toBe('startup');
     expect(usage.limit).toBe(20_000);
     expect(usage.eventCount).toBe(0);
     expect(usage.limitExceeded).toBe(false);
   });
 
-  it('should initialize with explicit pro plan', () => {
-    kontext = createClient('pro');
+  it('should initialize with explicit growth plan', () => {
+    kontext = createClient('growth');
     const usage = kontext.getUsage();
-    expect(usage.plan).toBe('pro');
+    expect(usage.plan).toBe('growth');
     expect(usage.limit).toBe(Infinity);
     expect(usage.remainingEvents).toBe(Infinity);
   });
@@ -289,12 +289,12 @@ describe('Kontext Plan Integration', () => {
   });
 
   it('should set plan at runtime with setPlan()', () => {
-    kontext = createClient('free');
-    expect(kontext.getUsage().plan).toBe('free');
+    kontext = createClient('startup');
+    expect(kontext.getUsage().plan).toBe('startup');
     expect(kontext.getUsage().limit).toBe(20_000);
 
-    kontext.setPlan('pro');
-    expect(kontext.getUsage().plan).toBe('pro');
+    kontext.setPlan('growth');
+    expect(kontext.getUsage().plan).toBe('growth');
     expect(kontext.getUsage().limit).toBe(Infinity);
 
     kontext.setPlan('enterprise');
@@ -303,7 +303,7 @@ describe('Kontext Plan Integration', () => {
   });
 
   it('should return correct usage data from getUsage()', async () => {
-    kontext = createClient('pro');
+    kontext = createClient('growth');
 
     for (let i = 0; i < 5; i++) {
       await kontext.log({
@@ -314,7 +314,7 @@ describe('Kontext Plan Integration', () => {
     }
 
     const usage = kontext.getUsage();
-    expect(usage.plan).toBe('pro');
+    expect(usage.plan).toBe('growth');
     expect(usage.eventCount).toBe(5);
     expect(usage.limit).toBe(Infinity);
     expect(usage.remainingEvents).toBe(Infinity);
@@ -328,7 +328,7 @@ describe('Kontext Plan Integration', () => {
   });
 
   it('should return custom upgrade URL when configured', () => {
-    kontext = createClient('free', { upgradeUrl: 'https://myapp.com/upgrade' });
+    kontext = createClient('startup', { upgradeUrl: 'https://myapp.com/upgrade' });
     expect(kontext.getUpgradeUrl()).toBe('https://myapp.com/upgrade');
   });
 
@@ -342,9 +342,9 @@ describe('Kontext Plan Integration', () => {
 // 3. Limit Enforcement Tests (using PlanManager directly for speed)
 // ---------------------------------------------------------------------------
 describe('Plan Limit Enforcement', () => {
-  it('should set limitExceeded flag on actions after free limit', async () => {
+  it('should set limitExceeded flag on actions after startup limit', async () => {
     // Use PlanManager directly to verify behavior
-    const pm = new PlanManager('free');
+    const pm = new PlanManager('startup');
 
     // Record 20000 events to hit limit
     for (let i = 0; i < 20_000; i++) pm.recordEvent();
@@ -358,7 +358,7 @@ describe('Plan Limit Enforcement', () => {
   });
 
   it('should continue logging after limit (soft limit)', async () => {
-    const pm = new PlanManager('free');
+    const pm = new PlanManager('startup');
 
     for (let i = 0; i < 20_100; i++) pm.recordEvent();
 
@@ -369,15 +369,15 @@ describe('Plan Limit Enforcement', () => {
     expect(pm.getUsagePercentage()).toBe(100);
   });
 
-  it('should log console warning for free tier limit', () => {
+  it('should log console warning for startup tier limit', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const pm = new PlanManager('free');
+    const pm = new PlanManager('startup');
     pm.upgradeUrl = 'https://kontext.so/upgrade';
 
     for (let i = 0; i < 20_000; i++) pm.recordEvent();
 
     expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining("You've reached the 20,000 event limit on the Free plan"),
+      expect.stringContaining("You've reached the 20,000 event limit on the Startup plan"),
     );
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining('https://kontext.so/upgrade'),
@@ -386,8 +386,8 @@ describe('Plan Limit Enforcement', () => {
     warnSpy.mockRestore();
   });
 
-  it('should not emit any warnings for pro plan (usage-based, no cap)', () => {
-    const pm = new PlanManager('pro');
+  it('should not emit any warnings for growth plan (usage-based, no cap)', () => {
+    const pm = new PlanManager('growth');
     const warnings: LimitEvent[] = [];
     const limits: LimitEvent[] = [];
     pm.onUsageWarning((e) => warnings.push(e));
@@ -401,21 +401,21 @@ describe('Plan Limit Enforcement', () => {
     expect(pm.getRemainingEvents()).toBe(Infinity);
   });
 
-  it('should emit warning at 16K for free plan', () => {
-    const pm = new PlanManager('free');
+  it('should emit warning at 16K for startup plan', () => {
+    const pm = new PlanManager('startup');
     const warnings: LimitEvent[] = [];
     pm.onUsageWarning((e) => warnings.push(e));
 
     for (let i = 0; i < 16_000; i++) pm.recordEvent();
 
     expect(warnings.length).toBe(1);
-    expect(warnings[0]!.plan).toBe('free');
+    expect(warnings[0]!.plan).toBe('startup');
     expect(warnings[0]!.eventCount).toBe(16_000);
   });
 
   it('should throttle limit warnings to once per 100 events', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const pm = new PlanManager('free');
+    const pm = new PlanManager('startup');
     const limitEvents: LimitEvent[] = [];
     pm.onLimitReached((e) => limitEvents.push(e));
 
@@ -458,7 +458,7 @@ describe('Plan Limit Enforcement', () => {
 // ---------------------------------------------------------------------------
 describe('Billing Period', () => {
   it('should set billing period start to 1st of current month by default', () => {
-    const pm = new PlanManager('free');
+    const pm = new PlanManager('startup');
     const start = pm.getBillingPeriodStart();
     const now = new Date();
     expect(start.getUTCDate()).toBe(1);
@@ -467,7 +467,7 @@ describe('Billing Period', () => {
   });
 
   it('should reset event count on billing period reset', () => {
-    const pm = new PlanManager('free');
+    const pm = new PlanManager('startup');
     for (let i = 0; i < 5_000; i++) pm.recordEvent();
     expect(pm.getEventCount()).toBe(5_000);
 
@@ -478,7 +478,7 @@ describe('Billing Period', () => {
   });
 
   it('should reset warning state on billing period reset', () => {
-    const pm = new PlanManager('free');
+    const pm = new PlanManager('startup');
     const warnings: LimitEvent[] = [];
     pm.onUsageWarning((e) => warnings.push(e));
 
@@ -498,7 +498,7 @@ describe('Billing Period', () => {
     lastMonth.setUTCMonth(lastMonth.getUTCMonth() - 1);
     lastMonth.setUTCDate(1);
 
-    const pm = new PlanManager('free', lastMonth);
+    const pm = new PlanManager('startup', lastMonth);
     pm.setEventCount(15_000);
 
     // recordEvent should detect we're in a new billing period
@@ -517,7 +517,7 @@ describe('Plan State Persistence', () => {
     const storage = new MemoryStorage();
 
     // Create client, log some events, flush plan state
-    const kontext1 = createClient('pro', { storage });
+    const kontext1 = createClient('growth', { storage });
     for (let i = 0; i < 3; i++) {
       await kontext1.log({
         type: 'test',
@@ -531,12 +531,12 @@ describe('Plan State Persistence', () => {
     await kontext1.destroy();
 
     // Create a new client and restore plan state
-    const kontext2 = createClient('free', { storage });
+    const kontext2 = createClient('startup', { storage });
     await kontext2.restorePlanState();
 
-    // Should have restored pro tier and event count
+    // Should have restored growth tier and event count
     const usage = kontext2.getUsage();
-    expect(usage.plan).toBe('pro');
+    expect(usage.plan).toBe('growth');
     expect(usage.eventCount).toBe(3);
     await kontext2.destroy();
   });
@@ -548,7 +548,7 @@ describe('Plan State Persistence', () => {
 describe('limitExceeded flag integration', () => {
   it('should set limitExceeded on action metadata when limit is exceeded', async () => {
     // We'll use PlanManager to verify the flag mechanism
-    const pm = new PlanManager('free');
+    const pm = new PlanManager('startup');
 
     // Hit the limit
     for (let i = 0; i < 20_000; i++) pm.recordEvent();
@@ -572,7 +572,7 @@ describe('limitExceeded flag integration', () => {
   });
 
   it('should not set limitExceeded flag when under limit', async () => {
-    const kontext = createClient('free');
+    const kontext = createClient('startup');
 
     const action = await kontext.log({
       type: 'test',
@@ -596,7 +596,7 @@ describe('Upgrade Flow Helpers', () => {
   });
 
   it('should return custom upgrade URL', () => {
-    const kontext = createClient('free', { upgradeUrl: 'https://stripe.com/checkout/123' });
+    const kontext = createClient('startup', { upgradeUrl: 'https://stripe.com/checkout/123' });
     expect(kontext.getUpgradeUrl()).toBe('https://stripe.com/checkout/123');
     kontext.destroy();
   });

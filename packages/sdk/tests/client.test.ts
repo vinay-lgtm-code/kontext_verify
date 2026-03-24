@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { Kontext, KontextError, KontextErrorCode } from '../src/index.js';
 
-function createClient(plan: 'free' | 'pro' | 'enterprise' = 'enterprise') {
+function createClient(plan: 'startup' | 'growth' | 'enterprise' = 'enterprise') {
   return Kontext.init({
     projectId: 'test-project',
     environment: 'development',

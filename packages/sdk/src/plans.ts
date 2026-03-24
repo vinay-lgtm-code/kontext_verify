@@ -3,7 +3,7 @@
 // ============================================================================
 
 /** Pricing tier identifiers */
-export type PlanTier = 'free' | 'pro' | 'enterprise';
+export type PlanTier = 'startup' | 'growth' | 'enterprise';
 
 /** Configuration for a pricing plan */
 export interface PlanConfig {
@@ -51,10 +51,10 @@ export interface LimitEvent {
   message: string;
 }
 
-/** Base plan definitions with their event limits (per seat for Pro) */
+/** Base plan definitions with their event limits */
 export const PLAN_LIMITS: Record<PlanTier, number> = {
-  free: 20_000,
-  pro: Infinity, // usage-based: $2/1K events above 20K free
+  startup: 20_000,
+  growth: Infinity,
   enterprise: Infinity,
 };
 
@@ -90,7 +90,7 @@ export class PlanManager {
   /** Enterprise contact URL */
   enterpriseContactUrl: string = 'https://cal.com/vinnaray';
 
-  constructor(tier: PlanTier = 'free', billingPeriodStart?: Date, seats: number = 1) {
+  constructor(tier: PlanTier = 'startup', billingPeriodStart?: Date, seats: number = 1) {
     this.tier = tier;
     this.seats = Math.max(1, Math.floor(seats));
     this.eventCount = 0;
@@ -120,7 +120,7 @@ export class PlanManager {
     return this.tier;
   }
 
-  /** Get the event limit for the current plan (Pro is multiplied by seats) */
+  /** Get the event limit for the current plan */
   getLimit(): number {
     return PLAN_LIMITS[this.tier];
   }
@@ -368,7 +368,7 @@ export class PlanManager {
     const message =
       type === 'warning'
         ? `You've used ${this.getUsagePercentage().toFixed(0)}% of your ${this.tier} plan event limit (${this.eventCount}/${this.getLimit()}).`
-        : `You've reached the ${this.getLimit().toLocaleString()} event limit on the ${this.tier === 'free' ? 'Free' : 'Pro'} plan.`;
+        : `You've reached the ${this.getLimit().toLocaleString()} event limit on the ${this.tier.charAt(0).toUpperCase() + this.tier.slice(1)} plan.`;
 
     return {
       type,
@@ -382,9 +382,9 @@ export class PlanManager {
   }
 
   private logLimitMessage(): void {
-    if (this.tier === 'free') {
+    if (this.tier === 'startup') {
       console.warn(
-        `You've reached the 20,000 event limit on the Free plan. Upgrade to Pro ($2/1K events above 20K free) → ${this.upgradeUrl}`,
+        `You've reached the 20,000 event limit on the Startup plan. Upgrade to Growth → ${this.upgradeUrl}`,
       );
     }
   }

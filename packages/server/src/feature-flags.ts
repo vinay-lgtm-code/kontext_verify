@@ -7,8 +7,8 @@
 
 /** Plan-based targeting for a single environment */
 interface FlagPlanTargeting {
-  free: boolean;
-  pro: boolean;
+  startup: boolean;
+  growth: boolean;
   enterprise: boolean;
 }
 
@@ -129,7 +129,7 @@ export class ServerFeatureFlags {
   isEnabled(
     flagName: string,
     environment: Environment,
-    plan: 'free' | 'pro' | 'enterprise',
+    plan: 'startup' | 'growth' | 'enterprise',
   ): boolean {
     const entry = this.cache.get(flagName);
     if (!entry) {
@@ -278,8 +278,8 @@ function parsePlanTargeting(
 ): FlagPlanTargeting | null {
   if (!fields) return null;
   return {
-    free: fields['free']?.booleanValue ?? false,
-    pro: fields['pro']?.booleanValue ?? false,
+    startup: fields['startup']?.booleanValue ?? false,
+    growth: fields['growth']?.booleanValue ?? false,
     enterprise: fields['enterprise']?.booleanValue ?? false,
   };
 }

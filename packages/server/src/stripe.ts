@@ -19,8 +19,8 @@ function getWebhookSecret(): string {
   return process.env['STRIPE_WEBHOOK_SECRET'] ?? '';
 }
 
-function getProPriceId(): string {
-  return process.env['STRIPE_PRO_PRICE_ID'] ?? '';
+function getStartupPriceId(): string {
+  return process.env['STRIPE_STARTUP_PRICE_ID'] ?? '';
 }
 
 function getStripeClient(): Stripe {
@@ -75,9 +75,9 @@ export async function createCheckoutSession(
     throw new Error('A valid email address is required');
   }
 
-  const priceId = getProPriceId();
+  const priceId = getStartupPriceId();
   if (!priceId) {
-    throw new Error('STRIPE_PRO_PRICE_ID environment variable is required');
+    throw new Error('STRIPE_STARTUP_PRICE_ID environment variable is required');
   }
 
   const stripe = getStripeClient();
@@ -288,4 +288,4 @@ export async function handleWebhookEvent(
 // Exports for testing
 // ---------------------------------------------------------------------------
 
-export { getStripeClient, getSecretKey, getWebhookSecret, getProPriceId };
+export { getStripeClient, getSecretKey, getWebhookSecret, getStartupPriceId };
