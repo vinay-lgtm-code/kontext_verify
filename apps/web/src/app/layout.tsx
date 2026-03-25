@@ -127,7 +127,7 @@ const softwareJsonLd = {
   featureList: [
     "Transaction verification with OFAC screening",
     "Tamper-evident SHA-256 digest chain",
-    "Compliance-grade audit trails",
+    "The compliance-proof layer for programmable payments",
     "Intent hashing and context binding",
     "Trust scoring with 5-factor breakdown",
     "Rule-based anomaly detection",
