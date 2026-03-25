@@ -25,13 +25,13 @@ const plans = [
     ctaHref: "/contact",
     highlighted: false,
     features: [
+      "Advisory mode",
       "1 production environment",
-      "Capped monthly payment volume",
       "OFAC screening (built-in SDN)",
-      "Tamper-evident audit trail",
-      "JSON + CSV audit export",
       "Standard evidence retention",
+      "JSON + CSV audit export",
       "Human / API / workflow initiation tracking",
+      "Readiness assessment support",
       "Email support",
     ],
   },
@@ -45,15 +45,15 @@ const plans = [
     highlighted: true,
     features: [
       "Everything in Starter",
-      "Higher monthly payment volume",
+      "Blocking mode + escalation workflows",
       "Multiple environments + integrations",
       "Role-based access (compliance, risk, audit)",
-      "Advanced alerting + webhooks",
-      "SAR/CTR report templates",
-      "Multi-chain evidence trails (8 chains)",
-      "AI agent initiation tracking",
       "Approval and override lineage",
       "Examiner packet export",
+      "Independent verification proof",
+      "OpenTelemetry / trace linking",
+      "AI agent initiation tracking",
+      "Advanced alerting + webhooks",
     ],
   },
   {
@@ -66,15 +66,15 @@ const plans = [
     highlighted: false,
     features: [
       "Everything in Growth",
-      "Custom volume bands",
       "Extended evidence retention",
       "Custom policy + controls mapping",
+      "Partner diligence + incident exports",
+      "GDPR / SAR / redaction workflows",
       "Case management / GRC integrations",
       "Security review + procurement terms",
       "Dedicated support + SLAs",
-      "Agent-specific evidence exports",
       "Policy-bound autonomous execution support",
-      "Partner diligence packet export",
+      "Custom verification / export requirements",
     ],
   },
 ];
@@ -126,8 +126,9 @@ export default function PricingPage() {
               Priced like a controls product, not a logging meter
             </h1>
             <p className="mx-auto mt-4 max-w-xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-              Annual platform fee based on payment decisions monitored — the
-              unit your compliance and risk teams already think in.
+              Annual platform fee based on payment decisions monitored and the
+              depth of controls, governance, and export workflows your reviewers
+              require.
             </p>
           </div>
         </div>
@@ -267,6 +268,61 @@ export default function PricingPage() {
                 <ArrowRight size={14} />
               </Link>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-border bg-[var(--ic-surface-2)]">
+        <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
+              Feature Areas
+            </span>
+            <h2 className="mt-4 font-serif text-2xl font-normal text-[var(--ic-text)] sm:text-3xl">
+              Plans scale with controls maturity
+            </h2>
+          </div>
+          <div className="mt-10 overflow-x-auto">
+            <table className="w-full min-w-[720px] text-left text-[13px]">
+              <thead>
+                <tr className="border-b border-[var(--ic-border)]">
+                  <th className="pb-3 font-mono text-[10px] uppercase tracking-widest text-[var(--ic-text-dim)]">
+                    Capability
+                  </th>
+                  <th className="pb-3 font-mono text-[10px] uppercase tracking-widest text-[var(--ic-text-dim)]">
+                    Starter
+                  </th>
+                  <th className="pb-3 font-mono text-[10px] uppercase tracking-widest text-[var(--ic-text-dim)]">
+                    Growth
+                  </th>
+                  <th className="pb-3 font-mono text-[10px] uppercase tracking-widest text-[var(--ic-text-dim)]">
+                    Enterprise
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  ["Enforcement", "Advisory", "Advisory + Blocking", "Blocking + custom escalation"],
+                  ["Evidence retention", "Standard", "Extended options", "Custom retention windows"],
+                  ["Export types", "JSON / CSV", "Examiner packets", "Diligence, incident, redacted"],
+                  ["Approval workflows", "Basic thresholds", "Approval lineage", "Custom approval mapping"],
+                  ["Verification", "Included", "Third-party proof", "Custom verification support"],
+                  ["Governance", "Basic controls", "Redaction support", "GDPR / SAR workflows"],
+                  ["Interoperability", "Core integrations", "OTel + webhooks", "GRC / case systems"],
+                ].map((row) => (
+                  <tr key={row[0]} className="border-b border-[var(--ic-border)]/50">
+                    {row.map((cell, index) => (
+                      <td
+                        key={cell}
+                        className={`py-3 ${index === 0 ? "text-[var(--ic-text)]" : "text-[var(--ic-text-muted)]"}`}
+                      >
+                        {cell}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </section>

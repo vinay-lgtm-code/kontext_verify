@@ -28,10 +28,11 @@ export function HeroSection() {
             className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-[var(--ic-text-muted)] opacity-0 animate-fade-up"
             style={{ animationDelay: "200ms" }}
           >
-            Kontext creates reviewer-ready evidence for programmable payments
-            — policy checks, sanctions screening, approvals, and immutable
-            audit history across stablecoin, ACH, wire, and card — including
-            flows initiated by apps, workflows, and AI agents.
+            Kontext helps payment, treasury, risk, and compliance teams enforce
+            policy, screen counterparties, and generate reviewer-ready evidence
+            across stablecoin, ACH, wire, and card flows. Approve, block, or
+            escalate payment decisions with a trail built for launch reviews,
+            partner diligence, and audit prep.
           </p>
 
           {/* CTAs */}
@@ -62,8 +63,8 @@ export function HeroSection() {
             className="mx-auto mt-6 max-w-lg text-[13px] text-[var(--ic-text-dim)] opacity-0 animate-fade-up"
             style={{ animationDelay: "350ms" }}
           >
-            Built for launch reviews, partner diligence, incident
-            reconstruction, and autonomous payment controls
+            Built for controls enforcement, partner diligence, incident
+            reconstruction, and reviewer-ready exports
           </p>
 
           {/* Payment Decision Packet visual */}
