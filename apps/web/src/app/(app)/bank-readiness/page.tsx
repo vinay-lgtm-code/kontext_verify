@@ -11,6 +11,10 @@ import { track } from "@/lib/analytics";
 
 const partnerQuestions = [
   {
+    question: "Who or what initiated this payment?",
+    what: "Initiation source tracking for human, workflow, API, or AI-agent actions, including the service or agent identity and instruction reference.",
+  },
+  {
     question: "Who approved this payment?",
     what: "Full approval chain with timestamps, authority level, and policy reference for every payment decision.",
   },
@@ -19,24 +23,24 @@ const partnerQuestions = [
     what: "OFAC/SDN screening results, EDD threshold checks, and counterparty verification — all with proof they ran before execution.",
   },
   {
-    question: "Can you prove this record hasn't been modified?",
-    what: "Tamper-evident digest chain where every record is cryptographically linked. Any modification breaks the chain.",
+    question: "Was the payment blocked, approved, or escalated?",
+    what: "Explicit enforcement mode and disposition tracking so reviewers can see whether a payment stayed advisory, was blocked, or was routed into human review.",
   },
   {
     question: "Which policy version was in force?",
     what: "Exact policy rules evaluated at decision time — threshold values, approval requirements, screening configurations.",
   },
   {
+    question: "Can this record be independently verified?",
+    what: "Digest proof returned with events and portable export files that can be verified by auditors, counterparties, or regulators.",
+  },
+  {
+    question: "How do you handle GDPR, erasure, and redaction?",
+    what: "PII separation, subject access exports, erasure workflow logging, and redacted export modes for non-compliance audiences.",
+  },
+  {
     question: "Can you export the evidence?",
-    what: "Structured case packets in JSON, CSV, or examiner-ready format with payment summary, policy checks, and integrity markers.",
-  },
-  {
-    question: "How do you handle sanctions screening?",
-    what: "Built-in OFAC SDN screening with timestamped results, list version tracking, and pluggable provider support for Chainalysis and OpenSanctions.",
-  },
-  {
-    question: "Who or what initiated this payment?",
-    what: "Initiation source tracking — whether human, workflow, API, or AI agent — with agent identity, instruction reference, and approval requirements.",
+    what: "Structured case packets in JSON, CSV, examiner-ready, partner diligence, incident review, or redacted formats.",
   },
 ];
 
@@ -46,6 +50,7 @@ const commonGaps = [
   "Screening evidence stored separately from payment records",
   "No structured export format — diligence responses built from screenshots",
   "Policy versions not captured at decision time, making retroactive review unreliable",
+  "No clear answer for right-to-erasure or redacted diligence exports",
 ];
 
 export default function BankReadinessPage() {
@@ -66,7 +71,8 @@ export default function BankReadinessPage() {
             <p className="mx-auto mt-4 max-w-xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
               Sponsor banks and enterprise partners ask hard questions about your
               payment controls. Kontext gives you examiner-ready answers backed
-              by cryptographic proof.
+              by enforcement records, reviewer-ready exports, and verifiable
+              proof.
             </p>
             <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Button
@@ -98,7 +104,7 @@ export default function BankReadinessPage() {
               What sponsor banks and partners usually ask
             </h2>
             <p className="mx-auto mt-3 max-w-lg text-[15px] text-[var(--ic-text-muted)]">
-              Every question maps to evidence Kontext captures automatically.
+              Every question maps to controls and evidence Kontext captures automatically.
             </p>
           </div>
 
@@ -132,7 +138,8 @@ export default function BankReadinessPage() {
             </h2>
             <p className="mx-auto mt-3 max-w-lg text-[15px] text-[var(--ic-text-muted)]">
               Every payment decision produces a structured evidence record with
-              policy checks, screening results, and cryptographic proof.
+              initiation source, enforcement state, policy checks, screening
+              results, export controls, and verification proof.
             </p>
           </div>
           <div className="mt-10">
@@ -189,6 +196,55 @@ export default function BankReadinessPage() {
               Learn more about AI agent controls
               <ArrowRight size={14} />
             </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-border bg-background">
+        <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
+              Governance + Verification
+            </span>
+            <h2 className="mt-4 font-serif text-2xl font-normal text-[var(--ic-text)] sm:text-3xl">
+              Evidence reviewers can verify, govern, and export
+            </h2>
+          </div>
+          <div className="mt-10 grid gap-6 md:grid-cols-2">
+            <div className="rounded-xl border border-[var(--ic-border)] bg-[hsl(var(--background))] p-6">
+              <h3 className="text-[15px] font-semibold text-[var(--ic-text)]">
+                Independent verification
+              </h3>
+              <ul className="mt-4 space-y-3">
+                {[
+                  "Digest proof returned with verification events",
+                  "Export files that third parties can validate independently",
+                  "Portable evidence across wallet, processor, and banking stacks",
+                ].map((item) => (
+                  <li key={item} className="flex items-start gap-2">
+                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[var(--ic-green)]" />
+                    <span className="text-[13px] text-[var(--ic-text-muted)]">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-xl border border-[var(--ic-border)] bg-[hsl(var(--background))] p-6">
+              <h3 className="text-[15px] font-semibold text-[var(--ic-text)]">
+                GDPR and data governance
+              </h3>
+              <ul className="mt-4 space-y-3">
+                {[
+                  "PII separation from the cryptographic audit record",
+                  "Subject access exports and redacted diligence packets",
+                  "Erasure workflow logging without breaking audit integrity",
+                ].map((item) => (
+                  <li key={item} className="flex items-start gap-2">
+                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[var(--ic-accent)]" />
+                    <span className="text-[13px] text-[var(--ic-text-muted)]">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </section>

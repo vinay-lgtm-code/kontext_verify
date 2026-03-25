@@ -10,25 +10,110 @@ import { ReviewerQuestions } from "@/components/reviewer-questions";
 import { IntegrationsStrip } from "@/components/integrations-strip";
 import { InitiationSourcesStrip } from "@/components/initiation-sources-strip";
 import {
-  ShieldCheck,
-  ScanEye,
-  FileSearch,
-  CreditCard,
-  Code,
   ArrowRight,
   Check,
-  Info,
+  CreditCard,
+  FileSearch,
+  Globe,
+  Lock,
+  ScanEye,
+  ShieldCheck,
+  Code,
 } from "lucide-react";
+
+const controlsCards = [
+  {
+    title: "Pre-send blocking",
+    desc: "Block or escalate non-compliant transfers before funds move. Start in advisory mode, graduate into enforced controls, and hold threshold exceptions for human review.",
+  },
+  {
+    title: "Sanctions and policy proof",
+    desc: "Show exactly which checks ran, when they ran, what list or policy version applied, and whether the payment stayed within bounds.",
+  },
+  {
+    title: "Approval lineage",
+    desc: "Capture who or what approved the action, under which authority, with support for workflow, API, and AI-initiated payment paths.",
+  },
+  {
+    title: "Tamper-evident integrity",
+    desc: "Return digest proof with events and preserve an independently verifiable record that is portable beyond your internal tooling.",
+  },
+  {
+    title: "Exportable review packets",
+    desc: "Generate examiner, diligence, incident review, and redacted exports without stitching together screenshots and logs after the fact.",
+  },
+];
+
+const deploymentModes = [
+  {
+    mode: "Advisory",
+    desc: "Capture the decision, explain what happened, and surface issues without interrupting the payment flow.",
+  },
+  {
+    mode: "Blocking",
+    desc: "Stop non-compliant payments automatically or route them into an explicit escalation path before execution.",
+  },
+  {
+    mode: "Human review",
+    desc: "Hold above-threshold or out-of-policy actions until an approver confirms the task and the evidence packet is complete.",
+  },
+];
+
+const governanceItems = [
+  {
+    title: "PII separation",
+    desc: "Keep sensitive payment and identity fields separate from the verifiable audit record so governance actions do not corrupt the evidence chain.",
+  },
+  {
+    title: "Subject access export",
+    desc: "Support SAR workflows with structured exports of the data associated with a subject or payment review.",
+  },
+  {
+    title: "Erasure workflow logging",
+    desc: "Log that a governance action occurred while preserving audit integrity and the proof that the request was handled.",
+  },
+  {
+    title: "Redacted exports",
+    desc: "Mask addresses and identifiers for partner diligence, internal distribution, and other non-compliance audiences.",
+  },
+];
+
+const verificationItems = [
+  "Digest proof returned with events, not hidden in a back office database",
+  "Export files can be independently verified by auditors, counterparties, and regulators",
+  "Evidence stays portable across processors, ledgers, wallet providers, and workflow systems",
+];
+
+const developerOutcomes = [
+  {
+    n: "1",
+    title: "Start without a platform migration",
+    desc: "Wrap an existing payment call once and begin in advisory mode with local defaults or auto-configuration.",
+  },
+  {
+    n: "2",
+    title: "Plug into your current stack",
+    desc: "Send evidence into OpenTelemetry, observability tools, screening providers, case systems, and approval workflows.",
+  },
+  {
+    n: "3",
+    title: "Promote controls over time",
+    desc: "Move from capture-only to blocking and human review once policy thresholds and escalation paths are ready.",
+  },
+  {
+    n: "4",
+    title: "Export proof, not raw logs",
+    desc: "Give compliance teams reviewer-ready packets while developers keep using SDK, CLI, API, and middleware entry points.",
+  },
+];
 
 export default function LandingPage() {
   return (
     <>
       <GridBackground />
 
-      {/* ===== HERO ===== */}
       <HeroSection />
 
-      {/* ===== COMPLIANCE GAP ===== */}
       <section className="relative px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <div className="text-center">
@@ -36,17 +121,17 @@ export default function LandingPage() {
               The Compliance Gap
             </span>
             <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
-              Payment infrastructure teams can move money — but can they prove why?
+              Payment infrastructure can move money. Review teams still need proof.
             </h2>
-            <p className="mx-auto mt-4 max-w-xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-              Reconstructing the decision trail for a single flagged payment
-              takes hours of log-diving across systems. Bank partners, auditors,
-              and enterprise customers are asking for more.
+            <p className="mx-auto mt-4 max-w-2xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
+              Compliance, risk, treasury, and audit teams are asked the same
+              questions every time a payment is reviewed: what checks ran, who
+              approved it, what policy applied, and whether the record can be
+              trusted. Raw logs do not answer those questions cleanly.
             </p>
           </div>
 
           <div className="mt-12 grid gap-6 md:grid-cols-2">
-            {/* Without Kontext */}
             <div className="rounded-lg border border-[var(--ic-red)]/15 bg-[var(--ic-surface)] p-8">
               <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--ic-red)]">
                 Without Kontext
@@ -56,11 +141,11 @@ export default function LandingPage() {
               </h3>
               <ul className="mt-6 space-y-4">
                 {[
-                  "Logs scattered across 4+ systems with no linkage",
-                  '"We think we checked" — no proof screening ran before funds moved',
-                  "Hours to reconstruct a single flagged payment",
-                  "No exportable evidence for examiner review",
-                  "No record of which system or person authorized the payment decision",
+                  "Logs scattered across processors, ledgers, and screening tools",
+                  "No proof that checks ran before funds moved",
+                  "Blocking and escalation behavior hidden inside application code",
+                  "No reviewer-ready export for partner diligence or internal audit",
+                  "Governance requests handled outside the audit trail",
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-3">
                     <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[var(--ic-red)]" />
@@ -70,21 +155,20 @@ export default function LandingPage() {
               </ul>
             </div>
 
-            {/* With Kontext */}
             <div className="rounded-lg border border-[var(--ic-green)]/15 bg-[var(--ic-surface)] p-8">
               <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--ic-green)]">
                 With Kontext
               </span>
               <h3 className="mt-4 text-lg font-semibold text-[var(--ic-text)]">
-                Structured evidence, examiner-ready in seconds
+                Controls enforced, evidence reviewer-ready
               </h3>
               <ul className="mt-6 space-y-4">
                 {[
-                  "Every payment decision linked in one evidence trail",
-                  "Proof that screening checks ran before funds moved",
-                  "Tamper-evident audit trail — every record cryptographically linked",
-                  "Export a complete case packet for any transaction",
-                  "Configurable policy controls for payment thresholds and approval workflows",
+                  "Approve, block, or escalate payment decisions with explicit enforcement modes",
+                  "Proof that sanctions and policy checks ran before execution",
+                  "Tamper-evident, independently verifiable evidence for every payment path",
+                  "Examiner, diligence, incident review, and redacted exports on demand",
+                  "Governance workflows for retention, SAR, and erasure without breaking audit integrity",
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-3">
                     <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[var(--ic-green)]" />
@@ -97,73 +181,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ===== WHY KONTEXT ===== */}
-      <section className="relative px-4 py-24 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-5xl">
-          <div className="text-center">
-            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
-              Why Kontext
-            </span>
-            <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
-              Built for a fragmented payment stack
-            </h2>
-            <p className="mx-auto mt-4 max-w-xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-              Stablecoin payments now span multiple chains, wallet providers,
-              payment APIs, and compliance models. Kontext gives teams one
-              verifiable system of record for payment intent, screening,
-              approvals, and execution, no matter which rail moves the money.
-            </p>
-          </div>
-
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
-            <div className="rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] p-8">
-              <h3 className="text-[16px] font-semibold text-[var(--ic-text)]">
-                One record across rails
-              </h3>
-              <p className="mt-2 text-[14px] leading-relaxed text-[var(--ic-text-muted)]">
-                Unify evidence from stablecoin rails, wallets, and fiat payment
-                systems into a single reviewer-ready trail.
-              </p>
-            </div>
-            <div className="rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] p-8">
-              <h3 className="text-[16px] font-semibold text-[var(--ic-text)]">
-                One source of truth across teams
-              </h3>
-              <p className="mt-2 text-[14px] leading-relaxed text-[var(--ic-text-muted)]">
-                Give engineering, compliance, and operations the same view of
-                what happened, who approved it, and what checks ran.
-              </p>
-            </div>
-            <div className="rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] p-8">
-              <h3 className="text-[16px] font-semibold text-[var(--ic-text)]">
-                One export for every review
-              </h3>
-              <p className="mt-2 text-[14px] leading-relaxed text-[var(--ic-text-muted)]">
-                Be ready for partner diligence, audits, launch reviews, and
-                incident investigations without stitching together logs by hand.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Link
-              href="#evidence-package"
-              className="inline-flex items-center gap-2 rounded-lg bg-[var(--ic-accent)] px-7 py-3.5 text-[14px] font-semibold text-white transition-colors hover:bg-[var(--ic-accent)]/90"
-            >
-              See the payment record
-              <ArrowRight size={14} />
-            </Link>
-            <Link
-              href="/contact"
-              className="inline-flex items-center gap-2 rounded-lg border border-[var(--ic-border)] px-7 py-3.5 text-[14px] font-semibold text-[var(--ic-text-muted)] transition-colors hover:bg-[var(--ic-surface-2)]"
-            >
-              Book a demo
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ===== COMPLIANCE COMMAND CENTER ===== */}
       <section className="relative bg-[var(--ic-surface-2)] px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <div className="text-center">
@@ -173,8 +190,9 @@ export default function LandingPage() {
             <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
               What your compliance team sees for every payment
             </h2>
-            <p className="mx-auto mt-4 max-w-lg text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-              One view across stablecoins, ACH, wire, card, and more — whether initiated by an agent, a human, or a scheduled system.
+            <p className="mx-auto mt-4 max-w-xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
+              One view across stablecoins, ACH, wire, card, and more, including
+              payments initiated by humans, workflows, APIs, and AI agents.
             </p>
           </div>
 
@@ -184,19 +202,19 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ===== EVIDENCE PACKAGE ===== */}
       <section id="evidence-package" className="relative px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
           <div className="text-center">
             <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
-              What Gets Captured
+              Sample Artifact
             </span>
             <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
               The evidence package for a single payment
             </h2>
-            <p className="mx-auto mt-4 max-w-lg text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-              Every programmable payment generates a structured compliance record
-              with full decision context — from initiation to execution to export.
+            <p className="mx-auto mt-4 max-w-2xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
+              Capture initiation source, enforcement mode, policy checks,
+              screening results, approval lineage, verification proof, and
+              export controls in one reviewer-ready record.
             </p>
           </div>
 
@@ -206,41 +224,30 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ===== AI-INITIATED PAYMENTS ===== */}
-      <section className="relative border-t border-[var(--ic-border)] px-4 py-24 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-5xl">
+      <section className="relative border-t border-[var(--ic-border)] bg-[var(--ic-surface-2)] px-4 py-24 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl">
           <div className="text-center">
             <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
-              AI-Initiated Payments
+              Controls + Evidence
             </span>
             <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
-              Why AI-initiated payments need more evidence
+              Built to enforce and prove payment controls
             </h2>
-            <p className="mx-auto mt-4 max-w-xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-              When software makes payment decisions faster, reviewers need better proof — not less.
+            <p className="mx-auto mt-4 max-w-2xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
+              Kontext is not just a logging layer. It sits in the decision flow
+              to evaluate payments, preserve proof, and package the record for
+              reviewer-facing workflows.
             </p>
           </div>
 
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
-            {[
-              {
-                title: "Autonomy increases speed",
-                desc: "AI agents and workflows can initiate or recommend payment actions faster than manual finance operations.",
-              },
-              {
-                title: "Review pressure increases too",
-                desc: "Risk, compliance, and partner reviewers still need to know what checks ran, who approved the action, and what policy was in force.",
-              },
-              {
-                title: "Logs are not enough",
-                desc: "Without structured payment evidence, teams end up reconstructing prompts, approvals, transactions, and exceptions from scattered systems after the fact.",
-              },
-            ].map((card) => (
+          <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-5">
+            {controlsCards.map((card) => (
               <div
                 key={card.title}
-                className="rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] p-6"
+                className="rounded-lg border border-[var(--ic-border)] bg-[hsl(var(--background))] p-6"
               >
-                <h3 className="text-[15px] font-semibold text-[var(--ic-text)]">
+                <ShieldCheck size={20} className="text-[var(--ic-accent)]" />
+                <h3 className="mt-3 text-[15px] font-semibold text-[var(--ic-text)]">
                   {card.title}
                 </h3>
                 <p className="mt-2 text-[13px] leading-relaxed text-[var(--ic-text-muted)]">
@@ -249,23 +256,45 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
 
-          <div className="mt-8 text-center">
-            <Link
-              href="/sample-ai-initiated-payment-packet"
-              className="inline-flex items-center gap-2 text-sm font-medium text-[var(--ic-accent)] transition-colors hover:text-[var(--ic-accent)]/80"
-            >
-              See an AI-initiated payment packet
-              <ArrowRight size={14} />
-            </Link>
+      <section className="relative border-t border-[var(--ic-border)] px-4 py-24 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl">
+          <div className="text-center">
+            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
+              Deployment Modes
+            </span>
+            <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
+              Start with visibility, grow into enforcement
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
+              Teams can adopt Kontext without replatforming, then move from
+              evidence capture to blocking and approval workflows as controls
+              mature.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
+            {deploymentModes.map((item) => (
+              <div
+                key={item.mode}
+                className="rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] p-6"
+              >
+                <h3 className="text-[16px] font-semibold text-[var(--ic-text)]">
+                  {item.mode}
+                </h3>
+                <p className="mt-3 text-[14px] leading-relaxed text-[var(--ic-text-muted)]">
+                  {item.desc}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ===== INITIATION SOURCES ===== */}
       <InitiationSourcesStrip />
 
-      {/* ===== BUYER ROLES ===== */}
       <section className="relative border-t border-[var(--ic-border)] bg-[var(--ic-surface-2)] px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <div className="text-center">
@@ -273,10 +302,11 @@ export default function LandingPage() {
               Who It Serves
             </span>
             <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
-              Built for the teams that own compliance liability
+              Built for teams that carry review and control liability
             </h2>
-            <p className="mx-auto mt-4 max-w-lg text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-              From the compliance team running daily reviews to the CEO presenting controls to the board.
+            <p className="mx-auto mt-4 max-w-xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
+              Compliance comes first, but treasury, audit, and engineering all
+              need the same defensible record.
             </p>
           </div>
 
@@ -285,27 +315,27 @@ export default function LandingPage() {
               {
                 icon: ShieldCheck,
                 title: "Compliance",
-                desc: "Prove every check ran. Export audit-ready evidence for examiner review and bank partner due diligence.",
+                desc: "Prove every check ran and export reviewer-ready packets for examiners, sponsor banks, and enterprise diligence teams.",
               },
               {
                 icon: ScanEye,
-                title: "Risk & Fraud",
-                desc: "Anomaly detection flags unusual patterns before they become incidents.",
+                title: "Risk",
+                desc: "See when controls trigger, what got blocked or escalated, and where risky payment patterns need attention.",
+              },
+              {
+                icon: CreditCard,
+                title: "Treasury & Ops",
+                desc: "Operate across rails with clear approval requirements, enforcement states, and exception workflows.",
               },
               {
                 icon: FileSearch,
                 title: "Internal Audit",
-                desc: "Tamper-evident audit trail proves no records were altered after the fact.",
-              },
-              {
-                icon: CreditCard,
-                title: "Payments Product",
-                desc: "Add compliance controls without rebuilding your payment stack. Works across stablecoin, card, and banking rails.",
+                desc: "Verify records were not altered, confirm the exact policy version applied, and review governance actions with context.",
               },
               {
                 icon: Code,
                 title: "Platform Engineering",
-                desc: "One integration point. Captures initiation source, agent identity, and approval lineage — whether payments are triggered by AI agents, orchestration systems, or direct API calls.",
+                desc: "One integration point into existing payment paths, with evidence exported to compliance teams instead of rebuilt from logs.",
               },
             ].map((role) => (
               <div
@@ -325,185 +355,28 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ===== REVIEWER QUESTIONS ===== */}
       <ReviewerQuestions />
 
-      {/* ===== ASSESSMENT ===== */}
-      <AssessmentSection />
-
-      {/* ===== AUDIT / INCIDENT ===== */}
-      <section id="solutions" className="relative border-t border-[var(--ic-border)] bg-[var(--ic-surface-2)] px-4 py-24 sm:px-6 lg:px-8">
+      <section className="relative border-t border-[var(--ic-border)] bg-[var(--ic-surface-2)] px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <div className="text-center">
             <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
-              Audit &amp; Incident Response
+              Independent Verification
             </span>
             <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
-              When someone asks &ldquo;what happened?&rdquo;
+              Proof that travels beyond your internal systems
             </h2>
-            <p className="mx-auto mt-4 max-w-lg text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-              When audit, compliance, or a bank partner asks what happened with a payment, Kontext gives you:
-            </p>
           </div>
 
-          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              { title: "Complete event trail", desc: "Every action from payment initiation through final disposition, linked in sequence." },
-              { title: "Exact decision inputs", desc: "The data the system had at decision time — amounts, counterparties, thresholds, context." },
-              { title: "Policy results at the time", desc: "Which screening checks ran, what rules applied, and whether they passed or flagged." },
-              { title: "Approval history", desc: "Who or what approved, when, and under which authority — human or automated." },
-              { title: "Linked execution evidence", desc: "Transaction hashes, payment references, and settlement confirmations tied to the decision." },
-              { title: "Exportable case packet", desc: "One-click export of the full evidence package for examiner review or partner diligence." },
-            ].map((item) => (
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
+            {verificationItems.map((item) => (
               <div
-                key={item.title}
+                key={item}
                 className="rounded-lg border border-[var(--ic-border)] bg-[hsl(var(--background))] p-6"
               >
-                <h3 className="text-[15px] font-semibold text-[var(--ic-text)]">{item.title}</h3>
-                <p className="mt-2 text-[13px] leading-relaxed text-[var(--ic-text-muted)]">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ===== ARCHITECTURE ===== */}
-      <section className="relative px-4 py-24 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-5xl">
-          <div className="text-center">
-            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
-              Where Kontext Fits
-            </span>
-            <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
-              An evidence layer across your payment stack
-            </h2>
-          </div>
-
-          <div className="mt-12 flex flex-col items-center gap-4 md:flex-row md:gap-0">
-            {/* Box 1 — Your Stack */}
-            <div className="flex-1 rounded-xl border border-[var(--ic-border)] bg-[var(--ic-surface)] p-7">
-              <h3 className="text-base font-semibold text-[var(--ic-text)]">Your Payment Stack</h3>
-              <div className="my-4 h-px bg-[var(--ic-border)]" />
-              <ul className="space-y-2 text-[13px] text-[var(--ic-text-muted)]">
-                <li>Payment Agents &amp; Automation</li>
-                <li>Wallet APIs</li>
-                <li>Payment Orchestration</li>
-                <li>Card Platforms</li>
-                <li>Banking APIs</li>
-                <li>Stablecoin Rails</li>
-              </ul>
-            </div>
-
-            <div className="flex-shrink-0 px-3 text-[var(--ic-text-dim)]">
-              <ArrowRight size={24} className="hidden md:block" />
-              <ArrowRight size={24} className="rotate-90 md:hidden" />
-            </div>
-
-            {/* Box 2 — Kontext */}
-            <div className="flex-1 rounded-xl border border-[var(--ic-accent)]/25 bg-[var(--ic-accent-dim)] p-7">
-              <h3 className="text-base font-semibold text-[var(--ic-accent)]">Kontext</h3>
-              <span className="mt-1 font-mono text-[10px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
-                Evidence Layer
-              </span>
-              <div className="my-4 h-px bg-[var(--ic-accent)]/10" />
-              <ul className="space-y-2 text-[13px] text-[var(--ic-text-muted)]">
-                <li>OFAC Screening</li>
-                <li>Decision Context Capture</li>
-                <li>Evidence Logging</li>
-                <li>Tamper-Evident Chain (Patented)</li>
-                <li>Audit Export</li>
-              </ul>
-            </div>
-
-            <div className="flex-shrink-0 px-3 text-[var(--ic-text-dim)]">
-              <ArrowRight size={24} className="hidden md:block" />
-              <ArrowRight size={24} className="rotate-90 md:hidden" />
-            </div>
-
-            {/* Box 3 — Evidence Store */}
-            <div className="flex-1 rounded-xl border border-[var(--ic-border)] bg-[var(--ic-surface)] p-7">
-              <h3 className="text-base font-semibold text-[var(--ic-text)]">Evidence Store</h3>
-              <div className="my-4 h-px bg-[var(--ic-border)]" />
-              <ul className="space-y-2 text-[13px] text-[var(--ic-text-muted)]">
-                <li>Audit Trails</li>
-                <li>Case Packets</li>
-                <li>Compliance Reports</li>
-                <li>GRC / SIEM Export</li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Green note */}
-          <div className="mt-8 flex justify-center">
-            <div className="inline-flex items-center gap-2 rounded-md bg-[var(--ic-green-dim)] px-5 py-2.5">
-              <Info size={14} className="text-[var(--ic-green)]" />
-              <span className="text-[13px] font-medium text-[var(--ic-green)]">
-                Kontext doesn&apos;t touch funds. Read-only evidence capture.
-              </span>
-            </div>
-          </div>
-
-          <p className="mt-6 text-center text-[13px] text-[var(--ic-text-dim)]">
-            Kontext doesn&apos;t replace your sanctions vendor, case management system, payment processor, ledger, or wallet provider.
-            It sits across them as the evidence layer.
-          </p>
-        </div>
-      </section>
-
-      {/* ===== INTEGRATIONS STRIP ===== */}
-      <IntegrationsStrip />
-
-      {/* ===== WHAT KONTEXT IS NOT ===== */}
-      <section className="relative px-4 py-24 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-5xl">
-          <div className="text-center">
-            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
-              What We Are
-            </span>
-            <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
-              Kontext is the evidence layer, not a replacement
-            </h2>
-            <p className="mx-auto mt-4 max-w-xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-              Kontext is not a fraud engine, banking core, or payment processor.
-              It is the evidence and controls layer that explains payment
-              decisions across your stack.
-            </p>
-          </div>
-
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
-            {[
-              {
-                label: "Payment Processor",
-                does: "Moves money",
-                color: "var(--ic-text-dim)",
-              },
-              {
-                label: "Fraud Tool",
-                does: "Scores risk",
-                color: "var(--ic-text-dim)",
-              },
-              {
-                label: "Kontext",
-                does: "Proves the decision context",
-                color: "var(--ic-accent)",
-              },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className={`rounded-lg border p-6 text-center ${
-                  item.label === "Kontext"
-                    ? "border-[var(--ic-accent)]/25 bg-[var(--ic-accent-dim)]"
-                    : "border-[var(--ic-border)] bg-[var(--ic-surface)]"
-                }`}
-              >
-                <h3
-                  className="text-base font-semibold"
-                  style={{ color: item.color }}
-                >
-                  {item.label}
-                </h3>
-                <p className="mt-2 text-[15px] text-[var(--ic-text-muted)]">
-                  {item.does}
+                <Lock size={18} className="text-[var(--ic-accent)]" />
+                <p className="mt-3 text-[14px] leading-relaxed text-[var(--ic-text-muted)]">
+                  {item}
                 </p>
               </div>
             ))}
@@ -511,205 +384,207 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ===== PRICING ===== */}
+      <section className="relative border-t border-[var(--ic-border)] px-4 py-24 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl">
+          <div className="text-center">
+            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
+              Data Governance
+            </span>
+            <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
+              Retention, redaction, and erasure without breaking audit integrity
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
+              Built for SAR and right-to-erasure workflows, while preserving the
+              evidence that governance actions happened when they should have.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-6 md:grid-cols-2">
+            {governanceItems.map((item) => (
+              <div
+                key={item.title}
+                className="rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] p-6"
+              >
+                <Globe size={18} className="text-[var(--ic-accent)]" />
+                <h3 className="mt-3 text-[15px] font-semibold text-[var(--ic-text)]">
+                  {item.title}
+                </h3>
+                <p className="mt-2 text-[13px] leading-relaxed text-[var(--ic-text-muted)]">
+                  {item.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <AssessmentSection />
+
       <section className="relative border-t border-[var(--ic-border)] bg-[var(--ic-surface-2)] px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <div className="text-center">
             <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
-              Pricing
+              Where Kontext Fits
             </span>
             <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
-              Priced like a controls product, not a logging meter
+              An evidence and controls layer across your payment stack
             </h2>
-            <p className="mx-auto mt-4 max-w-lg text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-              Annual platform fee based on payment decisions monitored — the unit
-              your compliance and risk teams already think in.
-            </p>
           </div>
 
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
-            {/* Starter */}
-            <div className="rounded-xl border border-[var(--ic-border)] bg-[hsl(var(--background))] p-8">
-              <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--ic-text-dim)]">Starter</span>
-              <p className="mt-3 text-sm font-medium text-[var(--ic-text)]">
-                For teams preparing for launch or first partner review
-              </p>
-              <div className="my-6 h-px bg-[var(--ic-border)]" />
-              <ul className="space-y-3">
-                {[
-                  "1 production environment",
-                  "Capped monthly payment volume",
-                  "OFAC screening (built-in SDN)",
-                  "Tamper-evident audit trail",
-                  "JSON + CSV audit export",
-                  "Standard evidence retention",
-                ].map((f) => (
-                  <li key={f} className="flex items-center gap-2">
-                    <Check size={14} className="text-[var(--ic-green)]" />
-                    <span className="text-[13px] text-[var(--ic-text)]">{f}</span>
-                  </li>
-                ))}
+          <div className="mt-12 flex flex-col items-center gap-4 md:flex-row md:gap-0">
+            <div className="flex-1 rounded-xl border border-[var(--ic-border)] bg-[var(--ic-surface)] p-7">
+              <h3 className="text-base font-semibold text-[var(--ic-text)]">Your Payment Stack</h3>
+              <div className="my-4 h-px bg-[var(--ic-border)]" />
+              <ul className="space-y-2 text-[13px] text-[var(--ic-text-muted)]">
+                <li>Payment agents and orchestration</li>
+                <li>Wallet APIs and ledgers</li>
+                <li>Processors and banking rails</li>
+                <li>Sanctions and risk vendors</li>
+                <li>Case management and approval systems</li>
               </ul>
-              <Link
-                href="/contact"
-                className="mt-8 flex w-full items-center justify-center rounded-lg border border-[var(--ic-border)] py-2.5 text-sm font-medium text-[var(--ic-text-muted)] transition-colors hover:bg-[var(--ic-surface)]"
-              >
-                Book a demo
-              </Link>
             </div>
 
-            {/* Growth */}
-            <div className="rounded-xl border border-[var(--ic-accent)]/40 bg-[hsl(var(--background))] p-8 relative">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <span className="rounded-full bg-[var(--ic-accent)] px-3 py-1 font-mono text-[9px] font-bold uppercase tracking-wider text-white">
-                  Most Popular
-                </span>
-              </div>
-              <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--ic-accent)]">Growth</span>
-              <p className="mt-3 text-sm font-medium text-[var(--ic-text)]">
-                For startups running live payment operations with formal controls
-              </p>
-              <div className="my-6 h-px bg-[var(--ic-accent)]/10" />
-              <ul className="space-y-3">
-                {[
-                  "Everything in Starter",
-                  "Higher monthly payment volume",
-                  "Multiple environments + integrations",
-                  "Role-based access (compliance, risk, audit)",
-                  "Advanced alerting + webhooks",
-                  "SAR/CTR report templates",
-                  "Multi-chain evidence trails",
-                ].map((f) => (
-                  <li key={f} className="flex items-center gap-2">
-                    <Check size={14} className="text-[var(--ic-green)]" />
-                    <span className="text-[13px] text-[var(--ic-text)]">{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href="/contact"
-                className="mt-8 flex w-full items-center justify-center rounded-lg bg-[var(--ic-accent)] py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--ic-accent)]/90"
-              >
-                Book a demo
-              </Link>
+            <div className="flex-shrink-0 px-3 text-[var(--ic-text-dim)]">
+              <ArrowRight size={24} className="hidden md:block" />
+              <ArrowRight size={24} className="rotate-90 md:hidden" />
             </div>
 
-            {/* Enterprise */}
-            <div className="rounded-xl border border-[var(--ic-border)] bg-[hsl(var(--background))] p-8">
-              <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--ic-text-dim)]">Enterprise</span>
-              <p className="mt-3 text-sm font-medium text-[var(--ic-text)]">
-                For multi-rail teams with audit, bank, and enterprise diligence needs
-              </p>
-              <div className="my-6 h-px bg-[var(--ic-border)]" />
-              <ul className="space-y-3">
-                {[
-                  "Everything in Growth",
-                  "Custom volume bands",
-                  "Extended evidence retention",
-                  "Custom policy + controls mapping",
-                  "Case management / GRC integrations",
-                  "Security review + procurement terms",
-                  "Dedicated support + SLAs",
-                ].map((f) => (
-                  <li key={f} className="flex items-center gap-2">
-                    <Check size={14} className="text-[var(--ic-green)]" />
-                    <span className="text-[13px] text-[var(--ic-text)]">{f}</span>
-                  </li>
-                ))}
+            <div className="flex-1 rounded-xl border border-[var(--ic-accent)]/25 bg-[var(--ic-accent-dim)] p-7">
+              <h3 className="text-base font-semibold text-[var(--ic-accent)]">Kontext</h3>
+              <span className="mt-1 font-mono text-[10px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
+                Controls + Evidence
+              </span>
+              <div className="my-4 h-px bg-[var(--ic-accent)]/10" />
+              <ul className="space-y-2 text-[13px] text-[var(--ic-text-muted)]">
+                <li>Policy evaluation and enforcement modes</li>
+                <li>Sanctions and decision context capture</li>
+                <li>Approval and escalation lineage</li>
+                <li>Verifiable audit proof and exports</li>
               </ul>
-              <Link
-                href="/contact"
-                className="mt-8 flex w-full items-center justify-center rounded-lg border border-[var(--ic-border)] py-2.5 text-sm font-medium text-[var(--ic-text-muted)] transition-colors hover:bg-[var(--ic-surface)]"
-              >
-                Contact sales
-              </Link>
+            </div>
+
+            <div className="flex-shrink-0 px-3 text-[var(--ic-text-dim)]">
+              <ArrowRight size={24} className="hidden md:block" />
+              <ArrowRight size={24} className="rotate-90 md:hidden" />
+            </div>
+
+            <div className="flex-1 rounded-xl border border-[var(--ic-border)] bg-[var(--ic-surface)] p-7">
+              <h3 className="text-base font-semibold text-[var(--ic-text)]">Reviewer Outputs</h3>
+              <div className="my-4 h-px bg-[var(--ic-border)]" />
+              <ul className="space-y-2 text-[13px] text-[var(--ic-text-muted)]">
+                <li>Examiner packets</li>
+                <li>Partner diligence exports</li>
+                <li>Incident review files</li>
+                <li>Redacted evidence bundles</li>
+              </ul>
             </div>
           </div>
 
-          {/* ROI strip */}
-          <div className="mt-12 rounded-lg border border-[var(--ic-border)] bg-[hsl(var(--background))] p-8">
-            <p className="text-center text-sm font-semibold text-[var(--ic-text)]">
-              Why teams invest before they feel &ldquo;big enough&rdquo;
-            </p>
-            <div className="mt-6 grid gap-6 md:grid-cols-2">
-              <div>
-                <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--ic-red)]">Before Kontext</span>
-                <ul className="mt-3 space-y-2">
-                  {[
-                    "Launch reviews stall on missing evidence",
-                    "Hours reconstructing each incident",
-                    "Spreadsheets and screenshots for diligence",
-                    "Manual responses to partner questionnaires",
-                  ].map((item) => (
-                    <li key={item} className="flex items-start gap-2">
-                      <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[var(--ic-red)]" />
-                      <span className="text-[13px] text-[var(--ic-text-muted)]">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--ic-green)]">With Kontext</span>
-                <ul className="mt-3 space-y-2">
-                  {[
-                    "Launch reviews close with structured evidence packets",
-                    "Incident reconstruction in seconds, not hours",
-                    "Examiner-ready exports replace ad hoc collection",
-                    "Diligence responses backed by verifiable evidence",
-                  ].map((item) => (
-                    <li key={item} className="flex items-start gap-2">
-                      <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[var(--ic-green)]" />
-                      <span className="text-[13px] text-[var(--ic-text-muted)]">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+          <div className="mt-8 flex justify-center">
+            <div className="inline-flex items-center gap-2 rounded-md bg-[var(--ic-green-dim)] px-5 py-2.5">
+              <Check size={14} className="text-[var(--ic-green)]" />
+              <span className="text-[13px] font-medium text-[var(--ic-green)]">
+                Kontext does not custody or move funds. It evaluates, proves,
+                and exports the controls around the payment decision.
+              </span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ===== FOR DEVELOPERS ===== */}
-      <section id="product" className="relative px-4 py-24 sm:px-6 lg:px-8">
+      <IntegrationsStrip />
+
+      <section className="relative border-t border-[var(--ic-border)] px-4 py-24 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl">
+          <div className="text-center">
+            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
+              Low-Friction Adoption
+            </span>
+            <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
+              Start without a platform migration
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
+              Use one integration point, auto-configuration, and middleware
+              patterns to fit Kontext around existing payment paths before you
+              expand into tighter controls.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-6 md:grid-cols-2">
+            {developerOutcomes.map((item) => (
+              <div key={item.n} className="flex gap-4 rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] p-6">
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-[var(--ic-accent-dim)]">
+                  <span className="font-mono text-xs font-semibold text-[var(--ic-accent)]">{item.n}</span>
+                </div>
+                <div>
+                  <p className="text-[15px] font-medium text-[var(--ic-text)]">{item.title}</p>
+                  <p className="mt-1 text-[13px] leading-relaxed text-[var(--ic-text-muted)]">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="product" className="relative border-t border-[var(--ic-border)] px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <div className="text-center">
             <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
               For Developers
             </span>
             <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
-              One integration. Full evidence trail.
+              One integration for controls, evidence, and exports
             </h2>
-            <p className="mx-auto mt-4 max-w-lg text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-              Wrap your payment call once — whether it&apos;s triggered by an autonomous agent, an orchestration engine, or a direct API call. Kontext records the decision context
-              around every transfer or payout.
+            <p className="mx-auto mt-4 max-w-2xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
+              Developer implementation comes after the business case: wrap the
+              payment path once, start in advisory mode, then promote flows into
+              blocking and human review.
             </p>
           </div>
 
           <div className="mt-12 grid items-start gap-12 lg:grid-cols-2">
-            {/* Code block */}
             <CodeBlock
-              code={`const result = await ctx.verify({
+              code={`const ctx = Kontext.auto();
+
+const result = await ctx.verify({
   txHash: transfer.hash,
-  chain: 'base',
-  amount: '28000',
-  token: 'USDC',
+  chain: "base",
+  amount: "28000",
+  token: "USDC",
   from: sender,
   to: recipient,
-  agentId: 'treasury-v2'
+  agentId: "treasury-v2",
+  enforcement: "blocking",
+  onBlock: "route_to_human_review"
 });`}
               filename="payment-handler.ts"
             />
 
-            {/* Outcomes */}
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-[var(--ic-text)]">
                 What happens automatically
               </h3>
               {[
-                { n: "1", title: "OFAC sanctions screening runs", desc: "Against latest SDN list, result recorded with timestamp" },
-                { n: "2", title: "Decision context captured with cryptographic proof", desc: "SHA-256 hash of payment purpose, scope, and limits" },
-                { n: "3", title: "Evidence joins tamper-evident chain", desc: "Each event linked cryptographically to the previous" },
-                { n: "4", title: "Audit-ready export available", desc: "JSON or CSV case packet for any transaction" },
+                {
+                  n: "1",
+                  title: "Policy and sanctions checks run",
+                  desc: "Results are timestamped, versioned, and tied to the payment before execution.",
+                },
+                {
+                  n: "2",
+                  title: "Enforcement mode is recorded",
+                  desc: "Advisory, blocking, and human review paths remain visible to reviewers later.",
+                },
+                {
+                  n: "3",
+                  title: "Proof is returned with the event",
+                  desc: "Digest proof and trace context can travel into observability, audit, and diligence workflows.",
+                },
+                {
+                  n: "4",
+                  title: "Export paths stay ready",
+                  desc: "Examiner, incident, diligence, and redacted exports are available without rebuilding the trail.",
+                },
               ].map((item) => (
                 <div key={item.n} className="flex gap-3.5">
                   <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-[var(--ic-accent-dim)]">
@@ -726,7 +601,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ===== DEVELOPER INTEGRATION ===== */}
       <section className="relative border-t border-[var(--ic-border)] bg-[var(--ic-surface-2)] px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <div className="text-center">
@@ -734,10 +608,12 @@ export default function LandingPage() {
               Developer Integration
             </span>
             <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
-              SDK, CLI, or API — however your team builds
+              SDK, CLI, API, and middleware entry points
             </h2>
             <p className="mx-auto mt-4 max-w-lg text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-              Developer implementation: SDK wrap, CLI commands, or direct API integration.
+              Developers can implement with the SDK, CLI, direct API calls, or
+              middleware while compliance teams stay focused on the evidence
+              outcome.
             </p>
           </div>
 
@@ -747,27 +623,87 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ===== FINAL CTA ===== */}
+      <section className="relative border-t border-[var(--ic-border)] bg-[var(--ic-surface-2)] px-4 py-24 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl">
+          <div className="text-center">
+            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
+              Pricing
+            </span>
+            <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
+              Controls maturity aligned to your operating stage
+            </h2>
+            <p className="mx-auto mt-4 max-w-lg text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
+              Choose launch readiness, live operations controls, or enterprise
+              diligence depth. Developers can implement fast, but the buyer is
+              still the team accountable for payment controls.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
+            {[
+              {
+                name: "Starter",
+                desc: "Launch readiness",
+                items: ["Advisory mode", "Standard evidence retention", "JSON + CSV exports", "Human / API / workflow initiation tracking"],
+              },
+              {
+                name: "Growth",
+                desc: "Live operations with formal controls",
+                items: ["Blocking and escalation", "Examiner packet export", "Approval workflows", "OpenTelemetry and integrations"],
+              },
+              {
+                name: "Enterprise",
+                desc: "Audit, diligence, and governance depth",
+                items: ["Partner diligence exports", "Third-party verification", "GDPR / SAR support", "GRC and case system integration"],
+              },
+            ].map((plan) => (
+              <div key={plan.name} className="rounded-xl border border-[var(--ic-border)] bg-[hsl(var(--background))] p-8">
+                <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--ic-text-dim)]">
+                  {plan.name}
+                </span>
+                <p className="mt-3 text-sm font-medium text-[var(--ic-text)]">{plan.desc}</p>
+                <ul className="mt-6 space-y-3">
+                  {plan.items.map((item) => (
+                    <li key={item} className="flex items-center gap-2">
+                      <Check size={14} className="text-[var(--ic-green)]" />
+                      <span className="text-[13px] text-[var(--ic-text)]">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/pricing"
+                  className="mt-8 flex w-full items-center justify-center rounded-lg border border-[var(--ic-border)] py-2.5 text-sm font-medium text-[var(--ic-text-muted)] transition-colors hover:bg-[var(--ic-surface)]"
+                >
+                  View pricing
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="relative px-4 py-28 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl lg:text-5xl">
-            Programmable payments need evidence. Autonomous payments need even more.
+            Explain every payment decision before reviewers ask.
           </h2>
-          <p className="mx-auto mt-6 max-w-md text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-            Kontext helps teams explain every payment decision — including actions initiated by AI agents, workflows, and APIs.
+          <p className="mx-auto mt-6 max-w-lg text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
+            Kontext helps teams prove and enforce payment controls across
+            programmable and AI-influenced payment flows without rebuilding the
+            rest of the stack.
           </p>
           <div className="mt-8 flex items-center justify-center gap-4">
             <a
               href="#evidence-package"
               className="inline-flex items-center rounded-lg bg-[var(--ic-accent)] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--ic-accent)]/90"
             >
-              See sample packet
+              See a sample case packet
             </a>
             <Link
-              href="/ai-agents"
+              href="/assessment"
               className="inline-flex items-center rounded-lg border border-[var(--ic-border)] px-6 py-3 text-sm font-medium text-[var(--ic-text-muted)] transition-colors hover:bg-[var(--ic-surface)] hover:text-[var(--ic-text)]"
             >
-              Explore AI agents use case
+              Run a readiness assessment
             </Link>
           </div>
         </div>

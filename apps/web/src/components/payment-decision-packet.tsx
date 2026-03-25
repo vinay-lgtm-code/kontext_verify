@@ -78,7 +78,7 @@ export function PaymentDecisionPacket({
           <span className="font-mono text-[9px] font-semibold uppercase tracking-widest text-[var(--ic-text-dim)]">
             Payment Summary
           </span>
-          <div className="mt-2 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="mt-2 grid grid-cols-2 gap-4 sm:grid-cols-5">
             <div>
               <p className="text-[11px] text-[var(--ic-text-dim)]">Amount</p>
               <p className="text-[15px] font-semibold text-[var(--ic-text)]">
@@ -103,6 +103,14 @@ export function PaymentDecisionPacket({
               </p>
               <p className="text-[15px] font-medium text-[var(--ic-text)]">
                 2026-03-21 09:14 UTC
+              </p>
+            </div>
+            <div>
+              <p className="text-[11px] text-[var(--ic-text-dim)]">
+                Enforcement
+              </p>
+              <p className="text-[15px] font-medium text-[var(--ic-text)]">
+                Blocking mode
               </p>
             </div>
           </div>
@@ -163,6 +171,12 @@ export function PaymentDecisionPacket({
               </span>
               <StatusBadge status="pass" label="Within limit" />
             </div>
+            <div className="flex items-center justify-between rounded-md border border-[var(--ic-border)] bg-[hsl(var(--background))] px-3 py-2">
+              <span className="text-[12px] text-[var(--ic-text-muted)]">
+                Block or escalate outside policy bounds
+              </span>
+              <StatusBadge status="pass" label="Escalation ready" />
+            </div>
           </div>
         </div>
 
@@ -181,6 +195,32 @@ export function PaymentDecisionPacket({
             <p className="mt-1 font-mono text-[10px] text-[var(--ic-text-dim)]">
               SDN v2026.03.21 · Checked at 09:14:02 UTC · 38ms
             </p>
+          </div>
+        </div>
+
+        <div>
+          <span className="font-mono text-[9px] font-semibold uppercase tracking-widest text-[var(--ic-text-dim)]">
+            Decision Outcome
+          </span>
+          <div className="mt-2 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-md border border-[var(--ic-border)] bg-[hsl(var(--background))] px-3 py-2">
+              <p className="text-[11px] text-[var(--ic-text-dim)]">Disposition</p>
+              <p className="text-[13px] font-medium text-[var(--ic-text)]">
+                Approved after dual review
+              </p>
+            </div>
+            <div className="rounded-md border border-[var(--ic-border)] bg-[hsl(var(--background))] px-3 py-2">
+              <p className="text-[11px] text-[var(--ic-text-dim)]">Fallback</p>
+              <p className="text-[13px] font-medium text-[var(--ic-text)]">
+                Blocked if approval missing
+              </p>
+            </div>
+            <div className="rounded-md border border-[var(--ic-border)] bg-[hsl(var(--background))] px-3 py-2">
+              <p className="text-[11px] text-[var(--ic-text-dim)]">Policy version</p>
+              <p className="font-mono text-[12px] font-medium text-[var(--ic-text)]">
+                payout-policy@2026.03
+              </p>
+            </div>
           </div>
         </div>
 
@@ -222,10 +262,10 @@ export function PaymentDecisionPacket({
               <div className="mt-2 grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-[11px] text-[var(--ic-text-dim)]">
-                    Digest chain position
+                    Verification proof
                   </p>
                   <p className="text-[13px] font-medium text-[var(--ic-text)]">
-                    #2,341 — chain verified
+                    digest #2,341 returned with event
                   </p>
                 </div>
                 <div>
@@ -238,13 +278,39 @@ export function PaymentDecisionPacket({
                 </div>
               </div>
             </div>
+
+            <div>
+              <span className="font-mono text-[9px] font-semibold uppercase tracking-widest text-[var(--ic-text-dim)]">
+                Export Controls
+              </span>
+              <div className="mt-2 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-md border border-[var(--ic-border)] bg-[hsl(var(--background))] px-3 py-2">
+                  <p className="text-[11px] text-[var(--ic-text-dim)]">Packet types</p>
+                  <p className="text-[13px] font-medium text-[var(--ic-text)]">
+                    Examiner, diligence, incident
+                  </p>
+                </div>
+                <div className="rounded-md border border-[var(--ic-border)] bg-[hsl(var(--background))] px-3 py-2">
+                  <p className="text-[11px] text-[var(--ic-text-dim)]">Redaction mode</p>
+                  <p className="text-[13px] font-medium text-[var(--ic-text)]">
+                    First6...last4 masking
+                  </p>
+                </div>
+                <div className="rounded-md border border-[var(--ic-border)] bg-[hsl(var(--background))] px-3 py-2">
+                  <p className="text-[11px] text-[var(--ic-text-dim)]">SAR / erasure log</p>
+                  <p className="text-[13px] font-medium text-[var(--ic-text)]">
+                    Preserved in audit trail
+                  </p>
+                </div>
+              </div>
+            </div>
           </>
         )}
       </div>
 
       {/* Metadata chips */}
       <div className="flex flex-wrap gap-2 border-t border-[var(--ic-border)] px-6 py-3">
-        {["immutable log", "policy version", "screened", "initiation source", "exportable"].map(
+        {["blocking mode", "screened", "policy version", "proof returned", "redaction ready", "initiation source", "exportable"].map(
           (chip) => (
             <span
               key={chip}
@@ -263,6 +329,7 @@ export function PaymentDecisionPacket({
             "Examiner packet",
             "Partner diligence",
             "Incident review",
+            "Redacted export",
           ].map((label) => (
             <button
               key={label}

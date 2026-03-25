@@ -56,6 +56,7 @@ export default function AIAgentsPage() {
               Controls and evidence for AI agents moving money
             </h1>
             <p className="mt-4 text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
+              AI-initiated payments create more review burden, not less.
               Kontext helps teams prove what an AI agent was allowed to do, what
               checks ran before execution, and how the payment decision was
               approved, blocked, or escalated.
@@ -80,9 +81,9 @@ export default function AIAgentsPage() {
       {/* The problem */}
       <section className="bg-background">
         <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
-          <h2 className="font-serif text-2xl font-normal text-[var(--ic-text)]">
-            Autonomous actions create a new review burden
-          </h2>
+            <h2 className="font-serif text-2xl font-normal text-[var(--ic-text)]">
+              Autonomous actions create a new review burden
+            </h2>
           <p className="mt-4 text-[15px] leading-relaxed text-[var(--ic-text-muted)]">
             When AI agents can initiate, recommend, or execute payment actions,
             the speed of money movement increases — but the review and
@@ -96,6 +97,25 @@ export default function AIAgentsPage() {
             receipts. That works until someone asks for the full decision
             context — and reconstructing it takes hours instead of seconds.
           </p>
+        </div>
+      </section>
+
+      <section className="border-t border-border bg-[var(--ic-surface-2)]">
+        <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
+              Review Requirements
+            </span>
+            <h2 className="mt-4 font-serif text-2xl font-normal text-[var(--ic-text)] sm:text-3xl">
+              AI is the wedge. Compliance is still the job to be done.
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-[var(--ic-text-muted)]">
+              Teams deploying AI into payment operations still need approval
+              boundaries, policy enforcement, initiation traceability, and
+              reviewer-ready evidence. Kontext packages those controls into the
+              same workflow used for broader diligence and audit prep.
+            </p>
+          </div>
         </div>
       </section>
 

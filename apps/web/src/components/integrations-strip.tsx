@@ -1,12 +1,11 @@
 import Link from "next/link";
 
 const categories = [
-  { name: "Wallets", count: 3 },
-  { name: "Ledgers", count: 2 },
-  { name: "Sanctions Providers", count: 3 },
-  { name: "Case Systems", count: 2 },
-  { name: "Data Warehouses", count: 2 },
-  { name: "Approval Systems", count: 2 },
+  { name: "Observability", count: 3 },
+  { name: "Screening + Risk", count: 4 },
+  { name: "Case Systems / GRC", count: 3 },
+  { name: "Processors / Ledgers / Wallets", count: 5 },
+  { name: "Workflow + Agent Orchestration", count: 3 },
 ];
 
 export function IntegrationsStrip() {
@@ -18,7 +17,8 @@ export function IntegrationsStrip() {
             Integrations
           </span>
           <p className="mt-2 text-[15px] text-[var(--ic-text-muted)]">
-            Kontext works across your existing payment infrastructure
+            Kontext does not replace your monitoring or detection stack. It adds
+            the compliance evidence and verification layer they lack.
           </p>
         </div>
 
