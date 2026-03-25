@@ -3,8 +3,8 @@ import { isFeatureEnabled } from "@/lib/feature-flags";
 interface FeatureFlagProps {
   /** Kebab-case flag name (e.g. "new-pricing-page") */
   flag: string;
-  /** Plan to check against (default: "free") */
-  plan?: "free" | "pro" | "enterprise";
+  /** Plan to check against (default: "startup") */
+  plan?: "startup" | "growth" | "enterprise";
   /** Content to render when the flag is enabled */
   children: React.ReactNode;
   /** Optional fallback content when the flag is disabled */
@@ -17,14 +17,14 @@ interface FeatureFlagProps {
  *
  * @example
  * ```tsx
- * <FeatureFlag flag="new-dashboard" plan="pro">
+ * <FeatureFlag flag="new-dashboard" plan="growth">
  *   <NewDashboard />
  * </FeatureFlag>
  * ```
  */
 export async function FeatureFlag({
   flag,
-  plan = "free",
+  plan = "startup",
   children,
   fallback = null,
 }: FeatureFlagProps) {
