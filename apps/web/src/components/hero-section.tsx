@@ -20,7 +20,7 @@ export function HeroSection() {
 
           {/* Headline */}
           <h1 className="mt-4 font-serif text-4xl font-normal leading-[1.1] tracking-tight text-[var(--ic-text)] sm:text-5xl lg:text-6xl opacity-0 animate-fade-up">
-            The compliance proof layer for programmable payments
+            The governance layer for programmable money
           </h1>
 
           {/* Subheadline */}
