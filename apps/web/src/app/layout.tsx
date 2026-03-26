@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { DM_Sans, IBM_Plex_Mono, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import { CookieConsentBanner } from "../components/cookie-consent";
@@ -167,6 +168,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-background font-sans antialiased">
         <CookieConsentBanner />
         {children}
+        <Analytics />
       </body>
     </html>
   );
