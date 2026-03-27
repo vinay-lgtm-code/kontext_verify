@@ -20,7 +20,7 @@ export function HeroSection() {
 
           {/* Headline */}
           <h1 className="mt-4 font-serif text-4xl font-normal leading-[1.1] tracking-tight text-[var(--ic-text)] sm:text-5xl lg:text-6xl opacity-0 animate-fade-up">
-            The missing evidence layer between your payment stack and the examiner's desk
+            The governance layer for programmable payments
           </h1>
 
           {/* Subheadline */}
