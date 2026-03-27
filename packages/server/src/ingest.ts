@@ -111,7 +111,7 @@ type PolicyDecision = 'allow' | 'warn' | 'block';
 type OfacStatus = 'clear' | 'match' | 'review_required';
 type TrustBand = 'low' | 'medium' | 'high';
 type CoverageStatus = 'full' | 'partial' | 'none';
-type EventStatus = 'verified' | 'warning' | 'blocked' | 'unverified';
+type EventStatus = 'verified' | 'warning' | 'blocked' | 'unverified' | 'pending_review';
 
 interface PolicyResult {
   decision: PolicyDecision;
@@ -184,10 +184,16 @@ function validateIngestRequest(body: unknown): IngestRequest {
   const req = body as Record<string, unknown>;
 
   // Required top-level fields
-  for (const field of ['environment', 'workflow', 'agent_id', 'actor_type', 'payment', 'intent']) {
+  for (const field of ['environment', 'workflow', 'agent_id', 'actor_type', 'payment', 'intent', 'enforcement_mode']) {
     if (!req[field]) {
       throw new ValidationError('MISSING_REQUIRED_FIELD', `Missing required field: ${field}`);
     }
+  }
+
+  // Validate enforcement_mode value
+  const VALID_ENFORCEMENT_MODES = new Set(['advisory', 'blocking', 'human_review']);
+  if (!VALID_ENFORCEMENT_MODES.has(req['enforcement_mode'] as string)) {
+    throw new ValidationError('INVALID_ENFORCEMENT_MODE', 'enforcement_mode must be one of: advisory, blocking, human_review');
   }
 
   const payment = req['payment'] as Record<string, unknown>;
@@ -844,6 +850,8 @@ export interface IngestResponse {
   intent_hash: string;
   chain_index: number;
   created_at: string;
+  enforcement_mode: string;
+  error?: string;
 }
 
 export async function handleIngest(
