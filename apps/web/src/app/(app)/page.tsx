@@ -11,13 +11,16 @@ import { IntegrationsStrip } from "@/components/integrations-strip";
 import { InitiationSourcesStrip } from "@/components/initiation-sources-strip";
 import {
   ArrowRight,
+  ArrowDown,
   Check,
   CreditCard,
   FileSearch,
   Globe,
+  KeyRound,
   Lock,
   ScanEye,
   ShieldCheck,
+  Sparkles,
   Code,
 } from "lucide-react";
 
@@ -44,38 +47,35 @@ const controlsCards = [
   },
 ];
 
-const deploymentModes = [
+const enforcementModes = [
   {
     mode: "Advisory",
-    desc: "Capture the decision, explain what happened, and surface issues without interrupting the payment flow.",
+    desc: "Capture decisions without interrupting flow. Evidence recorded, nothing blocked.",
+    status: "Evidence captured",
+    statusColor: "green" as const,
+    featured: false,
   },
   {
     mode: "Blocking",
-    desc: "Stop non-compliant payments automatically or route them into an explicit escalation path before execution.",
+    desc: "Stop non-compliant payments before funds move. verify() returns 422. Evidence proves the system can say no.",
+    status: "Payment blocked",
+    statusColor: "red" as const,
+    featured: true,
   },
   {
-    mode: "Human review",
-    desc: "Hold above-threshold or out-of-policy actions until an approver confirms the task and the evidence packet is complete.",
+    mode: "Human Review",
+    desc: "Hold above-threshold payments for explicit approval. Approval chain recorded with timestamps and roles.",
+    status: "Pending approval",
+    statusColor: "amber" as const,
+    featured: false,
   },
 ];
 
-const governanceItems = [
-  {
-    title: "PII separation",
-    desc: "Keep sensitive payment and identity fields separate from the verifiable audit record so governance actions do not corrupt the evidence chain.",
-  },
-  {
-    title: "Subject access export",
-    desc: "Support SAR workflows with structured exports of the data associated with a subject or payment review.",
-  },
-  {
-    title: "Erasure workflow logging",
-    desc: "Log that a governance action occurred while preserving audit integrity and the proof that the request was handled.",
-  },
-  {
-    title: "Redacted exports",
-    desc: "Mask addresses and identifiers for partner diligence, internal distribution, and other non-compliance audiences.",
-  },
+const gdprFeatures = [
+  "PII vault (AES-256-GCM encrypted)",
+  "Subject Access Request export",
+  "Erasure workflow logging",
+  "Redacted export modes",
 ];
 
 const verificationItems = [
@@ -297,6 +297,106 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* AI Evidence Narrator */}
+      <section className="relative border-t border-[var(--ic-border)] bg-[var(--ic-surface-2)] px-4 py-24 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl">
+          <div className="grid items-center gap-12 lg:grid-cols-2">
+            {/* Left: text */}
+            <div>
+              <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
+                AI Evidence Narrator
+              </span>
+              <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
+                One click. Examiner-ready narrative.
+              </h2>
+              <p className="mt-4 max-w-lg text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
+                Stop writing compliance narratives by hand. Kontext generates
+                regulatory-framed prose from your structured evidence &mdash;
+                every claim traced to a field in the evidence bundle. Choose
+                from OCC, CFPB, State Banking, MiCA, or Internal Audit
+                templates.
+              </p>
+              <div className="mt-8">
+                <Link
+                  href="/contact"
+                  className="inline-flex items-center gap-2 rounded-lg bg-[var(--ic-accent)] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--ic-accent)]/90"
+                >
+                  <Sparkles size={16} />
+                  Generate your first narrative
+                  <ArrowRight size={14} />
+                </Link>
+              </div>
+            </div>
+
+            {/* Right: narrative document preview */}
+            <div className="rounded-xl border border-[var(--ic-border)] bg-[var(--ic-surface)] p-6">
+              {/* Title bar */}
+              <div className="flex items-center justify-between border-b border-[var(--ic-border)] pb-4">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={14} className="text-[var(--ic-accent)]" />
+                  <span className="font-mono text-[11px] font-medium text-[var(--ic-text)]">
+                    Narrative Report
+                  </span>
+                </div>
+                <span className="font-mono text-[9px] text-[var(--ic-text-dim)]">
+                  PKT-2026-03-19-00847
+                </span>
+              </div>
+
+              {/* Template pills */}
+              <div className="mt-4 flex flex-wrap gap-2">
+                {["OCC", "CFPB", "State Banking", "MiCA", "Internal Audit"].map((tmpl, i) => (
+                  <span
+                    key={tmpl}
+                    className={`rounded-full px-3 py-1 font-mono text-[9px] font-semibold uppercase tracking-wider ${
+                      i === 0
+                        ? "bg-[var(--ic-accent)] text-white"
+                        : "border border-[var(--ic-border)] text-[var(--ic-text-dim)]"
+                    }`}
+                  >
+                    {tmpl}
+                  </span>
+                ))}
+              </div>
+
+              {/* Prose excerpt */}
+              <div className="mt-5 space-y-3">
+                <p className="font-serif text-[13px] italic leading-relaxed text-[var(--ic-text-muted)]">
+                  &ldquo;On March 21, 2026, a vendor payout of{" "}
+                  <span className="border-b border-[var(--ic-green)] text-[var(--ic-text)]">
+                    $48,200 USDC
+                  </span>{" "}
+                  was initiated by AI agent{" "}
+                  <span className="border-b border-[var(--ic-green)] text-[var(--ic-text)]">
+                    treasury-rebalancer-v2
+                  </span>{" "}
+                  pursuant to Board Resolution BR-2025-14...&rdquo;
+                </p>
+                <p className="font-serif text-[13px] italic leading-relaxed text-[var(--ic-text-muted)]">
+                  &ldquo;OFAC/SDN screening was completed at{" "}
+                  <span className="border-b border-[var(--ic-green)] text-[var(--ic-text)]">
+                    09:14:02 UTC
+                  </span>
+                  , one second prior to settlement, with result{" "}
+                  <span className="border-b border-[var(--ic-green)] text-[var(--ic-text)]">
+                    CLEAR
+                  </span>
+                  . This temporal ordering is cryptographically attested...&rdquo;
+                </p>
+              </div>
+
+              {/* Grounded badge */}
+              <div className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-[var(--ic-green-dim)] px-4 py-1.5">
+                <Check size={12} className="text-[var(--ic-green)]" />
+                <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--ic-green)]">
+                  Every claim grounded in evidence
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="relative border-t border-[var(--ic-border)] bg-[var(--ic-surface-2)] px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <div className="text-center">
@@ -336,32 +436,71 @@ export default function LandingPage() {
         <div className="mx-auto max-w-5xl">
           <div className="text-center">
             <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
-              Deployment Modes
+              Enforcement Modes
             </span>
             <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
-              Start with visibility, grow into enforcement
+              Start with visibility. Graduate to control.
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-              Teams can adopt Kontext without replatforming, then move from
-              evidence capture to blocking and approval workflows as controls
-              mature.
+              Most compliance tools only log. Kontext enforces. Move from
+              advisory capture to pre-send blocking to human approval &mdash;
+              each mode proves to examiners that your controls actually ran.
             </p>
           </div>
 
           <div className="mt-12 grid gap-6 md:grid-cols-3">
-            {deploymentModes.map((item) => (
-              <div
-                key={item.mode}
-                className="rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] p-6"
-              >
-                <h3 className="text-[16px] font-semibold text-[var(--ic-text)]">
-                  {item.mode}
-                </h3>
-                <p className="mt-3 text-[14px] leading-relaxed text-[var(--ic-text-muted)]">
-                  {item.desc}
-                </p>
-              </div>
-            ))}
+            {enforcementModes.map((item, i) => {
+              const colorMap = {
+                green: { pill: "bg-[var(--ic-green-dim)] text-[var(--ic-green)]", border: "" },
+                red: { pill: "bg-red-500/10 text-[var(--ic-red)]", border: "border-[var(--ic-red)]/30 ring-1 ring-[var(--ic-red)]/10" },
+                amber: { pill: "bg-amber-500/10 text-[var(--ic-amber)]", border: "" },
+              };
+              const c = colorMap[item.statusColor];
+              return (
+                <div key={item.mode} className="flex items-stretch">
+                  <div
+                    className={`flex-1 rounded-lg border bg-[var(--ic-surface)] p-6 ${
+                      item.featured ? c.border : "border-[var(--ic-border)]"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-[16px] font-semibold text-[var(--ic-text)]">
+                        {item.mode}
+                      </h3>
+                      {item.featured && (
+                        <span className="rounded-full bg-[var(--ic-red)]/10 px-2.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-[var(--ic-red)]">
+                          Featured
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-3 text-[14px] leading-relaxed text-[var(--ic-text-muted)]">
+                      {item.desc}
+                    </p>
+                    <div className="mt-4">
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-wider ${c.pill}`}>
+                        <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                        {item.status}
+                      </span>
+                    </div>
+                  </div>
+                  {i < enforcementModes.length - 1 && (
+                    <div className="hidden items-center px-2 text-[var(--ic-text-dim)] md:flex">
+                      <ArrowRight size={16} />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-8 flex justify-center">
+            <div className="inline-flex items-center gap-2 rounded-md bg-[var(--ic-green-dim)] px-5 py-2.5">
+              <ShieldCheck size={14} className="text-[var(--ic-green)]" />
+              <span className="text-[13px] font-medium text-[var(--ic-green)]">
+                What examiners see: enforcement mode recorded in every evidence
+                bundle.
+              </span>
+            </div>
           </div>
         </div>
       </section>
@@ -459,35 +598,110 @@ export default function LandingPage() {
 
       <section className="relative border-t border-[var(--ic-border)] px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
-          <div className="text-center">
-            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
-              Data Governance
-            </span>
-            <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
-              Retention, redaction, and erasure without breaking audit integrity
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-              Built for FinCEN SAR preservation and GDPR Article 17 erasure
-              workflows, while preserving the evidence that governance actions
-              happened when they should have.
-            </p>
-          </div>
+          <div className="grid items-center gap-12 lg:grid-cols-2">
+            {/* Left: text */}
+            <div>
+              <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
+                Data Governance
+              </span>
+              <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
+                Erase PII without breaking the audit trail.
+              </h2>
+              <p className="mt-4 max-w-lg text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
+                MiCA and GDPR require right-to-erasure. Most audit systems
+                can&apos;t comply without destroying evidence integrity. Kontext
+                stores PII in an encrypted vault, separate from the digest
+                chain. When you erase, the chain stays verifiable.
+              </p>
+              <ul className="mt-6 space-y-3">
+                {gdprFeatures.map((f) => (
+                  <li key={f} className="flex items-center gap-2.5">
+                    <Check size={14} className="text-[var(--ic-green)]" />
+                    <span className="text-[14px] text-[var(--ic-text)]">{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-          <div className="mt-12 grid gap-6 md:grid-cols-2">
-            {governanceItems.map((item) => (
-              <div
-                key={item.title}
-                className="rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] p-6"
-              >
-                <Globe size={18} className="text-[var(--ic-accent)]" />
-                <h3 className="mt-3 text-[15px] font-semibold text-[var(--ic-text)]">
-                  {item.title}
-                </h3>
-                <p className="mt-2 text-[13px] leading-relaxed text-[var(--ic-text-muted)]">
-                  {item.desc}
-                </p>
+            {/* Right: PII vault visual */}
+            <div className="flex flex-col items-center gap-3">
+              {/* Before card */}
+              <div className="w-full max-w-xs rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] p-5">
+                <div className="flex items-center gap-2">
+                  <KeyRound size={14} className="text-[var(--ic-amber)]" />
+                  <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--ic-text-dim)]">
+                    Evidence bundle with PII
+                  </span>
+                </div>
+                <div className="mt-3 space-y-2">
+                  <div className="flex items-center justify-between rounded border border-[var(--ic-border)] px-3 py-1.5">
+                    <span className="text-[11px] text-[var(--ic-text-dim)]">Name</span>
+                    <span className="rounded bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-[var(--ic-amber)]">
+                      Maria Chen
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between rounded border border-[var(--ic-border)] px-3 py-1.5">
+                    <span className="text-[11px] text-[var(--ic-text-dim)]">Address</span>
+                    <span className="rounded bg-amber-500/10 px-2 py-0.5 font-mono text-[10px] font-medium text-[var(--ic-amber)]">
+                      0x7B2e...4F91
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between rounded border border-[var(--ic-border)] px-3 py-1.5">
+                    <span className="text-[11px] text-[var(--ic-text-dim)]">Digest</span>
+                    <span className="font-mono text-[10px] text-[var(--ic-text-muted)]">
+                      sha256:a4f2...
+                    </span>
+                  </div>
+                </div>
               </div>
-            ))}
+
+              {/* Arrow + label */}
+              <div className="flex flex-col items-center gap-1">
+                <ArrowDown size={16} className="text-[var(--ic-text-dim)]" />
+                <span className="font-mono text-[9px] font-semibold uppercase tracking-wider text-[var(--ic-red)]">
+                  Erasure request
+                </span>
+                <ArrowDown size={16} className="text-[var(--ic-text-dim)]" />
+              </div>
+
+              {/* After card */}
+              <div className="w-full max-w-xs rounded-lg border border-[var(--ic-green)]/20 bg-[var(--ic-surface)] p-5">
+                <div className="flex items-center gap-2">
+                  <Lock size={14} className="text-[var(--ic-green)]" />
+                  <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--ic-text-dim)]">
+                    After erasure
+                  </span>
+                </div>
+                <div className="mt-3 space-y-2">
+                  <div className="flex items-center justify-between rounded border border-[var(--ic-border)] px-3 py-1.5">
+                    <span className="text-[11px] text-[var(--ic-text-dim)]">Name</span>
+                    <span className="rounded bg-[var(--ic-surface-2)] px-2 py-0.5 font-mono text-[10px] text-[var(--ic-text-dim)]">
+                      [redacted]
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between rounded border border-[var(--ic-border)] px-3 py-1.5">
+                    <span className="text-[11px] text-[var(--ic-text-dim)]">Address</span>
+                    <span className="rounded bg-[var(--ic-surface-2)] px-2 py-0.5 font-mono text-[10px] text-[var(--ic-text-dim)]">
+                      [pseudonym-token]
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between rounded border border-[var(--ic-border)] px-3 py-1.5">
+                    <span className="text-[11px] text-[var(--ic-text-dim)]">Digest</span>
+                    <span className="font-mono text-[10px] text-[var(--ic-text-muted)]">
+                      sha256:a4f2...
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Chain verified badge */}
+              <div className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-[var(--ic-green-dim)] px-4 py-1.5">
+                <Check size={12} className="text-[var(--ic-green)]" />
+                <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--ic-green)]">
+                  Chain verified &mdash; digest intact after erasure
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
