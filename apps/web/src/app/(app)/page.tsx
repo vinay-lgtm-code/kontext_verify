@@ -114,6 +114,72 @@ export default function LandingPage() {
 
       <HeroSection />
 
+      {/* Social proof bar */}
+      <section className="relative px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="text-[14px] leading-relaxed text-[var(--ic-text-muted)]">
+            Built with compliance teams at payment companies across stablecoin
+            treasury, cross-border payouts, and embedded finance.
+          </p>
+        </div>
+      </section>
+
+      {/* Cost-of-inaction stats */}
+      <section className="relative px-4 py-20 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl">
+          <div className="text-center">
+            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
+              The Cost of Fragmented Payment Evidence
+            </span>
+          </div>
+
+          <div className="mt-10 grid gap-6 md:grid-cols-3">
+            {[
+              {
+                stat: "$1.75B",
+                label: "TD Bank's BSA penalty",
+                detail: "Core finding: couldn't prove controls ran.",
+                source: "NETBankAudit",
+              },
+              {
+                stat: "61%",
+                label: "Increase in compliance hours since 2016",
+                detail: "While headcount grew only 20%.",
+                source: "BPI Survey",
+              },
+              {
+                stat: "4 hours",
+                label: "Average time per alert investigation",
+                detail: "Mostly ruling out false positives.",
+                source: "Flagright",
+              },
+            ].map((item) => (
+              <div
+                key={item.stat}
+                className="rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] p-8 text-center"
+              >
+                <p className="font-serif text-4xl font-normal text-[var(--ic-accent)]">
+                  {item.stat}
+                </p>
+                <p className="mt-3 text-[15px] font-semibold text-[var(--ic-text)]">
+                  {item.label}
+                </p>
+                <p className="mt-1 text-[13px] text-[var(--ic-text-muted)]">
+                  {item.detail}
+                </p>
+                <p className="mt-3 font-mono text-[10px] uppercase tracking-widest text-[var(--ic-text-dim)]">
+                  Source: {item.source}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <p className="mt-8 text-center text-[15px] text-[var(--ic-text-muted)]">
+            Every programmable money rail you add multiplies this problem. Kontext collapses it.
+          </p>
+        </div>
+      </section>
+
       <section className="relative px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <div className="text-center">
@@ -121,62 +187,60 @@ export default function LandingPage() {
               The Compliance Gap
             </span>
             <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
-              Payment infrastructure can move money. Review teams still need proof.
+              What happens when the examiner calls
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-              Compliance, risk, treasury, and audit teams are asked the same
-              questions every time a payment is reviewed: what checks ran, who
-              approved it, what policy applied, and whether the record can be
-              trusted. Raw logs do not answer those questions cleanly.
+              Every compliance review comes down to the same questions. Here is
+              what answering them looks like today — and what it could look like.
             </p>
           </div>
 
-          <div className="mt-12 grid gap-6 md:grid-cols-2">
-            <div className="rounded-lg border border-[var(--ic-red)]/15 bg-[var(--ic-surface)] p-8">
-              <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--ic-red)]">
-                Without Kontext
-              </span>
-              <h3 className="mt-4 text-lg font-semibold text-[var(--ic-text)]">
-                Scattered evidence, manual reconstruction
-              </h3>
-              <ul className="mt-6 space-y-4">
-                {[
-                  "Logs scattered across processors, ledgers, and screening tools",
-                  "No proof that checks ran before funds moved",
-                  "Blocking and escalation behavior hidden inside application code",
-                  "No reviewer-ready export for partner diligence or internal audit",
-                  "Governance requests handled outside the audit trail",
-                ].map((item) => (
-                  <li key={item} className="flex items-start gap-3">
-                    <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[var(--ic-red)]" />
-                    <span className="text-sm text-[var(--ic-text-muted)]">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="rounded-lg border border-[var(--ic-green)]/15 bg-[var(--ic-surface)] p-8">
-              <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--ic-green)]">
-                With Kontext
-              </span>
-              <h3 className="mt-4 text-lg font-semibold text-[var(--ic-text)]">
-                Controls enforced, evidence reviewer-ready
-              </h3>
-              <ul className="mt-6 space-y-4">
-                {[
-                  "Approve, block, or escalate payment decisions with explicit enforcement modes",
-                  "Proof that sanctions and policy checks ran before execution",
-                  "Tamper-evident, independently verifiable evidence for every payment path",
-                  "Examiner, diligence, incident review, and redacted exports on demand",
-                  "Governance workflows for retention, SAR, and erasure without breaking audit integrity",
-                ].map((item) => (
-                  <li key={item} className="flex items-start gap-3">
-                    <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[var(--ic-green)]" />
-                    <span className="text-sm text-[var(--ic-text-muted)]">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
+            {[
+              {
+                scenario: "\u201cShow me the approval chain for this $50K USDC transfer\u201d",
+                without: "3 systems, 2 hours, a stitched-together PDF",
+                withK: "One evidence packet, approval chain with timestamps, exported in seconds",
+              },
+              {
+                scenario: "\u201cProve sanctions screening ran before this payment executed\u201d",
+                without: "Screening vendor log says it ran. Payment ledger says it settled. No proof they\u2019re connected.",
+                withK: "OFAC/SDN result timestamped and cryptographically linked to the payment decision record",
+              },
+              {
+                scenario: "\u201cAn AI agent initiated this payment. Who authorized it?\u201d",
+                without: "Application logs show the agent ran. No record of delegation authority, policy bounds, or human approval.",
+                withK: "Agent ID, instruction reference, policy version, approval chain, and enforcement mode \u2014 all in one record",
+              },
+            ].map((item) => (
+              <div
+                key={item.scenario}
+                className="rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] p-7"
+              >
+                <p className="text-[15px] font-semibold leading-snug text-[var(--ic-text)]">
+                  {item.scenario}
+                </p>
+                <div className="mt-5 space-y-4">
+                  <div>
+                    <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--ic-red)]">
+                      Without Kontext
+                    </span>
+                    <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--ic-text-muted)]">
+                      {item.without}
+                    </p>
+                  </div>
+                  <div className="h-px bg-[var(--ic-border)]" />
+                  <div>
+                    <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--ic-green)]">
+                      With Kontext
+                    </span>
+                    <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--ic-text-muted)]">
+                      {item.withK}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -315,7 +379,7 @@ export default function LandingPage() {
               {
                 icon: ShieldCheck,
                 title: "Compliance",
-                desc: "Prove every check ran and export reviewer-ready packets for examiners, sponsor banks, and enterprise diligence teams.",
+                desc: "The #1 pattern in recent consent orders \u2014 TD Bank ($1.75B), Bank of America, Wells Fargo \u2014 is \u2018couldn\u2019t produce evidence that controls ran.\u2019 Prove every check ran and export reviewer-ready packets before the examiner asks.",
               },
               {
                 icon: ScanEye,
@@ -427,7 +491,7 @@ export default function LandingPage() {
               Where Kontext Fits
             </span>
             <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
-              An evidence and controls layer across your payment stack
+              8 systems. 1 evidence record.
             </h2>
           </div>
 
