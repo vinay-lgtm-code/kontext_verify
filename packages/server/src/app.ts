@@ -1225,6 +1225,14 @@ async function initScreeningEngine(): Promise<void> {
       console.log('[Kontext] Watchman source registered');
     }
 
+    // Register YenteSource (OpenSanctions) if YENTE_URL is configured (PR-J)
+    const { YenteSource } = await import('./screening/sources/yente-source.js');
+    const yente = new YenteSource();
+    if (yente.isAvailable()) {
+      sources.push(yente);
+      console.log('[Kontext] Yente/OpenSanctions source registered');
+    }
+
     await screeningEngine.init(sources);
     screeningEngine.startPeriodicSync();
     console.log('[Kontext] Unified screening engine initialized');
