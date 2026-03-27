@@ -41,7 +41,7 @@ export function Footer() {
               Kontext
             </Link>
             <p className="mt-3 text-xs text-[var(--ic-text-dim)] leading-relaxed max-w-[200px]">
-              Payment decision evidence for compliance teams.
+              Evidence an examiner can trust. From every payment decision.
             </p>
           </div>
 

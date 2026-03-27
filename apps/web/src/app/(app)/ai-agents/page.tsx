@@ -57,9 +57,9 @@ export default function AIAgentsPage() {
             </h1>
             <p className="mt-4 text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
               AI-initiated payments create more review burden, not less.
-              Kontext helps teams prove what an AI agent was allowed to do, what
-              checks ran before execution, and how the payment decision was
-              approved, blocked, or escalated.
+              Your compliance team can prove what an AI agent was allowed to do,
+              what BSA/AML and OFAC checks ran before execution, and how the
+              payment decision was approved, blocked, or escalated.
             </p>
             <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Button size="lg" asChild>

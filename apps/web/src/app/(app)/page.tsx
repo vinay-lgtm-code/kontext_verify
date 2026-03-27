@@ -36,11 +36,11 @@ const controlsCards = [
   },
   {
     title: "Tamper-evident integrity",
-    desc: "Return digest proof with events and preserve an independently verifiable record that is portable beyond your internal tooling.",
+    desc: "Cryptographic proof that no one altered the record \u2014 independently verifiable and portable beyond your internal tooling.",
   },
   {
     title: "Exportable review packets",
-    desc: "Generate examiner, diligence, incident review, and redacted exports without stitching together screenshots and logs after the fact.",
+    desc: "Hand your examiner a complete packet \u2014 diligence, incident review, or redacted exports \u2014 without stitching together screenshots and logs after the fact.",
   },
 ];
 
@@ -79,8 +79,8 @@ const governanceItems = [
 ];
 
 const verificationItems = [
-  "Digest proof returned with events, not hidden in a back office database",
-  "Export files can be independently verified by auditors, counterparties, and regulators",
+  "Cryptographic proof that no one altered the record, not hidden in a back office database",
+  "Export files your auditors, counterparties, and regulators can independently verify",
   "Evidence stays portable across processors, ledgers, wallet providers, and workflow systems",
 ];
 
@@ -295,12 +295,12 @@ export default function LandingPage() {
               Controls + Evidence
             </span>
             <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
-              Built to enforce and prove payment controls
+              Built to prove your BSA/AML and OFAC controls ran
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-              Kontext is not just a logging layer. It sits in the decision flow
-              to evaluate payments, preserve proof, and package the record for
-              reviewer-facing workflows.
+              Your compliance team can prove every BSA/AML and OFAC screening
+              check ran, package the record for OCC/FinCEN examination prep, and
+              export evidence an examiner can trust.
             </p>
           </div>
 
@@ -458,8 +458,9 @@ export default function LandingPage() {
               Retention, redaction, and erasure without breaking audit integrity
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-              Built for SAR and right-to-erasure workflows, while preserving the
-              evidence that governance actions happened when they should have.
+              Built for FinCEN SAR preservation and GDPR Article 17 erasure
+              workflows, while preserving the evidence that governance actions
+              happened when they should have.
             </p>
           </div>
 
@@ -697,9 +698,9 @@ const result = await ctx.verify({
               Controls maturity aligned to your operating stage
             </h2>
             <p className="mx-auto mt-4 max-w-lg text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-              Choose launch readiness, live operations controls, or enterprise
-              diligence depth. Developers can implement fast, but the buyer is
-              still the team accountable for payment controls.
+              Choose sponsor bank diligence readiness, live examination controls,
+              or enterprise audit depth. Your compliance team picks the tier
+              that matches their review obligations.
             </p>
           </div>
 
@@ -752,9 +753,9 @@ const result = await ctx.verify({
             Explain every payment decision before reviewers ask.
           </h2>
           <p className="mx-auto mt-6 max-w-lg text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-            Kontext helps teams prove and enforce payment controls across
-            programmable and AI-influenced payment flows without rebuilding the
-            rest of the stack.
+            Your compliance team can prove every control ran across
+            programmable and AI-influenced payment flows \u2014 without rebuilding
+            the rest of the stack.
           </p>
           <div className="mt-8 flex items-center justify-center gap-4">
             <a

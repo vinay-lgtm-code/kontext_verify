@@ -70,9 +70,9 @@ export default function UseCasesPage() {
               Compliance evidence for every payment workflow
             </h1>
             <p className="mx-auto mt-4 max-w-xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-              Kontext creates examiner-ready evidence wherever programmable
-              payments flow — stablecoin treasury, cross-border, embedded
-              finance, and incident response.
+              Your compliance team gets examiner-ready evidence wherever
+              programmable payments flow \u2014 stablecoin treasury, cross-border,
+              embedded finance, and OCC/FinCEN examination response.
             </p>
           </div>
         </div>

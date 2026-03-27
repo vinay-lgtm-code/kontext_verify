@@ -69,10 +69,10 @@ export default function BankReadinessPage() {
               Pass partner diligence with real evidence, not screenshots
             </h1>
             <p className="mx-auto mt-4 max-w-xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-              Sponsor banks and enterprise partners ask hard questions about your
-              payment controls. Kontext gives you examiner-ready answers backed
-              by enforcement records, reviewer-ready exports, and verifiable
-              proof.
+              Sponsor banks run Section 8 diligence reviews that demand evidence
+              your BSA/AML and OFAC controls ran. Your compliance team gets
+              examiner-ready answers backed by enforcement records, structured
+              exports, and cryptographic proof.
             </p>
             <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Button
