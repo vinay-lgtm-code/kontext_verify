@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 const useCases = [
   {
     title: "Stablecoin treasury and payouts",
-    pain: "Treasury agents move USDC across wallets with no audit trail connecting the decision to the transfer.",
+    pain: "Stablecoins settle in seconds, irreversibly. Your screening window went from hours to zero \u2014 and stablecoins accounted for 86% of illicit crypto flows in 2025 ($141B, TRM Labs). Treasury agents moving USDC need pre-execution proof, not post-hoc logs.",
     artifacts: [
       "Payment decision record with approval chain",
       "OFAC screening evidence with timestamps",
@@ -25,7 +25,7 @@ const useCases = [
   },
   {
     title: "Embedded finance and BaaS controls",
-    pain: "Embedded finance platforms can't prove to sponsor banks that compliance checks ran on every transaction.",
+    pain: "Your sponsor bank\u2019s examiner doesn\u2019t distinguish between your transactions and theirs. When Bank of America got a cease-and-desist for monitoring gaps, every downstream partner felt it. Embedded platforms need per-transaction compliance evidence that survives the bank\u2019s own exam.",
     artifacts: [
       "Per-transaction compliance evidence for bank review",
       "Policy version capture at decision time",

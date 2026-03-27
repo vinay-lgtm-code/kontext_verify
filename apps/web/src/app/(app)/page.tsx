@@ -280,6 +280,15 @@ export default function LandingPage() {
               screening results, approval lineage, verification proof, and
               export controls in one reviewer-ready record.
             </p>
+            <div className="mt-6">
+              <a
+                href="/sample-evidence-packet.pdf"
+                download
+                className="inline-flex items-center rounded-lg border border-[var(--ic-border)] px-5 py-2.5 text-sm font-medium text-[var(--ic-text-muted)] transition-colors hover:bg-[var(--ic-surface)] hover:text-[var(--ic-text)]"
+              >
+                Download sample packet (PDF)
+              </a>
+            </div>
           </div>
 
           <div className="mt-12">

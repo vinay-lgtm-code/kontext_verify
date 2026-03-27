@@ -79,6 +79,13 @@ export function Footer() {
           ))}
         </div>
 
+        <div className="border-t border-[var(--ic-border)] py-6">
+          <p className="text-center text-xs text-[var(--ic-text-muted)] leading-relaxed">
+            Built with compliance teams at payment companies processing
+            stablecoins, cross-border payouts, and embedded finance flows.
+          </p>
+        </div>
+
         <div className="flex flex-col items-center justify-between gap-4 border-t border-[var(--ic-border)] py-6 md:flex-row">
           <p className="text-xs text-[var(--ic-text-dim)]">
             &copy; {new Date().getFullYear()} Legaci Labs Inc. All rights reserved.
