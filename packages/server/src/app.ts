@@ -22,6 +22,7 @@ import { requirePermission, type Role } from './auth/rbac.js';
 import { createAuthRoutes } from './routes/auth.js';
 import { createTeamRoutes } from './routes/team.js';
 import { createExportRoutes } from './routes/export-routes.js';
+import { createNarratorRoutes } from './routes/narrator-routes.js';
 
 const app = new Hono();
 const store = new ServerStore();
@@ -993,6 +994,13 @@ app.use('/v1/exports', dashboardAuthMiddleware);
 app.use('/v1/exports/*', dashboardAuthMiddleware);
 const exportRouter = createExportRoutes(getPool, getRedis);
 app.route('/v1', exportRouter);
+
+// Narrator routes (AI Evidence Narrator — PR-K)
+app.use('/v1/evidence/*', dashboardAuthMiddleware);
+app.use('/v1/narratives', dashboardAuthMiddleware);
+app.use('/v1/narratives/*', dashboardAuthMiddleware);
+const narratorRouter = createNarratorRoutes(getPool, getRedis);
+app.route('/v1', narratorRouter);
 
 // Event assignment (admin only) — mounts alongside team routes
 app.post('/v1/events/:eventId/assign', authMiddleware, requirePermission('assign:events'), async (c) => {

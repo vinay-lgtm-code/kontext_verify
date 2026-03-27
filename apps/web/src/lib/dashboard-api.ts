@@ -373,3 +373,94 @@ export async function createBulkExport(
 export async function getExportProgress(exportId: string): Promise<ExportProgressResponse> {
   return apiFetch(`/exports/${exportId}/progress`);
 }
+
+// ---------- Narrator API ----------
+
+export interface NarrativeData {
+  narrative_id: string;
+  org_id: string;
+  event_id: string;
+  evidence_bundle_id: string;
+  template: string;
+  sections: Record<string, string>;
+  markdown: string;
+  status: string;
+  analyst_notes: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  review_decision: string | null;
+  generated_by: string;
+  llm_provider: string | null;
+  llm_model: string | null;
+  llm_tokens_used: number | null;
+  generation_time_ms: number | null;
+  digest_reference: string;
+  chain_index_reference: number;
+  bulk_id: string | null;
+  created_at: string;
+  expires_at: string | null;
+}
+
+export async function generateNarrative(
+  eventId: string,
+  template: string,
+  force = false,
+): Promise<NarrativeData> {
+  return apiFetch(`/evidence/${eventId}/narrative`, {
+    method: 'POST',
+    body: JSON.stringify({ template, force }),
+  });
+}
+
+export async function getNarrative(narrativeId: string): Promise<NarrativeData> {
+  return apiFetch(`/narratives/${narrativeId}`);
+}
+
+export async function updateNarrative(
+  narrativeId: string,
+  updates: { sections?: Record<string, string>; analyst_notes?: string },
+): Promise<NarrativeData> {
+  return apiFetch(`/narratives/${narrativeId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+}
+
+export async function reviewNarrative(
+  narrativeId: string,
+  decision: 'approved' | 'changes_requested',
+  notes?: string,
+): Promise<NarrativeData> {
+  return apiFetch(`/narratives/${narrativeId}/review`, {
+    method: 'POST',
+    body: JSON.stringify({ decision, notes }),
+  });
+}
+
+export async function exportNarrativePDF(narrativeId: string): Promise<void> {
+  const token = getToken();
+  if (!token) throw new Error('Not authenticated');
+
+  const res = await fetch(`${API_BASE}/v1/narratives/${narrativeId}/export`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body as Record<string, string>).error ?? `Export failed: ${res.status}`);
+  }
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `narrative-${narrativeId}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
