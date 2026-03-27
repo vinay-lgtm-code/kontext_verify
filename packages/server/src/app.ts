@@ -176,6 +176,33 @@ app.use('*', cors({
 app.use('*', logger());
 
 // ============================================================================
+// W3C Trace Context Propagation (PR-G)
+// ============================================================================
+
+import { randomBytes } from 'crypto';
+
+app.use('/v1/*', async (c, next) => {
+  const traceparent = c.req.header('traceparent');
+  let traceId: string;
+  let spanId: string | undefined;
+
+  if (traceparent) {
+    const parts = traceparent.split('-');
+    traceId = parts[1] ?? randomBytes(16).toString('hex');
+    spanId = parts[2];
+  } else {
+    traceId = randomBytes(16).toString('hex');
+  }
+
+  c.set('traceId' as never, traceId as never);
+  if (spanId) c.set('spanId' as never, spanId as never);
+
+  await next();
+
+  c.header('X-Kontext-Trace-Id', traceId);
+});
+
+// ============================================================================
 // Rate Limiting
 // ============================================================================
 

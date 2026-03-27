@@ -16,6 +16,8 @@ export {
   JsonFileExporter,
 } from './exporters.js';
 export type { EventExporter, ExporterResult } from './exporters.js';
+export { OTelExporter } from './exporters/otel-exporter.js';
+export type { OTelExporterConfig } from './exporters/otel-exporter.js';
 
 // Merkle tree
 export {
