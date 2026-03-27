@@ -25,6 +25,7 @@ import { createExportRoutes } from './routes/export-routes.js';
 import { createNarratorRoutes } from './routes/narrator-routes.js';
 import { createGdprRoutes } from './routes/gdpr-routes.js';
 import { createApprovalRoutes } from './routes/approval-routes.js';
+import { verifyChainExport } from './chain-verify.js';
 import { PIIVault } from './pii/vault.js';
 import { Pseudonymizer } from './pii/pseudonymizer.js';
 
@@ -288,6 +289,33 @@ app.get('/', (c) => {
 
 app.get('/health', (c) => {
   return c.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// ============================================================================
+// Public: Third-Party Chain Verification (PR-H)
+// ============================================================================
+
+const verifyChainLimiter = new Map<string, { count: number; resetAt: number }>();
+
+app.post('/v1/verify-chain', async (c) => {
+  // Dedicated rate limit: 10/min per IP
+  const ip = (c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? c.req.header('x-real-ip')) ?? 'unknown';
+  const now = Date.now();
+  const entry = verifyChainLimiter.get(ip);
+  if (entry && now < entry.resetAt && entry.count >= 10) {
+    return c.json({ error: 'Rate limit exceeded' }, { status: 429 });
+  }
+  if (!entry || now >= (entry.resetAt)) {
+    verifyChainLimiter.set(ip, { count: 1, resetAt: now + 60_000 });
+  } else {
+    entry.count++;
+  }
+
+  const body = await c.req.json<{ entries?: Array<{ record_hash: string; previous_record_hash: string; chain_index: number }> }>();
+  if (!body.entries || !Array.isArray(body.entries)) {
+    return c.json({ error: 'entries array required' }, 400);
+  }
+  return c.json(verifyChainExport(body.entries));
 });
 
 // ============================================================================
