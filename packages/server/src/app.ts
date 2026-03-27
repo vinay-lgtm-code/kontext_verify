@@ -935,7 +935,9 @@ app.post('/v1/verification-events', async (c) => {
   }
 
   try {
-    const result = await handleIngest(pool, orgId, body);
+    // Wait for screening engine to be ready (non-blocking on first request)
+    await screeningInitPromise;
+    const result = await handleIngest(pool, orgId, body, screeningEngine);
     return c.json(result, 201);
   } catch (err) {
     if (err instanceof ValidationError) {
@@ -1125,22 +1127,40 @@ app.get('/v1/checkout/success', async (c) => {
 // Unified Screening Service — Pre-cached government sanctions data
 // ============================================================================
 
-// Lazy-initialized screening engine
+// Screening engine — initialized eagerly at app startup so it is available
+// to both the /v1/screening/* routes and the ingest pipeline.
 let screeningEngine: import('./screening/screening-engine.js').ScreeningEngine | null = null;
 let screeningInitPromise: Promise<void> | null = null;
+
+/** 7 days in milliseconds */
+const SCREENING_SYNC_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
 
 async function initScreeningEngine(): Promise<void> {
   if (process.env['SCREENING_ENABLED'] === 'false') return;
 
   try {
     const { ScreeningEngine, OFACSDNSource, UKSanctionsSource, EUFSFSource, OpenSanctionsSource } = await import('./screening/index.js');
-    screeningEngine = new ScreeningEngine();
-    await screeningEngine.init([
+    const { WatchmanSource } = await import('./screening/sources/watchman-source.js');
+
+    screeningEngine = new ScreeningEngine({
+      syncIntervalMs: parseInt(process.env['SCREENING_SYNC_INTERVAL_MS'] ?? '', 10) || SCREENING_SYNC_INTERVAL_MS,
+    });
+
+    const sources: import('./screening/sources/source-interface.js').SanctionsSource[] = [
       new OFACSDNSource(),
       new UKSanctionsSource(),
       new EUFSFSource(),
       new OpenSanctionsSource(),
-    ]);
+    ];
+
+    // Register WatchmanSource if WATCHMAN_URL is configured
+    const watchman = new WatchmanSource();
+    if (watchman.isAvailable()) {
+      sources.push(watchman);
+      console.log('[Kontext] Watchman source registered');
+    }
+
+    await screeningEngine.init(sources);
     screeningEngine.startPeriodicSync();
     console.log('[Kontext] Unified screening engine initialized');
   } catch (err) {
