@@ -394,6 +394,44 @@ export class Kontext {
     return new Kontext(config);
   }
 
+  /**
+   * Zero-config factory that auto-detects configuration from environment
+   * variables and merges optional overrides on top.
+   *
+   * Environment variables read:
+   *   KONTEXT_API_KEY    — if present, enables cloud mode
+   *   KONTEXT_PROJECT_ID — defaults to 'kontext-project'
+   *   NODE_ENV           — 'production' | 'staging' | anything else → 'development'
+   *
+   * @param overrides — partial config merged on top of auto-detected values
+   */
+  static auto(overrides?: Partial<KontextConfig>): Kontext {
+    const apiKey = process.env['KONTEXT_API_KEY'] ?? undefined;
+    const projectId = process.env['KONTEXT_PROJECT_ID'] ?? 'kontext-project';
+
+    const nodeEnv = process.env['NODE_ENV'];
+    let environment: Environment = 'development';
+    if (nodeEnv === 'production') {
+      environment = 'production';
+    } else if (nodeEnv === 'staging') {
+      environment = 'staging';
+    }
+
+    const autoConfig: KontextConfig = {
+      apiKey,
+      projectId,
+      environment,
+      plan: 'startup',
+    };
+
+    const mergedConfig: KontextConfig = {
+      ...autoConfig,
+      ...overrides,
+    };
+
+    return Kontext.init(mergedConfig);
+  }
+
   // --------------------------------------------------------------------------
   // Mode & Config
   // --------------------------------------------------------------------------
