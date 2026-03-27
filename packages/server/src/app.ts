@@ -23,8 +23,19 @@ import { createAuthRoutes } from './routes/auth.js';
 import { createTeamRoutes } from './routes/team.js';
 import { createExportRoutes } from './routes/export-routes.js';
 import { createNarratorRoutes } from './routes/narrator-routes.js';
+import { createGdprRoutes } from './routes/gdpr-routes.js';
+import { PIIVault } from './pii/vault.js';
+import { Pseudonymizer } from './pii/pseudonymizer.js';
 
 const app = new Hono();
+
+// PII Vault — AES-256-GCM encrypted, pseudonymized (GDPR compliance)
+const PII_ENCRYPTION_KEY = process.env['PII_ENCRYPTION_KEY'];
+const piiVault: PIIVault | null = PII_ENCRYPTION_KEY ? new PIIVault(PII_ENCRYPTION_KEY) : null;
+const pseudonymizer: Pseudonymizer | null = piiVault ? new Pseudonymizer() : null;
+if (piiVault) {
+  console.log('[Kontext] PII vault initialized — addresses will be pseudonymized');
+}
 const store = new ServerStore();
 
 // ============================================================================
@@ -1001,6 +1012,10 @@ app.use('/v1/narratives', dashboardAuthMiddleware);
 app.use('/v1/narratives/*', dashboardAuthMiddleware);
 const narratorRouter = createNarratorRoutes(getPool, getRedis);
 app.route('/v1', narratorRouter);
+
+// GDPR routes (PII vault + erasure — PR-I)
+const gdprRouter = createGdprRoutes(getPool);
+app.route('/v1/gdpr', gdprRouter);
 
 // Event assignment (admin only) — mounts alongside team routes
 app.post('/v1/events/:eventId/assign', authMiddleware, requirePermission('assign:events'), async (c) => {
