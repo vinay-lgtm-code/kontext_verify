@@ -287,3 +287,89 @@ export async function assignEvent(
     body: JSON.stringify({ userId }),
   });
 }
+
+// ---------- Evidence Export API ----------
+
+export type ExportTemplate = 'examiner' | 'diligence' | 'incident' | 'redacted';
+export type ExportFormat = 'json' | 'csv' | 'pdf';
+
+export interface BulkExportFilters {
+  date_from?: string;
+  date_to?: string;
+  status?: string;
+  agent_id?: string;
+  chain?: string;
+}
+
+export interface BulkExportResponse {
+  export_id: string;
+  status: 'processing';
+  estimated_events: number;
+  template: string;
+  format: string;
+}
+
+export interface ExportProgressResponse {
+  export_id: string;
+  status: 'processing' | 'complete' | 'failed';
+  progress_pct: number;
+  download_url: string | null;
+  error: string | null;
+  file_size_bytes?: number | null;
+  event_count?: number | null;
+  completed_at?: string | null;
+}
+
+export async function exportSingleEvent(
+  eventId: string,
+  template: ExportTemplate = 'examiner',
+  format: ExportFormat = 'json',
+): Promise<unknown> {
+  const token = getToken();
+  if (!token) throw new Error('Not authenticated');
+
+  const res = await fetch(
+    `${API_BASE}/v1/verification-events/${eventId}/export?template=${template}&format=${format}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body as Record<string, string>).error ?? `Export failed: ${res.status}`);
+  }
+
+  if (format === 'json') {
+    return res.json();
+  }
+
+  // For CSV/PDF, trigger a download
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `kontext-${eventId}-${template}.${format}`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+  return { downloaded: true };
+}
+
+export async function createBulkExport(
+  template: ExportTemplate,
+  format: ExportFormat,
+  filters?: BulkExportFilters,
+): Promise<BulkExportResponse> {
+  return apiFetch('/exports/bulk', {
+    method: 'POST',
+    body: JSON.stringify({ template, format, filters }),
+  });
+}
+
+export async function getExportProgress(exportId: string): Promise<ExportProgressResponse> {
+  return apiFetch(`/exports/${exportId}/progress`);
+}
