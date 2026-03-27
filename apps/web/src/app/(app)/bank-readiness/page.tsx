@@ -175,6 +175,86 @@ export default function BankReadinessPage() {
         </div>
       </section>
 
+      {/* FFIEC request letter mapping */}
+      <section className="border-t border-border bg-[var(--ic-surface-2)]">
+        <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
+              Mapped to What Examiners Actually Request
+            </span>
+            <h2 className="mt-4 font-serif text-2xl font-normal text-[var(--ic-text)] sm:text-3xl">
+              FFIEC BSA/AML first-request letter items
+            </h2>
+            <p className="mx-auto mt-3 max-w-xl text-[15px] text-[var(--ic-text-muted)]">
+              The FFIEC BSA/AML Examination Manual (Appendix H) defines 130+
+              document categories in a standard first-request letter. Here is how
+              Kontext maps to the most common third-party payment processor items.
+            </p>
+          </div>
+          <div className="mt-10 overflow-x-auto">
+            <table className="w-full min-w-[720px] text-left text-[13px]">
+              <thead>
+                <tr className="border-b border-[var(--ic-border)]">
+                  <th className="pb-3 font-mono text-[10px] uppercase tracking-widest text-[var(--ic-text-dim)]">
+                    FFIEC Request Item
+                  </th>
+                  <th className="pb-3 font-mono text-[10px] uppercase tracking-widest text-[var(--ic-text-dim)]">
+                    What Examiners Want
+                  </th>
+                  <th className="pb-3 font-mono text-[10px] uppercase tracking-widest text-[var(--ic-red)]">
+                    Without Kontext
+                  </th>
+                  <th className="pb-3 font-mono text-[10px] uppercase tracking-widest text-[var(--ic-green)]">
+                    With Kontext
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  [
+                    "Processor policies & procedures",
+                    "Written controls documentation",
+                    "Confluence, Google Docs, scattered",
+                    "Policy version captured per decision",
+                  ],
+                  [
+                    "Transaction details & volume",
+                    "Activity records with amounts, parties, dates",
+                    "Core banking + blockchain explorer + processor dashboard",
+                    "Unified activity view across all rails",
+                  ],
+                  [
+                    "SARs filed on processor relationships",
+                    "Filing history with supporting docs",
+                    "Case management + FinCEN BSA E-Filing",
+                    "SAR workflow with linked evidence packets",
+                  ],
+                  [
+                    "NACHA return correspondence",
+                    "High return rate documentation",
+                    "Email + NACHA portal",
+                    "Alert evidence linked to payment records",
+                  ],
+                  [
+                    "Screening results",
+                    "OFAC/SDN check evidence",
+                    "Screening vendor dashboard",
+                    "Timestamped, cryptographically linked to each payment",
+                  ],
+                ].map((row) => (
+                  <tr key={row[0]} className="border-b border-[var(--ic-border)]/50">
+                    <td className="py-3 text-[var(--ic-text)]">{row[0]}</td>
+                    <td className="py-3 text-[var(--ic-text-muted)]">{row[1]}</td>
+                    <td className="py-3 text-[var(--ic-text-muted)]">{row[2]}</td>
+                    <td className="py-3 text-[var(--ic-text-muted)]">{row[3]}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       {/* AI agents subsection */}
       <section className="border-t border-border bg-[var(--ic-surface-2)]">
         <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">

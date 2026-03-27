@@ -43,6 +43,17 @@ const useCases = [
     ],
     href: "/use-cases/agentic-payments-controls",
   },
+  {
+    title: "Examination & incident response",
+    pain: "When an examiner sends a first-request letter or an incident triggers a lookback, your team has days \u2014 not weeks \u2014 to produce evidence from systems that were never designed to work together.",
+    artifacts: [
+      "Pre-assembled evidence packets for common examiner request categories",
+      "Incident reconstruction from structured records, not raw logs",
+      "FFIEC Appendix H alignment for standard request letter items",
+      "Lookback support with historical policy version and screening records",
+    ],
+    href: "/use-cases/incident-review",
+  },
 ];
 
 export default function UseCasesPage() {

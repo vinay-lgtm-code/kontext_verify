@@ -239,6 +239,38 @@ export default function AIAgentsPage() {
         </div>
       </section>
 
+      {/* Regulatory urgency */}
+      <section className="border-t border-border bg-background">
+        <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
+              Regulatory Momentum
+            </span>
+            <h2 className="mt-4 font-serif text-2xl font-normal text-[var(--ic-text)] sm:text-3xl">
+              The regulatory window is closing
+            </h2>
+          </div>
+          <div className="mt-8 space-y-4 text-[15px] leading-relaxed text-[var(--ic-text-muted)]">
+            <p>
+              In 2025, AI agents entered payments. Visa launched agent-initiated
+              transaction frameworks. Google announced the Agent Payments Protocol
+              (AP2). FIS built an AI transaction platform for banks. The EU AI Act
+              already requires governance, transparency, and audit obligations for
+              high-risk AI systems &mdash; and payment initiation qualifies.
+            </p>
+            <p>
+              US regulators haven&apos;t codified agent payment requirements yet. But
+              when Bank of America&apos;s consent order cited &ldquo;governance and
+              sanctions failures&rdquo; and Wells Fargo&apos;s cited &ldquo;suspicious
+              activity reporting failures,&rdquo; the evidence standard was set. The
+              question isn&apos;t whether examiners will ask &ldquo;who authorized this
+              AI-initiated payment?&rdquo; &mdash; it&apos;s whether you&apos;ll have the
+              answer when they do.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="border-t border-border bg-background">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
