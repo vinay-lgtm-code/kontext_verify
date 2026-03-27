@@ -78,7 +78,7 @@ export function Navbar() {
             <Link href="/docs">View Docs</Link>
           </Button>
           <Button size="sm" asChild>
-            <Link href="/contact">Book a Demo</Link>
+            <Link href="/#evidence-package">See What Examiners Get</Link>
           </Button>
         </div>
 
@@ -126,8 +126,8 @@ export function Navbar() {
                 </Link>
               </Button>
               <Button size="sm" asChild>
-                <Link href="/contact" onClick={() => setMobileMenuOpen(false)}>
-                  Book a Demo
+                <Link href="/#evidence-package" onClick={() => setMobileMenuOpen(false)}>
+                  See What Examiners Get
                 </Link>
               </Button>
             </div>

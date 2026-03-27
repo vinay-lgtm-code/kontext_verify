@@ -19,8 +19,8 @@ import { Check, ArrowRight } from "lucide-react";
 const plans = [
   {
     name: "Starter",
-    description: "For teams preparing for launch or first partner review",
-    who: "Pre-launch startups, first bank partner review, early compliance setup",
+    description: "Pass your first partner review",
+    who: "For teams preparing for their first sponsor bank or enterprise diligence review",
     cta: "Book a Demo",
     ctaHref: "/contact",
     highlighted: false,
@@ -37,9 +37,8 @@ const plans = [
   },
   {
     name: "Growth",
-    description:
-      "For startups running live payment operations with formal controls",
-    who: "Live payment operations, active compliance team, multi-environment",
+    description: "Survive an examiner call",
+    who: "For teams running live payments who need blocking, escalation, and examiner-ready exports",
     cta: "Book a Demo",
     ctaHref: "/contact",
     highlighted: true,
@@ -58,9 +57,8 @@ const plans = [
   },
   {
     name: "Enterprise",
-    description:
-      "For multi-rail teams with audit, bank, and enterprise diligence needs",
-    who: "Multi-rail programs, regulatory audits, enterprise procurement",
+    description: "Prove it to anyone",
+    who: "For multi-rail programs with OCC/FinCEN examination exposure, GDPR obligations, and enterprise procurement requirements",
     cta: "Contact Sales",
     ctaHref: "/contact",
     highlighted: false,
@@ -244,6 +242,49 @@ export default function PricingPage() {
                 ))}
               </ul>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Cost-of-alternative comparison */}
+      <section className="border-t border-border bg-background">
+        <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
+              The Cost of Not Having Kontext
+            </span>
+            <h2 className="mt-4 font-serif text-2xl font-normal text-[var(--ic-text)] sm:text-3xl">
+              What evidence fragmentation actually costs
+            </h2>
+          </div>
+          <div className="mt-10 overflow-x-auto">
+            <table className="w-full min-w-[600px] text-left text-[13px]">
+              <thead>
+                <tr className="border-b border-[var(--ic-border)]">
+                  <th className="pb-3 font-mono text-[10px] uppercase tracking-widest text-[var(--ic-text-dim)]" />
+                  <th className="pb-3 font-mono text-[10px] uppercase tracking-widest text-[var(--ic-red)]">
+                    Manual evidence assembly
+                  </th>
+                  <th className="pb-3 font-mono text-[10px] uppercase tracking-widest text-[var(--ic-green)]">
+                    With Kontext
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  ["Examiner prep time", "Days to weeks per request", "Minutes per packet"],
+                  ["Systems reconciled per review", "5\u20138 disconnected tools", "1 structured record"],
+                  ["Average enforcement penalty (FinCEN 2025)", "$12.7M", "\u2014"],
+                  ["Compliance team time on \u201chuman ETL\u201d", "60%+ of working hours", "Automated at capture"],
+                ].map((row) => (
+                  <tr key={row[0]} className="border-b border-[var(--ic-border)]/50">
+                    <td className="py-3 text-[var(--ic-text)]">{row[0]}</td>
+                    <td className="py-3 text-[var(--ic-text-muted)]">{row[1]}</td>
+                    <td className="py-3 text-[var(--ic-text-muted)]">{row[2]}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </section>

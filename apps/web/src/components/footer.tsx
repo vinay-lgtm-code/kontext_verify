@@ -19,6 +19,7 @@ const footerLinks = {
     { href: "/bank-readiness-checklist", label: "Bank Readiness Checklist" },
     { href: "/sample-payment-decision-packet", label: "Sample Evidence Packet" },
     { href: "/sample-ai-initiated-payment-packet", label: "AI Payment Packet" },
+    { href: "/evidence-calculator", label: "Evidence Calculator" },
     { href: "/contact", label: "Contact" },
   ],
   Company: [
@@ -41,7 +42,7 @@ export function Footer() {
               Kontext
             </Link>
             <p className="mt-3 text-xs text-[var(--ic-text-dim)] leading-relaxed max-w-[200px]">
-              Payment decision evidence for compliance teams.
+              Evidence an examiner can trust. From every payment decision.
             </p>
           </div>
 
@@ -77,6 +78,13 @@ export function Footer() {
               </ul>
             </div>
           ))}
+        </div>
+
+        <div className="border-t border-[var(--ic-border)] py-6">
+          <p className="text-center text-xs text-[var(--ic-text-muted)] leading-relaxed">
+            Built with compliance teams at payment companies processing
+            stablecoins, cross-border payouts, and embedded finance flows.
+          </p>
         </div>
 
         <div className="flex flex-col items-center justify-between gap-4 border-t border-[var(--ic-border)] py-6 md:flex-row">

@@ -9,6 +9,24 @@ export const metadata: Metadata = {
 
 const posts = [
   {
+    slug: "ffiec-examination-guide",
+    title: "The FFIEC Appendix H Survival Guide for Payment Companies",
+    description:
+      "A practical walkthrough of the FFIEC BSA/AML first-request letter items most relevant to payment processors, with guidance for companies operating stablecoin, AI agent, and real-time payment flows.",
+    date: "2026-03-26",
+    readTime: "18 min",
+    tags: ["BSA/AML", "FFIEC", "Examination Prep"],
+  },
+  {
+    slug: "enforcement-action-analysis",
+    title: "What TD Bank's $1.75B Penalty Means for Payment Startups",
+    description:
+      "Analysis of the TD Bank, Bank of America, and Wells Fargo enforcement actions, distilled for payment company compliance teams. What was cited, how it maps to your risk, and what evidence infrastructure would have changed the outcome.",
+    date: "2026-03-26",
+    readTime: "15 min",
+    tags: ["Enforcement", "BSA/AML", "Risk"],
+  },
+  {
     slug: "bsa-always-on-settlement",
     title: "Your BSA Program Wasn't Built for 24/7 Settlement. Here's What Breaks.",
     description:

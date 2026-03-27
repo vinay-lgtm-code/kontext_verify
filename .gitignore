@@ -44,6 +44,7 @@ internal/
 *.xls
 *.pptx
 *.pdf
+!apps/web/public/sample-evidence-packet.pdf
 
 # Office lock files
 .~lock.*

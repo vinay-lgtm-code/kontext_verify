@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 const useCases = [
   {
     title: "Stablecoin treasury and payouts",
-    pain: "Treasury agents move USDC across wallets with no audit trail connecting the decision to the transfer.",
+    pain: "Stablecoins settle in seconds, irreversibly. Your screening window went from hours to zero \u2014 and stablecoins accounted for 86% of illicit crypto flows in 2025 ($141B, TRM Labs). Treasury agents moving USDC need pre-execution proof, not post-hoc logs.",
     artifacts: [
       "Payment decision record with approval chain",
       "OFAC screening evidence with timestamps",
@@ -25,7 +25,7 @@ const useCases = [
   },
   {
     title: "Embedded finance and BaaS controls",
-    pain: "Embedded finance platforms can't prove to sponsor banks that compliance checks ran on every transaction.",
+    pain: "Your sponsor bank\u2019s examiner doesn\u2019t distinguish between your transactions and theirs. When Bank of America got a cease-and-desist for monitoring gaps, every downstream partner felt it. Embedded platforms need per-transaction compliance evidence that survives the bank\u2019s own exam.",
     artifacts: [
       "Per-transaction compliance evidence for bank review",
       "Policy version capture at decision time",
@@ -43,6 +43,17 @@ const useCases = [
     ],
     href: "/use-cases/agentic-payments-controls",
   },
+  {
+    title: "Examination & incident response",
+    pain: "When an examiner sends a first-request letter or an incident triggers a lookback, your team has days \u2014 not weeks \u2014 to produce evidence from systems that were never designed to work together.",
+    artifacts: [
+      "Pre-assembled evidence packets for common examiner request categories",
+      "Incident reconstruction from structured records, not raw logs",
+      "FFIEC Appendix H alignment for standard request letter items",
+      "Lookback support with historical policy version and screening records",
+    ],
+    href: "/use-cases/incident-review",
+  },
 ];
 
 export default function UseCasesPage() {
@@ -59,9 +70,9 @@ export default function UseCasesPage() {
               Compliance evidence for every payment workflow
             </h1>
             <p className="mx-auto mt-4 max-w-xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-              Kontext creates examiner-ready evidence wherever programmable
-              payments flow — stablecoin treasury, cross-border, embedded
-              finance, and incident response.
+              Your compliance team gets examiner-ready evidence wherever
+              programmable payments flow \u2014 stablecoin treasury, cross-border,
+              embedded finance, and OCC/FinCEN examination response.
             </p>
           </div>
         </div>

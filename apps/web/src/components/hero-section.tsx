@@ -15,12 +15,12 @@ export function HeroSection() {
         <div className="mx-auto max-w-4xl text-center">
           {/* Eyebrow */}
           <p className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)] opacity-0 animate-fade-up">
-            For payment, treasury, risk, and compliance teams
+            Payment evidence is scattered across 5–8 systems. Examiners don't wait.
           </p>
 
           {/* Headline */}
           <h1 className="mt-4 font-serif text-4xl font-normal leading-[1.1] tracking-tight text-[var(--ic-text)] sm:text-5xl lg:text-6xl opacity-0 animate-fade-up">
-            The governance layer for programmable money
+            The missing evidence layer between your payment stack and the examiner's desk
           </h1>
 
           {/* Subheadline */}
@@ -28,11 +28,12 @@ export function HeroSection() {
             className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-[var(--ic-text-muted)] opacity-0 animate-fade-up"
             style={{ animationDelay: "200ms" }}
           >
-            Kontext helps payment, treasury, risk, and compliance teams enforce
-            policy, screen counterparties, and generate reviewer-ready evidence
-            across stablecoin, ACH, wire, and card flows. Approve, block, or
-            escalate payment decisions with a trail built for launch reviews,
-            partner diligence, and audit prep.
+            Every new payment rail — stablecoins, real-time payments, AI-agent
+            initiated flows — adds another system your compliance team must
+            reconcile before an examiner asks. Kontext captures the decision,
+            the checks, the approval, and the proof in one reviewer-ready
+            record. No more assembling evidence from 5 systems at 11pm before
+            an OCC exam.
           </p>
 
           {/* CTAs */}
@@ -42,19 +43,19 @@ export function HeroSection() {
           >
             <a
               href="#evidence-package"
-              onClick={() => track("hero_cta_sample_packet")}
+              onClick={() => track("hero_cta_examiner_evidence")}
               className="inline-flex items-center rounded-lg bg-[var(--ic-accent)] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--ic-accent)]/90"
             >
-              See a sample case packet
+              See what your examiner would get
             </a>
             <button
               onClick={() => {
-                track("hero_cta_assessment");
+                track("hero_cta_evidence_gaps");
                 setAssessmentOpen(true);
               }}
               className="inline-flex items-center rounded-lg border border-[var(--ic-border)] px-6 py-3 text-sm font-medium text-[var(--ic-text-muted)] transition-colors hover:bg-[var(--ic-surface)] hover:text-[var(--ic-text)]"
             >
-              Run a readiness assessment
+              Score your evidence gaps in 3 minutes
             </button>
           </div>
 
