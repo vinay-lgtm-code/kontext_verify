@@ -268,6 +268,20 @@ export interface KontextConfig {
 
   /** x402 payment protocol configuration */
   x402Config?: X402Config;
+
+  /**
+   * Enforcement mode for verify() results.
+   * - 'advisory' (default): verify() always returns the result, never throws
+   * - 'blocking': verify() throws if the transaction is non-compliant
+   * - 'human_review': verify() auto-creates a pending review task if non-compliant
+   */
+  enforcement?: 'advisory' | 'blocking' | 'human_review';
+
+  /**
+   * Callback invoked when a transaction is blocked in 'blocking' enforcement mode.
+   * Called just before verify() throws the blocking error.
+   */
+  onBlock?: (result: VerifyResult) => void;
 }
 
 /** Screening configuration for pluggable multi-provider sanctions screening */
@@ -1534,6 +1548,8 @@ export interface VerifyResult {
   attribution?: ERC8021Attribution;
   /** SHA-256 hash of the intent context (present when intent provided in input) */
   intentHash?: string;
+  /** Enforcement status (present when enforcement mode is 'human_review' and transaction is non-compliant) */
+  status?: 'pending_review';
   /** Coverage warning when using built-in screening only (no external providers configured) */
   coverageWarning?: string;
   /** Reserve snapshot (present when reserveSnapshot config provided in input and token/chain available) */

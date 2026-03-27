@@ -5,6 +5,7 @@ import type { VerificationEvent, EvidenceBundle } from '@/lib/dashboard-api';
 import { getEvidence } from '@/lib/dashboard-api';
 import { StatusPill } from './status-pill';
 import { ReserveEvidence } from './reserve-evidence';
+import { NarratorButton } from './narrator-button';
 
 interface EvidenceDrawerProps {
   event: VerificationEvent;
@@ -211,10 +212,11 @@ export function EvidenceDrawer({ event, onClose, fetchEvidence }: EvidenceDrawer
             )}
 
         {/* Footer */}
-        <div className="dash-drawer-footer">
+        <div className="dash-drawer-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <button className="dash-btn dash-btn-secondary" onClick={onClose}>
             Close
           </button>
+          <NarratorButton eventId={event.event_id} />
         </div>
       </div>
     </>

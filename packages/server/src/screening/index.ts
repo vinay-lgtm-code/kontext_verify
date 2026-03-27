@@ -31,3 +31,5 @@ export { OFACSDNSource } from './sources/ofac-sdn-source.js';
 export { UKSanctionsSource } from './sources/uk-sanctions-source.js';
 export { EUFSFSource } from './sources/eu-fsf-source.js';
 export { OpenSanctionsSource } from './sources/opensanctions-source.js';
+export { WatchmanSource } from './sources/watchman-source.js';
+export { YenteSource } from './sources/yente-source.js';

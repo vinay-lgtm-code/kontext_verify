@@ -21,8 +21,23 @@ import { verifyToken } from './auth/jwt.js';
 import { requirePermission, type Role } from './auth/rbac.js';
 import { createAuthRoutes } from './routes/auth.js';
 import { createTeamRoutes } from './routes/team.js';
+import { createExportRoutes } from './routes/export-routes.js';
+import { createNarratorRoutes } from './routes/narrator-routes.js';
+import { createGdprRoutes } from './routes/gdpr-routes.js';
+import { createApprovalRoutes } from './routes/approval-routes.js';
+import { verifyChainExport } from './chain-verify.js';
+import { PIIVault } from './pii/vault.js';
+import { Pseudonymizer } from './pii/pseudonymizer.js';
 
 const app = new Hono();
+
+// PII Vault — AES-256-GCM encrypted, pseudonymized (GDPR compliance)
+const PII_ENCRYPTION_KEY = process.env['PII_ENCRYPTION_KEY'];
+const piiVault: PIIVault | null = PII_ENCRYPTION_KEY ? new PIIVault(PII_ENCRYPTION_KEY) : null;
+const pseudonymizer: Pseudonymizer | null = piiVault ? new Pseudonymizer() : null;
+if (piiVault) {
+  console.log('[Kontext] PII vault initialized — addresses will be pseudonymized');
+}
 const store = new ServerStore();
 
 // ============================================================================
@@ -161,6 +176,33 @@ app.use('*', cors({
 app.use('*', logger());
 
 // ============================================================================
+// W3C Trace Context Propagation (PR-G)
+// ============================================================================
+
+import { randomBytes } from 'crypto';
+
+app.use('/v1/*', async (c, next) => {
+  const traceparent = c.req.header('traceparent');
+  let traceId: string;
+  let spanId: string | undefined;
+
+  if (traceparent) {
+    const parts = traceparent.split('-');
+    traceId = parts[1] ?? randomBytes(16).toString('hex');
+    spanId = parts[2];
+  } else {
+    traceId = randomBytes(16).toString('hex');
+  }
+
+  c.set('traceId' as never, traceId as never);
+  if (spanId) c.set('spanId' as never, spanId as never);
+
+  await next();
+
+  c.header('X-Kontext-Trace-Id', traceId);
+});
+
+// ============================================================================
 // Rate Limiting
 // ============================================================================
 
@@ -274,6 +316,33 @@ app.get('/', (c) => {
 
 app.get('/health', (c) => {
   return c.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// ============================================================================
+// Public: Third-Party Chain Verification (PR-H)
+// ============================================================================
+
+const verifyChainLimiter = new Map<string, { count: number; resetAt: number }>();
+
+app.post('/v1/verify-chain', async (c) => {
+  // Dedicated rate limit: 10/min per IP
+  const ip = (c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? c.req.header('x-real-ip')) ?? 'unknown';
+  const now = Date.now();
+  const entry = verifyChainLimiter.get(ip);
+  if (entry && now < entry.resetAt && entry.count >= 10) {
+    return c.json({ error: 'Rate limit exceeded' }, { status: 429 });
+  }
+  if (!entry || now >= (entry.resetAt)) {
+    verifyChainLimiter.set(ip, { count: 1, resetAt: now + 60_000 });
+  } else {
+    entry.count++;
+  }
+
+  const body = await c.req.json<{ entries?: Array<{ record_hash: string; previous_record_hash: string; chain_index: number }> }>();
+  if (!body.entries || !Array.isArray(body.entries)) {
+    return c.json({ error: 'entries array required' }, 400);
+  }
+  return c.json(verifyChainExport(body.entries));
 });
 
 // ============================================================================
@@ -935,7 +1004,9 @@ app.post('/v1/verification-events', async (c) => {
   }
 
   try {
-    const result = await handleIngest(pool, orgId, body);
+    // Wait for screening engine to be ready (non-blocking on first request)
+    await screeningInitPromise;
+    const result = await handleIngest(pool, orgId, body, screeningEngine);
     return c.json(result, 201);
   } catch (err) {
     if (err instanceof ValidationError) {
@@ -984,6 +1055,29 @@ app.route('/v1/auth', authRouter);
 
 const teamRouter = createTeamRoutes(getPool, getRedis);
 app.route('/v1/team', teamRouter);
+
+// Export routes (Examiner-Ready Evidence Export Engine — PR-E)
+app.use('/v1/exports', dashboardAuthMiddleware);
+app.use('/v1/exports/*', dashboardAuthMiddleware);
+const exportRouter = createExportRoutes(getPool, getRedis);
+app.route('/v1', exportRouter);
+
+// Narrator routes (AI Evidence Narrator — PR-K)
+app.use('/v1/evidence/*', dashboardAuthMiddleware);
+app.use('/v1/narratives', dashboardAuthMiddleware);
+app.use('/v1/narratives/*', dashboardAuthMiddleware);
+const narratorRouter = createNarratorRoutes(getPool, getRedis);
+app.route('/v1', narratorRouter);
+
+// Approval routes (PR-D)
+app.use('/v1/approvals', dashboardAuthMiddleware);
+app.use('/v1/approvals/*', dashboardAuthMiddleware);
+const approvalRouter = createApprovalRoutes(getPool);
+app.route('/v1', approvalRouter);
+
+// GDPR routes (PII vault + erasure — PR-I)
+const gdprRouter = createGdprRoutes(getPool);
+app.route('/v1/gdpr', gdprRouter);
 
 // Event assignment (admin only) — mounts alongside team routes
 app.post('/v1/events/:eventId/assign', authMiddleware, requirePermission('assign:events'), async (c) => {
@@ -1125,22 +1219,48 @@ app.get('/v1/checkout/success', async (c) => {
 // Unified Screening Service — Pre-cached government sanctions data
 // ============================================================================
 
-// Lazy-initialized screening engine
+// Screening engine — initialized eagerly at app startup so it is available
+// to both the /v1/screening/* routes and the ingest pipeline.
 let screeningEngine: import('./screening/screening-engine.js').ScreeningEngine | null = null;
 let screeningInitPromise: Promise<void> | null = null;
+
+/** 7 days in milliseconds */
+const SCREENING_SYNC_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
 
 async function initScreeningEngine(): Promise<void> {
   if (process.env['SCREENING_ENABLED'] === 'false') return;
 
   try {
     const { ScreeningEngine, OFACSDNSource, UKSanctionsSource, EUFSFSource, OpenSanctionsSource } = await import('./screening/index.js');
-    screeningEngine = new ScreeningEngine();
-    await screeningEngine.init([
+    const { WatchmanSource } = await import('./screening/sources/watchman-source.js');
+
+    screeningEngine = new ScreeningEngine({
+      syncIntervalMs: parseInt(process.env['SCREENING_SYNC_INTERVAL_MS'] ?? '', 10) || SCREENING_SYNC_INTERVAL_MS,
+    });
+
+    const sources: import('./screening/sources/source-interface.js').SanctionsSource[] = [
       new OFACSDNSource(),
       new UKSanctionsSource(),
       new EUFSFSource(),
       new OpenSanctionsSource(),
-    ]);
+    ];
+
+    // Register WatchmanSource if WATCHMAN_URL is configured
+    const watchman = new WatchmanSource();
+    if (watchman.isAvailable()) {
+      sources.push(watchman);
+      console.log('[Kontext] Watchman source registered');
+    }
+
+    // Register YenteSource (OpenSanctions) if YENTE_URL is configured (PR-J)
+    const { YenteSource } = await import('./screening/sources/yente-source.js');
+    const yente = new YenteSource();
+    if (yente.isAvailable()) {
+      sources.push(yente);
+      console.log('[Kontext] Yente/OpenSanctions source registered');
+    }
+
+    await screeningEngine.init(sources);
     screeningEngine.startPeriodicSync();
     console.log('[Kontext] Unified screening engine initialized');
   } catch (err) {

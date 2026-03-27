@@ -287,3 +287,236 @@ export async function assignEvent(
     body: JSON.stringify({ userId }),
   });
 }
+
+// ---------- Evidence Export API ----------
+
+export type ExportTemplate = 'examiner' | 'diligence' | 'incident' | 'redacted';
+export type ExportFormat = 'json' | 'csv' | 'pdf';
+
+export interface BulkExportFilters {
+  date_from?: string;
+  date_to?: string;
+  status?: string;
+  agent_id?: string;
+  chain?: string;
+}
+
+export interface BulkExportResponse {
+  export_id: string;
+  status: 'processing';
+  estimated_events: number;
+  template: string;
+  format: string;
+}
+
+export interface ExportProgressResponse {
+  export_id: string;
+  status: 'processing' | 'complete' | 'failed';
+  progress_pct: number;
+  download_url: string | null;
+  error: string | null;
+  file_size_bytes?: number | null;
+  event_count?: number | null;
+  completed_at?: string | null;
+}
+
+export async function exportSingleEvent(
+  eventId: string,
+  template: ExportTemplate = 'examiner',
+  format: ExportFormat = 'json',
+): Promise<unknown> {
+  const token = getToken();
+  if (!token) throw new Error('Not authenticated');
+
+  const res = await fetch(
+    `${API_BASE}/v1/verification-events/${eventId}/export?template=${template}&format=${format}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body as Record<string, string>).error ?? `Export failed: ${res.status}`);
+  }
+
+  if (format === 'json') {
+    return res.json();
+  }
+
+  // For CSV/PDF, trigger a download
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `kontext-${eventId}-${template}.${format}`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+  return { downloaded: true };
+}
+
+export async function createBulkExport(
+  template: ExportTemplate,
+  format: ExportFormat,
+  filters?: BulkExportFilters,
+): Promise<BulkExportResponse> {
+  return apiFetch('/exports/bulk', {
+    method: 'POST',
+    body: JSON.stringify({ template, format, filters }),
+  });
+}
+
+export async function getExportProgress(exportId: string): Promise<ExportProgressResponse> {
+  return apiFetch(`/exports/${exportId}/progress`);
+}
+
+// ---------- Approval Chain API ----------
+
+export interface ApprovalChainStep {
+  approval_id: string;
+  event_id: string;
+  org_id: string;
+  step_index: number;
+  total_steps: number;
+  approver_id: string | null;
+  approver_role: string | null;
+  decision: 'pending' | 'approved' | 'rejected';
+  reason: string | null;
+  decided_at: string | null;
+  created_at: string;
+}
+
+export interface PendingApproval extends ApprovalChainStep {
+  payment_amount: string | null;
+  payment_token: string | null;
+  payment_chain: string | null;
+  agent_id: string | null;
+  trust_score: number | null;
+  event_status: string | null;
+}
+
+export async function createApprovalChain(
+  eventId: string,
+  steps?: Array<{ approver_role: string }>,
+): Promise<{ approvals: ApprovalChainStep[]; count: number }> {
+  return apiFetch(`/approvals/${eventId}`, {
+    method: 'POST',
+    body: JSON.stringify({ steps }),
+  });
+}
+
+export async function submitApprovalDecision(
+  approvalId: string,
+  decision: 'approved' | 'rejected',
+  reason: string,
+): Promise<{ approval: ApprovalChainStep }> {
+  return apiFetch(`/approvals/${approvalId}/decide`, {
+    method: 'POST',
+    body: JSON.stringify({ decision, reason }),
+  });
+}
+
+export async function getPendingApprovals(): Promise<{ approvals: PendingApproval[]; count: number }> {
+  return apiFetch('/approvals/pending');
+}
+
+export async function getEventApprovals(
+  eventId: string,
+): Promise<{ approvals: ApprovalChainStep[]; count: number }> {
+  return apiFetch(`/verification-events/${eventId}/approvals`);
+}
+
+// ---------- Narrator API ----------
+
+export interface NarrativeData {
+  narrative_id: string;
+  org_id: string;
+  event_id: string;
+  evidence_bundle_id: string;
+  template: string;
+  sections: Record<string, string>;
+  markdown: string;
+  status: string;
+  analyst_notes: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  review_decision: string | null;
+  generated_by: string;
+  llm_provider: string | null;
+  llm_model: string | null;
+  llm_tokens_used: number | null;
+  generation_time_ms: number | null;
+  digest_reference: string;
+  chain_index_reference: number;
+  bulk_id: string | null;
+  created_at: string;
+  expires_at: string | null;
+}
+
+export async function generateNarrative(
+  eventId: string,
+  template: string,
+  force = false,
+): Promise<NarrativeData> {
+  return apiFetch(`/evidence/${eventId}/narrative`, {
+    method: 'POST',
+    body: JSON.stringify({ template, force }),
+  });
+}
+
+export async function getNarrative(narrativeId: string): Promise<NarrativeData> {
+  return apiFetch(`/narratives/${narrativeId}`);
+}
+
+export async function updateNarrative(
+  narrativeId: string,
+  updates: { sections?: Record<string, string>; analyst_notes?: string },
+): Promise<NarrativeData> {
+  return apiFetch(`/narratives/${narrativeId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+}
+
+export async function reviewNarrative(
+  narrativeId: string,
+  decision: 'approved' | 'changes_requested',
+  notes?: string,
+): Promise<NarrativeData> {
+  return apiFetch(`/narratives/${narrativeId}/review`, {
+    method: 'POST',
+    body: JSON.stringify({ decision, notes }),
+  });
+}
+
+export async function exportNarrativePDF(narrativeId: string): Promise<void> {
+  const token = getToken();
+  if (!token) throw new Error('Not authenticated');
+
+  const res = await fetch(`${API_BASE}/v1/narratives/${narrativeId}/export`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body as Record<string, string>).error ?? `Export failed: ${res.status}`);
+  }
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `narrative-${narrativeId}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}

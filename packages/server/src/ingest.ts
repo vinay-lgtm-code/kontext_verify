@@ -19,6 +19,8 @@
 
 import { createHash, randomBytes } from 'crypto';
 import type { Pool, PoolClient } from 'pg';
+import type { ScreeningEngine } from './screening/screening-engine.js';
+import type { AddressScreeningResponse, EntityScreeningResponse } from './screening/types.js';
 
 // ---------------------------------------------------------------------------
 // ID Generation (ULID-style: time-sortable, URL-safe)
@@ -109,7 +111,7 @@ type PolicyDecision = 'allow' | 'warn' | 'block';
 type OfacStatus = 'clear' | 'match' | 'review_required';
 type TrustBand = 'low' | 'medium' | 'high';
 type CoverageStatus = 'full' | 'partial' | 'none';
-type EventStatus = 'verified' | 'warning' | 'blocked' | 'unverified';
+type EventStatus = 'verified' | 'warning' | 'blocked' | 'unverified' | 'pending_review';
 
 interface PolicyResult {
   decision: PolicyDecision;
@@ -182,10 +184,16 @@ function validateIngestRequest(body: unknown): IngestRequest {
   const req = body as Record<string, unknown>;
 
   // Required top-level fields
-  for (const field of ['environment', 'workflow', 'agent_id', 'actor_type', 'payment', 'intent']) {
+  for (const field of ['environment', 'workflow', 'agent_id', 'actor_type', 'payment', 'intent', 'enforcement_mode']) {
     if (!req[field]) {
       throw new ValidationError('MISSING_REQUIRED_FIELD', `Missing required field: ${field}`);
     }
+  }
+
+  // Validate enforcement_mode value
+  const VALID_ENFORCEMENT_MODES = new Set(['advisory', 'blocking', 'human_review']);
+  if (!VALID_ENFORCEMENT_MODES.has(req['enforcement_mode'] as string)) {
+    throw new ValidationError('INVALID_ENFORCEMENT_MODE', 'enforcement_mode must be one of: advisory, blocking, human_review');
   }
 
   const payment = req['payment'] as Record<string, unknown>;
@@ -394,31 +402,47 @@ async function evaluatePolicy(
 }
 
 // ---------------------------------------------------------------------------
-// OFAC / Sanctions Screening
+// OFAC / Sanctions Screening (via ScreeningEngine)
 // ---------------------------------------------------------------------------
 
-const KNOWN_SANCTIONED_ADDRESSES = new Set<string>([
-  // Tornado Cash contracts (OFAC SDN listed August 2022)
-  '0x8589427373d6d84e98730d7795d8f6f8731fda16',
-  '0xd4b88df4d29f5cedd6857912842cff3b20c8cfa3',
-  '0xfd8610d20aa15b7b2e3be39b396a1bc3516c7144',
-]);
-
-async function screenAddress(address: string): Promise<OfacStatus> {
-  const normalized = address.toLowerCase();
-
-  if (KNOWN_SANCTIONED_ADDRESSES.has(normalized)) {
-    return 'match';
-  }
-
-  return 'clear';
+/** Extended screening result that includes engine response metadata */
+interface ScreeningResultWithMeta extends ScreeningResult {
+  listsChecked: string[];
+  entityId: string | null;
+  entityName: string | null;
+  durationMs: number;
 }
 
-async function runScreening(req: IngestRequest): Promise<ScreeningResult> {
+function addressResponseToOfacStatus(resp: AddressScreeningResponse): OfacStatus {
+  return resp.hit ? 'match' : 'clear';
+}
+
+async function runScreening(
+  req: IngestRequest,
+  engine: ScreeningEngine | null,
+): Promise<ScreeningResultWithMeta> {
+  // If engine is not ready, return a degraded but safe result
+  if (!engine || !engine.isReady()) {
+    return {
+      ofac_status: 'review_required',
+      screened_at: new Date().toISOString(),
+      screening_provider: 'none',
+      matches: [],
+      listsChecked: [],
+      entityId: null,
+      entityName: null,
+      durationMs: 0,
+    };
+  }
+
   if (req.payment.rail === 'card') {
     // Card rail: screen merchant name + merchant country
     const matches: string[] = [];
     let ofac_status: OfacStatus = 'clear';
+    let entityId: string | null = null;
+    let entityName: string | null = null;
+    let totalDurationMs = 0;
+    let listsChecked: string[] = [];
 
     // Screen merchant country against sanctions
     if (req.payment.merchant_country) {
@@ -432,41 +456,78 @@ async function runScreening(req: IngestRequest): Promise<ScreeningResult> {
     // Screen merchant name — if it looks like a blockchain address, use address screening
     const merchantName = req.payment.merchant_name ?? req.payment.to_address;
     if (/^0x[a-fA-F0-9]{40}$/.test(merchantName)) {
-      const status = await screenAddress(merchantName);
-      if (status === 'match') {
+      const addrResult = engine.screenAddress(merchantName);
+      listsChecked = addrResult.listsChecked;
+      totalDurationMs += addrResult.durationMs;
+      if (addrResult.hit) {
         ofac_status = 'match';
         matches.push(`merchant_address: ${merchantName}`);
+        entityId = addrResult.entity?.id ?? null;
+        entityName = addrResult.entity?.name ?? null;
+      }
+    } else if (merchantName) {
+      // Screen merchant name via entity fuzzy search
+      const entityResult: EntityScreeningResponse = engine.screenEntity(merchantName);
+      listsChecked = entityResult.listsChecked;
+      totalDurationMs += entityResult.durationMs;
+      if (entityResult.hit && entityResult.matches[0]) {
+        ofac_status = entityResult.matches[0].similarity >= 0.9 ? 'match' : 'review_required';
+        matches.push(`merchant_name: ${merchantName} (similarity: ${entityResult.matches[0].similarity})`);
+        entityId = entityResult.matches[0].entityId;
+        entityName = entityResult.matches[0].name;
       }
     }
 
     return {
       ofac_status,
       screened_at: new Date().toISOString(),
-      screening_provider: 'kontext-card-screening-v1',
+      screening_provider: 'kontext-screening-engine',
       matches,
+      listsChecked: listsChecked.map(String),
+      entityId,
+      entityName,
+      durationMs: totalDurationMs,
     };
   }
 
-  // Stablecoin/fiat: screen from/to addresses
-  const [fromStatus, toStatus] = await Promise.all([
-    screenAddress(req.payment.from_address),
-    screenAddress(req.payment.to_address),
-  ]);
+  // Stablecoin/fiat: screen from/to addresses via engine
+  const fromResult = engine.screenAddress(req.payment.from_address);
+  const toResult = engine.screenAddress(req.payment.to_address);
+
+  const fromStatus = addressResponseToOfacStatus(fromResult);
+  const toStatus = addressResponseToOfacStatus(toResult);
 
   const ofac_status: OfacStatus =
     fromStatus === 'match' || toStatus === 'match' ? 'match' :
-    fromStatus === 'review_required' || toStatus === 'review_required' ? 'review_required' :
     'clear';
 
   const matches: string[] = [];
-  if (fromStatus === 'match') matches.push(`from_address: ${req.payment.from_address}`);
-  if (toStatus === 'match') matches.push(`to_address: ${req.payment.to_address}`);
+  let entityId: string | null = null;
+  let entityName: string | null = null;
+
+  if (fromResult.hit) {
+    matches.push(`from_address: ${req.payment.from_address}`);
+    entityId = fromResult.entity?.id ?? null;
+    entityName = fromResult.entity?.name ?? null;
+  }
+  if (toResult.hit) {
+    matches.push(`to_address: ${req.payment.to_address}`);
+    // Prefer to_address entity if from wasn't a hit
+    if (!entityId) {
+      entityId = toResult.entity?.id ?? null;
+      entityName = toResult.entity?.name ?? null;
+    }
+  }
 
   return {
     ofac_status,
     screened_at: new Date().toISOString(),
-    screening_provider: 'kontext-ofac-v1',
+    screening_provider: 'kontext-screening-engine',
     matches,
+    listsChecked: fromResult.listsChecked.map(String),
+    entityId,
+    entityName,
+    durationMs: fromResult.durationMs + toResult.durationMs,
   };
 }
 
@@ -789,12 +850,15 @@ export interface IngestResponse {
   intent_hash: string;
   chain_index: number;
   created_at: string;
+  enforcement_mode: string;
+  error?: string;
 }
 
 export async function handleIngest(
   db: Pool,
   orgId: string,
   rawBody: unknown,
+  engine?: ScreeningEngine | null,
 ): Promise<IngestResponse> {
 
   // 1. Validate and strip forbidden fields
@@ -820,7 +884,7 @@ export async function handleIngest(
   try {
     const [policy, screening] = await Promise.all([
       evaluatePolicy(client, orgId, req),
-      runScreening(req),
+      runScreening(req, engine ?? null),
     ]);
 
     // 4. Compute trust score (depends on policy + screening results)
@@ -976,11 +1040,13 @@ export async function handleIngest(
           instrument_id, instrument_issuer,
           card_authorization_id, card_3ds_status,
           merchant_screened_name, scope_evaluation,
+          screening_lists_checked, screening_list_version,
+          screening_entity_id, screening_entity_name, screening_duration_ms,
           created_at
         ) VALUES (
           $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,
           $13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,
-          $28,$29,$30,$31,$32,$33,$34
+          $28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39
         )`,
         [
           bundleId, eventId, orgId,
@@ -1007,6 +1073,12 @@ export async function handleIngest(
           req.payment.three_d_secure_status ?? null,
           req.payment.merchant_name ?? null,
           scopeEvaluation,
+          // Screening metadata (from ScreeningEngine)
+          screening.listsChecked.length > 0 ? screening.listsChecked : null,
+          null, // screening_list_version: populated when engine exposes snapshot version
+          screening.entityId,
+          screening.entityName,
+          screening.durationMs > 0 ? screening.durationMs : null,
           now,
         ],
       );
