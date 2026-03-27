@@ -17,6 +17,23 @@ export {
 } from './exporters.js';
 export type { EventExporter, ExporterResult } from './exporters.js';
 
+// Merkle tree
+export {
+  MerkleTree,
+  createMerkleBatch,
+  verifyDigestInBatch,
+  mergeBatches,
+  createMultiProof,
+  calculateProofSize,
+  hashLeaf,
+  hashNodes,
+  buildMerkleTree,
+  computeMerkleRoot,
+  generateMerkleProof,
+  verifyMerkleProof,
+} from './merkle.js';
+export type { MerkleProof, MerkleBatch } from './merkle.js';
+
 // Webhooks
 export { WebhookManager } from './webhooks.js';
 export type { WebhookConfig, WebhookEventType, WebhookDeliveryResult } from './webhooks.js';
