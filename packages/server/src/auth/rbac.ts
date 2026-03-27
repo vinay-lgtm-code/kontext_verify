@@ -51,6 +51,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'write:transactions',
     'write:logs',
     'write:tasks',
+    'approve:tasks',
     'read:scoped-data',
     'export:json',
     'export:csv',

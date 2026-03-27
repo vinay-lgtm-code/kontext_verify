@@ -24,6 +24,7 @@ import { createTeamRoutes } from './routes/team.js';
 import { createExportRoutes } from './routes/export-routes.js';
 import { createNarratorRoutes } from './routes/narrator-routes.js';
 import { createGdprRoutes } from './routes/gdpr-routes.js';
+import { createApprovalRoutes } from './routes/approval-routes.js';
 import { PIIVault } from './pii/vault.js';
 import { Pseudonymizer } from './pii/pseudonymizer.js';
 
@@ -1012,6 +1013,12 @@ app.use('/v1/narratives', dashboardAuthMiddleware);
 app.use('/v1/narratives/*', dashboardAuthMiddleware);
 const narratorRouter = createNarratorRoutes(getPool, getRedis);
 app.route('/v1', narratorRouter);
+
+// Approval routes (PR-D)
+app.use('/v1/approvals', dashboardAuthMiddleware);
+app.use('/v1/approvals/*', dashboardAuthMiddleware);
+const approvalRouter = createApprovalRoutes(getPool);
+app.route('/v1', approvalRouter);
 
 // GDPR routes (PII vault + erasure — PR-I)
 const gdprRouter = createGdprRoutes(getPool);

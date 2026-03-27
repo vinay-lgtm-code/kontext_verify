@@ -374,6 +374,62 @@ export async function getExportProgress(exportId: string): Promise<ExportProgres
   return apiFetch(`/exports/${exportId}/progress`);
 }
 
+// ---------- Approval Chain API ----------
+
+export interface ApprovalChainStep {
+  approval_id: string;
+  event_id: string;
+  org_id: string;
+  step_index: number;
+  total_steps: number;
+  approver_id: string | null;
+  approver_role: string | null;
+  decision: 'pending' | 'approved' | 'rejected';
+  reason: string | null;
+  decided_at: string | null;
+  created_at: string;
+}
+
+export interface PendingApproval extends ApprovalChainStep {
+  payment_amount: string | null;
+  payment_token: string | null;
+  payment_chain: string | null;
+  agent_id: string | null;
+  trust_score: number | null;
+  event_status: string | null;
+}
+
+export async function createApprovalChain(
+  eventId: string,
+  steps?: Array<{ approver_role: string }>,
+): Promise<{ approvals: ApprovalChainStep[]; count: number }> {
+  return apiFetch(`/approvals/${eventId}`, {
+    method: 'POST',
+    body: JSON.stringify({ steps }),
+  });
+}
+
+export async function submitApprovalDecision(
+  approvalId: string,
+  decision: 'approved' | 'rejected',
+  reason: string,
+): Promise<{ approval: ApprovalChainStep }> {
+  return apiFetch(`/approvals/${approvalId}/decide`, {
+    method: 'POST',
+    body: JSON.stringify({ decision, reason }),
+  });
+}
+
+export async function getPendingApprovals(): Promise<{ approvals: PendingApproval[]; count: number }> {
+  return apiFetch('/approvals/pending');
+}
+
+export async function getEventApprovals(
+  eventId: string,
+): Promise<{ approvals: ApprovalChainStep[]; count: number }> {
+  return apiFetch(`/verification-events/${eventId}/approvals`);
+}
+
 // ---------- Narrator API ----------
 
 export interface NarrativeData {
