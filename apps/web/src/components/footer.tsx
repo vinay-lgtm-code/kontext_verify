@@ -19,6 +19,7 @@ const footerLinks = {
     { href: "/bank-readiness-checklist", label: "Bank Readiness Checklist" },
     { href: "/sample-payment-decision-packet", label: "Sample Evidence Packet" },
     { href: "/sample-ai-initiated-payment-packet", label: "AI Payment Packet" },
+    { href: "/evidence-calculator", label: "Evidence Calculator" },
     { href: "/contact", label: "Contact" },
   ],
   Company: [
