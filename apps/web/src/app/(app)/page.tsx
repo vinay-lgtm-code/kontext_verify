@@ -707,17 +707,17 @@ const result = await ctx.verify({
             {[
               {
                 name: "Starter",
-                desc: "Launch readiness",
+                desc: "Pass your first partner review",
                 items: ["Advisory mode", "Standard evidence retention", "JSON + CSV exports", "Human / API / workflow initiation tracking"],
               },
               {
                 name: "Growth",
-                desc: "Live operations with formal controls",
+                desc: "Survive an examiner call",
                 items: ["Blocking and escalation", "Examiner packet export", "Approval workflows", "OpenTelemetry and integrations"],
               },
               {
                 name: "Enterprise",
-                desc: "Audit, diligence, and governance depth",
+                desc: "Prove it to anyone",
                 items: ["Partner diligence exports", "Third-party verification", "GDPR / SAR support", "GRC and case system integration"],
               },
             ].map((plan) => (
