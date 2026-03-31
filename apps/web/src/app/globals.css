@@ -13,8 +13,8 @@
     --primary-foreground: 0 0% 100%; /* #ffffff */
     --secondary: 224 26% 11%;        /* #131825 */
     --secondary-foreground: 224 52% 91%;
-    --muted: 222 22% 44%;            /* #5a6885 */
-    --muted-foreground: 222 22% 44%;
+    --muted: 222 20% 57%;            /* #7a8aaa */
+    --muted-foreground: 222 20% 57%;
     --accent: 222 93% 60%;           /* #3b6ef8 */
     --accent-foreground: 0 0% 100%;
     --border: 222 30% 18%;           /* #1c2540 */
@@ -29,8 +29,8 @@
     --ic-border: #1c2540;
     --ic-border-dim: #131a30;
     --ic-text: #dde4f5;
-    --ic-text-muted: #5a6885;
-    --ic-text-dim: #4a5572;
+    --ic-text-muted: #7a8aaa;
+    --ic-text-dim: #6b7a9a;
     --ic-accent: #3b6ef8;
     --ic-accent-dim: rgba(59, 110, 248, 0.1);
     --ic-accent-glow: rgba(59, 110, 248, 0.22);
