@@ -19,7 +19,7 @@ export function HeroSection() {
           </p>
 
           {/* Headline */}
-          <h1 className="mt-4 font-serif text-4xl font-normal leading-[1.1] tracking-tight text-[var(--ic-text)] sm:text-5xl lg:text-6xl opacity-0 animate-fade-up">
+          <h1 className="mt-4 font-serif text-4xl font-normal leading-[1.15] tracking-tight text-[var(--ic-text)] sm:text-5xl lg:text-6xl opacity-0 animate-fade-up">
             The governance layer for programmable payments
           </h1>
 
@@ -53,7 +53,7 @@ export function HeroSection() {
                 track("hero_cta_evidence_gaps");
                 setAssessmentOpen(true);
               }}
-              className="inline-flex items-center rounded-lg border border-[var(--ic-border)] px-6 py-3 text-sm font-medium text-[var(--ic-text-muted)] transition-colors hover:bg-[var(--ic-surface)] hover:text-[var(--ic-text)]"
+              className="inline-flex items-center rounded-lg border border-[var(--ic-text-dim)] bg-[var(--ic-surface-2)] px-6 py-3 text-sm font-medium text-[var(--ic-text-muted)] transition-colors hover:bg-[var(--ic-surface-3)] hover:text-[var(--ic-text)]"
             >
               Score your evidence gaps in 3 minutes
             </button>

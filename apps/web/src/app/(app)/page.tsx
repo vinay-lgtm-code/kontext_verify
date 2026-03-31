@@ -127,13 +127,11 @@ export default function LandingPage() {
       {/* Cost-of-inaction stats */}
       <section className="relative px-4 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
-          <div className="text-center">
-            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
-              The Cost of Fragmented Payment Evidence
-            </span>
-          </div>
+          <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
+            The Cost of Fragmented Payment Evidence
+          </span>
 
-          <div className="mt-10 grid gap-6 md:grid-cols-3">
+          <div className="mt-10 space-y-6">
             {[
               {
                 stat: "$1.75B",
@@ -156,25 +154,27 @@ export default function LandingPage() {
             ].map((item) => (
               <div
                 key={item.stat}
-                className="rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] p-8 text-center"
+                className="flex items-start gap-6 rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] p-6"
               >
-                <p className="font-serif text-4xl font-normal text-[var(--ic-accent)]">
+                <p className="flex-shrink-0 font-serif text-4xl font-normal text-[var(--ic-accent)]">
                   {item.stat}
                 </p>
-                <p className="mt-3 text-[15px] font-semibold text-[var(--ic-text)]">
-                  {item.label}
-                </p>
-                <p className="mt-1 text-[13px] text-[var(--ic-text-muted)]">
-                  {item.detail}
-                </p>
-                <p className="mt-3 font-mono text-[10px] uppercase tracking-widest text-[var(--ic-text-dim)]">
-                  Source: {item.source}
-                </p>
+                <div>
+                  <p className="text-[15px] font-semibold text-[var(--ic-text)]">
+                    {item.label}
+                  </p>
+                  <p className="mt-1 text-[13px] text-[var(--ic-text-muted)]">
+                    {item.detail}
+                  </p>
+                  <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-[var(--ic-text-dim)]">
+                    Source: {item.source}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
 
-          <p className="mt-8 text-center text-[15px] text-[var(--ic-text-muted)]">
+          <p className="mt-8 text-[15px] text-[var(--ic-text-muted)]">
             Every programmable money rail you add multiplies this problem. Kontext collapses it.
           </p>
         </div>
@@ -509,60 +509,64 @@ export default function LandingPage() {
 
       <section className="relative border-t border-[var(--ic-border)] bg-[var(--ic-surface-2)] px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
-          <div className="text-center">
-            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
-              Who It Serves
-            </span>
-            <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
-              Built for teams that carry review and control liability
-            </h2>
-            <p className="mx-auto mt-4 max-w-xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-              Compliance comes first, but treasury, audit, and engineering all
-              need the same defensible record.
-            </p>
-          </div>
+          <div className="grid items-start gap-12 lg:grid-cols-5">
+            <div className="lg:col-span-2">
+              <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
+                Who It Serves
+              </span>
+              <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
+                Built for teams that carry review and control liability
+              </h2>
+              <p className="mt-4 text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
+                Compliance comes first, but treasury, audit, and engineering all
+                need the same defensible record.
+              </p>
+            </div>
 
-          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            {[
-              {
-                icon: ShieldCheck,
-                title: "Compliance",
-                desc: "The #1 pattern in recent consent orders \u2014 TD Bank ($1.75B), Bank of America, Wells Fargo \u2014 is \u2018couldn\u2019t produce evidence that controls ran.\u2019 Prove every check ran and export reviewer-ready packets before the examiner asks.",
-              },
-              {
-                icon: ScanEye,
-                title: "Risk",
-                desc: "See when controls trigger, what got blocked or escalated, and where risky payment patterns need attention.",
-              },
-              {
-                icon: CreditCard,
-                title: "Treasury & Ops",
-                desc: "Operate across rails with clear approval requirements, enforcement states, and exception workflows.",
-              },
-              {
-                icon: FileSearch,
-                title: "Internal Audit",
-                desc: "Verify records were not altered, confirm the exact policy version applied, and review governance actions with context.",
-              },
-              {
-                icon: Code,
-                title: "Platform Engineering",
-                desc: "One integration point into existing payment paths, with evidence exported to compliance teams instead of rebuilt from logs.",
-              },
-            ].map((role) => (
-              <div
-                key={role.title}
-                className="rounded-lg border border-[var(--ic-border)] bg-[hsl(var(--background))] p-6 transition-colors hover:border-[var(--ic-accent)]/30"
-              >
-                <role.icon size={24} className="text-[var(--ic-accent)]" />
-                <h3 className="mt-4 text-base font-semibold text-[var(--ic-text)]">
-                  {role.title}
-                </h3>
-                <p className="mt-2 text-[13px] leading-relaxed text-[var(--ic-text-muted)]">
-                  {role.desc}
-                </p>
-              </div>
-            ))}
+            <div className="space-y-4 lg:col-span-3">
+              {[
+                {
+                  icon: ShieldCheck,
+                  title: "Compliance",
+                  desc: "The #1 pattern in recent consent orders \u2014 TD Bank ($1.75B), Bank of America, Wells Fargo \u2014 is \u2018couldn\u2019t produce evidence that controls ran.\u2019 Prove every check ran and export reviewer-ready packets before the examiner asks.",
+                },
+                {
+                  icon: ScanEye,
+                  title: "Risk",
+                  desc: "See when controls trigger, what got blocked or escalated, and where risky payment patterns need attention.",
+                },
+                {
+                  icon: CreditCard,
+                  title: "Treasury & Ops",
+                  desc: "Operate across rails with clear approval requirements, enforcement states, and exception workflows.",
+                },
+                {
+                  icon: FileSearch,
+                  title: "Internal Audit",
+                  desc: "Verify records were not altered, confirm the exact policy version applied, and review governance actions with context.",
+                },
+                {
+                  icon: Code,
+                  title: "Platform Engineering",
+                  desc: "One integration point into existing payment paths, with evidence exported to compliance teams instead of rebuilt from logs.",
+                },
+              ].map((role) => (
+                <div
+                  key={role.title}
+                  className="flex gap-4 rounded-lg border border-[var(--ic-border)] bg-[hsl(var(--background))] p-5 transition-colors hover:border-[var(--ic-accent)]/30"
+                >
+                  <role.icon size={22} className="mt-0.5 flex-shrink-0 text-[var(--ic-accent)]" />
+                  <div>
+                    <h3 className="text-[15px] font-semibold text-[var(--ic-text)]">
+                      {role.title}
+                    </h3>
+                    <p className="mt-1 text-[13px] leading-relaxed text-[var(--ic-text-muted)]">
+                      {role.desc}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -709,72 +713,69 @@ export default function LandingPage() {
       <AssessmentSection />
 
       <section className="relative border-t border-[var(--ic-border)] bg-[var(--ic-surface-2)] px-4 py-24 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-5xl">
-          <div className="text-center">
-            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
-              Where Kontext Fits
-            </span>
-            <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
-              8 systems. 1 evidence record.
-            </h2>
-          </div>
-
-          <div className="mt-12 flex flex-col items-center gap-4 md:flex-row md:gap-0">
-            <div className="flex-1 rounded-xl border border-[var(--ic-border)] bg-[var(--ic-surface)] p-7">
-              <h3 className="text-base font-semibold text-[var(--ic-text)]">Your Payment Stack</h3>
-              <div className="my-4 h-px bg-[var(--ic-border)]" />
-              <ul className="space-y-2 text-[13px] text-[var(--ic-text-muted)]">
-                <li>Payment agents and orchestration</li>
-                <li>Wallet APIs and ledgers</li>
-                <li>Processors and banking rails</li>
-                <li>Sanctions and risk vendors</li>
-                <li>Case management and approval systems</li>
-              </ul>
-            </div>
-
-            <div className="flex-shrink-0 px-3 text-[var(--ic-text-dim)]">
-              <ArrowRight size={24} className="hidden md:block" />
-              <ArrowRight size={24} className="rotate-90 md:hidden" />
-            </div>
-
-            <div className="flex-1 rounded-xl border border-[var(--ic-accent)]/25 bg-[var(--ic-accent-dim)] p-7">
-              <h3 className="text-base font-semibold text-[var(--ic-accent)]">Kontext</h3>
-              <span className="mt-1 font-mono text-[10px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
-                Controls + Evidence
+        <div className="mx-auto max-w-6xl">
+          <div className="grid items-start gap-12 lg:grid-cols-5">
+            <div className="lg:col-span-2">
+              <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
+                Where Kontext Fits
               </span>
-              <div className="my-4 h-px bg-[var(--ic-accent)]/10" />
-              <ul className="space-y-2 text-[13px] text-[var(--ic-text-muted)]">
-                <li>Policy evaluation and enforcement modes</li>
-                <li>Sanctions and decision context capture</li>
-                <li>Approval and escalation lineage</li>
-                <li>Verifiable audit proof and exports</li>
-              </ul>
+              <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
+                8 systems. 1 evidence record.
+              </h2>
+              <div className="mt-6 inline-flex items-center gap-2 rounded-md bg-[var(--ic-green-dim)] px-5 py-2.5">
+                <Check size={14} className="text-[var(--ic-green)]" />
+                <span className="text-[13px] font-medium text-[var(--ic-green)]">
+                  Kontext does not custody or move funds. It evaluates, proves,
+                  and exports the controls around the payment decision.
+                </span>
+              </div>
             </div>
 
-            <div className="flex-shrink-0 px-3 text-[var(--ic-text-dim)]">
-              <ArrowRight size={24} className="hidden md:block" />
-              <ArrowRight size={24} className="rotate-90 md:hidden" />
-            </div>
+            <div className="flex flex-col gap-4 lg:col-span-3">
+              <div className="rounded-xl border border-[var(--ic-border)] bg-[var(--ic-surface)] p-7">
+                <h3 className="text-base font-semibold text-[var(--ic-text)]">Your Payment Stack</h3>
+                <div className="my-4 h-px bg-[var(--ic-border)]" />
+                <ul className="space-y-2 text-[13px] text-[var(--ic-text-muted)]">
+                  <li>Payment agents and orchestration</li>
+                  <li>Wallet APIs and ledgers</li>
+                  <li>Processors and banking rails</li>
+                  <li>Sanctions and risk vendors</li>
+                  <li>Case management and approval systems</li>
+                </ul>
+              </div>
 
-            <div className="flex-1 rounded-xl border border-[var(--ic-border)] bg-[var(--ic-surface)] p-7">
-              <h3 className="text-base font-semibold text-[var(--ic-text)]">Reviewer Outputs</h3>
-              <div className="my-4 h-px bg-[var(--ic-border)]" />
-              <ul className="space-y-2 text-[13px] text-[var(--ic-text-muted)]">
-                <li>Examiner packets</li>
-                <li>Partner diligence exports</li>
-                <li>Incident review files</li>
-                <li>Redacted evidence bundles</li>
-              </ul>
-            </div>
-          </div>
+              <div className="flex items-center gap-2 px-2">
+                <ArrowDown size={18} className="text-[var(--ic-text-dim)]" />
+              </div>
 
-          <div className="mt-8 flex justify-center">
-            <div className="inline-flex items-center gap-2 rounded-md bg-[var(--ic-green-dim)] px-5 py-2.5">
-              <Check size={14} className="text-[var(--ic-green)]" />
-              <span className="text-[13px] font-medium text-[var(--ic-green)]">
-                Kontext does not custody or move funds. It evaluates, proves,
-                and exports the controls around the payment decision.
-              </span>
+              <div className="rounded-xl border border-[var(--ic-accent)]/25 bg-[var(--ic-accent-dim)] p-7">
+                <h3 className="text-base font-semibold text-[var(--ic-accent)]">Kontext</h3>
+                <span className="mt-1 font-mono text-[10px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
+                  Controls + Evidence
+                </span>
+                <div className="my-4 h-px bg-[var(--ic-accent)]/10" />
+                <ul className="space-y-2 text-[13px] text-[var(--ic-text-muted)]">
+                  <li>Policy evaluation and enforcement modes</li>
+                  <li>Sanctions and decision context capture</li>
+                  <li>Approval and escalation lineage</li>
+                  <li>Verifiable audit proof and exports</li>
+                </ul>
+              </div>
+
+              <div className="flex items-center gap-2 px-2">
+                <ArrowDown size={18} className="text-[var(--ic-text-dim)]" />
+              </div>
+
+              <div className="rounded-xl border border-[var(--ic-border)] bg-[var(--ic-surface)] p-7">
+                <h3 className="text-base font-semibold text-[var(--ic-text)]">Reviewer Outputs</h3>
+                <div className="my-4 h-px bg-[var(--ic-border)]" />
+                <ul className="space-y-2 text-[13px] text-[var(--ic-text-muted)]">
+                  <li>Examiner packets</li>
+                  <li>Partner diligence exports</li>
+                  <li>Incident review files</li>
+                  <li>Redacted evidence bundles</li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
@@ -784,32 +785,34 @@ export default function LandingPage() {
 
       <section className="relative border-t border-[var(--ic-border)] px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
-          <div className="text-center">
-            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
-              Low-Friction Adoption
-            </span>
-            <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
-              Start without a platform migration
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
-              Use one integration point, auto-configuration, and middleware
-              patterns to fit Kontext around existing payment paths before you
-              expand into tighter controls.
-            </p>
-          </div>
+          <div className="grid items-start gap-12 lg:grid-cols-5">
+            <div className="lg:col-span-2">
+              <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
+                Low-Friction Adoption
+              </span>
+              <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
+                Start without a platform migration
+              </h2>
+              <p className="mt-4 text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
+                Use one integration point, auto-configuration, and middleware
+                patterns to fit Kontext around existing payment paths before you
+                expand into tighter controls.
+              </p>
+            </div>
 
-          <div className="mt-12 grid gap-6 md:grid-cols-2">
-            {developerOutcomes.map((item) => (
-              <div key={item.n} className="flex gap-4 rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] p-6">
-                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-[var(--ic-accent-dim)]">
-                  <span className="font-mono text-xs font-semibold text-[var(--ic-accent)]">{item.n}</span>
+            <div className="space-y-4 lg:col-span-3">
+              {developerOutcomes.map((item) => (
+                <div key={item.n} className="flex gap-4 rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] p-6">
+                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-[var(--ic-accent-dim)]">
+                    <span className="font-mono text-xs font-semibold text-[var(--ic-accent)]">{item.n}</span>
+                  </div>
+                  <div>
+                    <p className="text-[15px] font-medium text-[var(--ic-text)]">{item.title}</p>
+                    <p className="mt-1 text-[13px] leading-relaxed text-[var(--ic-text-muted)]">{item.desc}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[15px] font-medium text-[var(--ic-text)]">{item.title}</p>
-                  <p className="mt-1 text-[13px] leading-relaxed text-[var(--ic-text-muted)]">{item.desc}</p>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>
