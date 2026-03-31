@@ -392,6 +392,12 @@
   border: 1px solid rgba(139, 144, 160, 0.2);
 }
 
+.dash-pill.pending-review {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--dash-amber);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
 /* Type chips for policies */
 .dash-chip {
   display: inline-flex;

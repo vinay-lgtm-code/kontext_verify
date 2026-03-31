@@ -21,6 +21,8 @@ import {
   ScanEye,
   ShieldCheck,
   Sparkles,
+  CheckCircle2,
+  Brain,
   Code,
 } from "lucide-react";
 
@@ -105,6 +107,24 @@ const developerOutcomes = [
     title: "Export proof, not raw logs",
     desc: "Give compliance teams reviewer-ready packets while developers keep using SDK, CLI, API, and middleware entry points.",
   },
+];
+
+const automatedTasks = [
+  { task: "Maintain compliance documentation", onet: "Maintain regulatory or compliance documentation" },
+  { task: "Assemble evidence for examiner requests", onet: "Verify accuracy of records + Prepare reports" },
+  { task: "Monitor payment-level compliance", onet: "Monitor organizational compliance with regulations" },
+  { task: "File compliance reports", onet: "Report violations of compliance or regulatory standards" },
+  { task: "Track screening results across systems", onet: "Evaluating Information to Determine Compliance" },
+  { task: "Generate examiner narratives", onet: "Documenting/Recording Information" },
+];
+
+const reclaimedActivities = [
+  { activity: "Investigate complex compliance issues", skill: "Critical Thinking, Complex Problem Solving" },
+  { activity: "Advise leadership on regulatory strategy", skill: "Judgment and Decision Making" },
+  { activity: "Negotiate with regulators and examiners", skill: "Negotiation, Persuasion" },
+  { activity: "Develop risk management strategies", skill: "Systems Analysis" },
+  { activity: "Train teams on emerging regulations", skill: "Instructing, Social Perceptiveness" },
+  { activity: "Build relationships with sponsor banks", skill: "Coordination, Active Listening" },
 ];
 
 export default function LandingPage() {
@@ -563,6 +583,103 @@ export default function LandingPage() {
                 </p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Compliance Officer Time */}
+      <section className="relative border-t border-[var(--ic-border)] px-4 py-24 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl">
+          <div className="text-center">
+            <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--ic-text-dim)]">
+              Compliance Officer Time
+            </span>
+            <h2 className="mt-4 font-serif text-3xl font-normal leading-tight tracking-tight text-[var(--ic-text)] sm:text-4xl">
+              Free your team for the work that actually requires judgment.
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
+              The U.S. Bureau of Labor Statistics classifies Compliance Managers
+              as a role requiring &ldquo;considerable preparation&rdquo; &mdash;
+              critical thinking, negotiation, regulatory interpretation. Yet 40%
+              of the job is assembling documents, filing reports, and maintaining
+              records. Kontext automates that 40%.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-8 md:grid-cols-2">
+            {/* Left: Automated by Kontext */}
+            <div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-[var(--ic-green)]" />
+                <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--ic-text-dim)]">
+                  Automated by Kontext
+                </span>
+              </div>
+              <div className="mt-4 space-y-3">
+                {automatedTasks.map((item) => (
+                  <div
+                    key={item.task}
+                    className="flex items-start gap-3 rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] p-4"
+                  >
+                    <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-[var(--ic-green)]/50" />
+                    <div className="flex-1">
+                      <p className="text-[13px] font-medium text-[var(--ic-text-muted)]">
+                        {item.task}
+                      </p>
+                      <p className="mt-1 font-mono text-[10px] text-[var(--ic-text-dim)]">
+                        {item.onet}
+                      </p>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-[var(--ic-green-dim)] px-2.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wider text-[var(--ic-green)]">
+                      Automated
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right: Freed for human judgment */}
+            <div>
+              <div className="flex items-center gap-2">
+                <Brain size={16} className="text-[var(--ic-accent)]" />
+                <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--ic-text-dim)]">
+                  Freed for human judgment
+                </span>
+              </div>
+              <div className="mt-4 space-y-3">
+                {reclaimedActivities.map((item) => (
+                  <div
+                    key={item.activity}
+                    className="flex items-start gap-3 rounded-lg border border-[var(--ic-accent)]/15 bg-[var(--ic-surface)] p-4"
+                  >
+                    <Brain size={16} className="mt-0.5 shrink-0 text-[var(--ic-accent)]" />
+                    <div className="flex-1">
+                      <p className="text-[13px] font-medium text-[var(--ic-text)]">
+                        {item.activity}
+                      </p>
+                      <p className="mt-1 font-mono text-[10px] text-[var(--ic-text-dim)]">
+                        {item.skill}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Proof bar */}
+          <div className="mt-10 rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] p-6 text-center">
+            <p className="text-[15px] font-medium text-[var(--ic-text)]">
+              $136,550 median salary for Compliance Managers (BLS 2024).
+            </p>
+            <p className="mt-1 text-[13px] text-[var(--ic-text-muted)]">
+              Your most expensive team members shouldn&apos;t be copy-pasting
+              from 5 systems into a spreadsheet.
+            </p>
+            <p className="mt-3 font-mono text-[9px] uppercase tracking-widest text-[var(--ic-text-dim)]">
+              Task classification based on O*NET 11-9199.02 (Compliance
+              Managers)
+            </p>
           </div>
         </div>
       </section>

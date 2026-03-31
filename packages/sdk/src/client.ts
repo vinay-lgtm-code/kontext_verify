@@ -394,6 +394,44 @@ export class Kontext {
     return new Kontext(config);
   }
 
+  /**
+   * Zero-config factory that auto-detects configuration from environment
+   * variables and merges optional overrides on top.
+   *
+   * Environment variables read:
+   *   KONTEXT_API_KEY    — if present, enables cloud mode
+   *   KONTEXT_PROJECT_ID — defaults to 'kontext-project'
+   *   NODE_ENV           — 'production' | 'staging' | anything else → 'development'
+   *
+   * @param overrides — partial config merged on top of auto-detected values
+   */
+  static auto(overrides?: Partial<KontextConfig>): Kontext {
+    const apiKey = process.env['KONTEXT_API_KEY'] ?? undefined;
+    const projectId = process.env['KONTEXT_PROJECT_ID'] ?? 'kontext-project';
+
+    const nodeEnv = process.env['NODE_ENV'];
+    let environment: Environment = 'development';
+    if (nodeEnv === 'production') {
+      environment = 'production';
+    } else if (nodeEnv === 'staging') {
+      environment = 'staging';
+    }
+
+    const autoConfig: KontextConfig = {
+      apiKey,
+      projectId,
+      environment,
+      plan: 'startup',
+    };
+
+    const mergedConfig: KontextConfig = {
+      ...autoConfig,
+      ...overrides,
+    };
+
+    return Kontext.init(mergedConfig);
+  }
+
   // --------------------------------------------------------------------------
   // Mode & Config
   // --------------------------------------------------------------------------
@@ -1503,7 +1541,7 @@ export class Kontext {
       intentHash = createHash('sha256').update(canonical).digest('hex');
     }
 
-    return {
+    const result: VerifyResult = {
       compliant: compliance.compliant,
       checks: compliance.checks,
       riskLevel: compliance.riskLevel,
@@ -1525,6 +1563,41 @@ export class Kontext {
       ...(reserveSnapshot ? { reserveSnapshot } : {}),
       ...(!this.screeningAggregator ? { coverageWarning: 'Built-in screening covers ~3% of OFAC crypto addresses. Configure external providers for comprehensive coverage.' } : {}),
     };
+
+    // 9. Enforcement mode
+    const enforcement = this.config.enforcement ?? 'advisory';
+    if (enforcement === 'blocking' && !result.compliant) {
+      this.config.onBlock?.(result);
+      throw new Error('Transaction blocked by enforcement policy');
+    }
+    if (enforcement === 'human_review' && !result.compliant) {
+      // Auto-create a pending review task if one wasn't already created by approval policies
+      if (!result.task) {
+        const label = input.token
+          ? `${input.token} ${input.amount} transfer`
+          : `${input.currency ?? 'USD'} ${input.amount} payment`;
+        const reviewTask = await this.createTask({
+          description: `[Human Review] Non-compliant ${label} from ${input.from} to ${input.to}`,
+          agentId: input.agentId,
+          requiredEvidence: input.txHash ? ['txHash'] : ['paymentReference'],
+          metadata: {
+            enforcement_mode: 'human_review',
+            riskLevel: result.riskLevel,
+            amount: input.amount,
+            from: input.from,
+            to: input.to,
+            ...(input.txHash ? { txHash: input.txHash } : {}),
+            ...(input.chain ? { chain: input.chain } : {}),
+            ...(input.token ? { token: input.token } : {}),
+          },
+        });
+        result.requiresApproval = true;
+        result.task = reviewTask;
+      }
+      result.status = 'pending_review';
+    }
+
+    return result;
   }
 
   // --------------------------------------------------------------------------
