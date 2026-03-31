@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Blog",
@@ -74,53 +75,94 @@ const posts = [
 ];
 
 export default function BlogPage() {
+  const [featured, ...rest] = posts;
+
   return (
     <>
       {/* Header */}
       <section className="border-b border-[var(--ic-border)]">
-        <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
-          <h1 className="font-serif text-3xl italic text-[var(--ic-text)]">
+        <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+          <h1 className="font-serif text-4xl italic text-[var(--ic-text)]">
             Blog
           </h1>
-          <p className="mt-4 text-sm text-[var(--ic-text-muted)]">
+          <p className="mt-4 max-w-xl text-[17px] leading-relaxed text-[var(--ic-text-muted)]">
             Insights on compliance controls, evidence integrity, and regulatory
             readiness for programmable payments infrastructure.
           </p>
         </div>
       </section>
 
-      {/* Posts */}
+      {/* Featured post */}
+      <section className="border-b border-[var(--ic-border)] bg-[var(--ic-surface)]">
+        <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
+          <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--ic-accent)]">
+            Latest
+          </span>
+          <Link
+            href={`/blog/${featured.slug}`}
+            className="group mt-4 block"
+          >
+            <h2 className="font-serif text-2xl font-normal leading-snug text-[var(--ic-text)] transition-colors group-hover:text-[var(--ic-accent)] sm:text-3xl">
+              {featured.title}
+            </h2>
+            <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-[var(--ic-text-muted)]">
+              {featured.description}
+            </p>
+            <div className="mt-4 flex items-center gap-4">
+              <time dateTime={featured.date} className="font-mono text-xs text-[var(--ic-text-dim)]">
+                {featured.date}
+              </time>
+              <span className="text-xs text-[var(--ic-text-dim)]">{featured.readTime}</span>
+              <div className="flex gap-1.5">
+                {featured.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded bg-[var(--ic-accent-dim)] px-2 py-0.5 font-mono text-[9px] font-medium uppercase tracking-wider text-[var(--ic-accent)]"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-[var(--ic-accent)] transition-all group-hover:gap-2">
+              Read article <ArrowRight size={14} />
+            </span>
+          </Link>
+        </div>
+      </section>
+
+      {/* Remaining posts */}
       <section>
-        <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="space-y-0 divide-y divide-[var(--ic-border)]">
-            {posts.map((post) => (
+        <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className="grid gap-6 sm:grid-cols-2">
+            {rest.map((post) => (
               <Link
                 key={post.slug}
                 href={`/blog/${post.slug}`}
-                className="group block py-6 first:pt-0 last:pb-0"
+                className="group rounded-lg border border-[var(--ic-border)] bg-[var(--ic-surface)] p-6 transition-colors hover:border-[var(--ic-accent)]/30"
               >
-                <div className="flex items-baseline gap-3 text-xs text-[var(--ic-text-dim)]">
+                <div className="flex items-center gap-3 text-xs text-[var(--ic-text-dim)]">
                   <time dateTime={post.date} className="font-mono shrink-0">
                     {post.date}
                   </time>
                   <span>{post.readTime}</span>
-                  <span className="hidden sm:flex sm:gap-1.5">
-                    {post.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded bg-[var(--ic-accent-dim)] px-2 py-0.5 font-mono text-[9px] font-medium uppercase tracking-wider text-[var(--ic-accent)]"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </span>
                 </div>
-                <h2 className="mt-2 text-sm font-medium text-[var(--ic-text)] group-hover:text-[var(--ic-accent)] transition-colors">
+                <h2 className="mt-3 text-[15px] font-semibold leading-snug text-[var(--ic-text)] transition-colors group-hover:text-[var(--ic-accent)]">
                   {post.title}
                 </h2>
-                <p className="mt-1 text-xs text-[var(--ic-text-muted)] leading-relaxed">
+                <p className="mt-2 text-[13px] leading-relaxed text-[var(--ic-text-muted)] line-clamp-3">
                   {post.description}
                 </p>
+                <div className="mt-4 flex flex-wrap gap-1.5">
+                  {post.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded bg-[var(--ic-accent-dim)] px-2 py-0.5 font-mono text-[9px] font-medium uppercase tracking-wider text-[var(--ic-accent)]"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
               </Link>
             ))}
           </div>
