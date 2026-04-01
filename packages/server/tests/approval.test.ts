@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ApprovalChain } from '../src/approval.js';
+import { ApprovalService } from '../src/approval.js';
 import type { Pool } from 'pg';
 
 // ---------------------------------------------------------------------------
@@ -36,13 +36,13 @@ function makeApprovalRow(overrides: Record<string, unknown> = {}) {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('ApprovalChain', () => {
+describe('ApprovalService', () => {
   let pool: Pool;
-  let chain: ApprovalChain;
+  let chain: ApprovalService;
 
   beforeEach(() => {
     pool = makeMockPool();
-    chain = new ApprovalChain(pool);
+    chain = new ApprovalService(pool);
   });
 
   // ---- createChain ----
