@@ -33,7 +33,7 @@ const app = new Hono();
 
 // PII Vault — AES-256-GCM encrypted, pseudonymized (GDPR compliance)
 const PII_ENCRYPTION_KEY = process.env['PII_ENCRYPTION_KEY'];
-const piiVault: PIIVault | null = PII_ENCRYPTION_KEY ? new PIIVault(PII_ENCRYPTION_KEY) : null;
+const piiVault: PIIVault | null = PII_ENCRYPTION_KEY && getPool() ? new PIIVault(getPool()!, PII_ENCRYPTION_KEY) : null;
 const pseudonymizer: Pseudonymizer | null = piiVault ? new Pseudonymizer() : null;
 if (piiVault) {
   console.log('[Kontext] PII vault initialized — addresses will be pseudonymized');
