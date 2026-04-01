@@ -36,6 +36,32 @@ jobs:
           workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
           service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
 
+      - name: Run database migrations
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_USER: ${{ secrets.DB_USER }}
+        run: |
+          # Download Cloud SQL Auth Proxy
+          curl -sLo cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.14.3/cloud-sql-proxy.linux.amd64
+          chmod +x cloud-sql-proxy
+
+          # Start proxy in background
+          ./cloud-sql-proxy "$PROJECT_ID:$REGION:kontext-db" --port 5433 &
+          PROXY_PID=$!
+          sleep 3
+
+          # Run all migrations (idempotent — IF NOT EXISTS / ADD COLUMN IF NOT EXISTS)
+          for f in packages/server/migrations/0*.sql; do
+            echo "Running migration: $f"
+            PGPASSWORD="$DB_PASSWORD" psql \
+              -h 127.0.0.1 -p 5433 \
+              -U "$DB_USER" \
+              -d kontext \
+              -f "$f" 2>&1 || true
+          done
+
+          kill $PROXY_PID || true
+
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
 
