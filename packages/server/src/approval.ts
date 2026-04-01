@@ -42,7 +42,7 @@ function generateApprovalId(): string {
   return `apr_${randomBytes(12).toString('hex')}`;
 }
 
-export class ApprovalChain {
+export class ApprovalService {
   constructor(private readonly pool: Pool) {}
 
   /** Create an approval chain for an event with N steps */
