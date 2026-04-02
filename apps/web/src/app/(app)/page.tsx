@@ -2,6 +2,7 @@ import Link from "next/link";
 import { GridBackground } from "@/components/grid-background";
 import { CodeBlock } from "@/components/code-block";
 import { HeroSection } from "@/components/hero-section";
+import { EvidenceFlowDiagram } from "@/components/landing/evidence-flow-diagram";
 import { AgentView } from "@/components/agent-view";
 import { ComplianceCommandCenter } from "@/components/compliance-command-center";
 import { AssessmentSection } from "@/components/assessment/assessment-section";
@@ -113,6 +114,7 @@ export default function LandingPage() {
       <GridBackground />
 
       <HeroSection />
+      <EvidenceFlowDiagram />
 
       <section className="relative px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
